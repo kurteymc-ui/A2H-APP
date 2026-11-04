@@ -381,7 +381,17 @@ public sealed class CooldownSkillWindow : MovableOverlay
         _host.Children.Add(_hover);
     }
 
-    public void Show(CooldownView view) => _look?.Show(view);
+    public void Show(CooldownView view)
+    {
+        if (IsLocked && _hover.Visibility == Visibility.Visible)
+        {
+            // locked again while the mouse was on it (Done): it lets the clicks through now and never hears the mouse leave
+            _hover.Visibility = Visibility.Collapsed;
+            Cursor = null;
+        }
+
+        _look?.Show(view);
+    }
 
     /// <summary>Puts the window somewhere (not saved).</summary>
     public void MoveTo(double left, double top)
