@@ -1,0 +1,74 @@
+{
+ "maps": {
+  "verteron": {
+   "title": "Verteron",
+   "table": "World/World_L/World_L_A",
+   "tile": 2048,
+   "grid": 8,
+   "scale": 0.019583509634873143,
+   "offsetX": 8070.937975984913,
+   "offsetY": 8307.450753846877,
+   "tiles": 26
+  },
+  "altgard": {
+   "title": "Altgard",
+   "table": "World/World_D/World_D_A",
+   "tile": 1024,
+   "grid": 8,
+   "scale": 0.0098227439264612,
+   "offsetX": 4137.781824319782,
+   "offsetY": 4062.9907075320293,
+   "tiles": 34
+  },
+  "abyss": {
+   "title": "Abyss",
+   "table": "Intersever/Abyss/Abyss_Reshanta_A",
+   "tile": 1024,
+   "grid": 4,
+   "scale": 0.010035199999999989,
+   "offsetX": 2044.3219753086414,
+   "offsetY": 2044.66074074074,
+   "tiles": 4
+  },
+  "eltnen": {
+   "title": "Eltnen",
+   "table": "World/World_L/World_L_B",
+   "tile": 1024,
+   "grid": 8,
+   "scale": 0.0098,
+   "offsetX": 4096.0,
+   "offsetY": 4096.0,
+   "tiles": 30
+  },
+  "morheim": {
+   "title": "Morheim",
+   "table": "World/World_D/World_D_B",
+   "tile": 1024,
+   "grid": 8,
+   "scale": 0.0098,
+   "offsetX": 4096.0,
+   "offsetY": 4096.0,
+   "tiles": 32
+  },
+  "reshanta-middle": {
+   "title": "Middle Reshanta",
+   "table": "Intersever/Abyss/Abyss_Reshanta_C",
+   "tile": 1024,
+   "grid": 2,
+   "scale": 0.009981299999999988,
+   "offsetX": 1020.5639506172834,
+   "offsetY": 1023.6128395061722,
+   "tiles": 4
+  },
+  "reshanta-upper": {
+   "title": "Upper Reshanta",
+   "table": "Intersever/Abyss/Abyss_Reshanta_D",
+   "tile": 1024,
+   "grid": 2,
+   "scale": 0.01002539999999999,
+   "offsetX": 1022.5965432098759,
+   "offsetY": 1023.9999999999993,
+   "tiles": 4
+  }
+ }
+}

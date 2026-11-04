@@ -1,0 +1,311 @@
+<UserControl x:Class="AionDPS.Ui.PlayerDetailsView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:AionDPS.Ui"
+        Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}"
+        FontSize="{DynamicResource FontSize.Base}">
+    <UserControl.Resources>
+        <!-- Same dark header as the meter's own grids (the default one was bright white). -->
+        <Style TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="6,4"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="ToolTip" Value="{local:Loc Details.SortTooltip}"/>
+        </Style>
+        <local:ClassIconConverter x:Key="ClassIconConverter"/>
+        <local:ClassNameConverter x:Key="ClassNameConverter"/>
+        <local:RaceIconConverter x:Key="RaceIconConverter"/>
+        <!-- One DMG/DPS/TIME/HITS-PER-SEC stat tile: a small muted label over a large bold value,
+             boxed, so the headline numbers read at a glance instead of being buried in
+             SummaryText's sentence - same idea as the stat cards in a certain other meter's
+             post-fight "Details" panel, adapted to this window's existing dark theme rather than
+             copying its colors. -->
+        <Style x:Key="StatTile" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="4"/>
+            <Setter Property="Padding" Value="12,6"/>
+            <Setter Property="Margin" Value="0,0,8,0"/>
+            <Setter Property="MinWidth" Value="86"/>
+        </Style>
+        <!-- The switch between the skill table, the rotation and the effects. -->
+        <Style x:Key="DetailsTabButton" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Rim" Padding="12,5" BorderThickness="0,0,0,2" BorderBrush="Transparent" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" TextElement.Foreground="{TemplateBinding Foreground}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Rim" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="StatTileLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+        </Style>
+        <Style x:Key="StatTileValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Margin" Value="0,2,0,0"/>
+        </Style>
+    </UserControl.Resources>
+    <DockPanel Margin="10">
+        <StackPanel DockPanel.Dock="Top" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <Image Source="{Binding Faction, Converter={StaticResource RaceIconConverter}}"
+                       Height="22" Width="22" Margin="0,0,4,0" ToolTip="{Binding Faction}"/>
+                <Image Source="{Binding ClassName, Converter={StaticResource ClassIconConverter}}"
+                       Height="22" Width="22" Margin="0,0,8,0" ToolTip="{Binding ClassName, Converter={StaticResource ClassNameConverter}}"/>
+                <TextBlock x:Name="HeaderText" FontSize="16" FontWeight="Bold" VerticalAlignment="Center"/>
+            </StackPanel>
+            <!-- DMG/DPS/TIME/HITS-PER-SEC: the four numbers a reader looks for first, pulled out of
+                 SummaryText's sentence and given their own tiles. DpsTileText/TimeTileText read
+                 "n/a" when the events span less than one second (see DpsCalculator.AllDpsWallClock's
+                 null case) - a single isolated hit has no elapsed duration to divide by, and a
+                 tile showing a rate in that case would be worse than one saying "n/a". -->
+            <StackPanel x:Name="TilesPanel" Orientation="Horizontal" Margin="0,10,0,0">
+                <Border Style="{StaticResource StatTile}">
+                    <StackPanel>
+                        <TextBlock x:Name="AmountTileLabel" Text="DMG" Style="{StaticResource StatTileLabel}"/>
+                        <TextBlock x:Name="DmgTileText" Style="{StaticResource StatTileValue}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatTile}">
+                    <StackPanel>
+                        <TextBlock x:Name="RateTileLabel" Text="DPS" Style="{StaticResource StatTileLabel}"/>
+                        <TextBlock x:Name="DpsTileText" Style="{StaticResource StatTileValue}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatTile}">
+                    <StackPanel>
+                        <TextBlock Text="TIME" Style="{StaticResource StatTileLabel}"/>
+                        <TextBlock x:Name="TimeTileText" Style="{StaticResource StatTileValue}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatTile}">
+                    <StackPanel>
+                        <TextBlock Text="{local:Loc Details.Tile.Hits}" Style="{StaticResource StatTileLabel}"/>
+                        <TextBlock x:Name="HitsTileText" Style="{StaticResource StatTileValue}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatTile}">
+                    <StackPanel>
+                        <TextBlock Text="HITS/S" Style="{StaticResource StatTileLabel}"/>
+                        <TextBlock x:Name="HitsPerSecTileText" Style="{StaticResource StatTileValue}"/>
+                    </StackPanel>
+                </Border>
+                <Border Style="{StaticResource StatTile}">
+                    <StackPanel>
+                        <TextBlock Text="{local:Loc Details.Tile.Crit}" Style="{StaticResource StatTileLabel}"/>
+                        <TextBlock x:Name="CritTileText" Style="{StaticResource StatTileValue}"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+            <TextBlock x:Name="SummaryText" Foreground="{DynamicResource Brush.TextMuted}" Margin="0,8,0,0"/>
+        </StackPanel>
+
+        <!-- The damage over time, per second (a coarser step for a long span): where the fight
+             peaked and where it went quiet. Drawn in code (DrawCurve). -->
+        <Border x:Name="CurvePanel" DockPanel.Dock="Bottom" Height="150" Margin="0,8,0,0" Background="{DynamicResource Brush.Panel}"
+                BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="4" Padding="8,4">
+            <DockPanel>
+                <TextBlock x:Name="CurveTitle" DockPanel.Dock="Top" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}"/>
+                <Grid>
+                    <Canvas x:Name="CurveCanvas" ClipToBounds="True" SizeChanged="OnCurveSizeChanged"/>
+                    <TextBlock x:Name="CurveMaxText" FontSize="10" Foreground="{DynamicResource Brush.TextSubtle}" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                    <TextBlock x:Name="CurveStartText" FontSize="10" Foreground="{DynamicResource Brush.TextSubtle}" HorizontalAlignment="Left" VerticalAlignment="Bottom"/>
+                    <TextBlock x:Name="CurveEndText" FontSize="10" Foreground="{DynamicResource Brush.TextSubtle}" HorizontalAlignment="Right" VerticalAlignment="Bottom"/>
+                </Grid>
+            </DockPanel>
+        </Border>
+
+        <!-- Says where the crit column's numbers come from: the game server flags every crit. -->
+        <TextBlock x:Name="CritNoteText" DockPanel.Dock="Bottom" Foreground="{DynamicResource Brush.TextMuted}"
+                   TextWrapping="Wrap" Margin="0,8,0,0" FontStyle="Italic"/>
+
+        <!-- Damage per target: one line per monster this player hit, with the player's share of all
+             damage on it, and a total line on top. -->
+        <DataGrid x:Name="TargetsGrid" DockPanel.Dock="Top" AutoGenerateColumns="False" IsReadOnly="True" MaxHeight="130" Margin="0,0,0,8"
+                  Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}" RowBackground="{DynamicResource Brush.RowAlt}"
+                  AlternatingRowBackground="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}"
+                  HorizontalGridLinesBrush="{DynamicResource Brush.Border}" GridLinesVisibility="Horizontal"
+                  HeadersVisibility="Column" CanUserAddRows="False">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="{local:Loc Details.Col.Target}" Binding="{Binding Name}" Width="*" MinWidth="160"/>
+                <DataGridTextColumn Header="{local:Loc Details.Col.Total}" Binding="{Binding Total, StringFormat=N0}" Width="110"/>
+                <DataGridTextColumn Header="{local:Loc Details.Col.Dps}" Binding="{Binding Dps, StringFormat=N0}" Width="90"/>
+                <DataGridTextColumn Header="{local:Loc Details.Col.Share}" Binding="{Binding ShareDisplay}" Width="90"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <StackPanel x:Name="TabBar" DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+            <RadioButton x:Name="TabSkillsButton" GroupName="DetailsTab" Style="{StaticResource DetailsTabButton}" IsChecked="True" Content="{local:Loc Details.Tab.Skills}" Checked="OnDetailsTabChanged"/>
+            <RadioButton x:Name="TabRotationButton" GroupName="DetailsTab" Style="{StaticResource DetailsTabButton}" Content="{local:Loc Details.Tab.Rotation}" Checked="OnDetailsTabChanged"/>
+            <RadioButton x:Name="TabBuffsButton" GroupName="DetailsTab" Style="{StaticResource DetailsTabButton}" Content="{local:Loc Details.Tab.Buffs}" Checked="OnDetailsTabChanged"/>
+            <RadioButton x:Name="TabPlayerButton" GroupName="DetailsTab" Style="{StaticResource DetailsTabButton}" Visibility="Collapsed" Content="{local:Loc Details.Tab.Player}" Checked="OnDetailsTabChanged"/>
+            <Button x:Name="ReplayButton" Content="{local:Loc Replay.Button}" Visibility="Collapsed" Margin="16,0,0,0" Padding="12,3" VerticalAlignment="Center" Click="OnReplayClicked"/>
+        </StackPanel>
+        <Grid x:Name="TabHost">
+        <!-- What the game's "player appeared" frame said of the player (level, item level, combat power, worn pieces): built in code (BuildSeenPanel), a tab of its own so the damage and the player's data are looked at apart. -->
+        <ScrollViewer x:Name="PlayerPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+            <StackPanel x:Name="SeenHost" Margin="0,4,0,0"/>
+        </ScrollViewer>
+        <DataGrid x:Name="SkillsGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                  Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}" RowBackground="{DynamicResource Brush.RowAlt}"
+                  AlternatingRowBackground="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}"
+                  HorizontalGridLinesBrush="{DynamicResource Brush.Border}" GridLinesVisibility="Horizontal"
+                  HeadersVisibility="Column" CanUserAddRows="False" Sorting="OnSkillsSorting">
+            <DataGrid.Columns>
+                <!-- Icon + name, not plain text - SkillIconConverter resolves the (possibly
+                     rank-suffixed, EN/DE/FR) skill name via SkillDatabase.FindByLocalizedName and
+                     falls back to no image (Image just collapses to its blank space) for anything
+                     the database doesn't recognise, rather than showing a broken-image glyph. -->
+                <DataGridTemplateColumn Header="Skill" Width="*" MinWidth="200" SortMemberPath="Skill">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal">
+                                <Image Source="{Binding Icon}" Width="22" Height="22" Margin="0,1,6,1"
+                                       RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding Skill}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="Hits" Binding="{Binding Hits, StringFormat=N0}" Width="60"/>
+                <DataGridTextColumn Header="Crit %" Binding="{Binding CritRate, StringFormat={}{0:F1}%}" Width="70"/>
+                <!-- Total as text plus a ShareBar underneath (SkillRow.SharePercent = this skill's
+                     share of the player's own total damage) - same "number + bar under it" pattern
+                     as MainWindow's Damage/DPS column, so the skill breakdown reads at a glance
+                     instead of requiring a column-by-column comparison. -->
+                <DataGridTemplateColumn Header="Total" Width="110" SortMemberPath="Total">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel VerticalAlignment="Center">
+                                <TextBlock Text="{Binding Total, StringFormat=N0}"/>
+                                <ProgressBar Style="{StaticResource ShareBar}" Value="{Binding SharePercent, Mode=OneWay}"
+                                             ToolTip="{Binding SharePercent, StringFormat={}{0:F1}% of total damage dealt by this player}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+                <DataGridTextColumn Header="{local:Loc Details.Col.Back}" Binding="{Binding BackDisplay}" Width="62"/>
+                <DataGridTextColumn Header="{local:Loc Details.Col.Front}" Binding="{Binding FrontDisplay}" Width="62"/>
+                <DataGridTextColumn Header="{local:Loc Details.Col.Perfect}" Binding="{Binding PerfectDisplay}" Width="66"/>
+                <DataGridTextColumn Header="{local:Loc Details.Col.Double}" Binding="{Binding DoubleDisplay}" Width="62"/>
+                <DataGridTextColumn Header="{local:Loc Details.Col.Multi}" Binding="{Binding MultiDisplay}" Width="62"/>
+                <DataGridTextColumn Header="Min" Binding="{Binding Min, StringFormat=N0}" Width="80"/>
+                <DataGridTextColumn Header="Max" Binding="{Binding Max, StringFormat=N0}" Width="80"/>
+                <DataGridTextColumn Header="Avg" Binding="{Binding Average, StringFormat=N0}" Width="80"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <DockPanel x:Name="RotationPanel" Visibility="Collapsed">
+            <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,6">
+                <CheckBox x:Name="ShowPassivesBox" Foreground="{DynamicResource Brush.Text}" Content="{local:Loc Rotation.ShowPassives}" IsChecked="True" Margin="0,0,16,0" Checked="OnRotationOptionChanged" Unchecked="OnRotationOptionChanged"/>
+                <CheckBox x:Name="ShowDpsBox" Foreground="{DynamicResource Brush.Text}" Content="{local:Loc Rotation.ShowDps}" IsChecked="True" Margin="0,0,16,0" Checked="OnRotationOptionChanged" Unchecked="OnRotationOptionChanged"/>
+                <CheckBox x:Name="ShowStaggerBox" Foreground="{DynamicResource Brush.Text}" Content="{local:Loc Rotation.ShowStagger}" IsChecked="True" Margin="0,0,16,0" Checked="OnRotationOptionChanged" Unchecked="OnRotationOptionChanged"/>
+                <TextBlock Text="{local:Loc Rotation.Hint}" Foreground="{DynamicResource Brush.TextSubtle}" FontSize="11" VerticalAlignment="Center"/>
+            </StackPanel>
+            <TextBlock x:Name="NoRotationText" DockPanel.Dock="Top" Text="{local:Loc Rotation.NoData}" Foreground="{DynamicResource Brush.TextMuted}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed"/>
+            <Border x:Name="RotationBox" DockPanel.Dock="Top" Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="4">
+                <ScrollViewer x:Name="RotationScroll" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Height="172">
+                    <local:RotationTimelineView x:Name="Timeline"/>
+                </ScrollViewer>
+            </Border>
+            <StackPanel x:Name="OpenerRow" DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,8,0,4">
+                <TextBlock Text="{local:Loc Rotation.Opener}" FontWeight="Bold" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                <WrapPanel x:Name="OpenerPanel" VerticalAlignment="Center"/>
+            </StackPanel>
+            <DataGrid x:Name="RotationGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}" RowBackground="{DynamicResource Brush.RowAlt}"
+                      AlternatingRowBackground="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}"
+                      HorizontalGridLinesBrush="{DynamicResource Brush.Border}" GridLinesVisibility="Horizontal"
+                      HeadersVisibility="Column" CanUserAddRows="False">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="{local:Loc Details.Tab.Skills}" Width="*" MinWidth="180">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,1,6,1" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.Uses}" Binding="{Binding Uses}" Width="70"/>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.PerMinute}" Binding="{Binding PerMinute}" Width="80"/>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.Gap}" Binding="{Binding AverageGap}" Width="90"/>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.First}" Binding="{Binding FirstAt}" Width="80"/>
+                    <DataGridTextColumn Header="{local:Loc Details.Col.Share}" Binding="{Binding Share}" Width="80"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+
+        <DockPanel x:Name="BuffsPanel" Visibility="Collapsed">
+            <TextBlock x:Name="NoBuffsText" DockPanel.Dock="Top" Text="{local:Loc Rotation.NoBuffs}" Foreground="{DynamicResource Brush.TextMuted}" TextWrapping="Wrap" Margin="0,8,0,0" Visibility="Collapsed"/>
+            <DataGrid x:Name="DebuffsGrid" DockPanel.Dock="Bottom" MaxHeight="260" Visibility="Collapsed" AutoGenerateColumns="False" IsReadOnly="True"
+                      Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}" RowBackground="{DynamicResource Brush.RowAlt}"
+                      AlternatingRowBackground="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}"
+                      HorizontalGridLinesBrush="{DynamicResource Brush.Border}" GridLinesVisibility="Horizontal"
+                      HeadersVisibility="Column" CanUserAddRows="False">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="{local:Loc Rotation.Col.Effect}" Width="*" MinWidth="200">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,1,6,1" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.Uptime}" Binding="{Binding Uptime}" Width="90"/>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.OnYou}" Binding="{Binding FromYou}" Width="90"/>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.Times}" Binding="{Binding Applications}" Width="70"/>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.Givers}" Binding="{Binding Givers}" Width="200"/>
+                </DataGrid.Columns>
+            </DataGrid>
+            <TextBlock x:Name="DebuffsHeader" DockPanel.Dock="Bottom" Text="{local:Loc Rotation.Debuffs}" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextSubtle}" Margin="0,14,0,6" Visibility="Collapsed"/>
+            <DataGrid x:Name="BuffsGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                      Background="{DynamicResource Brush.Window}" Foreground="{DynamicResource Brush.Text}" RowBackground="{DynamicResource Brush.RowAlt}"
+                      AlternatingRowBackground="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}"
+                      HorizontalGridLinesBrush="{DynamicResource Brush.Border}" GridLinesVisibility="Horizontal"
+                      HeadersVisibility="Column" CanUserAddRows="False">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="{local:Loc Rotation.Col.Effect}" Width="*" MinWidth="200">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <Image Source="{Binding Icon}" Width="20" Height="20" Margin="0,1,6,1" RenderOptions.BitmapScalingMode="HighQuality" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{Binding Name}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.Uptime}" Binding="{Binding Uptime}" Width="90"/>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.FromYou}" Binding="{Binding FromYou}" Width="90"/>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.Times}" Binding="{Binding Applications}" Width="70"/>
+                    <DataGridTextColumn Header="{local:Loc Rotation.Col.Givers}" Binding="{Binding Givers}" Width="200"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </DockPanel>
+        </Grid>
+    </DockPanel>
+</UserControl>

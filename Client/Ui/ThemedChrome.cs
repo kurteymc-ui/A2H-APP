@@ -1,0 +1,137 @@
+using System.IO;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+
+namespace AionDPS.Ui;
+
+/// <summary>
+/// The meter's own window frame for secondary windows (details, character): no OS title bar, the
+/// same dark title strip with the app icon, title and minimize/close as MainWindow and
+/// SettingsWindow, inside a bordered surface. Applied in code so windows built in code and windows
+/// built in XAML get the identical frame. Call before the window is first shown
+/// (WindowStyle and WindowChrome cannot change afterwards).
+/// </summary>
+public static class ThemedChrome
+{
+    private static readonly Type[] SharedStyleTypes =
+    {
+        typeof(System.Windows.Controls.Primitives.ScrollBar), typeof(ToolTip), typeof(ComboBox), typeof(ComboBoxItem),
+        typeof(CheckBox), typeof(MenuItem), typeof(Separator), typeof(Button), typeof(ContextMenu),
+    };
+
+    /// <summary>
+    /// Takes the content out of a window that <see cref="Apply"/> has dressed (title bar and frame stay behind), to put it into another window - the
+    /// tools window shows several tools' pages that way. The window is never shown; close it when the page goes away.
+    /// </summary>
+    public static UIElement? TakeContent(Window window)
+    {
+        if (window.Content is Border { Child: DockPanel dock } && dock.Children.Count > 1)
+        {
+            UIElement content = dock.Children[1];
+            dock.Children.RemoveAt(1);
+            return content;
+        }
+
+        return null;
+    }
+
+    public static void Apply(Window window)
+    {
+        UIElement? content = window.Content as UIElement;
+        window.Content = null;
+        window.WindowStyle = WindowStyle.None;
+        // Not AllowsTransparency: a layered window is missing from Windows' own screenshot tool
+        // (Win+Shift+S). WindowChrome without caption or glass frame drops the OS frame instead.
+        window.ResizeMode = ResizeMode.CanResizeWithGrip;
+        window.SetResourceReference(Window.BackgroundProperty, "Brush.Window");
+        System.Windows.Shell.WindowChrome.SetWindowChrome(window, new System.Windows.Shell.WindowChrome
+        {
+            CaptionHeight = 0,
+            ResizeBorderThickness = new Thickness(6),
+            GlassFrameThickness = new Thickness(0),
+            CornerRadius = new CornerRadius(0),
+            UseAeroCaptionButtons = false,
+        });
+
+        // The dark control styles (scroll bar, tooltip, combo box, check box, menu, button) live in
+        // MainWindow's resources; without them a secondary window shows the system's light ones.
+        // A style the window defines itself wins.
+        if (Application.Current.MainWindow?.Resources is { } shared)
+        {
+            foreach (Type type in SharedStyleTypes)
+            {
+                if (!window.Resources.Contains(type) && shared[type] is Style style)
+                {
+                    window.Resources[type] = style;
+                }
+            }
+        }
+
+        var icon = new Image { Width = 16, Height = 16, Margin = new Thickness(8, 0, 0, 0), HorizontalAlignment = HorizontalAlignment.Left };
+        RenderOptions.SetBitmapScalingMode(icon, BitmapScalingMode.HighQuality);
+        try
+        {
+            using var appIcon = new System.Drawing.Icon(Path.Combine(AppContext.BaseDirectory, "assets", "app", "aiondps.ico"));
+            icon.Source = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(appIcon.Handle, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+        }
+        catch (Exception ex) when (ex is IOException or ArgumentException)
+        {
+            // No icon file: the title strip just starts with the text.
+        }
+
+        var title = new TextBlock { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(30, 0, 0, 0) };
+        title.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+        title.SetBinding(TextBlock.TextProperty, new System.Windows.Data.Binding(nameof(Window.Title)) { Source = window });
+
+        Button Caption(string geometry, Action action)
+        {
+            // Drawn lines, not a text glyph: the cross came out of a fallback font, and in some installs only half of it showed.
+            // The drawing sits inside a 12 x 12 box with a margin of 1 for the stroke, Stretch.None: stretched into a box exactly as large as the lines, the ends of the cross were cut off
+            // at some display scalings (125 %, 150 %), and pixel snapping made one arm thinner than the other.
+            var line = new System.Windows.Shapes.Path
+            {
+                Data = Geometry.Parse(geometry), StrokeThickness = 1.4, Width = 12, Height = 12, Stretch = Stretch.None, SnapsToDevicePixels = false, UseLayoutRounding = false,
+                StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            };
+            line.SetResourceReference(System.Windows.Shapes.Shape.StrokeProperty, "Brush.TextMuted");
+            // Padding 0: the button style of the main window pads every button by 8 px, which squeezes the glyph out of a 28 px wide caption button
+            var button = new Button { Content = line, Width = 28, Height = 30, BorderThickness = new Thickness(0), Background = Brushes.Transparent, Margin = new Thickness(0), Padding = new Thickness(0) };
+            button.SetResourceReference(Control.ForegroundProperty, "Brush.TextMuted");
+            button.Click += (_, _) => action();
+            return button;
+        }
+
+        var buttons = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        buttons.Children.Add(Caption("M1,6 L11,6", () => window.WindowState = WindowState.Minimized));
+        buttons.Children.Add(Caption("M1.5,1.5 L10.5,10.5 M10.5,1.5 L1.5,10.5", window.Close));
+
+        var bar = new Grid { Height = 30 };
+        bar.SetResourceReference(Panel.BackgroundProperty, "Brush.TitleBar");
+        bar.Children.Add(icon);
+        bar.Children.Add(title);
+        bar.Children.Add(buttons);
+        bar.MouseLeftButtonDown += (_, e) =>
+        {
+            if (e.LeftButton == MouseButtonState.Pressed)
+            {
+                window.DragMove();
+            }
+        };
+
+        var dock = new DockPanel { LastChildFill = true };
+        DockPanel.SetDock(bar, Dock.Top);
+        dock.Children.Add(bar);
+        if (content is not null)
+        {
+            dock.Children.Add(content);
+        }
+
+        var frame = new Border { BorderThickness = new Thickness(1), Child = dock };
+        frame.SetResourceReference(Border.BackgroundProperty, "Brush.Window");
+        frame.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        window.Content = frame;
+    }
+}

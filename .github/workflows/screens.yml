@@ -1,0 +1,123 @@
+name: Screens
+
+# Draws the meter's main windows with sample data (the app's own render-* modes, no window is shown) after every change to
+# the app, and puts the pictures on the "screens" branch, so the look can be checked without a Windows PC.
+on:
+  push:
+    branches: [main]
+    paths: ["Client/**", ".github/workflows/screens.yml"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: screens
+  cancel-in-progress: true
+
+jobs:
+  screens:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Build
+        run: dotnet build Client/AionDPS.csproj -c Release --nologo -o out
+      - name: Draw the windows
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory screens | Out-Null
+          $exe = (Resolve-Path out/A2HMeter.exe).Path
+          $shots = @(
+            @('render-overlay', 'window.png', 'window'),
+            @('render-overlay', 'compact.png', 'compact'),
+            @('render-overlay', 'chips.png', 'chips'),
+            @('render-overlay', 'menu.png', 'menu'),
+            @('render-overlay', 'menu-dummy.png', 'menu-dummy'),
+            @('render-overlay', 'callout.png', 'callout'),
+            @('render-overlay', 'look-wide.png', 'look-wide'),
+            @('render-overlay', 'look-thread.png', 'look-thread'),
+            @('render-overlay', 'look-frame.png', 'look-frame'),
+            @('render-overlay', 'look-raidlog.png', 'look-raidlog'),
+            @('render-overlay', 'look-minimal.png', 'look-minimal'),
+            @('render-overlay', 'look-oldschool.png', 'look-oldschool'),
+            @('render-checklist', 'roster.png', 'roster'),
+            @('render-app', 'app-home.png', 'home'),
+            @('render-app', 'app-overlays.png', 'overlays'),
+            @('render-app', 'app-characters.png', 'characters'),
+            @('render-app', 'app-history.png', 'history'),
+            @('render-app', 'app-meter.png', 'meter'),
+            @('render-app', 'app-cubes.png', 'cubes'),
+            @('render-app', 'app-timers.png', 'timetable'),
+            @('render-app', 'app-timers-full.png', 'timetable', '2100'),
+            @('render-tool', 'timers-overlay.png', 'timetable-overlay'),
+            @('render-tool', 'blackcloud-toast.png', 'blackcloud-toast'),
+            @('render-petmap', 'petmap-route.png', 'altgard', '20000', '30000', 'route'),
+            @('render-petmap', 'petmap-route-round.png', 'altgard', '20000', '30000', 'route-round'),
+            @('render-petmap', 'petmap-route-whole.png', 'altgard', '20000', '30000', 'route-whole'),
+            @('render-assist', 'assist-window.png', 'en'),
+            @('render-assist', 'assist-buffs.png', 'buffs'),
+            @('render-assist', 'assist-overlays.png', 'overlays'),
+            @('render-petmap', 'petmap-route-whole-v.png', 'verteron', '-215789', '262953', 'route-whole'),
+            @('render-petmap', 'petmap-eltnen.png', 'eltnen', '0', '0', 'route-whole'),
+            @('render-petmap', 'petmap-morheim.png', 'morheim', '0', '0', 'route-whole'),
+            @('render-petmap', 'petmap-reshanta-middle.png', 'reshanta-middle', '0', '0', 'route-whole'),
+            @('render-petmap', 'petmap-reshanta-upper.png', 'reshanta-upper', '0', '0', 'route-whole'),
+            @('render-app', 'app-meterlook.png', 'meterlook'),
+            @('render-app', 'app-petmap.png', 'petmap'),
+            @('render-app', 'app-pets.png', 'petmap.pets'),
+            @('render-app', 'app-pets-long.png', 'petmap.pets', '2000'),
+            @('render-app', 'app-gather.png', 'petmap.gather'),
+            @('render-checklist', 'checklist.png', 'character'),
+            @('render-checklist', 'checklist-season.png', 'character-season'),
+            @('render-checklist', 'checklist-supply.png', 'character-supply'),
+            @('render-checklist', 'checklist-inventory.png', 'character-inventory'),
+            @('render-details', 'details-skills.png', 'skills'),
+            @('render-details', 'details-buffs.png', 'buffs'),
+            @('render-loot', 'loot.png', 'en'),
+            @('render-cpcalc', 'cpcalc.png', 'en', 'gear'),
+            @('render-cpcalc', 'cpcalc-stigmas.png', 'en', 'stigmas'),
+            @('render-cpcalc', 'cpcalc-skills.png', 'en', 'skills'),
+            @('render-cpcalc', 'cpcalc-genus.png', 'en', 'genus'),
+            @('render-cpcalc', 'cpcalc-pets.png', 'en', 'pets'),
+            @('render-cpcalc', 'cpcalc-daevanion.png', 'en', 'daevanion'),
+            @('render-cpcalc', 'cpcalc-titles.png', 'en', 'titles'),
+            @('render-cpcalc', 'cpcalc-arcana.png', 'en', 'arcana'),
+            @('render-cpcalc', 'cpcalc-check.png', 'en', 'check'),
+            @('render-gather', 'gather-overlay.png', 'en'),
+            @('render-season', 'season-overlay.png', 'en'),
+            @('render-settings', 'settings.png', 'Interface'),
+            @('render-report', 'report-damage.png', 'Damage'),
+            @('render-report', 'report-healing.png', 'Healing'),
+            @('render-report', 'report-taken.png', 'Damage-taken'),
+            @('render-report', 'report-buffs.png', 'Buffs'),
+            @('render-report', 'report-support.png', 'Support'),
+            @('render-report', 'report-rotation.png', 'Rotation'),
+            @('render-report', 'report-timeline.png', 'Timeline'),
+            @('render-report', 'report-defense.png', 'Defense'),
+            @('render-history', 'history-nightmare.png', 'Nightmare'),
+            @('render-history', 'history-bosses.png', 'Boss-fights'),
+            @('render-history', 'history-bests.png', 'Personal-bests')
+          )
+          foreach ($s in $shots) {
+            $out = Join-Path (Resolve-Path screens).Path $s[1]
+            $p = Start-Process -FilePath $exe -ArgumentList (@($s[0], "`"$out`"") + $s[2..($s.Count - 1)]) -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru
+            "$($s[0]) $($s[2]): exit $($p.ExitCode), $(if (Test-Path $out) { (Get-Item $out).Length } else { 'no picture' })"
+          }
+          # The app's own checks (recorded game frames, no game or Npcap needed): the result goes up with the pictures.
+          $self = Start-Process -FilePath $exe -ArgumentList @('selftest') -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru `
+            -RedirectStandardOutput screens/selftest.txt -RedirectStandardError screens/selftest-errors.txt
+          "selftest: exit $($self.ExitCode)"
+          "Built from $env:GITHUB_SHA" | Set-Content screens/README.txt
+      - name: Put the pictures on the screens branch
+        shell: pwsh
+        run: |
+          cd screens
+          git init -q
+          git checkout -q -b screens
+          git add .
+          git -c user.name="screens" -c user.email="screens@users.noreply.github.com" commit -q -m "Screens for $env:GITHUB_SHA"
+          git push -q -f "https://x-access-token:$env:GH_TOKEN@github.com/$env:GITHUB_REPOSITORY" screens
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

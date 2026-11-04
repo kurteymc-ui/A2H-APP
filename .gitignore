@@ -1,0 +1,24 @@
+bin/
+obj/
+.vs/
+*.user
+
+# Real player traffic captures (logins, chat, etc.) -- never commit or sync these.
+captures/
+*.pcap
+*.pcapng
+
+# Build output of the release flow (dotnet publish -o publish, then the MSI into dist/).
+publish/
+dist/
+
+node_modules/
+.claude/settings.local.json
+
+# Working notes from content derivation (third-party prose, never checked in)
+*.review.json
+
+__pycache__/
+
+# Generated translation spreadsheets for native speakers (Tools/translations/export_translations.py)
+Tools/translations/export/

@@ -1,0 +1,263 @@
+namespace AionDPS.Upload;
+
+/// <summary>Outcome of one UploadClient.SendAsync call. <see cref="Error"/> is null exactly when
+/// <see cref="Success"/> is true - carries the real reason for a failure (HTTP status + response
+/// body, or the exception message) rather than collapsing every failure into one generic message.</summary>
+public readonly record struct UploadResult(bool Success, string? Error, int? EncounterId = null, string? Url = null)
+{
+    public static UploadResult Ok { get; } = new(true, null);
+
+    /// <summary>A boss fight the server took: the id of the fight there (which the replay upload names).</summary>
+    public static UploadResult OkWith(int? encounterId, string? url = null) => new(true, null, encounterId, url);
+
+    public static UploadResult Failed(string error) => new(false, error);
+}
+
+/// <summary>One skill's usage for one participant - field-for-field what the backend's
+/// uploadSchema.ts zod schema expects (skill/hits/critHits/total/min/max).</summary>
+public sealed record SkillUsageUpload(string Skill, int Hits, int CritHits, long Total, long Min, long Max);
+
+/// <summary>One real reinforcement this participant RECEIVED -
+/// deliberately its own, narrower record rather than reusing SkillUsageUpload: a buff cast has no
+/// damage/crit/min/max to report, and forcing those fields to 0 would misrepresent them as measured
+/// zeros rather than "not applicable". <see cref="Casts"/> counts how many times this row was
+/// affected by the skill, whether self-cast or landed on them by a Cleric/Chanter's group buff -
+/// not how many times this row itself cast it. <see cref="SkillId"/> is the game's effect id (the website finds the icon and the localized name by it),
+/// <see cref="UptimePermille"/> the share of the fight the effect was on this row (0..1000), <see cref="Givers"/> the other players of the fight who gave it
+/// (empty: the row's own effect).</summary>
+public sealed record BuffUsageUpload(string Skill, int Casts, int SkillId = 0, int UptimePermille = 0, IReadOnlyList<string>? Givers = null, IReadOnlyList<int>? Spans = null);
+
+/// <summary>One skill of a player's <see cref="TimelineUpload"/>: the game's skill id and its name.</summary>
+public sealed record TimelineSkillUpload(int Id, string Name);
+
+/// <summary>The time axis of one player: which skill was used when, and when they died. Times are tenths of a second from the start of the uploaded fight;
+/// <see cref="Times"/>[i] is a use of <see cref="Skills"/>[<see cref="Index"/>[i]].</summary>
+public sealed record TimelineUpload(IReadOnlyList<TimelineSkillUpload> Skills, IReadOnlyList<int> Times, IReadOnlyList<int> Index, IReadOnlyList<int> Deaths,
+    // Whom this player had selected: see FocusUpload. Null when the stream named no target of his.
+    FocusUpload? Focus = null,
+    // What the analysis of the fight needs besides the skills (see AnalysisUpload). Null where the client has no data for it.
+    AnalysisUpload? Analysis = null);
+
+/// <summary>One line of the hostile damage a player took: from the fight's boss, another monster (an add) or anything else, by skill.</summary>
+public sealed record TakenUpload(string From, string Skill, int Hits, long Total, long Max);
+
+/// <summary>
+/// What the website's analysis of a fight reads from each player: <see cref="Damage"/> is his damage on the boss in 5-second slices from the start of the window, <see cref="AddDamage"/>
+/// his damage on other monsters, <see cref="Dead"/> the spans he was dead as flattened (start, end) pairs in tenths of a second, <see cref="Taken"/> the hostile damage he took.
+/// </summary>
+public sealed record AnalysisUpload(IReadOnlyList<long> Damage, long AddDamage, IReadOnlyList<int> Dead, IReadOnlyList<TakenUpload> Taken);
+
+/// <summary>How a player split his time between the boss and everything else (adds, other players to heal), in tenths of a second of the uploaded window, and how often he
+/// changed from one target to another. Only his target, never where he stood.</summary>
+public sealed record FocusUpload(int OnBoss, int OnOthers, int Switches);
+
+/// <summary>One player's contribution to an encounter. <see cref="IsSelf"/> mirrors the client's own
+/// "You" check (see MainWindow.ResolveDisplayName) - the backend trusts THIS row's crit rate for
+/// this player permanently once received, since the game only flags crits reliably on the scorer's own
+/// side (see Combat/CritEstimator.cs). Per the user: AP/Kinah/EXP/loot are never part of this payload
+/// -- only combat performance (damage AND heal) is - so there is deliberately no ApTotal field here
+/// anymore.</summary>
+public sealed record ParticipantUpload(
+    string Name,
+    string ClassName,
+    string Faction,
+    bool IsSelf,
+    long TotalDamage,
+    double Dps,
+    double Idps,
+    long TotalHealing,
+    double Hps,
+    IReadOnlyList<SkillUsageUpload> Skills,
+    IReadOnlyList<SkillUsageUpload> HealSkills,
+    // How much of the BOSS's own damage output this row ate, over the same window TotalDamage was
+    // computed for - the opposite direction from TotalDamage (dealt TO the boss). Per the user: the
+    // web frontend's damage-distribution chart is meant to show who took the boss's hits, not who
+    // hit the boss - a different question a raid needs answered (aggro/tank checks) that the
+    // existing dealt-damage total cannot answer.
+    long DamageTaken = 0,
+    // Per the user: the web frontend's "Buffs" column must show real reinforcements, not the
+    // damage/heal skills it showed before.
+    IReadOnlyList<BuffUsageUpload>? Buffs = null,
+    // The guild the packet stream named next to this player. Null where unknown.
+    string? Guild = null,
+    // The character profile (see ProfileUpload).
+    ProfileUpload? Profile = null,
+    // Not sent any more: the group shields name no caster (see ShieldSkills).
+    IReadOnlyList<ShieldGivenUpload>? ShieldsGiven = null,
+    // The numeric id of the server this player announced himself with (his own, not the uploader's: a matched world mixes servers).
+    int? ServerId = null,
+    // Damage the group shields on this player absorbed from the boss, over the same window as DamageTaken.
+    long DamageAbsorbed = 0,
+    // The damage figures of this row are estimated (a crowded world boss: the game sends the hits of other players without their damage,
+    // so each hit counts at the average of its skill). Crit hits are then 0, not measured.
+    bool Estimated = false,
+    // The game's permanent character id of this player (it stays when he is renamed), when a player list named him. The website uses it only as a hint to recognise a renamed character.
+    int? CharacterId = null,
+    // When this player used which skill, and when they died (see TimelineUpload). Null where the client has no data for it.
+    TimelineUpload? Timeline = null);
+
+public sealed record ShieldGivenUpload(string PlayerName, long Amount);
+
+/// <summary>An Aion 2 character as the client read it from the game's traffic (ids only; the website
+/// resolves names). Source "self" is the uploader's own character - level, full equipment with
+/// enchants, skills and Daevanion; "seen" is what could be read off another player.</summary>
+public sealed record ProfileUpload(
+    string Source,
+    int? Level,
+    int? ClassId,
+    // The low two bits of the class code (4 * class id + bits). Not a faction. Sent as "faction" by clients up to 0.27.
+    int? ClassBits,
+    IReadOnlyList<ProfileGearUpload> Gear,
+    IReadOnlyList<ProfileSkillUpload> Skills,
+    IReadOnlyList<ProfileBoardUpload> Daevanion,
+    // Species knowledge (own character only): level, progress and analysed effects of Cognia..Specia.
+    IReadOnlyList<ProfileSpeciesUpload>? Species = null,
+    // The gear score ("Ausrüstungswert", the number beside the helmet icon in the game's character window); only
+    // read for players whose window the uploader opened (see Aion2FrameDecoder.DecodeInspect). Null when unknown.
+    // The combat power ("Kampfkraft", the big number with the crossed swords) is not read yet.
+    int? GearScore = null,
+    // The three worn titles (slot 1..3 and the game's title id), the pet circles (quality of each effect slot) and,
+    // for other players, how many nodes of each Daevanion board they have (the board list above is the uploader's own).
+    IReadOnlyList<ProfileTitleUpload>? Titles = null,
+    IReadOnlyList<ProfilePetUpload>? Pets = null,
+    IReadOnlyList<ProfileBoardCountUpload>? BoardCounts = null,
+    // Own character only: base attributes + Lord values (id 1..17 -> value), wing and wing skin item ids, the summoned pet's species id (0 = none).
+    IReadOnlyDictionary<int, int>? Attributes = null,
+    int? WingId = null,
+    int? WingSkinId = null,
+    int? ActivePet = null,
+    // Level (1..3) of the summoned pet from the pet list; null when no pet is summoned or the list does not contain it.
+    int? ActivePetLevel = null,
+    // Own character only: every skill preset seen so far (the server sends only the active one; the others are as last seen), the
+    // active one marked. Skills above is the active preset. Null/empty = a character without presets.
+    IReadOnlyList<ProfilePresetUpload>? Presets = null,
+    // Own character only: a hash of the account key of the login's character list (16 hex digits); the same on every character of one account.
+    string? AccountKey = null,
+    // Own character only: the ranks the game showed in its ranking window (see ProfileRankUpload). Null when the window was not opened in this session.
+    IReadOnlyList<ProfileRankUpload>? Ranks = null,
+    // Own character only: the Pantheon (decorations set up per preset as the game sent them, and every registered decoration). Null before the game sent it.
+    ProfilePantheonUpload? Pantheon = null);
+
+/// <summary>The own Pantheon: the setups seen (preset 1..3) and the registered decorations by the game's decoration number.</summary>
+public sealed record ProfilePantheonUpload(IReadOnlyList<ProfilePantheonPresetUpload> Presets, IReadOnlyList<int> Owned);
+
+/// <summary>One preset's decorations: slot 1-12 painting, 13-16 statue, 17 colossus; empty slots are left out.</summary>
+public sealed record ProfilePantheonPresetUpload(int Preset, IReadOnlyList<ProfilePantheonSlotUpload> Slots);
+
+public sealed record ProfilePantheonSlotUpload(int Slot, int Id);
+
+/// <summary>The own rank in one content (type 1 Abyss, 3 Nightmare, 4 Transcendence, 5 Arena 1v1, 6 Arena 5v5, 21 Ascension rite; scope 0 overall, 2 within the class): the rank, the points, the change
+/// since the last ranking (negative = fell), the season grade, the stats the game lists next to it (kills and deaths, wins and losses) as the game's own JSON text and when it was read.</summary>
+public sealed record ProfileRankUpload(int Type, int Scope, int Rank, long Points, int Change, int Grade, string? Stats, DateTime At);
+
+/// <summary>One skill preset: its number (1..), whether it is the active one, when it was last seen (UTC) and its skills.</summary>
+public sealed record ProfilePresetUpload(int Index, bool Active, DateTime SeenAt, IReadOnlyList<ProfileSkillUpload> Skills);
+
+public sealed record ProfileTitleUpload(int Slot, int TitleId);
+
+public sealed record ProfilePetUpload(int Species, int Level, IReadOnlyList<int> Kinds);
+
+public sealed record ProfileBoardCountUpload(int Board, int Count);
+
+public sealed record ProfileGearUpload(int Slot, int ItemId, int Enchant, IReadOnlyList<ProfileStoneUpload>? Stones = null, IReadOnlyList<ProfileStatUpload>? Stats = null, int? Godstone = null, IReadOnlyList<ProfileSkillBonusUpload>? SkillBonuses = null, ProfileArcanaUpload? Arcana = null);
+
+/// <summary>What an arcana piece carries besides its level (own character only, from the login list): the experience collected towards the next level, the god stat id
+/// and its value, and the skill level bonuses of the piece (own and rolled levels added up).</summary>
+public sealed record ProfileArcanaUpload(int Exp, int God, int GodValue, IReadOnlyList<ProfileSkillBonusUpload> SkillBonuses);
+
+/// <summary>A skill level bonus on an item (skill id, bonus levels).</summary>
+public sealed record ProfileSkillBonusUpload(int Skill, int Level);
+
+/// <summary>A mana stone of an item: the stat id the stone gives (0 = empty slot) and its tier (1..4).</summary>
+public sealed record ProfileStoneUpload(int Stat, int Tier);
+
+/// <summary>A stat rolled on the item (stat id and value in the game's units).</summary>
+public sealed record ProfileStatUpload(int Stat, long Value);
+
+/// <summary>Stones: the choice in each specialisation slot (1-5 = the skill's five stones, 0 = empty); null when not read.</summary>
+public sealed record ProfileSkillUpload(int Id, int Level, int BaseLevel, bool Stigma = false, bool Equipped = false, IReadOnlyList<int>? Stones = null);
+
+public sealed record ProfileBoardUpload(int Board, IReadOnlyList<int> Nodes);
+
+public sealed record ProfileSpeciesUpload(int Id, int Level, long Progress, IReadOnlyList<ProfileSpeciesEffectUpload> Effects);
+
+public sealed record ProfileSpeciesEffectUpload(int Page, int Slot, int Stat, long Value, int Kind = 0);
+
+/// <summary>One boss encounter, as sent to POST /api/uploads. The backend recognizes the same real
+/// fight across several independent uploads (one per group member) by boss + time window + roster
+/// overlap WITHIN one server - see Backend/src/matching/merge.ts. <see cref="ServerFingerprint"/> is
+/// what makes "within one server" possible at all: two private servers can have completely
+/// different gear/rate standards (per the user: EuroAion's gear level is nothing like this app's
+/// home server's), so runs from different servers must never merge or share a leaderboard even if
+/// boss name, timing and roster happen to coincide.</summary>
+public sealed record EncounterUploadRequest(
+    string ClientVersion,
+    string BossNpcName,
+    DateTime StartedAt,
+    DateTime EndedAt,
+    IReadOnlyList<ParticipantUpload> Participants,
+    string ServerFingerprint,
+    string? ServerName,
+    // The backend's game token ("aion" | "aion2", see Backend/src/constants.ts). Boss names and
+    // servers are only ever matched within one game there; a payload without it (older clients)
+    // is treated as the legacy "aion" game.
+    string Game = "aion2",
+    // The game's numeric NPC id of the boss, which is unambiguous where the name is not (the same
+    // boss name recurs across Aion 2 dungeons). Null when no id was seen.
+    int? BossNpcId = null,
+    // The boss's highest hit-point reading from the game's HP frame (a lower bound when the meter
+    // joined mid-fight). Explore and conquest differ 2-3x in it, so the backend can tell them apart.
+    long? BossMaxHp = null,
+    // The maximum the boss's spawn frame announced, raw (for a party-scaled exploration boss the value for one player).
+    // Null when no spawn frame was seen for it, e.g. the player arrived while the boss already stood there.
+    long? BossSpawnMaxHp = null,
+    // The numeric server id of the own character record and the game server's address (IP:port) the
+    // meter captured from. The id is only unique within one region; the address is what tells the
+    // regions apart, so the backend keeps both.
+    int? ServerId = null,
+    string? GameServer = null,
+    // The boss's level from its spawn frame. An Ascension rite names its difficulty by it (45 easy, 50 medium, 55 hard, 60 extreme).
+    int? BossLevel = null,
+    // The boss's health over the fight: (tenths of a second from the start, thousandths of its health) pairs, flattened. Null when not read.
+    IReadOnlyList<int>? BossHp = null,
+    // The effects the players put on the boss during the fight (uptime, who gave it, when), like a participant's effects. Null when none were seen.
+    IReadOnlyList<BuffUsageUpload>? BossDebuffs = null,
+    // The fight report (see ReportUpload): the tabs of the client's report window for the website. Null for a crowded world boss.
+    ReportUpload? Report = null,
+    // Where the fight was: the game's zone id and its English name (a dungeon, Nightmare, an open-world map), for the site's logs grouped by dungeon.
+    int? ZoneId = null,
+    string? ZoneName = null,
+    // The bar style the uploader gave the meter (Meter look: glow, flat, solid, thread, capsule, frame): the fight's page on the site draws its players so.
+    string? MeterBar = null);
+
+/// <summary>Aion 2 players without a boss fight, as sent to POST /api/uploads/profiles: the
+/// character profiles the client read off the network, with no encounter and no damage attached.
+/// Exactly one participant is the uploader themselves (<see cref="ParticipantUpload.IsSelf"/>).</summary>
+public sealed record ProfilesUploadRequest(
+    string ClientVersion,
+    string ServerFingerprint,
+    string? ServerName,
+    IReadOnlyList<ProfileParticipantUpload> Participants,
+    string Game = "aion2",
+    int? ServerId = null,
+    string? GameServer = null);
+
+public sealed record ProfileParticipantUpload(
+    string Name,
+    string ClassName,
+    string Faction,
+    bool IsSelf,
+    string? Guild,
+    ProfileUpload Profile,
+    int? ServerId = null,
+    int? CharacterId = null);
+
+/// <summary>The complete login traffic of a member of the legion Akatsuki (Kaisinel), for POST /api/uploads/login-dump: gzip of JSON lines, base64.
+/// Only sent with the switch in Settings > General, which only members of that legion see.</summary>
+public sealed record LoginDumpUploadRequest(
+    string ClientVersion,
+    string CharacterName,
+    string Guild,
+    int ServerId,
+    string? GameServer,
+    string Dump);

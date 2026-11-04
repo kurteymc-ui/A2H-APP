@@ -1,0 +1,42 @@
+name: Item icons
+
+# Fetches the icons of the items the other icon sets leave out (souls, soulstones, materials …) from NCSOFT's public item data
+# and puts them on the item-icons branch, to be taken into main after a look.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/item-icons.yml", "Tools/item-icons/fetch_item_icons.py"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: item-icons
+  cancel-in-progress: true
+
+jobs:
+  icons:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch the icons
+        run: |
+          pip install -q pillow
+          python3 Tools/item-icons/fetch_item_icons.py Client/assets/aion2
+          du -sh Client/assets/aion2/items/more
+          ls Client/assets/aion2/items/more | wc -l
+      - name: Put them on the item-icons branch
+        run: |
+          mkdir out && cp -r Client/assets/aion2/items/more out/more && cp Client/assets/aion2/items/more_icons.json out/
+          cd out
+          git init -q
+          git checkout -q -b item-icons
+          git add .
+          git -c user.name="item-icons" -c user.email="item-icons@users.noreply.github.com" commit -q -m "Item icons for $GITHUB_SHA"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}" item-icons
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

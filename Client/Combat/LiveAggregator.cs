@@ -1,0 +1,158 @@
+namespace AionDPS.Combat;
+
+/// <summary>
+/// Keeps a running per-source damage tally over the DamageEvents the combat source produces,
+/// and renders the leaderboard the console mode prints. Deliberately knows nothing about where
+/// the events came from: it is independent of the input, which is the whole point of DamageEvent sitting between them.
+/// </summary>
+public sealed class LiveAggregator
+{
+    private readonly List<DamageEvent> _events = new();
+    private readonly List<DamageEvent> _shields = new();
+
+    /// <summary>Shield events (see <see cref="ShieldSkills"/>), kept out of <see cref="Events"/> so they
+    /// are not counted as healing.</summary>
+    public IReadOnlyList<DamageEvent> Shields => _shields;
+
+    public IReadOnlyList<DamageEvent> Events => _events;
+
+    /// <summary>Counts every change to events already in <see cref="Events"/> (Clear, a summon credited to its owner, two ids
+    /// merged). Appending does not change it: a reader that keeps running totals (<see cref="DamageIndex"/>) can take in
+    /// the new events alone while this stays the same, and must start over when it moves.</summary>
+    public int Version { get; private set; }
+
+    /// <summary>
+    /// Feeds decoded DamageEvents in. Damage a player does to themselves (an Assassin's Infiltrate,
+    /// 30,000 per use, or a skill's health cost) is not damage dealt and not damage taken from
+    /// anyone: with all targets shown it used to add 150,000 to one Assassin's total and 8,960 to a
+    /// Sorcerer's, which the boss-only view and the website never showed. Self-heals stay.
+    /// </summary>
+    public void IngestEvents(IEnumerable<DamageEvent> events)
+    {
+        foreach (DamageEvent e in events)
+        {
+            if (ShieldSkills.IsShield(e))
+            {
+                _shields.Add(e);
+            }
+            else if (e.IsHeal || e.SourceObjectId != e.TargetObjectId)
+            {
+                _events.Add(e);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Discards all events for a fresh session. Previously missing on purpose-turned-oversight:
+    /// the GUI's "Clear" button used to only clear its own row list, leaving the underlying events
+    /// in place -- so DpsCalculator kept averaging in pre-clear damage into any "new" numbers
+    /// instead of starting from zero, invisibly, since the row list looked empty right after.
+    /// </summary>
+    public void Clear()
+    {
+        _events.Clear();
+        _shields.Clear();
+        Version++;
+    }
+
+    /// <summary>
+    /// Credits a summon's earlier hits to its owner, once the owner is known: the class-skill hits
+    /// (a summon's attacks are its class's skills) and the summon attacks (a spirit's basic attack,
+    /// whose id names no class) <paramref name="summon"/> dealt. Other events under that id - a
+    /// monster that held it before - stay as they are.
+    /// </summary>
+    public int Reattribute(int summon, int owner)
+    {
+        int changed = 0;
+        for (int i = 0; i < _events.Count; i++)
+        {
+            DamageEvent ev = _events[i];
+            if (ev.SourceObjectId == summon && ev.SkillId != 0
+                && (Aion2.Protocol.Aion2SkillNames.ClassOf(ev.SkillId) is not null || Aion2.Protocol.Aion2SkillNames.IsSummonAttack(ev.SkillId)))
+            {
+                _events[i] = ev with { SourceObjectId = owner };
+                changed++;
+            }
+        }
+
+        if (changed > 0)
+        {
+            Version++;
+        }
+
+        return changed;
+    }
+
+    /// <summary>
+    /// The player got a new combat id (a map change: the game announces the own character again under another id): everything the old id did
+    /// or received is credited to the new one, so the player is one row and not two.
+    /// </summary>
+    public int MergeIds(int from, int to)
+    {
+        if (from == to)
+        {
+            return 0;
+        }
+
+        int changed = 0;
+        for (int i = 0; i < _events.Count; i++)
+        {
+            DamageEvent ev = _events[i];
+            if (ev.SourceObjectId == from || ev.TargetObjectId == from)
+            {
+                _events[i] = ev with
+                {
+                    SourceObjectId = ev.SourceObjectId == from ? to : ev.SourceObjectId,
+                    TargetObjectId = ev.TargetObjectId == from ? to : ev.TargetObjectId,
+                };
+                changed++;
+            }
+        }
+
+        if (changed > 0)
+        {
+            Version++;
+        }
+
+        for (int i = 0; i < _shields.Count; i++)
+        {
+            var sh = _shields[i];
+            if (sh.SourceObjectId == from || sh.TargetObjectId == from)
+            {
+                _shields[i] = sh with
+                {
+                    SourceObjectId = sh.SourceObjectId == from ? to : sh.SourceObjectId,
+                    TargetObjectId = sh.TargetObjectId == from ? to : sh.TargetObjectId,
+                };
+            }
+        }
+
+        return changed;
+    }
+
+    /// <summary>One-line-per-source leaderboard for the console dump: total damage and wall-clock
+    /// "ALL" DPS since the first hit seen for that source (see DpsCalculator remarks on why this is
+    /// the ambiguous, gap-inclusive variant rather than iDPS). <paramref name="nameResolver"/> lets
+    /// the caller show real names instead of the raw object id.</summary>
+    public string Summarize(Func<int, string?>? nameResolver = null)
+    {
+        // Found by terminal_windows against a real, heal-bearing session: this used to
+        // group ALL events (heals included) while the Dps column below already filtered heals out
+        // via DpsCalculator.HitsBy -- so a pure healer showed up as "Potion: 3526 dmg (n/a DPS)",
+        // a damage total with no rate to match it, because the total and the rate were silently
+        // computed over two different event sets.
+        var damageEvents = _events.Where(e => !e.IsHeal).ToList();
+        if (damageEvents.Count == 0)
+        {
+            return "(no attributable damage yet)";
+        }
+
+        var lines = damageEvents
+            .GroupBy(e => e.SourceObjectId)
+            .Select(g => (SourceId: g.Key, Total: g.Sum(e => e.Amount), Dps: DpsCalculator.AllDpsWallClock(damageEvents, g.Key)))
+            .OrderByDescending(x => x.Total)
+            .Select(x => $"{nameResolver?.Invoke(x.SourceId) ?? $"0x{x.SourceId:X8}"}: {x.Total} dmg ({(x.Dps is double d ? d.ToString("F0") : "n/a")} DPS)");
+
+        return string.Join(" | ", lines);
+    }
+}

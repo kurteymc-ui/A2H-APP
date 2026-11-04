@@ -1,0 +1,329 @@
+{
+ "about": "The pets the Black Cloud Merchants sell that can't be farmed out in the world, in four groups.",
+ "groups": [
+  {
+   "kind": "fieldboss",
+   "pets": [
+    {
+     "id": 1196,
+     "where": {
+      "en": "Predator Colossus Balakh · Morheim",
+      "de": "Raubkoloss Balakh · Morheim",
+      "fr": "Balakh le prédateur colossal · Morheim",
+      "es": "Balakh, el Coloso Depredador · Morheim",
+      "ru": "Хищный колосс Балах · Морхейм",
+      "pt": "Balakh, Fera Colossal Predadora · Morheim",
+      "ja": "捕食の巨獣ヴァラーク · モルヘイム",
+      "ko": "포식의 거수 발라크 · 모르헤임"
+     },
+     "name": "Elite Dratona"
+    },
+    {
+     "id": 1099,
+     "where": {
+      "en": "Crimson Blizzard Renulf · Morheim",
+      "de": "Blutsturm Renulf · Morheim",
+      "fr": "Renulf la tempête pourpre · Morheim",
+      "es": "Renulf de la Ventisca Carmesí · Morheim",
+      "ru": "Багровая метель Ренульф · Морхейм",
+      "pt": "Renulf, Nevasca Carmesim · Morheim",
+      "ja": "血染めの吹雪レヌルフ · モルヘイム",
+      "ko": "핏빛 눈보라 레눌프 · 모르헤임"
+     },
+     "name": "Elite Karnif"
+    },
+    {
+     "id": 1103,
+     "where": {
+      "en": "Gluttonous Egetis · Eltnen",
+      "de": "Fressgieriger Egetis · Eltnen",
+      "fr": "Egetis vorace · Eltnen",
+      "es": "Egetis, el Glotón · Eltnen",
+      "ru": "Обжорливый Эгетис · Элтенен",
+      "pt": "Iguetis da Ganância · Eltnen",
+      "ja": "貪欲のイゲティス · エルテネン",
+      "ko": "탐욕의 이게티스 · 엘테넨"
+     },
+     "name": "Pretor Veil Administrator"
+    },
+    {
+     "id": 1206,
+     "where": {
+      "en": "Divine Ansas · Verteron",
+      "de": "Heiliger Ansas · Verteron",
+      "fr": "Ansas sacré · Verteron",
+      "es": "Ansas divina · Verteron",
+      "ru": "Священный Ансас · Бертрон",
+      "pt": "Ansas Divino · Verteron",
+      "ja": "神聖なアンサス · ベルテロン",
+      "ko": "신성한 안사스 · 베르테론"
+     },
+     "name": "Elite Guardite"
+    },
+    {
+     "id": 1156,
+     "where": {
+      "en": "Bodyguard Teegant · Verteron",
+      "de": "Leibgardist Teegant · Verteron",
+      "fr": "Teegant le garde du corps · Verteron",
+      "es": "Guardia Teegant · Verteron",
+      "ru": "Стражник Тигант · Бертрон",
+      "pt": "Soldado de Escolta Teegant · Verteron",
+      "ja": "護衛兵ティガント · ベルテロン",
+      "ko": "호위병 티간트 · 베르테론"
+     },
+     "name": "Elite Klaw"
+    }
+   ]
+  },
+  {
+   "kind": "dungeon",
+   "pets": [
+    {
+     "id": 1058,
+     "where": {
+      "en": "Fire Temple",
+      "de": "Feuertempel",
+      "fr": "Temple Divin du Feu",
+      "es": "Templo de Fuego",
+      "ru": "Храм огня",
+      "pt": "Templo Divino do Fogo",
+      "ja": "炎の神殿",
+      "ko": "불의 신전"
+     },
+     "name": "Black Smoke Murute"
+    },
+    {
+     "id": 1091,
+     "where": {
+      "en": "Fire Temple",
+      "de": "Feuertempel",
+      "fr": "Temple Divin du Feu",
+      "es": "Templo de Fuego",
+      "ru": "Храм огня",
+      "pt": "Templo Divino do Fogo",
+      "ja": "炎の神殿",
+      "ko": "불의 신전"
+     },
+     "name": "Red Spark Ignus"
+    },
+    {
+     "id": 1077,
+     "where": {
+      "en": "Krao Cave (Conquest)",
+      "de": "Kraohöhle (Eroberung)",
+      "fr": "Grotte de Krao (Conquête)",
+      "es": "Cueva de Krao (Conquista)",
+      "ru": "Пещера крао (Завоевание)",
+      "pt": "Caverna de Krao (Conquista)",
+      "ja": "クラオ洞窟 (征服)",
+      "ko": "크라오 동굴 (정복)"
+     },
+     "name": "Harcon"
+    },
+    {
+     "id": 1093,
+     "where": {
+      "en": "Draupnir",
+      "de": "Draupnir",
+      "fr": "Draupnir",
+      "es": "Draupnir",
+      "ru": "Драупнир",
+      "pt": "Draupnir",
+      "ja": "ドラウプニル",
+      "ko": "드라웁니르"
+     },
+     "name": "Phantasmal Lakshmi"
+    },
+    {
+     "id": 1215,
+     "where": {
+      "en": "Draupnir",
+      "de": "Draupnir",
+      "fr": "Draupnir",
+      "es": "Draupnir",
+      "ru": "Драупнир",
+      "pt": "Draupnir",
+      "ja": "ドラウプニル",
+      "ko": "드라웁니르"
+     },
+     "name": "Predator Saraswati"
+    }
+   ]
+  },
+  {
+   "kind": "chests",
+   "pets": [
+    {
+     "id": 1009,
+     "name": "Kernon"
+    },
+    {
+     "id": 1025,
+     "name": "Aberrant Odyle Spider"
+    },
+    {
+     "id": 1028,
+     "name": "Krao Mutant"
+    },
+    {
+     "id": 1032,
+     "name": "Elite Keneire"
+    },
+    {
+     "id": 1043,
+     "name": "Elite Ursus"
+    },
+    {
+     "id": 1044,
+     "name": "Aultross's Doppelganger"
+    },
+    {
+     "id": 1055,
+     "name": "Grave Rat"
+    },
+    {
+     "id": 1057,
+     "name": "Coradon"
+    },
+    {
+     "id": 1068,
+     "name": "Krao Test Subject"
+    },
+    {
+     "id": 1078,
+     "name": "Urugugu Brawler"
+    },
+    {
+     "id": 1079,
+     "name": "Ultimate Wind Spirit"
+    },
+    {
+     "id": 1080,
+     "name": "Sentinel K'nash"
+    },
+    {
+     "id": 1081,
+     "name": "Dionae"
+    },
+    {
+     "id": 1082,
+     "name": "Ultimate Fire Spirit"
+    },
+    {
+     "id": 1090,
+     "name": "Ultimate Water Spirit"
+    },
+    {
+     "id": 1100,
+     "name": "Ultimate Earth Spirit"
+    },
+    {
+     "id": 1102,
+     "name": "Dried Up Forest Guardian"
+    },
+    {
+     "id": 1107,
+     "name": "Krao Seal Guardian"
+    },
+    {
+     "id": 1122,
+     "name": "Young Tog"
+    },
+    {
+     "id": 1132,
+     "name": "Ashen Lupyllini"
+    },
+    {
+     "id": 1133,
+     "name": "Forest Dionae"
+    },
+    {
+     "id": 1138,
+     "name": "Mumu Overseer"
+    },
+    {
+     "id": 1139,
+     "name": "Swamp Monster"
+    },
+    {
+     "id": 1145,
+     "name": "Mutated Insectoid Valka"
+    },
+    {
+     "id": 1146,
+     "name": "Gatekeeper Pinopi"
+    },
+    {
+     "id": 1158,
+     "name": "Venomous Insect Sram"
+    },
+    {
+     "id": 1160,
+     "name": "Drana Contaminant"
+    },
+    {
+     "id": 1167,
+     "name": "Flame Stone Guardian Statue"
+    },
+    {
+     "id": 1177,
+     "name": "Ancient Spirit"
+    },
+    {
+     "id": 1182,
+     "name": "Elite Soulless Corpse Gnat"
+    },
+    {
+     "id": 1185,
+     "name": "Dratona Tinkerer"
+    },
+    {
+     "id": 1190,
+     "name": "Elite Poisonous Spore Fungen"
+    },
+    {
+     "id": 1191,
+     "name": "Furious Feruk"
+    },
+    {
+     "id": 1198,
+     "name": "Ashen Basilisk"
+    },
+    {
+     "id": 1199,
+     "name": "Flame Barghest"
+    }
+   ]
+  },
+  {
+   "kind": "special",
+   "pets": [
+    {
+     "id": 1111,
+     "name": "Swift Lugi"
+    },
+    {
+     "id": 1112,
+     "name": "Wandering Merchant Lugi"
+    },
+    {
+     "id": 1204,
+     "name": "Pagati"
+    },
+    {
+     "id": 1240,
+     "name": "White Bunny"
+    },
+    {
+     "id": 1278,
+     "name": "Chonky Hamster"
+    },
+    {
+     "id": 1299,
+     "name": "Two"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,1372 @@
+<Window x:Class="AionDPS.Ui.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:AionDPS.Ui"
+        Title="{local:Loc Settings.WindowTitle}" Height="725" Width="641"
+        Background="{DynamicResource Brush.Window}" WindowStartupLocation="CenterOwner"
+        FontSize="{DynamicResource FontSize.Base}"
+        WindowStyle="None" ResizeMode="CanResizeWithGrip">
+    <!-- No AllowsTransparency: a layered (per-pixel transparent) window is missing from Windows'
+         own screenshot tool (Win+Shift+S freezes the screen without it, so the window cannot be
+         photographed). WindowChrome without a caption or glass frame removes the OS frame the way
+         AllowsTransparency did, and keeps the resize edge. -->
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" UseAeroCaptionButtons="False"/>
+    </WindowChrome.WindowChrome>
+    <Window.Resources>
+        <local:ClassIconConverter x:Key="ClassIconConverter"/>
+        <local:RaceIconConverter x:Key="RaceIconConverter"/>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+        <!-- Einstellungen A ("Seitenleiste", vom User gebilligter Prototyp): one row-style shared
+             by the 5 sidebar RadioButtons below. Colors hard-coded navy/orange like the App-Menü
+             flyout in MainWindow.xaml - same user decision ("Orange fest verdrahten"), same
+             reasoning (no current theme has an orange accent). Foreground here becomes each
+             RadioButton's own Foreground (muted by default, accent when checked - see the
+             Trigger below); the icon Paths inside bind to it explicitly via
+             RelativeSource/AncestorType since Path.Stroke isn't an inherited property the way
+             TextBlock.Foreground is. -->
+        <Style x:Key="SettingsNavItem" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+            <Setter Property="Padding" Value="8,8"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" Background="Transparent" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHoverStrong}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+        <!-- Pet page: the two tabs of "Shown pets" (Type / Region): text with an orange underline on the chosen one -->
+        <Style x:Key="PetTab" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd" BorderThickness="0,0,0,2" BorderBrush="Transparent" Padding="14,6" Margin="0,0,4,-1" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="PetSplitter" TargetType="GridSplitter">
+            <Setter Property="Cursor" Value="SizeWE"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GridSplitter">
+                        <Border Background="Transparent">
+                            <Rectangle x:Name="Line" Width="1" Fill="{DynamicResource Brush.Border}" HorizontalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Line" Property="Fill" Value="{DynamicResource Brush.Accent}"/>
+                                <Setter TargetName="Line" Property="Width" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Sammeln page: a collectible is a pill that lights up orange when it is on; "all / none" is a plain underlined link -->
+        <Style x:Key="GatherPill" TargetType="ToggleButton">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+            <Setter Property="Margin" Value="0,0,6,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border x:Name="Bd" Background="{DynamicResource Brush.Control}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="14" Padding="11,4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.TextMuted}"/>
+                            </Trigger>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="#2BDCB877"/>
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{DynamicResource Brush.Accent}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style x:Key="GatherLink" TargetType="Button">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Accent}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <TextBlock Text="{TemplateBinding Content}" Foreground="{TemplateBinding Foreground}" TextDecorations="Underline"/>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Every CheckBox in this dialog is an on/off setting, so it is drawn as a switch: label on
+             the left (wraps), track on the right. Orange when on, the same accent the sidebar uses. -->
+        <Style TargetType="CheckBox" BasedOn="{StaticResource SettingsSwitch}"/>
+        <!-- A group of related settings: the page is a stack of these, each with a small heading. -->
+        <Style x:Key="SettingsCard" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="8"/>
+            <Setter Property="Padding" Value="14,10,14,10"/>
+            <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+        <Style x:Key="CardTitle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+        <Style x:Key="CardHint" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextMuted}"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+        <!-- Per the user: the border around each section was too heavy (the OS's own themed
+             GroupBox chrome - there's no BorderThickness setter that touches it, same lesson as
+             every other control this session; only a full template replacement does). Thin,
+             flat 1px border instead, header sitting above it rather than notched into the line. -->
+        <Style TargetType="GroupBox">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextSubtle}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+            <Setter Property="Margin" Value="6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="GroupBox">
+                        <DockPanel>
+                            <ContentPresenter DockPanel.Dock="Top" ContentSource="Header" Margin="2,0,0,3"
+                                              TextElement.FontWeight="SemiBold"/>
+                            <Border BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1" CornerRadius="2">
+                                <ContentPresenter Margin="6"/>
+                            </Border>
+                        </DockPanel>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Brush.TextSubtle}"/>
+        </Style>
+                <!-- Same dark ComboBox fix as MainWindow (see its Window.Resources comment for why a
+             Background/Foreground setter alone doesn't do it) - ThemeBox/FontSizeBox were
+             rendering with WPF's default light-theme chrome and popup otherwise. -->
+        <Style TargetType="ComboBoxItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Margin" Value="4,1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="7" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsHighlighted" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter Property="Foreground" Value="#E6C88F"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <Style TargetType="ComboBox">
+            <!-- One height for every dropdown and button in this dialog (Button style below), per the
+                 user; titlebar buttons set their own Height explicitly. -->
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Background" Value="{DynamicResource Brush.Control}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.CheckBorder}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton" Focusable="False"
+                                          Background="{TemplateBinding Background}"
+                                          BorderBrush="{TemplateBinding BorderBrush}"
+                                          IsChecked="{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                          ClickMode="Press">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="{TemplateBinding Background}" CornerRadius="9"
+                                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1">
+                                            <Path Data="M0.5,0.5 L4,4 L7.5,0.5" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.6"
+                                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Margin="0,1,12,0"
+                                                  HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <ContentPresenter IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                              Margin="12,3,30,3" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                            <Popup IsOpen="{TemplateBinding IsDropDownOpen}" AllowsTransparency="True"
+                                   Focusable="False" PopupAnimation="Slide">
+                                <Border Background="{DynamicResource Brush.Panel}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="10"
+                                        Padding="0,4" Margin="0,4,0,0" MaxHeight="360" MinWidth="{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <ScrollViewer SnapsToDevicePixels="True">
+                                        <ItemsPresenter/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Same flat template as MainWindow's own implicit Button style (Ui/MainWindow.xaml) -
+             per the user, whose new titlebar minimize/close glyphs ("─"/"✕") were hard to make out
+             here: without this template override, WPF's DEFAULT button chrome (3D bevel, focus
+             rectangle) was still in effect - Foreground alone changes the glyph's color, not the
+             chunky default chrome it sits inside, which is what actually made it read differently
+             from MainWindow's own flat titlebar buttons. -->
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource Brush.Control}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.CheckBorder}"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Padding" Value="14,4"/>
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="9"
+                                BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.ControlHover}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{DynamicResource Brush.Window}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Learned from the DataGrid selection fix: a plain Background/BorderBrush setter is
+             enough for ListBox's own chrome, but the selected-ITEM highlight is driven by
+             SystemColors.Highlight* inside the default template regardless - overridden the same
+             way, scoped to just this list (see the CharactersList.Resources below). -->
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+        </Style>
+        <!-- Same dark ToolTip fix as MainWindow - the class-name tooltips on the icon-only
+             ComboBoxItems below would otherwise show a bright white box. -->
+        <Style TargetType="ToolTip">
+            <Setter Property="Background" Value="{DynamicResource Brush.Panel}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Brush.Text}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Brush.Border}"/>
+            <Setter Property="Padding" Value="6,4"/>
+        </Style>
+    </Window.Resources>
+
+    <!-- Same Border-carries-the-real-background pattern as MainWindow's own NormalContent - per
+         the user, who spotted a thin white sliver at the top edge that MainWindow doesn't have.
+         WindowStyle="None" + ResizeMode="CanResizeWithGrip" without AllowsTransparency leaves the
+         OS drawing its own small non-client resize-border sliver in its default (light) color,
+         since only AllowsTransparency hands the ENTIRE window surface to WPF's own content all the
+         way to the true edge - Window.Background alone only ever painted the client area, not
+         that sliver. -->
+    <Border Background="{DynamicResource Brush.Window}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1">
+    <DockPanel LastChildFill="True">
+        <!-- Same custom titlebar as MainWindow (App-Icon + title + minimize/close), per the user:
+             this dialog previously kept the OS's own chrome (colored dark via DarkTitleBar's DWM
+             call, but still not actually part of this app's UI) while the main window draws
+             everything itself - the app icon in particular only ever showed here, not there,
+             which is what prompted asking for the two to match. "✕" reuses OnCancelClicked (close
+             without saving), the same as the OS close button always meant on this dialog. -->
+        <Grid DockPanel.Dock="Top" Background="{DynamicResource Brush.TitleBar}" Height="30" MouseLeftButtonDown="OnTitleBarMouseDown">
+            <Image x:Name="AppIconImage" Width="16" Height="16" Margin="8,0,0,0" HorizontalAlignment="Left" RenderOptions.BitmapScalingMode="HighQuality"/>
+            <TextBlock Text="{Binding Title, RelativeSource={RelativeSource AncestorType=Window}}"
+                       Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center" Margin="30,0,0,0"/>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <!-- Drawn lines, not text glyphs (the same as ThemedChrome): the cross came out of a fallback font, too big and uneven. -->
+                <Button Click="OnMinimizeClicked" Width="28" Height="30" Padding="0"
+                        Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.TextMuted}" Margin="0">
+                    <Path Data="M1,6 L11,6" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.4" Width="12" Height="12" Stretch="None" SnapsToDevicePixels="False" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+                <Button Click="OnCancelClicked" Width="28" Height="30" Padding="0"
+                        Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.TextMuted}" Margin="0">
+                    <Path Data="M1.5,1.5 L10.5,10.5 M10.5,1.5 L1.5,10.5" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.4" Width="12" Height="12" Stretch="None" SnapsToDevicePixels="False" StrokeStartLineCap="Round" StrokeEndLineCap="Round" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Button>
+            </StackPanel>
+        </Grid>
+        <!-- Right/bottom margin keeps Cancel clear of the window's resize grip in the corner. -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,22,8">
+            <TextBlock x:Name="UndoText" VerticalAlignment="Center" Margin="0,0,8,0" Foreground="{DynamicResource Brush.Accent}" Visibility="Collapsed"/>
+            <Button x:Name="UndoButton" Content="{local:Loc Settings.Reset.UndoButton}" Click="OnUndoResetClicked" Visibility="Collapsed" Margin="0,0,16,0"/>
+            <Button Content="{local:Loc Settings.Save}" Click="OnSaveClicked"/>
+            <Button Content="{local:Loc Settings.Cancel}" Click="OnCancelClicked"/>
+        </StackPanel>
+
+        <!-- Einstellungen A ("Seitenleiste"): the ScrollViewer>StackPanel>5×GroupBox column this
+             replaced is still exactly how MeterSettings.Load/Save and every OnXxx handler in
+             SettingsWindow.xaml.cs expect to find these controls - only the SURROUNDING chrome
+             changed (sidebar nav instead of one long scroll), every x:Name below is unchanged and
+             in the same relative order. Categories are the same 5 as before (Aion-Installation /
+             Charaktere / Ziele-Targets / Benutzeroberfläche / Updates) - NOT the 6-category split
+             ("Allgemein"/"Anzeige") the HTML prototype explored, since that would restructure the
+             settings themselves, not just their navigation (see the plan this was built from).
+             GroupBox headers are gone: the sidebar names the category now, a second label would
+             just repeat it. Colors: same "Orange fest verdrahten" decision as the App-Menü flyout
+             - only this new chrome (sidebar background/active state/icons) is hard-coded
+             navy/orange; the reused inner controls (ComboBox/CheckBox/TextBox above) keep their
+             existing {DynamicResource Brush.*} bindings untouched. -->
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <!-- The pages of the settings proper as a tab strip along the top (as in the prototype). -->
+            <Border x:Name="NavBar" Grid.Row="0" Background="{DynamicResource Brush.TitleBar}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="0,0,0,1">
+                <StackPanel Margin="6,6,6,4" Orientation="Horizontal">
+                    <RadioButton x:Name="NavGeneral" IsChecked="True" GroupName="SettingsNav" Style="{StaticResource SettingsNavItem}">
+                        <StackPanel Orientation="Horizontal">
+                            <Grid Width="14" Height="14" Margin="0,0,7,0">
+                                <Path Data="M1,4 L13,4 M1,10 L13,10" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.3"/>
+                                <Ellipse Width="4" Height="4" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,2,0,0"/>
+                                <Ellipse Width="4" Height="4" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,3,2"/>
+                            </Grid>
+                            <TextBlock Text="{local:Loc Settings.Nav.General}" FontSize="12"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="NavMeter" GroupName="SettingsNav" Style="{StaticResource SettingsNavItem}">
+                        <StackPanel Orientation="Horizontal">
+                            <Grid Width="14" Height="14" Margin="0,0,7,0">
+                                <Path Data="M1,4 L13,4 M1,10 L13,10" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.3"/>
+                                <Ellipse Width="4" Height="4" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="6,2,0,0"/>
+                                <Ellipse Width="4" Height="4" Fill="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,3,2"/>
+                            </Grid>
+                            <TextBlock Text="{local:Loc Settings.Nav.Meter}" FontSize="12"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="NavInstall" GroupName="SettingsNav" Style="{StaticResource SettingsNavItem}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M2,3 L12,3 L12,9 L2,9 Z M5,12 L9,12 M7,9 L7,12" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.3" Width="14" Height="12" Margin="0,0,7,0"/>
+                            <TextBlock Text="{local:Loc Settings.Nav.Capture}" FontSize="12"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="NavHotkeys" GroupName="SettingsNav" Style="{StaticResource SettingsNavItem}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M1,3 L13,3 L13,10 L1,10 Z M3,5.5 L4,5.5 M6,5.5 L7,5.5 M9,5.5 L10,5.5 M4,8 L10,8" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.2" Width="14" Height="12" Margin="0,0,7,0"/>
+                            <TextBlock Text="{local:Loc Settings.Hotkeys}" FontSize="12"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                        </StackPanel>
+                    </RadioButton>
+                    <RadioButton x:Name="NavUpdates" GroupName="SettingsNav" Style="{StaticResource SettingsNavItem}">
+                        <StackPanel Orientation="Horizontal">
+                            <Path Data="M2,6 L6,2 L6,5 L11,5 M11,6 L7,10 L7,7 L2,7" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}" StrokeThickness="1.3" Width="14" Height="10" Margin="0,0,7,0"/>
+                            <TextBlock Text="{local:Loc Settings.Nav.System}" FontSize="12"
+                                       Foreground="{Binding Foreground, RelativeSource={RelativeSource AncestorType=RadioButton}}"/>
+                        </StackPanel>
+                    </RadioButton>
+                </StackPanel>
+            </Border>
+
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+              <StackPanel>
+                <!-- The frame of a tool's window (shown only for a tool, not for the settings proper): its name, the main switch of its overlay and its hotkey.
+                     The switch is the tool's own "show overlay" box (the panel's copy of it is hidden), the hotkey button opens the hotkeys page. -->
+                <Border x:Name="ModuleHeader" Visibility="Collapsed" Margin="16,14,16,0" Padding="0,0,0,8" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Brush.Border}">
+                    <DockPanel>
+                        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock x:Name="ModuleMasterText" VerticalAlignment="Center" Margin="0,0,10,0" Foreground="{DynamicResource Brush.TextSubtle}"/>
+                            <CheckBox x:Name="ModuleMasterBox" Margin="0" VerticalAlignment="Center" Click="OnModuleMasterClicked"/>
+                            <Button x:Name="ModuleKeyButton" Margin="12,0,0,0" Padding="10,2" MinHeight="26" Click="OnModuleKeyClicked" ToolTip="{local:Loc Settings.Hotkey.ChipTip}"/>
+                        </StackPanel>
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock x:Name="ModuleTitleText" FontSize="18" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Text}"/>
+                            <!-- Shown only while the main switch is off: the switches below do nothing then. -->
+                            <TextBlock x:Name="ModuleMasterHint" Visibility="Collapsed" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap" Foreground="{DynamicResource Brush.TextMuted}"/>
+                        </StackPanel>
+                    </DockPanel>
+                </Border>
+                <StackPanel Margin="16,14,16,6">
+                                        <StackPanel x:Name="PanelGeneral" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.Display}"/>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.Theme}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="ThemeBox" Margin="0,2" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="{local:Loc Settings.ThemeDark}" Tag="Dark"/>
+                                    </ComboBox>
+                                </Grid>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.FontSize}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="FontSizeBox" Margin="0,2" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="{local:Loc Settings.SizeSmall}" Tag="Small"/>
+                                        <ComboBoxItem Content="{local:Loc Settings.SizeMedium}" Tag="Medium"/>
+                                        <ComboBoxItem Content="{local:Loc Settings.SizeLarge}" Tag="Large"/>
+                                    </ComboBox>
+                                </Grid>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.Language}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="LanguageBox" Margin="0,2" HorizontalAlignment="Stretch" SelectionChanged="OnLanguageChanged"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Audio.Title}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Audio.Hint}"/>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="300"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.Audio.Device}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="AudioDeviceCombo" Margin="0,2" HorizontalAlignment="Stretch"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.MainWindow}"/>
+                                <CheckBox x:Name="AlwaysOnTopBox" Content="{local:Loc Settings.AlwaysOnTop}"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.Behavior}"/>
+                                <CheckBox x:Name="StartWithWindowsBox" Content="{local:Loc Settings.StartWithWindows}" Checked="OnStartWithWindowsChanged" Unchecked="OnStartWithWindowsChanged"/>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.AutoReset}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Text}"
+                                               ToolTip="{local:Loc Settings.AutoReset.Tooltip}"/>
+                                    <TextBox x:Name="AutoResetSecondsBox" Grid.Column="1" Width="44" Height="24" Margin="12,0,12,0" VerticalContentAlignment="Center"
+                                             HorizontalContentAlignment="Right" MaxLength="3"
+                                             Background="{DynamicResource Brush.Control}" Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"
+                                             IsEnabled="{Binding IsChecked, ElementName=AutoResetBox}" PreviewTextInput="OnDigitsOnly"/>
+                                    <CheckBox x:Name="AutoResetBox" Grid.Column="2" VerticalAlignment="Center" Margin="0"
+                                              ToolTip="{local:Loc Settings.AutoReset.Tooltip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <CheckBox x:Name="HideDuringMenusBox" Content="{local:Loc Settings.Menu.Hide}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Menu.Hint}" Margin="0,8,0,0"/>
+                                <TextBlock x:Name="MenuControlStatus" Style="{StaticResource CardHint}" Margin="0,6,0,0" FontWeight="SemiBold"/>
+                                <TextBlock x:Name="MenuPausedStatus" Style="{StaticResource CardHint}" Margin="0,6,0,0" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Warning}" Visibility="Collapsed"/>
+                            </StackPanel>
+                        </Border>
+<Border x:Name="LoginShareCard" Style="{StaticResource SettingsCard}" Visibility="Collapsed">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.LoginShare.Title}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.LoginShare.Hint}"/>
+                                <CheckBox x:Name="ShareLoginBox" Content="{local:Loc Settings.LoginShare}"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelMeter" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.Overlay}"/>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.OverlayStyle}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="OverlayStyleBox" Margin="0,2" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="{local:Loc Settings.OverlayStyle.Chips}" Tag="Chips"/>
+                                        <ComboBoxItem Content="{local:Loc Settings.OverlayStyle.Compact}" Tag="Compact"/>
+                                    </ComboBox>
+                                </Grid>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.OverlayOpacity}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="OverlayOpacityBox" Margin="0,2" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="30 %" Tag="0.3"/>
+                                        <ComboBoxItem Content="45 %" Tag="0.45"/>
+                                        <ComboBoxItem Content="60 %" Tag="0.6"/>
+                                        <ComboBoxItem Content="80 %" Tag="0.8"/>
+                                        <ComboBoxItem Content="100 %" Tag="1"/>
+                                    </ComboBox>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.OverlayLayout}"/>
+                                <CheckBox x:Name="OverlayGridSnapBox" Content="{local:Loc Settings.OverlayGrid}"/>
+                                <Grid Margin="0,6,0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.OverlayGridSize}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="OverlayGridSizeBox" Margin="0,2" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="10 px" Tag="10"/>
+                                        <ComboBoxItem Content="20 px" Tag="20"/>
+                                        <ComboBoxItem Content="40 px" Tag="40"/>
+                                        <ComboBoxItem Content="80 px" Tag="80"/>
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.OverlayGrid.Hint}" Margin="0,2,0,8"/>
+                                <CheckBox x:Name="OverlayDockingBox" Content="{local:Loc Settings.OverlayDocking}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.OverlayDocking.Hint}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.DisplayChips}"/>
+                                <CheckBox x:Name="ShowShareBarsBox" Content="{local:Loc Settings.ShowShareBars}"/>
+                                <CheckBox x:Name="ShowPartyBuffsBox" Content="Show each player's party buffs live under their name (Mantra, Gale, Protective Light ...)"/>
+                                <CheckBox x:Name="ShowDamageTakenBox" Content="{local:Loc Settings.ShowDamageTaken}"/>
+                                <Grid Margin="0,6,0,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.AutoBossView}" VerticalAlignment="Center" TextWrapping="Wrap" Foreground="{DynamicResource Brush.Text}"
+                                               ToolTip="{local:Loc Settings.AutoBossView.Tooltip}"/>
+                                    <Border Grid.Column="1" Width="52" Height="24" Margin="12,0,4,0" CornerRadius="3" BorderThickness="1"
+                                            Background="{DynamicResource Brush.Control}" BorderBrush="{DynamicResource Brush.Border}">
+                                        <Border.Style>
+                                            <Style TargetType="Border">
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsEnabled, ElementName=AutoBossSecondsBox}" Value="False"><Setter Property="Opacity" Value="0.5"/></DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </Border.Style>
+                                        <Grid>
+                                            <!-- the "s" sits inside the field, fixed: it is not part of the text and cannot be deleted -->
+                                            <TextBlock Text="s" Margin="0,0,6,0" HorizontalAlignment="Right" VerticalAlignment="Center" IsHitTestVisible="False" Foreground="{DynamicResource Brush.Text}"/>
+                                            <TextBox x:Name="AutoBossSecondsBox" Margin="0,0,12,0" BorderThickness="0" Background="Transparent" VerticalContentAlignment="Center"
+                                                     HorizontalContentAlignment="Right" MaxLength="3" Foreground="{DynamicResource Brush.Text}"
+                                                     IsEnabled="{Binding IsChecked, ElementName=AutoBossViewBox}" PreviewTextInput="OnDigitsOnly"
+                                                     ToolTip="{local:Loc Settings.AutoBossView.Tooltip}"/>
+                                        </Grid>
+                                    </Border>
+                                    <CheckBox x:Name="AutoBossViewBox" Grid.Column="2" VerticalAlignment="Center" Margin="0"
+                                              ToolTip="{local:Loc Settings.AutoBossView.Tooltip}"/>
+                                </Grid>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.AutoBossView.Hint}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.DisplayCompact}"/>
+                                <CheckBox x:Name="MeterOverlayOnBox" Content="{local:Loc Settings.MeterOverlayOn}"/>
+                                <CheckBox x:Name="MeterPopUpForBossBox" Content="{local:Loc Settings.MeterPopUpForBoss}" Margin="0,6,0,0"
+                                          ToolTip="{local:Loc Settings.MeterPopUpForBoss.Tooltip}"/>
+                                <CheckBox x:Name="MeterOverlayAutoHideBox" Content="{local:Loc Settings.MeterOverlayAutoHide}" Margin="0,6,0,0"
+                                          IsEnabled="{Binding IsChecked, ElementName=MeterOverlayOnBox}"/>
+                                <Grid Margin="0,6,0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.MeterOverlayHide}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="MeterOverlayHideBox" Margin="0,2" HorizontalAlignment="Stretch"
+                                              IsEnabled="{Binding IsChecked, ElementName=MeterOverlayAutoHideBox}">
+                                        <ComboBoxItem Content="10 s" Tag="10"/>
+                                        <ComboBoxItem Content="20 s" Tag="20"/>
+                                        <ComboBoxItem Content="30 s" Tag="30"/>
+                                        <ComboBoxItem Content="1 min" Tag="60"/>
+                                        <ComboBoxItem Content="2 min" Tag="120"/>
+                                        <ComboBoxItem Content="5 min" Tag="300"/>
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.MeterOverlay.Hint}" Margin="0,4,0,8"/>
+                                <CheckBox x:Name="CompactClickThroughBox" Content="{local:Loc Settings.CompactClickThrough}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.CompactClickThrough.Hint}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.Dummy}"/>
+                                <CheckBox x:Name="DummyAutoStartBox" Content="{local:Loc Settings.DummyAutoStart}"/>
+                                <Grid Margin="0,6,0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.DummyLength}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox Grid.Column="1" x:Name="DummyLengthBox" Margin="0,2" HorizontalAlignment="Stretch">
+                                        <ComboBoxItem Content="30 s" Tag="30"/>
+                                        <ComboBoxItem Content="1 min" Tag="60"/>
+                                        <ComboBoxItem Content="2 min" Tag="120"/>
+                                        <ComboBoxItem Content="3 min" Tag="180"/>
+                                        <ComboBoxItem Content="5 min" Tag="300"/>
+                                        <ComboBoxItem Content="10 min" Tag="600"/>
+                                    </ComboBox>
+                                </Grid>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.DummyAutoStart.Hint}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelCapture" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.Capture}"/>
+                            <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Aion2Hint}"/>
+                                <Grid x:Name="CaptureAdapterPanel" Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.CaptureAdapter}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <ComboBox x:Name="CaptureAdapterBox" Grid.Column="1" Margin="0,2" HorizontalAlignment="Stretch"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.Upload}"/>
+                                <CheckBox x:Name="AutoUploadProfileBox" Content="{local:Loc Settings.AutoUploadProfile}"
+                                          ToolTip="Uploads your own character (name, class, level, gear, skills, Daevanion, legion, server) a few seconds after you log in, so you can be found on aiondps.com. Nothing else is uploaded automatically unless you switch on the boss upload below."/>
+                                <CheckBox x:Name="UploadOtherProfilesBox" Content="{local:Loc Settings.UploadOtherProfiles}"
+                                          ToolTip="Also sends the data of other players the meter has seen (name, class, level, gear, legion), the members of your own legion and, with the replay upload, their positions in a fight. Off by default: with it off only your own character is sent."/>
+                                <CheckBox x:Name="AutoUploadBossBox" Content="{local:Loc Settings.AutoUploadBoss}"
+                                          ToolTip="Uploads the fight to aion2helper.com a few seconds after a boss died, the same as the Upload button. Off by default."/>
+                                <CheckBox x:Name="UploadReplayBox" Content="{local:Loc Settings.UploadReplay}"
+                                          ToolTip="Sends where your character, the boss and the other monsters were during the fight, for the replay on the fight's page on aion2helper.com. Other players' positions only with the switch above. Off by default."/>
+                                <CheckBox x:Name="ShareCpBox" Content="{local:Loc Settings.ShareCp}" ToolTip="{local:Loc Settings.ShareCp.Hint}"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.Privacy}"/>
+                                <TextBlock x:Name="PrivacyStatusText" Style="{StaticResource CardHint}"/>
+                                <Button Content="{local:Loc Settings.Privacy.Show}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Click="OnShowPrivacyClicked"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelHotkeys" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.HotkeyOverlay.Title}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.HotkeyOverlay.Hint}"/>
+                                <CheckBox x:Name="ShowHotkeyOverlayBox" Content="{local:Loc Settings.HotkeyOverlay.Show}"/>
+                                <CheckBox x:Name="HotkeyOverlayLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="HotkeyOpacity" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Tag="Aion DPS Hotkeys" Click="OnResetOverlayPlaceClicked"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Hotkeys.Group.Dps}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Hotkeys.Hint}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvHideUiBox" Tag="HideUi" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.HideUi}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyHideUiBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyHideUiBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvPauseBox" Tag="Pause" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.Pause}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyPauseBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyPauseBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvCopyDamageBox" Tag="CopyDamage" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.CopyDamage}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyCopyDamageBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyCopyDamageBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvClearBox" Tag="Clear" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.Clear}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyClearBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyClearBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvUploadBossBox" Tag="UploadBoss" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.UploadBoss}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyUploadBossBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyUploadBossBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvModeBox" Tag="Mode" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,10,0">
+                                        <TextBlock Text="{local:Loc Settings.Hotkey.Mode}" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                        <Border Width="16" Height="16" CornerRadius="8" Margin="6,0,0,0" Background="#3B82F6" Cursor="Help"
+                                                VerticalAlignment="Center" ToolTipService.InitialShowDelay="100" ToolTipService.ShowDuration="30000"
+                                                ToolTip="{local:Loc Settings.Hotkey.Mode.Tip}">
+                                            <TextBlock Text="?" Foreground="White" FontSize="11" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </StackPanel>
+                                    <TextBox x:Name="HotkeyModeBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyModeBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Hotkeys.Group.Overlays}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvAllOverlaysBox" Tag="AllOverlays" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.AllOverlays}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyAllOverlaysBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyAllOverlaysBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvMoveOverlaysBox" Tag="MoveOverlays" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.MoveOverlays}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyMoveOverlaysBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyMoveOverlaysBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvHotkeyOverlayBox" Tag="HotkeyOverlay" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.HotkeyOverlay}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyHotkeyOverlayBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyHotkeyOverlayBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Hotkeys.Group.Modules}" Margin="4,10,0,2"/>
+                        <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Hotkeys.ModulesHint}" Margin="4,0,0,6"/>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Main.MenuTools.Loot}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvLootBox" Tag="Loot" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.OnOff}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyLootBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyLootBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Main.MenuTools.Craft}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvCraftBox" Tag="Craft" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.OnOff}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyCraftBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyCraftBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Nav.PetMap}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvPetMapBox" Tag="PetMap" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.Page.Map}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyPetMapBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyPetMapBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvPetArrowsBox" Tag="PetArrows" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.PetArrows}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyPetArrowsBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyPetArrowsBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvPetMapZoomInBox" Tag="PetMapZoomIn" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.PetMapZoomIn}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyPetMapZoomInBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyPetMapZoomInBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvPetMapZoomOutBox" Tag="PetMapZoomOut" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.PetMapZoomOut}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyPetMapZoomOutBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyPetMapZoomOutBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvGatherArrowsBox" Tag="GatherArrows" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.GatherArrows}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyGatherArrowsBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyGatherArrowsBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Nav.Combat}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvCombatBox" Tag="Combat" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.OnOff}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyCombatBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyCombatBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Main.MenuTools.Assist}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvAssistBox" Tag="Assist" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.OnOff}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyAssistBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyAssistBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Timers.Title}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvTimetableBox" Tag="Timetable" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.OnOff}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyTimetableBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyTimetableBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Nav.Boss}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvWorldBossBox" Tag="WorldBoss" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.OnOff}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyWorldBossBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyWorldBossBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Nav.Network}"/>
+<Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <CheckBox x:Name="OvNetworkBox" Tag="Network" Grid.Column="3" Margin="8,0,0,0" VerticalAlignment="Center" IsChecked="True" ToolTip="{local:Loc Settings.HotkeyOverlay.Row.Tip}"/>
+                                    <TextBlock Text="{local:Loc Settings.Hotkey.OnOff}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <TextBox x:Name="HotkeyNetworkBox" Grid.Column="1" Height="28" Margin="0,2" IsReadOnly="True" IsReadOnlyCaretVisible="False" Cursor="Hand" GotKeyboardFocus="OnHotkeyBoxGotFocus" LostKeyboardFocus="OnHotkeyBoxLostFocus"
+                                             VerticalContentAlignment="Center" Background="{DynamicResource Brush.Control}"
+                                             Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                    <Button Grid.Column="2" Tag="HotkeyNetworkBox" Click="OnHotkeyClearClicked" Height="28" Width="28" Margin="6,2,0,2" Padding="0"
+                                            Content="✕" ToolTip="{local:Loc Settings.Hotkey.Clear.Tip}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelSystem" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}" Visibility="Collapsed"><!-- updates come by themselves: nothing to set (kept for the code that reads the box) -->
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Updates}"/>
+                                <CheckBox x:Name="CheckForUpdatesBox" Content="{local:Loc Settings.CheckForUpdates}"
+                                          ToolTip="Asks GitHub whether a newer version exists and sends nothing but the request itself. 'Check for updates' in the App menu still works when you ask for it."/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.Debug}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.DebugHint}"/>
+                                <CheckBox x:Name="DebugRecordingBox" Content="{local:Loc Settings.DebugRecording}"/>
+                                <Button Content="{local:Loc Settings.DebugOpenFolder}" Click="OnOpenDebugFolderClicked" HorizontalAlignment="Left" Margin="0,6,0,0"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <Button x:Name="ResetSettingsButton" Content="{local:Loc Settings.Reset.Button}" HorizontalAlignment="Left" Padding="12,3" Click="OnResetSettingsClicked"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Reset.Hint}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelNetwork" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <CheckBox x:Name="ShowNetworkOverlayBox" Content="{local:Loc Settings.Network.Overlay}"/>
+                                <CheckBox x:Name="NetworkOverlayLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="NetworkOpacity" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Tag="Aion DPS Network" Click="OnResetOverlayPlaceClicked"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Network.Hint}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Network.Rows}"/>
+                                <CheckBox x:Name="NetRowServerBox" Tag="server" Content="{local:Loc Network.Row.server}" IsChecked="True" Margin="0,2,0,0"/>
+                                <CheckBox x:Name="NetRowPingBox" Tag="ping" Content="{local:Loc Network.Row.ping}" IsChecked="True" Margin="0,2,0,0"/>
+                                <CheckBox x:Name="NetRowJitterBox" Tag="jitter" Content="{local:Loc Network.Row.jitter}" IsChecked="True" Margin="0,2,0,0"/>
+                                <CheckBox x:Name="NetRowTrafficBox" Tag="traffic" Content="{local:Loc Network.Row.traffic}" IsChecked="True" Margin="0,2,0,0"/>
+                                <CheckBox x:Name="NetRowLossBox" Tag="loss" Content="{local:Loc Network.Row.loss}" IsChecked="True" Margin="0,2,0,0"/>
+                                <CheckBox x:Name="NetRowStallsBox" Tag="stalls" Content="{local:Loc Network.Row.stalls}" IsChecked="True" Margin="0,2,0,0"/>
+                                <CheckBox x:Name="NetRowGatewayBox" Tag="gateway" Content="{local:Loc Network.Row.gateway}" IsChecked="True" Margin="0,2,0,0"/>
+                                <CheckBox x:Name="NetRowInternetBox" Tag="internet" Content="{local:Loc Network.Row.internet}" IsChecked="True" Margin="0,2,0,0"/>
+                                <CheckBox x:Name="NetRowConnectionBox" Tag="connection" Content="{local:Loc Network.Row.connection}" IsChecked="True" Margin="0,2,0,0"/>
+                                <CheckBox x:Name="NetRowLoadBox" Tag="load" Content="{local:Loc Network.Row.load}" IsChecked="True" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelLoot" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <CheckBox x:Name="ShowLootOverlayBox" Content="{local:Loc Loot.Settings.Overlay}"/>
+                                <CheckBox x:Name="LootOverlayLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="LootOpacity" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Tag="Aion DPS Loot" Click="OnResetOverlayPlaceClicked"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Loot.Settings.Hint}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Loot.Settings.Content}"/>
+                                <CheckBox x:Name="LootHideCommonBox" Content="{local:Loc Loot.Settings.HideCommon}"/>
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Loot.Settings.Lines}" VerticalAlignment="Center"/>
+                                    <ComboBox x:Name="LootLinesBox" Grid.Column="1" Width="80"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelCombat" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <CheckBox x:Name="ShowCombatOverlayBox" Content="{local:Loc Settings.Combat.Overlay}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Combat.OverlaysIntro}"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Combat.CardBossHp}"/>
+                                <CheckBox x:Name="ShowBossHpBox" Content="{local:Loc Settings.Overlay.ShowAs}"/>
+                                <CheckBox x:Name="CombatHpLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="BossHpOpacity" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Tag="Aion DPS Target Health" Click="OnResetOverlayPlaceClicked"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Combat.CardBossCast}"/>
+                                <CheckBox x:Name="CombatShowBossCastBox" Content="{local:Loc Settings.Overlay.ShowAs}"/>
+                                <CheckBox x:Name="CombatCastLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="CombatCastOpacity" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Tag="Aion DPS Boss Cast" Click="OnResetOverlayPlaceClicked"/>
+                                <TextBlock Text="{local:Loc Settings.Combat.CastFilter}" Margin="0,8,0,2"/>
+                                <ComboBox x:Name="CombatCastFilterCombo" HorizontalAlignment="Left" MinWidth="240"/>
+                                <TextBlock Text="{local:Loc Settings.Combat.MaxCasts}" Margin="0,8,0,2"/>
+                                <ComboBox x:Name="CombatMaxCastsCombo" HorizontalAlignment="Left" MinWidth="80"/>
+                                <CheckBox x:Name="CombatAllMonstersBox" Content="{local:Loc Settings.Combat.AllMonsters}" Margin="0,8,0,0"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Combat.CastHint}" Margin="0,8,0,0"/>
+                                <Rectangle Height="1" Fill="{DynamicResource Brush.Border}" Margin="0,20,0,16"/>
+                                <CheckBox x:Name="SpeechOnBox" Content="{local:Loc Settings.Speech.Title}" FontWeight="SemiBold" Checked="OnSpeechSwitched" Unchecked="OnSpeechSwitched"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Speech.Hint}" Margin="0,2,0,0"/>
+                                <StackPanel x:Name="SpeechPanel" Visibility="Collapsed">
+                                    <Grid Margin="0,4,0,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock Text="{local:Loc Settings.Speech.Language}" Margin="0,0,0,4"/>
+                                            <ComboBox x:Name="SpeechLanguageCombo" SelectionChanged="OnSpeechLanguageChanged"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock Text="{local:Loc Settings.Speech.Voice}" Margin="0,0,0,4"/>
+                                            <ComboBox x:Name="SpeechVoiceCombo" SelectionChanged="OnSpeechOptionChanged"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBlock x:Name="SpeechNoVoices" Style="{StaticResource CardHint}" Text="{local:Loc Settings.Speech.NoVoices}" Visibility="Collapsed" Margin="0,8,0,0"/>
+                                    <Grid Margin="0,22,0,4">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="164"/><ColumnDefinition Width="64"/></Grid.ColumnDefinitions>
+                                        <TextBlock Text="{local:Loc Settings.Speech.Content}"/>
+                                        <TextBlock Grid.Column="1" Text="{local:Loc Settings.Speech.Volume}" Style="{StaticResource CardHint}" Margin="0" VerticalAlignment="Center" HorizontalAlignment="Left"/>
+                                    </Grid>
+                                    <CheckBox x:Name="SpeechSkillNameBox" Content="{local:Loc Settings.Speech.SkillName}" Margin="0,2,0,0" Checked="OnSpeechOptionChanged" Unchecked="OnSpeechOptionChanged"/>
+                                    <Grid Margin="0,2,0,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/><ColumnDefinition Width="44"/><ColumnDefinition Width="64"/></Grid.ColumnDefinitions>
+                                        <CheckBox x:Name="SpeechOnYouBox" Grid.ColumnSpan="4" Content="{local:Loc Settings.Speech.OnYou}" VerticalAlignment="Center" Checked="OnSpeechOptionChanged" Unchecked="OnSpeechOptionChanged"/>
+                                        <Slider Grid.Column="1" x:Name="SpeechVolumeOnYouSlider" Style="{StaticResource ThemedSlider}" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                                SmallChange="5" LargeChange="10" VerticalAlignment="Center" Margin="0,2" ValueChanged="OnSpeechVolumeChanged"/>
+                                        <TextBlock Grid.Column="2" x:Name="SpeechVolumeOnYouValue" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource Brush.Text}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2,0,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/><ColumnDefinition Width="44"/><ColumnDefinition Width="64"/></Grid.ColumnDefinitions>
+                                        <CheckBox x:Name="SpeechOnAllBox" Grid.ColumnSpan="4" Content="{local:Loc Settings.Speech.OnAll}" VerticalAlignment="Center" Checked="OnSpeechOptionChanged" Unchecked="OnSpeechOptionChanged"/>
+                                        <Slider Grid.Column="1" x:Name="SpeechVolumeOnAllSlider" Style="{StaticResource ThemedSlider}" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                                SmallChange="5" LargeChange="10" VerticalAlignment="Center" Margin="0,2" ValueChanged="OnSpeechVolumeChanged"/>
+                                        <TextBlock Grid.Column="2" x:Name="SpeechVolumeOnAllValue" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource Brush.Text}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2,0,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/><ColumnDefinition Width="44"/><ColumnDefinition Width="64"/></Grid.ColumnDefinitions>
+                                        <CheckBox x:Name="SpeechLethalYouBox" Grid.ColumnSpan="4" Content="{local:Loc Settings.Speech.LethalYou}" VerticalAlignment="Center" Checked="OnSpeechOptionChanged" Unchecked="OnSpeechOptionChanged"/>
+                                        <Slider Grid.Column="1" x:Name="SpeechVolumeLethalYouSlider" Style="{StaticResource ThemedSlider}" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                                SmallChange="5" LargeChange="10" VerticalAlignment="Center" Margin="0,2" ValueChanged="OnSpeechVolumeChanged"/>
+                                        <TextBlock Grid.Column="2" x:Name="SpeechVolumeLethalYouValue" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource Brush.Text}"/>
+                                    </Grid>
+                                    <Grid Margin="0,2,0,0">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/><ColumnDefinition Width="44"/><ColumnDefinition Width="64"/></Grid.ColumnDefinitions>
+                                        <CheckBox x:Name="SpeechLethalAllBox" Grid.ColumnSpan="4" Content="{local:Loc Settings.Speech.LethalAll}" VerticalAlignment="Center" Checked="OnSpeechOptionChanged" Unchecked="OnSpeechOptionChanged"/>
+                                        <Slider Grid.Column="1" x:Name="SpeechVolumeLethalAllSlider" Style="{StaticResource ThemedSlider}" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True"
+                                                SmallChange="5" LargeChange="10" VerticalAlignment="Center" Margin="0,2" ValueChanged="OnSpeechVolumeChanged"/>
+                                        <TextBlock Grid.Column="2" x:Name="SpeechVolumeLethalAllValue" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource Brush.Text}"/>
+                                    </Grid>
+                                    <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Speech.Note}" Margin="0,6,0,0"/>
+                                    <TextBlock Text="{local:Loc Settings.Speech.Examples}" Margin="0,22,0,4"/>
+                                    <Border Background="{DynamicResource Brush.Control}" BorderBrush="{DynamicResource Brush.Border}" BorderThickness="1" CornerRadius="6" Padding="14,2">
+                                        <StackPanel x:Name="SpeechExamples"/>
+                                    </Border>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Combat.Element.TargetOfTarget}"/>
+                                <CheckBox x:Name="CombatShowTargetBox" Content="{local:Loc Settings.Overlay.ShowAs}"/>
+                                <CheckBox x:Name="CombatOverlayLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="CombatTargetOpacity" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Tag="Aion DPS Combat" Click="OnResetOverlayPlaceClicked"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Combat.TargetAlways}" Margin="0,8,0,0"/>
+                                <CheckBox x:Name="CombatHealerHpBox" Content="{local:Loc Settings.Combat.TargetHpBar}" Margin="0,6,0,0"/>
+                                <CheckBox x:Name="CombatHealerEffectsBox" Content="{local:Loc Settings.Combat.TargetEffects}" Margin="0,2,0,0"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Combat.TargetHint2}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelTimetable" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Hotkey.Timetable}"/>
+                                <CheckBox x:Name="ShowTimetableBox" Content="{local:Loc Settings.ShowTimetable}"/>
+                                <CheckBox x:Name="TimetableLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="TimetableOpacityField" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,4" Padding="12,3" Tag="Aion DPS Timetable" Click="OnResetOverlayPlaceClicked"/>
+                                <Grid Margin="0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/><ColumnDefinition Width="50"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.Timetable.Lookahead}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                    <Slider Grid.Column="1" x:Name="TimetableLookaheadSlider" Style="{StaticResource ThemedSlider}" Minimum="0" Maximum="60" TickFrequency="5" IsSnapToTickEnabled="True"
+                                            SmallChange="5" LargeChange="10" VerticalAlignment="Center" Margin="0,2" ValueChanged="OnTimetableLookaheadChanged"/>
+                                    <TextBlock Grid.Column="2" x:Name="TimetableLookaheadValue" VerticalAlignment="Center" HorizontalAlignment="Right"
+                                               Foreground="{DynamicResource Brush.Text}"/>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Timetable.Events}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Timetable.Events.Hint}"/>
+                                <CheckBox x:Name="TimetableNotifyBox" Content="{local:Loc Settings.Timetable.Notify}" Margin="0,2,0,4" Checked="OnTimetableNotifyChanged" Unchecked="OnTimetableNotifyChanged"/>
+                                <Grid x:Name="TimetableMinutesRow" Margin="0,2,0,8">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="56"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.Timetable.SoundMinutes}" VerticalAlignment="Center" Margin="0,0,14,0"/>
+                                    <Slider Grid.Column="1" x:Name="TimetableSoundSlider" Style="{StaticResource ThemedSlider}" Minimum="0" Maximum="60" TickFrequency="1" IsSnapToTickEnabled="True"
+                                            SmallChange="1" LargeChange="5" VerticalAlignment="Center" Margin="0,2" ValueChanged="OnTimetableSoundMinutesChanged"/>
+                                    <TextBlock Grid.Column="2" x:Name="TimetableSoundValue" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource Brush.Text}"/>
+                                </Grid>
+                                <StackPanel x:Name="TimetableEventRows"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelBoss" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <CheckBox x:Name="ShowBossOverlayBox" Content="{local:Loc Settings.Boss.Overlay}"/>
+                                <CheckBox x:Name="BossOverlayLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="BossOpacity" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,8" Padding="12,3" Tag="Aion DPS World Boss" Click="OnResetOverlayPlaceClicked"/>
+                                <CheckBox x:Name="BossNotifyBox" Content="{local:Loc Settings.Boss.Notify}" Checked="OnBossNotifyChanged" Unchecked="OnBossNotifyChanged"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Boss.Hint}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+<StackPanel x:Name="BossGroups"/>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelPetMap" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <CheckBox x:Name="ShowPetMapBox" Content="{local:Loc Settings.PetMap.Show}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.PetMap.OverlaysIntro}"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.PetMap.CardMap}"/>
+                                <CheckBox x:Name="PetMapShowMapBox" Content="{local:Loc Settings.Overlay.ShowAs}"/>
+                                <CheckBox x:Name="PetFarmLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <CheckBox x:Name="ShowGuardsBox" Content="{local:Loc Settings.Gather.Guards}" ToolTip="{local:Loc Settings.Gather.Guards.Tip}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="PetMapOpacity" Margin="0,8,0,0"/>
+                                <Grid Margin="0,4,0,2">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/><ColumnDefinition Width="56"/></Grid.ColumnDefinitions>
+                                    <TextBlock Text="{local:Loc Settings.PetMap.Radius}" VerticalAlignment="Center"/>
+                                    <Slider Grid.Column="1" x:Name="PetMapRadiusSlider" Style="{StaticResource ThemedSlider}" Minimum="50" Maximum="500" TickFrequency="10" IsSnapToTickEnabled="True"
+                                            SmallChange="10" LargeChange="50" VerticalAlignment="Center" Margin="0,2" ValueChanged="OnPetMapSliderChanged"/>
+                                    <TextBlock Grid.Column="2" x:Name="PetMapRadiusValue" VerticalAlignment="Center" HorizontalAlignment="Right" Foreground="{DynamicResource Brush.Text}"/>
+                                </Grid>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Tag="Aion DPS Pet Map" Click="OnResetOverlayPlaceClicked"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.PetMap.CardList}"/>
+                                <CheckBox x:Name="PetMapShowListBox" Content="{local:Loc Settings.Overlay.ShowAs}"/>
+                                <CheckBox x:Name="PetListLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="PetListOpacity" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Tag="Aion DPS Pet List" Click="OnResetOverlayPlaceClicked"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelPets" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.PetInfo.Title}"/>
+                                <CheckBox x:Name="ShowPetFarmBox" Content="{local:Loc Settings.PetInfo.Show}"/>
+                                <CheckBox x:Name="PetInfoLockedBox" Content="{local:Loc Settings.PetFarm.Locked}" Margin="0,4,0,0"/>
+                                <local:OpacityField x:Name="PetInfoOpacity" Margin="0,8,0,0"/>
+                                <Button Content="{local:Loc Settings.Overlay.ResetPlace}" HorizontalAlignment="Left" Margin="0,8,0,0" Padding="12,3" Tag="Aion DPS Pet Farming" Click="OnResetOverlayPlaceClicked"/>
+                                <CheckBox x:Name="ShowPetArrowsBox" Content="{local:Loc Settings.Pet.Arrows}" ToolTip="{local:Loc Settings.Pet.Arrows.Tip}" Margin="0,4,0,0"/>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.PetMap.Mobs}"/>
+                                <CheckBox x:Name="PetAutoBox" Content="{local:Loc Settings.PetMap.Auto}" ToolTip="{local:Loc Settings.PetMap.AutoTip}" Checked="OnPetAutoChanged" Unchecked="OnPetAutoChanged"/>
+                                <TextBlock x:Name="PetCollectionText" TextWrapping="Wrap" FontSize="11.5" Margin="0,2,60,10" Foreground="{DynamicResource Brush.TextSubtle}"/>
+                                <!-- per genus: how many pets are owned, and how many at each level (3/3 down to 0/3: not owned) -->
+                                <Grid x:Name="PetGenusGrid" Margin="0,0,0,12" HorizontalAlignment="Left"/>
+                                <Border x:Name="PetTabBar" BorderThickness="0,0,0,1" BorderBrush="{DynamicResource Brush.Border}" Margin="0,0,0,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ToggleButton x:Name="PetTabType" Style="{StaticResource PetTab}" Content="{local:Loc Settings.PetTab.Type}" IsChecked="True" Click="OnPetTabClick"/>
+                                        <ToggleButton x:Name="PetTabRegion" Style="{StaticResource PetTab}" Content="{local:Loc Settings.PetTab.Region}" Click="OnPetTabClick"/>
+                                        <ToggleButton x:Name="PetTabRare" Style="{StaticResource PetTab}" Content="{local:Loc Settings.PetTab.Rare}" Click="OnPetTabClick"/>
+                                    </StackPanel>
+                                </Border>
+                                <Grid x:Name="PetTypePanel" Height="270">
+                                    <Grid.ColumnDefinitions><ColumnDefinition Width="132"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                    <DockPanel Margin="0,0,10,0">
+                                        <TextBlock DockPanel.Dock="Bottom" x:Name="PetTotalText" TextWrapping="Wrap" FontSize="11" Margin="0,8,0,0" Foreground="{DynamicResource Brush.TextSubtle}"/>
+                                        <StackPanel x:Name="PetSpeciesList"/>
+                                    </DockPanel>
+                                    <Border Grid.Column="1" BorderThickness="1,0,0,0" BorderBrush="{DynamicResource Brush.Border}" Padding="10,0,0,0">
+                                        <DockPanel>
+                                            <Grid DockPanel.Dock="Top" Margin="0,0,-10,6">
+                                                <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                                                <TextBox x:Name="PetSearchBox" Height="26" VerticalContentAlignment="Center" TextChanged="OnPetSearchChanged"
+                                                         Background="{DynamicResource Brush.Control}" Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                                <Button Grid.Column="1" Content="{local:Loc Settings.PetMap.AllOn}" Click="OnPetAllOn" Margin="6,0,0,0" Padding="8,0" Height="26"/>
+                                                <Button Grid.Column="2" Content="{local:Loc Settings.PetMap.AllOff}" Click="OnPetAllOff" Margin="6,0,0,0" Padding="8,0" Height="26"/>
+                                            </Grid>
+                                            <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,0,-10,0"><StackPanel x:Name="PetRows"/></ScrollViewer>
+                                        </DockPanel>
+                                    </Border>
+                                </Grid>
+                                <Grid x:Name="PetRegionPanel" Height="270" Visibility="Collapsed">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition x:Name="PetRegionLeftColumn" Width="185" MinWidth="120"/>
+                                        <ColumnDefinition Width="8"/>
+                                        <ColumnDefinition Width="*" MinWidth="190"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="PetRegionTree" Margin="0,0,6,0"/></ScrollViewer>
+                                    <GridSplitter Grid.Column="1" Style="{StaticResource PetSplitter}" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ToolTip="{local:Loc Settings.PetRegion.Splitter}"/>
+                                    <DockPanel Grid.Column="2" Margin="4,0,0,0">
+                                        <TextBox DockPanel.Dock="Top" x:Name="PetRegionSearchBox" Height="26" VerticalContentAlignment="Center" TextChanged="OnPetRegionSearchChanged" Margin="0,0,0,6"
+                                                 Background="{DynamicResource Brush.Control}" Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}"/>
+                                        <Grid DockPanel.Dock="Top" Margin="0,0,18,4">
+                                            <TextBlock Text="{local:Loc Settings.PetRegion.Name}" FontSize="11" Foreground="{DynamicResource Brush.TextSubtle}"/>
+                                            <TextBlock Text="{local:Loc Settings.PetRegion.YourLevel}" FontSize="11" HorizontalAlignment="Right" Foreground="{DynamicResource Brush.TextSubtle}"/>
+                                        </Grid>
+                                        <Border DockPanel.Dock="Top" Height="1" Background="{DynamicResource Brush.Border}" Margin="0,0,0,4"/>
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="PetRegionRows"/></ScrollViewer>
+                                    </DockPanel>
+                                </Grid>
+                                <Grid x:Name="PetRarePanel" Visibility="Collapsed">
+                                    <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                                    <Grid Margin="0,0,0,8">
+                                        <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="16"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                                        <StackPanel>
+                                            <TextBlock x:Name="PetRareMaxText" TextWrapping="Wrap" FontSize="11" MinHeight="44" Foreground="{DynamicResource Brush.TextSubtle}"/>
+                                            <Slider x:Name="PetRareMaxSlider" Style="{StaticResource ThemedSlider}" Minimum="1" Maximum="60" TickFrequency="1" IsSnapToTickEnabled="True"
+                                                    SmallChange="1" LargeChange="5" Margin="0,2" ValueChanged="OnPetRareSliderChanged"/>
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2">
+                                            <TextBlock x:Name="PetRareInstanceText" TextWrapping="Wrap" FontSize="11" MinHeight="44" Foreground="{DynamicResource Brush.TextSubtle}"/>
+                                            <Slider x:Name="PetRareInstanceSlider" Style="{StaticResource ThemedSlider}" Minimum="1" Maximum="200" TickFrequency="1" IsSnapToTickEnabled="True"
+                                                    SmallChange="1" LargeChange="10" Margin="0,2" ValueChanged="OnPetRareSliderChanged"/>
+                                        </StackPanel>
+                                    </Grid>
+                                    <Grid Grid.Row="1" Height="372">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition x:Name="PetRareLeftColumn" Width="185" MinWidth="120"/>
+                                            <ColumnDefinition Width="8"/>
+                                            <ColumnDefinition Width="*" MinWidth="190"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto"><StackPanel x:Name="PetRareTree" Margin="0,0,6,0"/></ScrollViewer>
+                                        <GridSplitter Grid.Column="1" Style="{StaticResource PetSplitter}" HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ToolTip="{local:Loc Settings.PetRegion.Splitter}"/>
+                                        <DockPanel Grid.Column="2" Margin="4,0,0,0">
+                                            <TextBlock DockPanel.Dock="Bottom" x:Name="PetRareHint" TextWrapping="Wrap" FontSize="11" Margin="0,6,0,0" Foreground="{DynamicResource Brush.TextSubtle}"/>
+                                            <TextBlock DockPanel.Dock="Top" x:Name="PetRareInfo" TextWrapping="Wrap" Height="64" Margin="0,0,0,6" Foreground="{DynamicResource Brush.Text}"/>
+                                            <ContentControl x:Name="PetRareView"/>
+                                        </DockPanel>
+                                    </Grid>
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc BlackCloud.Title}"/>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc BlackCloud.Lede}" TextWrapping="Wrap" MaxWidth="{x:Static local:SettingsWindow.BlackCloudTextWidth}" HorizontalAlignment="Left" Margin="0,0,0,8"/>
+                                <CheckBox x:Name="BlackCloudPopupBox" Content="{local:Loc BlackCloud.Popup}" ToolTip="{local:Loc BlackCloud.Popup.Tip}"/>
+                                <CheckBox x:Name="BlackCloudRenewBox" Content="{local:Loc BlackCloud.RenewNote}" ToolTip="{local:Loc BlackCloud.RenewNote.Tip}" Margin="0,4,0,10"/>
+                                <StackPanel x:Name="BlackCloudPets"/>
+                                <StackPanel x:Name="BlackCloudOffers" Margin="0,10,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelGather" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <CheckBox x:Name="ShowGatherArrowsBox" Content="{local:Loc Settings.Gather.Arrows}" ToolTip="{local:Loc Settings.Gather.Arrows.Tip}"/>
+                        </Border>
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <CheckBox x:Name="CubeSoundBox" Content="{local:Loc Settings.Gather.CubeSound}" ToolTip="{local:Loc Settings.Gather.CubeSound.Tip}"/>
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="170"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ComboBox x:Name="CubeSoundCombo" Grid.Column="0" Margin="0,0,10,0"/>
+                                    <Slider x:Name="CubeVolumeSlider" Grid.Column="1" Minimum="0" Maximum="100" TickFrequency="5" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="0,0,8,0" Style="{DynamicResource ThemedSlider}"/>
+                                    <Button x:Name="CubeSoundTest" Grid.Column="2" Content="▶" Width="28" Height="26" Padding="0"/>
+                                </Grid>
+                                <Grid Margin="0,8,0,0">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Gather.CubeArrival}" TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                                    <Button x:Name="CubeArrivalTest" Grid.Column="1" Content="▶" Width="28" Height="26" Padding="0"/>
+                                </Grid>
+                                <CheckBox x:Name="ShowMapOnCubeBox" Margin="0,12,0,0" Content="{local:Loc Settings.Gather.ShowMapOnCube}" ToolTip="{local:Loc Settings.Gather.ShowMapOnCube.Tip}"/>
+                            </StackPanel>
+                        </Border>
+
+<TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Gather.Hint}" Margin="2,0,0,10"/>
+<TextBlock x:Name="GatherFactionNote" Style="{StaticResource CardHint}" Margin="2,0,0,10" Visibility="Collapsed"/>
+<StackPanel x:Name="GatherCards"/>
+                    </StackPanel>
+                    <StackPanel x:Name="PanelStream" Visibility="Collapsed">
+<Border Style="{StaticResource SettingsCard}">
+                            <StackPanel>
+                                <CheckBox x:Name="StreamOverlayOnBox" Content="{local:Loc Settings.Stream.On}"/>
+                                <CheckBox x:Name="StreamNetworkBox" Content="{local:Loc Settings.Stream.Network}" Margin="0,4,0,0"/>
+                                <CheckBox x:Name="StreamShowNamesBox" Content="{local:Loc Settings.Stream.Names}" Margin="0,4,0,0"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <TextBlock Text="{local:Loc Settings.Stream.Port}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                    <TextBox x:Name="StreamPortBox" Width="64" Height="24" VerticalContentAlignment="Center" HorizontalContentAlignment="Right" MaxLength="5"
+                                             Background="{DynamicResource Brush.Control}" Foreground="{DynamicResource Brush.Text}" BorderBrush="{DynamicResource Brush.Border}" PreviewTextInput="OnDigitsOnly"/>
+                                </StackPanel>
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button Content="{local:Loc Settings.Stream.Copy}" Padding="10,2" Click="OnCopyStreamLinkClicked"/>
+                                    <Button Content="{local:Loc Settings.Stream.NewKey}" Padding="10,2" Margin="8,0,0,0" Click="OnNewStreamKeyClicked"/>
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Stream.Hint}" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+              </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </DockPanel>
+    </Border>
+</Window>

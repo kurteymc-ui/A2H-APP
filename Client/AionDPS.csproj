@@ -1,0 +1,100 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- WinExe, not Exe: an Exe-subsystem binary always gets a console window from Windows even
+         when launched straight into "gui" mode - found by the user, a console flashing up next to
+         the meter window on every start. Program.Main still supports the CLI modes (selftest,
+         chatlog, capture) by attaching to the LAUNCHING console via AttachConsole when one exists
+         (e.g. run from cmd/PowerShell); double-clicking the exe (no parent console) just opens the
+         GUI with nothing else. -->
+    <OutputType>WinExe</OutputType>
+    <!-- -windows suffix needed for WPF (Ui/); Aion itself is Windows-only, so the tool always was. -->
+    <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <!-- WPF has no tray-icon API of its own - System.Windows.Forms.NotifyIcon (TrayIcon.cs, backing
+         "Minimize to system tray") is the standard way every WPF app gets one, hence this flag
+         purely for that one type. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>AionDPS</RootNamespace>
+    <!-- Per the user: the exe, window title and Task Manager process name should all read "Aion
+         DPS" - AssemblyName drives the built exe's filename directly, and (together with Product/
+         FileDescription below) the FileDescription version-resource field Task Manager's Name
+         column actually shows, which does not otherwise follow the raw filename. RootNamespace was
+         briefly left as the old "AionSniffer" internal C# namespace (no user-visible bearing on
+         any of the three things above), but per the user that leftover had to go too - every
+         `namespace AionSniffer.*`/`using AionSniffer.*` in the project was renamed to AionDPS to
+         match. -->
+    <AssemblyName>A2HMeter</AssemblyName>
+    <Product>A2HMeter</Product>
+    <AssemblyTitle>A2HMeter</AssemblyTitle>
+    <!-- asInvoker: the meter reads network traffic through the Npcap driver, which the user installs
+         separately, so it needs no elevation itself. See app.manifest. -->
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- The aion2helper emblem (the website's and the Discord bot's icon, content/public/site/discord-icon.png of the site), 16 to 256 px;
+         assets/app/a2h-emblem.png is the same emblem see-through for the title bar. Earlier designs are in the git history;
+         assets/app/make-icon.py is stale, kept only as history. -->
+    <ApplicationIcon>assets/app/aiondps.ico</ApplicationIcon>
+    <!-- Single source of truth for the version the user sees. The window title reads it back at
+         runtime (see MainWindow's constructor) and the installer takes it from the git tag the release
+         workflow was triggered by, so a build can always be identified from a screenshot. Keep in
+         step with the release tag. -->
+    <Version>1.20.1</Version>
+  </PropertyGroup>
+
+  <!-- UseWindowsForms's own implicit-usings set adds a PROJECT-WIDE global "using
+       System.Windows.Forms" the moment ImplicitUsings is enabled - not scoped to TrayIcon.cs,
+       which is the only file that actually wants it. That collided with WPF's own
+       System.Windows.{Application,ComboBox,Button,TextBox,...} everywhere else in the project
+       (CS0104, ambiguous reference) the instant UseWindowsForms was turned on above. Removed here;
+       TrayIcon.cs keeps its own ordinary file-scoped "using System.Windows.Forms" instead, which
+       doesn't have this problem since nothing else in that one file collides with it. -->
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Self-updating: installs per-user under %LOCALAPPDATA%, so replacing the app's own files
+         needs no elevation and an update can apply without a UAC prompt. That is the whole reason
+         the WiX/MSI packaging was dropped: a per-machine install under Program Files can only be
+         updated by an elevated process. See Update/UpdateService.cs and .github/workflows/release.yml. -->
+    <PackageReference Include="Velopack" Version="1.2.0" />
+    <!-- Packet capture (see Aion2/): combat is read from the game's network traffic through the Npcap
+         driver - passively, never touching the game process. -->
+    <PackageReference Include="SharpPcap" Version="6.3.0" />
+    <PackageReference Include="PacketDotNet" Version="1.4.7" />
+    <!-- Local fight history (History/FightStore.cs): one SQLite file under %AppData%, so past
+         fights survive restarts and can be searched. Bundled native SQLite, no system install. -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="9.0.9" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Skill/class/race data + icons collected in assets/ (see assets/README.md), copied
+         next to the built exe so Data/SkillDatabase.cs can find them via AppContext.BaseDirectory. -->
+    <None Include="assets/**/*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The faces of aion2helper.com (see Fonts/OFL.txt), compiled in: A2H Sans for all text, Cinzel for titles (ThemeManager.SetFonts). -->
+    <Resource Include="Fonts\*.ttf" />
+    <None Include="Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The app's license and the notices of the parts from other projects, shipped next to the exe. -->
+    <None Include="..\LICENSE" Link="LICENSE.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\THIRD-PARTY-NOTICES.md" Link="THIRD-PARTY-NOTICES.md" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- captures/ holds standalone diagnostic probe scripts with their own top-level-statement
+         Main (see captures/probe-source-Program.cs), gitignored real traffic captures, and
+         analysis logs; none of it belongs to this project's build. Without this exclusion, the
+         probe's top-level statements silently take over as the real entry point instead of
+         Program.Main, so "dotnet run" launches the probe sniffer instead of this tool. -->
+    <Compile Remove="captures/**/*.cs" />
+  </ItemGroup>
+
+</Project>

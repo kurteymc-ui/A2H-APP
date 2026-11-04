@@ -1,0 +1,261 @@
+name: Build and attach the installer to a release
+
+# Runs on every "vX.Y.Z" tag push (the normal release flow) and can also be triggered
+# manually for a tag that already exists (workflow_dispatch) -- needed the first time this
+# workflow is added, since GitHub evaluates a tag-push trigger using the workflow file that
+# existed AT that tag's commit, so tags created before this file existed never fire it on
+# their own.
+#
+# The tag may be written with or without the "v" ("v1.18.4" or "1.18.4"): both build, so a release made on GitHub's
+# page with either spelling gets its installer and update files. The app's own version number is set from the tag
+# too, so the title bar always shows the version that was released, whatever the project file said.
+on:
+  push:
+    tags:
+      - "v*.*.*"
+      - "[0-9]+.[0-9]+.[0-9]+*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to build and attach the installer to (e.g. v0.5.3)"
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  build-msi:
+    runs-on: windows-latest
+    steps:
+      - name: Determine tag
+        id: tag
+        shell: bash
+        run: |
+          if [ -n "${{ github.event.inputs.tag }}" ]; then
+            echo "name=${{ github.event.inputs.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=${GITHUB_REF#refs/tags/}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.name }}
+
+      - name: Derive version from tag
+        id: version
+        shell: bash
+        # MSI ProductVersion must be plain major.minor.build (each under its own numeric limit,
+        # see ICE24/ICE80's sibling ICE for the exact caps) with no prerelease label -- strip
+        # everything from the first "-" onward so a tag like "v1.0.0-beta.1" still produces a
+        # valid "1.0.0" rather than failing the MSI build entirely.
+        #
+        # A tag with a suffix ("v1.0.0-alpha.1") is a pre-release for testers: it is packed under its full
+        # semantic version on its own Velopack channel ("alpha"), so installed stable clients (channel
+        # "win") never see it as an update, it is never marked "Latest", and the final 1.0.0 stays free.
+        run: |
+          version="${TAG#v}"
+          full="$version"
+          version="${version%%-*}"
+          echo "number=$version" >> "$GITHUB_OUTPUT"
+          if [ "$full" != "$version" ]; then
+            echo "pack=$full" >> "$GITHUB_OUTPUT"
+            echo "channel=alpha" >> "$GITHUB_OUTPUT"
+            echo "pre=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "pack=$version" >> "$GITHUB_OUTPUT"
+            echo "channel=win" >> "$GITHUB_OUTPUT"
+            echo "pre=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          TAG: ${{ steps.tag.outputs.name }}
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Publish AionDPS (win-x64, self-contained)
+        run: >
+          dotnet publish Client/AionDPS.csproj -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=false -p:Version=${{ steps.version.outputs.number }} -o publish
+
+      # The app's own checks (recorded game frames, no game or Npcap needed). A failed check fails this job and with it the release: nothing is packed or attached; each failed line becomes an
+      # error on the run's page, so a red run says which check broke.
+      - name: Self-checks
+        shell: pwsh
+        timeout-minutes: 20
+        run: |
+          $dir = (Resolve-Path publish).Path
+          $p = Start-Process -FilePath (Join-Path $dir 'A2HMeter.exe') -ArgumentList @('selftest') -WorkingDirectory $dir -Wait -PassThru `
+            -RedirectStandardOutput selftest.txt -RedirectStandardError selftest-errors.txt
+          Get-Content selftest.txt
+          $errors = Get-Content selftest-errors.txt -ErrorAction SilentlyContinue
+          if ($errors) { "--- errors ---"; $errors }
+          if ($p.ExitCode -ne 0 -or -not (Select-String -Path selftest.txt -SimpleMatch '[selftest] ALL CHECKS PASSED' -Quiet)) {
+            $lines = Get-Content selftest.txt
+            $shown = 0
+            for ($i = 0; $i -lt $lines.Count -and $shown -lt 25; $i++) {
+              if ($lines[$i] -match '\bFalse\b') {
+                # the scenario's heading (the last "[selftest]" line above it) and the failed line
+                $head = ''
+                for ($j = $i; $j -ge 0; $j--) { if ($lines[$j] -like '[[]selftest]*') { $head = $lines[$j]; break } }
+                "::error title=Self-check failed::$head $($lines[$i].Trim())"
+                $shown++
+              }
+            }
+            if ($errors) { "::error title=Self-check crashed::$(($errors | Select-Object -First 3) -join ' | ')" }
+            "::error::The self-checks failed (exit $($p.ExitCode)): no installer is built or attached for this tag."
+            exit 1
+          }
+
+      - name: Install the Velopack CLI
+        run: dotnet tool install --global vpk --version 1.2.0
+
+      # Delta packages are built by diffing against the previous release, so the previous release
+      # has to be on disk before packing -- with an empty output directory every release would be
+      # a full ~70 MB download for everyone. Allowed to fail: the very first Velopack release has
+      # nothing to fetch, and a missed delta only costs bandwidth, never correctness.
+      #
+      # --pre because every release of this project is marked prerelease; without it this finds
+      # nothing, exactly like GitHub's own /releases/latest endpoint.
+      - name: Fetch the previous release (for delta packages)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: >
+          vpk download github
+          --repoUrl https://github.com/${{ github.repository }}
+          --channel ${{ steps.version.outputs.channel }} --pre true --token $env:GH_TOKEN --outputDir releases
+        shell: pwsh
+
+      # Produces, in "releases": the installer (A2HMeter-win-Setup.exe), a full .nupkg, a
+      # delta .nupkg when a previous release was fetched above, and releases.win.json -- the index
+      # the installed app reads to discover updates. Velopack's GithubSource resolves all of them
+      # by asset name from the GitHub release, so they must be attached to it.
+      - name: Build the Velopack release
+        run: >
+          vpk pack
+          --packId A2HMeter
+          --packTitle "A2HMeter"
+          --packAuthors "A2HMeter"
+          --packVersion ${{ steps.version.outputs.pack }}
+          --packDir publish
+          --mainExe "A2HMeter.exe"
+          --icon Client/assets/app/aiondps.ico
+          --channel ${{ steps.version.outputs.channel }}
+          --outputDir releases
+
+      # Scans the installer with VirusTotal before anything is attached to the release. Skipped when
+      # the VT_API_KEY secret is not set. An unreachable VirusTotal never blocks a release (warning
+      # only); a verdict does: 5 or more malicious/suspicious engines, or any of the big vendors
+      # listed below, fails the job so the installer is never published. A handful of hits from
+      # small engines is normal for a new unsigned program that reads network traffic -- those are
+      # only reported. The report link ends up in the release notes (see the attach step).
+      - name: Scan the installer with VirusTotal
+        id: vt
+        env:
+          VT_API_KEY: ${{ secrets.VT_API_KEY }}
+          INSTALLER: releases/A2HMeter-${{ steps.version.outputs.channel }}-Setup.exe
+        shell: bash
+        run: |
+          if [ -z "$VT_API_KEY" ]; then echo "VT_API_KEY not set, skipping the VirusTotal scan."; exit 0; fi
+          api=https://www.virustotal.com/api/v3
+          big='^(Microsoft|Kaspersky|ESET-NOD32|BitDefender|Sophos|Symantec|McAfee|CrowdStrike|Avast|AVG)$'
+          skip() { echo "::warning::VirusTotal scan failed, the release continues without it: $*"; exit 0; }
+          sha=$(sha256sum "$INSTALLER" | cut -d' ' -f1)
+
+          # The report of a file is looked up by its hash; it exists (with results) once VirusTotal finished the scan.
+          lookup() {
+            code=$(curl -sS -o vt_file.json -w '%{http_code}' -H "x-apikey: $VT_API_KEY" "$api/files/$sha") || return 1
+            [ "$code" = 200 ] && [ "$(jq '.data.attributes.last_analysis_stats | .malicious + .suspicious + .harmless + .undetected' vt_file.json)" -gt 0 ]
+          }
+
+          if ! lookup; then
+            code=$(curl -sS -o vt_url.json -w '%{http_code}' -H "x-apikey: $VT_API_KEY" "$api/files/upload_url") || skip "upload_url request"
+            [ "$code" = 200 ] || skip "upload_url HTTP $code: $(head -c 300 vt_url.json)"
+            code=$(curl -sS -o vt_upload.json -w '%{http_code}' -H "x-apikey: $VT_API_KEY" -F "file=@$INSTALLER" "$(jq -r .data vt_url.json)") || skip "upload request"
+            # 409: already submitted a moment ago (a re-run) -- just wait for that scan.
+            [ "$code" = 200 ] || [ "$code" = 409 ] || skip "upload HTTP $code: $(head -c 300 vt_upload.json)"
+            for i in $(seq 1 40); do
+              sleep 30
+              lookup && break
+            done
+            lookup || skip "analysis did not finish in time"
+          fi
+
+          hits=$(jq '.data.attributes.last_analysis_stats | .malicious + .suspicious' vt_file.json)
+          total=$(jq '.data.attributes.last_analysis_stats | .malicious + .suspicious + .harmless + .undetected' vt_file.json)
+          flagged=$(jq -r '[.data.attributes.last_analysis_results[] | select(.category == "malicious" or .category == "suspicious") | .engine_name] | join(", ")' vt_file.json)
+          bigflagged=$(jq -r --arg re "$big" '[.data.attributes.last_analysis_results[] | select((.category == "malicious" or .category == "suspicious") and (.engine_name | test($re))) | .engine_name] | join(", ")' vt_file.json)
+          link="https://www.virustotal.com/gui/file/$sha"
+
+          echo "link=$link" >> "$GITHUB_OUTPUT"
+          echo "result=$hits/$total" >> "$GITHUB_OUTPUT"
+          summary="### VirusTotal: $hits / $total engines flag the installer"$'\n'"$link"
+          [ -n "$flagged" ] && summary="$summary"$'\n'"Flagged by: $flagged"
+          echo "$summary" | tee -a "$GITHUB_STEP_SUMMARY"
+
+          if [ "$hits" -ge 5 ] || [ -n "$bigflagged" ]; then
+            echo "::error::VirusTotal verdict too bad ($hits hits, big vendors: $bigflagged). Not publishing. $link"
+            exit 1
+          fi
+
+      - name: Upload the installer as a build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: A2HMeter-${{ steps.tag.outputs.name }}
+          path: releases/A2HMeter-${{ steps.version.outputs.channel }}-Setup.exe
+
+      # Everything except the portable zip, which is another ~70 MB per release and duplicates
+      # what the installer already carries. The index files are small but load-bearing: without
+      # releases.win.json the installed app cannot see the release at all.
+      - name: Attach the release files to the GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ steps.tag.outputs.name }}"
+          # A pushed tag without a release used to fail here ("release not found") and leave
+          # installed clients with nothing to update to. Every release of this project is a
+          # prerelease, so create it as one when it does not exist yet.
+          gh release view $tag *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --prerelease --title $tag --notes "Release $tag"
+          }
+          # SHA-256 of the installer and the update packages, so a download can be checked (Get-FileHash on Windows, sha256sum elsewhere).
+          # The list is written before the upload and goes up with the rest; the installer's hash is also put into the release notes (once).
+          $sumFiles = Get-ChildItem releases -File | Where-Object { $_.Name -like '*.exe' -or $_.Name -like '*.nupkg' } | Sort-Object Name
+          $sums = ($sumFiles | ForEach-Object { "$((Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower())  $($_.Name)" }) -join "`n"
+          [System.IO.File]::WriteAllText((Join-Path (Resolve-Path releases).Path 'SHA256SUMS.txt'), "$sums`n")
+          $files = Get-ChildItem releases -File | Where-Object { $_.Name -notlike '*-Portable.zip' }
+          gh release upload "${{ steps.tag.outputs.name }}" $files.FullName --clobber
+          # The release notes always have the same shape (Tools/changelog/release-notes.mjs): what changed, the link to the
+          # full changelog and an installer block with the SHA-256 and the VirusTotal result. A re-run writes the same text again.
+          $installer = $sumFiles | Where-Object { $_.Name -like '*-Setup.exe' } | Select-Object -First 1
+          $notesIn = Join-Path $env:RUNNER_TEMP 'release-notes-in.txt'
+          [System.IO.File]::WriteAllText($notesIn, (gh release view $tag --json body --jq .body))
+          $notesArgs = @('Tools/changelog/release-notes.mjs', '--version', '${{ steps.version.outputs.number }}', '--body-file', $notesIn)
+          if ($installer) {
+            $notesArgs += @('--installer', $installer.Name, '--sha', (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLower())
+          }
+          $vtLink = "${{ steps.vt.outputs.link }}"
+          if ($vtLink) {
+            $notesArgs += @('--vt-result', '${{ steps.vt.outputs.result }}', '--vt-link', $vtLink)
+          }
+          $notes = (node @notesArgs) -join "`n"
+          gh release edit $tag --notes $notes
+          # The release stays a prerelease while the files are still being uploaded; only when
+          # everything is attached does it become the normal "Latest" release (the fetch for
+          # delta packages and the client's updater both still look at prereleases as well).
+          # A test release (channel alpha) stays a prerelease for good and is never "Latest".
+          if ("${{ steps.version.outputs.pre }}" -ne "true") {
+            gh release edit $tag --prerelease=false --latest
+            # Only the newest 10 stable releases are kept (deltas need the recent ones; older ones just
+            # multiply the versions); older releases are deleted together with their tags. Test releases
+            # are never counted and never deleted here.
+            $old = gh release list --limit 200 --json tagName,createdAt,isPrerelease | ConvertFrom-Json |
+              Where-Object { $_.tagName -notmatch '-' } |
+              Sort-Object createdAt -Descending | Select-Object -Skip 10
+            foreach ($r in $old) { gh release delete $r.tagName --cleanup-tag --yes }
+          }
+        shell: pwsh

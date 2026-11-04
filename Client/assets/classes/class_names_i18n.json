@@ -1,0 +1,110 @@
+{
+  "Assassin": {
+    "en": "Assassin",
+    "de": "Assassine",
+    "fr": "Assassin",
+    "es": "Asesino",
+    "ru": "Убийца",
+    "zh": "刺客",
+    "zh-TW": "殺星",
+    "pt": "Assassino",
+    "ja": "アサシン",
+    "ko": "살성"
+  },
+  "Brawler": {
+    "en": "Brawler",
+    "de": "Raufbold",
+    "fr": "Bagarreur",
+    "es": "Luchador",
+    "ru": "Боец",
+    "zh": "格斗家",
+    "zh-TW": "格鬥家",
+    "pt": "Lutador",
+    "ja": "ファイター",
+    "ko": "권성"
+  },
+  "Chanter": {
+    "en": "Chanter",
+    "de": "Kantor",
+    "fr": "Aède",
+    "es": "Cantor",
+    "ru": "Чародей",
+    "zh": "圣咏者",
+    "zh-TW": "護法星",
+    "pt": "Encantador",
+    "ja": "チャンター",
+    "ko": "호법성"
+  },
+  "Cleric": {
+    "en": "Cleric",
+    "de": "Kleriker",
+    "fr": "Clerc",
+    "es": "Clérigo",
+    "ru": "Целитель",
+    "zh": "牧师",
+    "zh-TW": "治癒星",
+    "pt": "Clérigo",
+    "ja": "クレリック",
+    "ko": "치유성"
+  },
+  "Gladiator": {
+    "en": "Gladiator",
+    "de": "Gladiator",
+    "fr": "Gladiateur",
+    "es": "Gladiador",
+    "ru": "Гладиатор",
+    "zh": "角斗士",
+    "zh-TW": "劍星",
+    "pt": "Gladiador",
+    "ja": "グラディエーター",
+    "ko": "검성"
+  },
+  "Ranger": {
+    "en": "Ranger",
+    "de": "Waldläufer",
+    "fr": "Rôdeur",
+    "es": "Arquero",
+    "ru": "Стрелок",
+    "zh": "弓箭手",
+    "zh-TW": "弓星",
+    "pt": "Arqueiro",
+    "ja": "レンジャー",
+    "ko": "궁성"
+  },
+  "Sorcerer": {
+    "en": "Sorcerer",
+    "de": "Magier",
+    "fr": "Sorcier",
+    "es": "Hechicero",
+    "ru": "Волшебник",
+    "zh": "魔法师",
+    "zh-TW": "魔道星",
+    "pt": "Mago",
+    "ja": "ソーサラー",
+    "ko": "마도성"
+  },
+  "Spiritmaster": {
+    "en": "Spiritmaster",
+    "de": "Beschwörer",
+    "fr": "Spiritualiste",
+    "es": "Espiritualista",
+    "ru": "Заклинатель",
+    "zh": "Spiritmaster",
+    "zh-TW": "精靈星",
+    "pt": "Espiritualista",
+    "ja": "スピリットマスター",
+    "ko": "정령성"
+  },
+  "Templar": {
+    "en": "Templar",
+    "de": "Templer",
+    "fr": "Templier",
+    "es": "Templario",
+    "ru": "Страж",
+    "zh": "圣骑士",
+    "zh-TW": "守護星",
+    "pt": "Templário",
+    "ja": "テンプラー",
+    "ko": "수호성"
+  }
+}

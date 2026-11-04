@@ -1,0 +1,277 @@
+namespace AionDPS.Aion2;
+
+/// <summary>One hit-point reading of an entity, as the server sent it.</summary>
+public readonly record struct HpSample(DateTime At, long Hp);
+
+/// <summary>The skill that killed an entity, as its death frame (0x048d) names it; <paramref name="At"/> is when the frame came, about 50 ms after the hit points hit 0.</summary>
+public readonly record struct KillCredit(DateTime At, int SkillId);
+
+/// <summary>
+/// Every entity's hit points over time, from the server's HP frame (see
+/// Aion2FrameDecoder.DecodeHp), and the moments a monster came back to full health after having
+/// been worn down - a wipe and retry, where the server keeps the boss's entity id. Without those
+/// moments both attempts read as one fight against one target, and the damage summed over them
+/// passes the boss's hit points (verified on a solo Krao Cave run, 2026-10-02: Ultimate Berk, 123,000
+/// HP, 24,196 damage in the failed attempt, then back to 123,000 under the same id).
+/// </summary>
+public sealed class Aion2HitPoints
+{
+    /// <summary>A rise to the highest value seen counts as a reset only from below this share of
+    /// it - small heals near full health are not a new attempt.</summary>
+    private const double ResetFromBelow = 0.95;
+
+    /// <summary>A single rise by this share of the maximum is a new attempt even without a reading at full health.</summary>
+    private const double ResetRise = 0.10;
+
+    /// <summary>Readings kept per entity; a long session drops its oldest half past this.</summary>
+    private const int MaxSamplesPerEntity = 20_000;
+
+    private readonly Dictionary<int, Track> _tracks = new();
+    private readonly Dictionary<int, (long Current, long Max)> _spawns = new();
+    private readonly Dictionary<int, List<KillCredit>> _credits = new();
+    private readonly object _gate = new();
+
+    /// <summary>Kill credits kept per entity (a player dies a few times in a fight, never hundreds).</summary>
+    private const int MaxCreditsPerEntity = 200;
+
+    /// <summary>The death frame named <paramref name="skillId"/> as what killed <paramref name="entityId"/>.</summary>
+    public void NoteKillCredit(int entityId, int skillId, DateTime at)
+    {
+        lock (_gate)
+        {
+            if (!_credits.TryGetValue(entityId, out List<KillCredit>? list))
+            {
+                list = new List<KillCredit>();
+                _credits[entityId] = list;
+            }
+
+            if (list.Count >= MaxCreditsPerEntity)
+            {
+                list.RemoveRange(0, MaxCreditsPerEntity / 2);
+            }
+
+            list.Add(new KillCredit(at, skillId));
+        }
+    }
+
+    /// <summary>The kill credits of an entity between two moments (inclusive), oldest first.</summary>
+    public IReadOnlyList<KillCredit> KillCreditsBetween(int entityId, DateTime from, DateTime to)
+    {
+        lock (_gate)
+        {
+            return _credits.TryGetValue(entityId, out List<KillCredit>? list)
+                ? list.Where(c => c.At >= from && c.At <= to).ToList()
+                : Array.Empty<KillCredit>();
+        }
+    }
+
+    /// <summary>The entities a hit-point reading exists for, and how many readings each has.</summary>
+    public IReadOnlyDictionary<int, int> ReadingCounts()
+    {
+        lock (_gate)
+        {
+            return _tracks.ToDictionary(kv => kv.Key, kv => kv.Value.Samples.Count);
+        }
+    }
+
+    public void Note(int entityId, DateTime at, long hp)
+    {
+        lock (_gate)
+        {
+            if (!_tracks.TryGetValue(entityId, out Track? track))
+            {
+                track = new Track();
+                _tracks[entityId] = track;
+            }
+
+            if (track.Samples.Count > 0 && IsReset(track, hp))
+            {
+                track.Resets.Add(at);
+            }
+
+            track.HighestSeen = Math.Max(track.HighestSeen, hp);
+            if (track.Samples.Count >= MaxSamplesPerEntity)
+            {
+                track.Samples.RemoveRange(0, MaxSamplesPerEntity / 2);
+            }
+
+            track.Samples.Add(new HpSample(at, hp));
+        }
+    }
+
+    /// <summary>
+    /// A new attempt: back to full health from a worn-down state, or - when the reset frame itself
+    /// was never received (the player was dead or far away) and the next reading is already
+    /// damaged - a single rise of at least <see cref="ResetRise"/> of the maximum. A boss's own
+    /// healing stays far below that (Thamon's, 2026-10-04, was 2 %).
+    /// </summary>
+    private static bool IsReset(Track track, long hp)
+    {
+        long previous = track.Samples[^1].Hp;
+        if (hp >= track.HighestSeen && previous < track.HighestSeen * ResetFromBelow)
+        {
+            return true;
+        }
+
+        return hp - previous >= track.HighestSeen * ResetRise;
+    }
+
+    /// <summary>The highest value seen - the maximum once the entity has been seen at full health
+    /// (at its first reading, or after a reset); a lower bound when the meter joined mid-fight.</summary>
+    public long? HighestSeen(int entityId)
+    {
+        lock (_gate)
+        {
+            return _tracks.TryGetValue(entityId, out Track? track) ? track.HighestSeen : null;
+        }
+    }
+
+    /// <summary>The hit points a monster's spawn frame carried (current and maximum; the maximum of a party-scaled boss is the value for one
+    /// player). Null clears them: the entity id is reused, an earlier spawn's values belong to something else.</summary>
+    public void NoteSpawn(int entityId, (long Current, long Max)? hp)
+    {
+        lock (_gate)
+        {
+            if (hp is { } value)
+            {
+                _spawns[entityId] = value;
+            }
+            else
+            {
+                _spawns.Remove(entityId);
+            }
+        }
+    }
+
+    /// <summary>The maximum the entity's spawn frame announced, or null when no spawn frame with hit points was seen for it.</summary>
+    public long? SpawnMaxOf(int entityId)
+    {
+        lock (_gate)
+        {
+            return _spawns.TryGetValue(entityId, out var spawn) ? spawn.Max : null;
+        }
+    }
+
+    /// <summary>The hit points the entity's spawn frame announced as current, or null when none was seen.</summary>
+    public long? SpawnCurrentOf(int entityId)
+    {
+        lock (_gate)
+        {
+            return _spawns.TryGetValue(entityId, out var spawn) ? spawn.Current : null;
+        }
+    }
+
+    /// <summary>A maximum the server reported (8-byte kind 7 of the HP frame; it follows buffs that raise it).</summary>
+    public void NoteMax(int entityId, long max)
+    {
+        if (max <= 0)
+        {
+            return;
+        }
+
+        lock (_gate)
+        {
+            if (!_tracks.TryGetValue(entityId, out Track? track))
+            {
+                track = new Track();
+                _tracks[entityId] = track;
+            }
+
+            track.ReportedMax = max;
+        }
+    }
+
+    /// <summary>The entity's maximum hit points: the one the server reported when it is not below the latest reading,
+    /// else the highest reading seen (a lower bound when the meter joined mid-fight); null when nothing is known.</summary>
+    public long? MaxOf(int entityId)
+    {
+        lock (_gate)
+        {
+            if (!_tracks.TryGetValue(entityId, out Track? track))
+            {
+                return null;
+            }
+
+            long latest = track.Samples.Count > 0 ? track.Samples[^1].Hp : 0;
+            if (track.ReportedMax >= Math.Max(latest, 1))
+            {
+                return track.ReportedMax;
+            }
+
+            return track.HighestSeen > 0 ? track.HighestSeen : null;
+        }
+    }
+
+    /// <summary>The entity's most recent reading, or null before the first one.</summary>
+    public HpSample? Latest(int entityId)
+    {
+        lock (_gate)
+        {
+            return _tracks.TryGetValue(entityId, out Track? track) && track.Samples.Count > 0 ? track.Samples[^1] : null;
+        }
+    }
+
+    /// <summary>When the entity died: the first reading of 0 of the run of 0 readings it ends on (the game repeats a 0 reading). Null while its latest reading
+    /// is above 0 - alive, or back at full health for another attempt - and before the first reading.</summary>
+    public DateTime? DiedAt(int entityId)
+    {
+        lock (_gate)
+        {
+            if (!_tracks.TryGetValue(entityId, out Track? track) || track.Samples.Count == 0 || track.Samples[^1].Hp > 0)
+            {
+                return null;
+            }
+
+            int i = track.Samples.Count - 1;
+            while (i > 0 && track.Samples[i - 1].Hp <= 0)
+            {
+                i--;
+            }
+
+            return track.Samples[i].At;
+        }
+    }
+
+    /// <summary>When the entity came back to full health from a worn-down state, oldest first.</summary>
+    public IReadOnlyList<DateTime> ResetsOf(int entityId)
+    {
+        lock (_gate)
+        {
+            return _tracks.TryGetValue(entityId, out Track? track) ? track.Resets.ToList() : Array.Empty<DateTime>();
+        }
+    }
+
+    /// <summary>The readings between two moments (inclusive), oldest first, plus the last one before
+    /// <paramref name="from"/> - what the entity had when that window began.</summary>
+    public IReadOnlyList<HpSample> SamplesAround(int entityId, DateTime from, DateTime to)
+    {
+        lock (_gate)
+        {
+            if (!_tracks.TryGetValue(entityId, out Track? track))
+            {
+                return Array.Empty<HpSample>();
+            }
+
+            int before = track.Samples.FindLastIndex(s => s.At < from);
+            return track.Samples.Skip(Math.Max(before, 0)).TakeWhile(s => s.At <= to).ToList();
+        }
+    }
+
+    public void Clear()
+    {
+        lock (_gate)
+        {
+            _tracks.Clear();
+            _spawns.Clear();
+            _credits.Clear();
+        }
+    }
+
+    private sealed class Track
+    {
+        public long HighestSeen;
+        public long ReportedMax;
+        public readonly List<HpSample> Samples = new();
+        public readonly List<DateTime> Resets = new();
+    }
+}

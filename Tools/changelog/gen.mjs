@@ -1,0 +1,126 @@
+// Builds Web-Frontend/changelog.json from the git history (GitHub only keeps the newest 10
+// releases, git keeps everything). Run it after the release commit has been made:
+//   node Tools/changelog/gen.mjs
+// A release is closed by the commit that changes <Version> in Client/AionDPS.csproj; every commit
+// since the previous one is an entry of it (commits after the last one are "Unreleased").
+// Each entry is tagged by the paths its commit touched: Client, Website (Web-Frontend/),
+// Backend (Backend/) and Database (Backend/drizzle, Backend/src/db). No commit convention needed.
+// A "Release X.Y.Z: <text>" subject contributes its text; bare version bumps and merges nothing.
+import { execFileSync } from "node:child_process";
+import { readFileSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+
+const out = fileURLToPath(new URL("../../Web-Frontend/changelog.json", import.meta.url));
+const git = (...args) => execFileSync("git", args, { encoding: "utf8", maxBuffer: 1 << 28, stdio: ["ignore", "pipe", "ignore"] });
+
+// Before the reorganisation (2026-09-22) the client sat in the repo root and the server and website
+// together in backend/ (public/ was the website); those paths map to the same areas.
+const AREAS = [
+  ["Database", /^(Backend|backend)\/(drizzle|src\/db)\//],
+  ["Website", /^backend\/public\/(?!icons\/|images\/)/],
+  ["Backend", /^(Backend|backend)\//],
+  ["Website", /^Web-Frontend\//],
+  ["Client", /^Client\//],
+  ["Client", /^(?!Tools\/|\.github\/|assets\/|[^/]*\.md$|\.gitignore$)/],
+];
+const areasOf = (files) => {
+  const set = new Set();
+  for (const f of files) {
+    if (f === "Web-Frontend/changelog.json") continue;
+    for (const [name, re] of AREAS) {
+      if (re.test(f)) { set.add(name); if (name === "Database") continue; break; }
+    }
+  }
+  return ["Client", "Website", "Backend", "Database"].filter((a) => set.has(a));
+};
+
+// overrides.json: {"<commit hash prefix>": "<text shown instead>" | null (= leave the commit out)}.
+// For commits whose subject must not be shown as written (e.g. it names something that is not public).
+const overrides = JSON.parse(readFileSync(fileURLToPath(new URL("./overrides.json", import.meta.url)), "utf8"));
+const overrideFor = (hash) => Object.entries(overrides).find(([prefix]) => hash.startsWith(prefix));
+
+const SEP = "\u0001";
+const raw = git("log", "--reverse", "--name-only", `--format=${SEP}%H%x09%ad%x09%cI%x09%s`, "--date=short");
+const commits = raw.split(SEP).filter(Boolean).map((block) => {
+  const [head, ...files] = block.split("\n");
+  const [hash, date, iso, ...s] = head.split("\t");
+  return { hash, date, iso, subject: s.join("\t"), files: files.filter(Boolean) };
+});
+
+// The project file moved over time: AionSniffer.csproj -> AionDPS.csproj -> Client/AionDPS.csproj.
+const CSPROJ = ["Client/AionDPS.csproj", "AionDPS.csproj", "AionSniffer.csproj"];
+const versionAt = (hash) => {
+  for (const f of CSPROJ) {
+    try {
+      const v = /<Version>([^<]+)<\/Version>/.exec(git("show", `${hash}:${f}`))?.[1];
+      if (v) return v;
+    } catch { /* not there at this commit */ }
+  }
+  return null;
+};
+
+const releases = [];
+const releasedAt = {}; // version -> exact time of its release commit (the website's statistics compare uploads against it)
+let current = null;
+let pending = [];
+const before = []; // commits from before the first <Version> existed
+for (const c of commits) {
+  const touchesCsproj = c.files.some((f) => CSPROJ.includes(f));
+  let v = touchesCsproj || current === null ? versionAt(c.hash) : current;
+  if (v?.includes("-")) v = current; // a test version (1.0.0-alpha.N) is no release: its commits belong to the next real one
+  const rel = /^Release (\d+\.\d+\.\d+)(?:: (.+))?$/.exec(c.subject);
+  const noise = /^(Merge |Bump (the )?version|Version \d|Release workflow|Changelog)/.test(c.subject);
+  const override = overrideFor(c.hash);
+  const text = override ? override[1] : rel ? rel[2] : noise ? null : c.subject.replace(/;? ?version \d+\.\d+\.\d+$/i, "");
+  const areas = areasOf(c.files);
+  if (text && areas.length) {
+    (v ? pending : before).push({ text, areas, date: c.date });
+  }
+  if (v && v !== current) {
+    current = v;
+    releasedAt[v] ??= c.iso;
+    if (pending.length) {
+      releases.push({ version: v, date: c.date, items: pending });
+    }
+    pending = [];
+  }
+}
+if (pending.length) {
+  releases.push({ version: "Unreleased", date: commits.at(-1).date, items: pending });
+}
+// Before the first version number there are no releases: one pseudo release per day instead.
+const PRE = "Before 0.4.0";
+for (const date of [...new Set(before.map((b) => b.date))]) {
+  releases.push({ version: PRE, date, items: before.filter((b) => b.date === date).map(({ text, areas }) => ({ text, areas })) });
+}
+// A feature commit and the "Release X.Y.Z: <same text>" commit that follows it say the same: one entry (the first, with the areas of both).
+for (const r of releases) {
+  const seen = new Map();
+  for (const item of r.items) {
+    const first = seen.get(item.text);
+    if (first) first.areas = [...new Set([...first.areas, ...item.areas])];
+    else seen.set(item.text, item);
+  }
+  r.items = [...seen.values()];
+}
+const key = (v) => (v === "Unreleased" ? [1e9, 0, 0] : v === PRE ? [-1, 0, 0] : v.split(".").map(Number));
+releases.sort((a, b) => { const x = key(a.version), y = key(b.version); return y[0] - x[0] || y[1] - x[1] || y[2] - x[2] || (a.date < b.date ? 1 : -1); });
+writeFileSync(out, JSON.stringify(releases, null, 1) + "\n");
+// The tags are the real release moments. Version numbers are not in release order (0.9.55 was followed by 0.10.48,
+// and 0.9.56 / 0.9.57 came out much later), so the statistics compare uploads by time, never by number.
+// Only tags of THIS project's history count: a fetch from a fork's remote brings that fork's tags along (v0.9.7 .. v0.9.64 came from a
+// contributor's fork), and the update obligation would then take the fork's newest tag for the current release and lock the real client out.
+const own = new Set(git("tag", "--merged", "HEAD").split("\n").filter(Boolean));
+for (const line of git("for-each-ref", "--format=%(refname:short)\t%(creatordate:iso-strict)", "refs/tags").split("\n").filter(Boolean)) {
+  const [tag, iso] = line.split("\t");
+  if (/^v\d+\.\d+\.\d+$/.test(tag) && own.has(tag)) releasedAt[tag.slice(1)] = iso;
+}
+writeFileSync(fileURLToPath(new URL("../../Web-Frontend/releases.json", import.meta.url)), JSON.stringify(releasedAt, null, 1) + "\n");
+// German texts live in Web-Frontend/changelog.de.json ({"<english text>": "<german text>"}); new entries
+// have to be added there, the page falls back to English for anything missing.
+const de = JSON.parse(readFileSync(fileURLToPath(new URL("../../Web-Frontend/changelog.de.json", import.meta.url)), "utf8"));
+const untranslated = [...new Set(releases.flatMap((r) => r.items.map((i) => i.text)))].filter((t) => !(t in de));
+if (untranslated.length) {
+  console.log(`${untranslated.length} entries without a German text:\n- ${untranslated.join("\n- ")}`);
+}
+console.log(`${releases.length} releases, ${releases.reduce((n, r) => n + r.items.length, 0)} entries -> ${out}`);

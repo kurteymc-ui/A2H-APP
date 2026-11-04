@@ -1,0 +1,1241 @@
+{
+  "timeZone": "Europe/Berlin",
+  "events": [
+    {
+      "id": "shugo_festival",
+      "kind": "field_event",
+      "icon": "shugo",
+      "sure": "checked",
+      "zones": {
+        "eu": "Europe/Berlin",
+        "nae": "America/New_York",
+        "naw": "America/Los_Angeles",
+        "latam": "America/Sao_Paulo",
+        "asia": "Asia/Tokyo"
+      },
+      "names": {
+        "en": "Shugo Festival",
+        "de": "Shugofesta",
+        "fr": "Festival des Shugos",
+        "ru": "Фестиваль шиго",
+        "es": "Festival de Shugo",
+        "pt": "Shugo Festa",
+        "ja": "シューゴ フェスタ",
+        "ko": "슈고 페스타"
+      },
+      "short": {
+        "en": "Shugo",
+        "de": "Shugo",
+        "fr": "Shugo",
+        "ru": "Шиго",
+        "es": "Shugo",
+        "pt": "Shugo",
+        "ja": "シューゴ",
+        "ko": "슈고"
+      },
+      "windows": [
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "00:00",
+          "end": "00:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "01:00",
+          "end": "01:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "02:00",
+          "end": "02:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "03:00",
+          "end": "03:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "04:00",
+          "end": "04:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "05:00",
+          "end": "05:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "06:00",
+          "end": "06:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "07:00",
+          "end": "07:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "08:00",
+          "end": "08:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "09:00",
+          "end": "09:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "10:00",
+          "end": "10:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "11:00",
+          "end": "11:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "12:00",
+          "end": "12:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "13:00",
+          "end": "13:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "14:00",
+          "end": "14:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "15:00",
+          "end": "15:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "16:00",
+          "end": "16:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "17:00",
+          "end": "17:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "18:00",
+          "end": "18:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "19:00",
+          "end": "19:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "20:00",
+          "end": "20:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "21:00",
+          "end": "21:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "22:00",
+          "end": "22:10"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "23:00",
+          "end": "23:10"
+        }
+      ]
+    },
+    {
+      "id": "beritra_air_raid",
+      "kind": "field_event",
+      "icon": "invasion",
+      "sure": "checked",
+      "zones": {
+        "eu": "Europe/Berlin",
+        "nae": "America/New_York",
+        "naw": "America/Los_Angeles",
+        "latam": "America/Sao_Paulo",
+        "asia": "Asia/Tokyo"
+      },
+      "names": {
+        "en": "Dimensional Invasion",
+        "de": "Dimensionale Invasion",
+        "fr": "Invasion dimensionnelle",
+        "ru": "Межпространственное вторжение",
+        "es": "Invasión dimensional",
+        "pt": "Invasão Dimensional",
+        "ja": "次元侵攻",
+        "ko": "차원 침공"
+      },
+      "short": {
+        "en": "Invasion",
+        "de": "Invasion",
+        "fr": "Invasion",
+        "ru": "Вторжение",
+        "es": "Invasión",
+        "pt": "Invasão",
+        "ja": "侵攻",
+        "ko": "침공"
+      },
+      "windows": [
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "00:30",
+          "end": "00:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "01:30",
+          "end": "01:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "02:30",
+          "end": "02:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "03:30",
+          "end": "03:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "04:30",
+          "end": "04:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "05:30",
+          "end": "05:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "06:30",
+          "end": "06:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "07:30",
+          "end": "07:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "08:30",
+          "end": "08:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "09:30",
+          "end": "09:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "10:30",
+          "end": "10:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "11:30",
+          "end": "11:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "12:30",
+          "end": "12:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "13:30",
+          "end": "13:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "14:30",
+          "end": "14:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "15:30",
+          "end": "15:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "16:30",
+          "end": "16:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "17:30",
+          "end": "17:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "18:30",
+          "end": "18:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "19:30",
+          "end": "19:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "20:30",
+          "end": "20:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "21:30",
+          "end": "21:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "22:30",
+          "end": "22:43"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "23:30",
+          "end": "23:43"
+        }
+      ]
+    },
+    {
+      "id": "spacetime_rift",
+      "kind": "field_event",
+      "icon": "rift",
+      "sure": "checked",
+      "zones": {
+        "eu": "Europe/Berlin",
+        "nae": "America/New_York",
+        "naw": "America/Los_Angeles",
+        "latam": "America/Sao_Paulo",
+        "asia": "Asia/Tokyo"
+      },
+      "names": {
+        "en": "Spacetime Rift",
+        "de": "Raumzeit-Riss",
+        "fr": "Faille spatio-temporelle",
+        "ru": "Пространственный разлом",
+        "es": "Grieta Espacio-Tiempo",
+        "pt": "Fenda Espaço-Temporal",
+        "ja": "時空の亀裂",
+        "ko": "시공의 균열"
+      },
+      "short": {
+        "en": "Rift",
+        "de": "Riss",
+        "fr": "Faille",
+        "ru": "Разлом",
+        "es": "Grieta",
+        "pt": "Fenda",
+        "ja": "亀裂",
+        "ko": "균열"
+      },
+      "open": 10,
+      "windows": [
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "02:00",
+          "end": "03:00"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "05:00",
+          "end": "06:00"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "08:00",
+          "end": "09:00"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "11:00",
+          "end": "12:00"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "14:00",
+          "end": "15:00"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "17:00",
+          "end": "18:00"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "20:00",
+          "end": "21:00"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "23:00",
+          "end": "00:00"
+        }
+      ]
+    },
+    {
+      "id": "watcher_kaira",
+      "kind": "world_boss",
+      "icon": "kaira",
+      "sure": "checked",
+      "zones": {
+        "eu": "Europe/Berlin",
+        "nae": "America/New_York",
+        "naw": "America/Los_Angeles",
+        "latam": "America/Sao_Paulo",
+        "asia": "Asia/Tokyo"
+      },
+      "names": {
+        "en": "Watcher Kaira",
+        "de": "Aufseherin Kaira",
+        "fr": "Kaira la veilleuse",
+        "ru": "Дозорщик Кайра",
+        "es": "Kaira, la Vigilante",
+        "pt": "Vigilante Kairah",
+        "ja": "監視者カイラ",
+        "ko": "감시자 카이라"
+      },
+      "short": {
+        "en": "Kaira",
+        "de": "Kaira",
+        "fr": "Kaira",
+        "ru": "Кайра",
+        "es": "Kaira",
+        "pt": "Kairah",
+        "ja": "カイラ",
+        "ko": "카이라"
+      },
+      "windows": [
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "01:00",
+          "end": "01:30"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "04:00",
+          "end": "04:30"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "07:00",
+          "end": "07:30"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "10:00",
+          "end": "10:30"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "13:00",
+          "end": "13:30"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "16:00",
+          "end": "16:30"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "19:00",
+          "end": "19:30"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "22:00",
+          "end": "22:30"
+        }
+      ]
+    },
+    {
+      "id": "arena_of_strategy",
+      "kind": "battlefield",
+      "players": "10v10",
+      "icon": "arena",
+      "sure": "reported",
+      "zones": {
+        "eu": "Europe/Berlin",
+        "nae": "America/New_York",
+        "naw": "America/Los_Angeles",
+        "latam": "America/Sao_Paulo",
+        "asia": "Asia/Tokyo"
+      },
+      "names": {
+        "en": "Battlefield",
+        "de": "Schlachtfeld",
+        "fr": "Champ de bataille",
+        "ru": "Поле боя",
+        "es": "Campo de batalla",
+        "pt": "Campo de Batalha",
+        "ja": "戦場",
+        "ko": "전장"
+      },
+      "windows": [
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "11:00",
+          "end": "14:00"
+        },
+        {
+          "days": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "start": "19:00",
+          "end": "21:00"
+        }
+      ]
+    },
+    {
+      "id": "abyss_raid",
+      "kind": "raid",
+      "icon": "siege",
+      "sure": "checked",
+      "zones": {
+        "eu": "Europe/Berlin",
+        "nae": "America/New_York",
+        "naw": "America/Los_Angeles",
+        "latam": "America/Sao_Paulo",
+        "asia": "Asia/Tokyo"
+      },
+      "names": {
+        "en": "Artifact Siege (Abyss)",
+        "de": "Artefakt-Eroberung (Abyss)",
+        "fr": "Siège d'artefact (Abysse)",
+        "ru": "Захват артефактов (Бездна)",
+        "es": "Asedio de artefacto (Abismo)",
+        "pt": "Cerco de Artefatos (Abismo)",
+        "ja": "アーティファクト占領戦 (アビス)",
+        "ko": "아티팩트 점령전 (어비스)"
+      },
+      "short": {
+        "en": "Siege",
+        "de": "Eroberung",
+        "fr": "Siège",
+        "ru": "Захват",
+        "es": "Asedio",
+        "pt": "Cerco",
+        "ja": "占領戦",
+        "ko": "점령전"
+      },
+      "windows": [
+        {
+          "days": [
+            1,
+            4,
+            6
+          ],
+          "start": "21:00",
+          "end": "21:30"
+        }
+      ]
+    },
+    {
+      "id": "executor_bosses",
+      "kind": "world_boss",
+      "icon": "exec",
+      "sure": "checked",
+      "zones": {
+        "eu": "Europe/Berlin",
+        "nae": "America/New_York",
+        "naw": "America/Los_Angeles",
+        "latam": "America/Sao_Paulo",
+        "asia": "Asia/Tokyo"
+      },
+      "names": {
+        "en": "Executor Bosses (Abyss)",
+        "de": "Vollstrecker-Bosse (Abyss)",
+        "fr": "Boss exécuteurs (Abysse)",
+        "ru": "Боссы-исполнители (Бездна)",
+        "es": "Jefes Ejecutantes (Abismo)",
+        "pt": "Chefes Executores (Abismo)",
+        "ja": "執行者ボス (アビス)",
+        "ko": "집행자 보스 (어비스)"
+      },
+      "short": {
+        "en": "Executors",
+        "de": "Vollstrecker",
+        "fr": "Exécuteurs",
+        "ru": "Исполнители",
+        "es": "Ejecutantes",
+        "pt": "Executores",
+        "ja": "執行者",
+        "ko": "집행자"
+      },
+      "windows": [
+        {
+          "days": [
+            1,
+            4,
+            6
+          ],
+          "start": "21:30",
+          "end": "22:00"
+        }
+      ]
+    },
+    {
+      "id": "guardian_lord_nahma",
+      "kind": "world_boss",
+      "icon": "nahma",
+      "sure": "checked",
+      "zones": {
+        "eu": "Europe/Berlin",
+        "nae": "America/New_York",
+        "naw": "America/Los_Angeles",
+        "latam": "America/Sao_Paulo",
+        "asia": "Asia/Tokyo"
+      },
+      "names": {
+        "de": "Wächtergott Nahma",
+        "en": "Guardian Lord Nahma",
+        "es": "Gran Vigía Nahma",
+        "fr": "Nahma le seigneur gardien",
+        "ja": "守護神将ナフマ",
+        "ko": "수호신장 나흐마",
+        "pt": "Senhor Guardião Nahma",
+        "ru": "Лорд-хранитель Нахма"
+      },
+      "short": {
+        "en": "Nahma",
+        "de": "Nahma",
+        "fr": "Nahma",
+        "ru": "Нахма",
+        "es": "Nahma",
+        "pt": "Nahma",
+        "ja": "ナフマ",
+        "ko": "나흐마"
+      },
+      "windows": [
+        {
+          "days": [
+            0,
+            5
+          ],
+          "start": "21:00",
+          "end": "21:30"
+        }
+      ]
+    },
+    {
+      "id": "middle_reshanta_bosses",
+      "kind": "world_boss",
+      "icon": "mboss",
+      "sure": "reported",
+      "zones": {
+        "eu": "Europe/Berlin",
+        "nae": "America/New_York",
+        "naw": "America/Los_Angeles",
+        "latam": "America/Sao_Paulo",
+        "asia": "Asia/Tokyo"
+      },
+      "names": {
+        "en": "Middle Reshanta bosses",
+        "de": "Bosse der Mittleren Ebene von Reshanta",
+        "fr": "Boss de Reshanta Intermédiaire",
+        "ru": "Боссы среднего уровня Арэшурата",
+        "es": "Jefes de Reshanta Intermedia",
+        "pt": "Chefes do Piso Intermediário de Reshanta",
+        "ja": "エレシュランタ中層のボス",
+        "ko": "에레슈란타 중층 보스"
+      },
+      "short": {
+        "en": "M. Reshanta",
+        "de": "Mittl. Reshanta",
+        "fr": "Reshanta int.",
+        "ru": "Ср. Арэшурата",
+        "es": "Reshanta int.",
+        "pt": "Reshanta int.",
+        "ja": "中層ボス",
+        "ko": "중층 보스"
+      },
+      "windows": [
+        {
+          "days": [
+            1,
+            4,
+            6
+          ],
+          "start": "21:30",
+          "end": "22:00"
+        }
+      ]
+    },
+    {
+      "id": "arena_of_silence",
+      "kind": "arena",
+      "players": "1v1",
+      "always": true,
+      "icon": "arena",
+      "names": {
+        "en": "Arena of Solitude",
+        "de": "Arena der Stille",
+        "fr": "Arène de solitude",
+        "ru": "Арена одиночества",
+        "es": "Arena de Soledad",
+        "pt": "Arena da Solidão",
+        "ja": "孤独の闘技場",
+        "ko": "고독의 투기장"
+      },
+      "windows": []
+    },
+    {
+      "id": "arena_of_cooperation",
+      "kind": "arena",
+      "players": "5v5",
+      "always": true,
+      "icon": "arena",
+      "names": {
+        "en": "Arena of Cooperation",
+        "de": "Arena der Kooperation",
+        "fr": "Arène de coopération",
+        "ru": "Арена сотрудничества",
+        "es": "Arena de Cooperación",
+        "pt": "Arena da Cooperação",
+        "ja": "協力の闘技場",
+        "ko": "협력의 투기장"
+      },
+      "windows": []
+    }
+  ]
+}
