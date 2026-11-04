@@ -40,12 +40,19 @@ public static class CooldownArt
     /// <summary>Keeps light text readable on any picture or background.</summary>
     public static readonly Effect Outline = FrozenShadow(Colors.Black, 3, 1);
 
-    /// <summary>The time left as the cooldowns show it: tenths under ten seconds (1.6), whole seconds above (18), minutes from a minute on (1:35).</summary>
+    /// <summary>
+    /// The time left as the cooldowns show it, always rounded up (it reads 0.1 in the last tenth, never 0 while running): tenths under ten seconds (1.6),
+    /// whole seconds above (18), minutes from a minute on (1:35). Just under ten seconds reads 10, not 10.0 (11, 10, 9.9, 9.8 ... - no longer text between).
+    /// </summary>
     public static string Time(double seconds)
     {
         if (seconds < 10)
         {
-            return (Math.Ceiling(seconds * 10 - 1e-9) / 10).ToString("0.0", CultureInfo.CurrentCulture);
+            double tenths = Math.Ceiling(seconds * 10 - 1e-9) / 10;
+            if (tenths < 10)
+            {
+                return tenths.ToString("0.0", CultureInfo.CurrentCulture);
+            }
         }
 
         int whole = (int)Math.Ceiling(seconds - 1e-9);
@@ -136,15 +143,17 @@ public static class CooldownArt
 
 /// <summary>
 /// A skill's cooldown as a bar: its picture, its name and the time left, the part still to go filled in; green with "Ready" once it is back (amber the last
-/// ten seconds, tenths under ten).
+/// ten seconds, tenths under ten). The fill is cut off where the time stands, to a fraction of a unit (shown every frame while it runs, so it glides).
 /// </summary>
 public sealed class CooldownBar : Border, ICooldownLook
 {
     private readonly Border _fill;
+    private readonly RectangleGeometry _fillClip = new(new Rect(0, 0, 0, CooldownArt.BarHeight), 3, 3);
     private readonly TextBlock _time;
     private readonly double _width;
     private bool? _running;
     private string _shown = "";
+    private double _fillShown = -1;
 
     public CooldownBar(int skillId, double width)
     {
@@ -158,7 +167,7 @@ public sealed class CooldownBar : Border, ICooldownLook
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        _fill = new Border { HorizontalAlignment = HorizontalAlignment.Left, Background = CooldownArt.CoolFill, Width = 0, CornerRadius = new CornerRadius(3) };
+        _fill = new Border { HorizontalAlignment = HorizontalAlignment.Left, Background = CooldownArt.CoolFill, Width = width, Clip = _fillClip };
         Grid.SetColumnSpan(_fill, 3);
         grid.Children.Add(_fill);
         FrameworkElement picture = CooldownArt.Picture(CooldownArt.IconOf(skillId), CooldownArt.BarHeight - 2);
@@ -186,7 +195,7 @@ public sealed class CooldownBar : Border, ICooldownLook
             Background = view.Running ? CooldownArt.CoolBack : CooldownArt.ReadyBack;
             if (!view.Running)
             {
-                _fill.Width = 0;
+                FillTo(0);
                 _shown = LocalizationManager.Instance["Assist.Ready"];
                 _time.Text = _shown;
                 _time.Foreground = CooldownArt.ReadyText;
@@ -198,13 +207,23 @@ public sealed class CooldownBar : Border, ICooldownLook
             return;
         }
 
-        _fill.Width = Math.Round(_width * view.Fraction);
+        FillTo(_width * view.Fraction);
         string text = CooldownArt.Time(view.Seconds);
         if (text != _shown)
         {
             _shown = text;
             _time.Text = text;
             _time.Foreground = view.Seconds < 10 ? CooldownArt.Soon : CooldownArt.Text;
+        }
+    }
+
+    /// <summary>The fill up to <paramref name="width"/> units (changed only when it moved a twentieth of one).</summary>
+    private void FillTo(double width)
+    {
+        if (Math.Abs(width - _fillShown) >= 0.05)
+        {
+            _fillShown = width;
+            _fillClip.Rect = new Rect(0, 0, Math.Max(0, width), CooldownArt.BarHeight);
         }
     }
 }
@@ -263,7 +282,7 @@ public sealed class CooldownTile : Grid, ICooldownLook
             return;
         }
 
-        if (Math.Abs(view.Fraction - _fraction) > 0.002)
+        if (Math.Abs(view.Fraction - _fraction) > 0.001)
         {
             _fraction = view.Fraction;
             _sweep.Data = CooldownArt.SweepOf(_size, _fraction);

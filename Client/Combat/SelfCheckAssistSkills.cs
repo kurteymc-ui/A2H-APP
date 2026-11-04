@@ -81,6 +81,7 @@ public static class SelfCheckAssistSkills
         Lengths(Check);
         BarAndVoice(Check);
         Places(Check);
+        TimeText(Check);
 
         // the effects list: the Abyss's zone states, the artifacts' faction bonus and the game's test states are left off (seen on 2026-10-31 in Reshanta);
         // a class skill's standing effect, a scroll and a boss's timed zone stay
@@ -237,6 +238,16 @@ public static class SelfCheckAssistSkills
         Aion2Cooldowns.NoteOwnCast(variant, t0.AddHours(1));
         check("the gaps kept from the last session", Aion2Cooldowns.Length(warding) == 22.2, $"{Aion2Cooldowns.Length(warding)} s");
         Aion2Cooldowns.Reset();
+    }
+
+    /// <summary>The time as the cooldowns show it: rounded up, tenths under ten seconds but never "10.0" (11, 10, 9.9 ...), the last tenth 0.1, minutes from a minute on.</summary>
+    private static void TimeText(Action<string, bool, string> check)
+    {
+        static string T(double seconds) => Ui.CooldownArt.Time(seconds);
+        static string N(double value) => value.ToString("0.0", System.Globalization.CultureInfo.CurrentCulture);
+        string[] got = { T(10.4), T(10.0), T(9.95), T(9.9), T(9.81), T(0.04), T(75) };
+        string[] want = { "11", "10", "10", N(9.9), N(9.9), N(0.1), "1:15" };
+        check("the time: 11, 10, 9.9 - never 10.0; the last tenth 0.1; 1:15", got.SequenceEqual(want), string.Join(" ", got));
     }
 
     /// <summary>The cooldowns' places at another size: the arrangement kept around its top left corner (squares side by side neither apart nor overlapping).</summary>

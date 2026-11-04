@@ -106,6 +106,12 @@ public sealed class AssistController : IDisposable
     private int _placesSeen = PlacesVersion;
     private CooldownEditBar? _editBar;
 
+    // every frame while a shown cooldown runs (the timer's eight times a second made the tenths skip and the bars step): the windows shown at the last
+    // tick, and whether they may show at all, are being placed, or show when ready too
+    private readonly List<(int Id, CooldownSkillWindow Window)> _framed = new();
+    private bool _mayShow, _placingNow, _showReadyNow, _everyFrame;
+    private TimeSpan _lastFrame;
+
     /// <summary>The look, size and bar width the windows were last laid out with: a change rearranges them (the arrangement kept, scaled).</summary>
     private string _laidStyle = "";
     private double _laidScale, _laidWidth;
@@ -195,6 +201,7 @@ public sealed class AssistController : IDisposable
     public void Dispose()
     {
         _timer.Stop();
+        EveryFrame(false);
         _effects?.Close();
         _editBar?.Close();
         foreach (CooldownSkillWindow w in _skills.Values)
@@ -302,6 +309,9 @@ public sealed class AssistController : IDisposable
             }
 
             _editBar?.Hide();
+            _mayShow = false;
+            _framed.Clear();
+            EveryFrame(false);
             return;
         }
 
@@ -310,6 +320,8 @@ public sealed class AssistController : IDisposable
         double width = Math.Clamp(_settings.AssistBarWidth, 90, 400);
         CooldownSkillWindow.Together = _settings.AssistCooldownsTogether;
         Arrange(style, scale, width, listed);
+        _framed.Clear();
+        bool running = false;
         foreach (int id in shown)
         {
             if (!_skills.TryGetValue(id, out CooldownSkillWindow? window))
@@ -325,7 +337,12 @@ public sealed class AssistController : IDisposable
             CooldownView view = Aion2Cooldowns.View(id, now);
             window.Show(view);
             window.ShowOverlay(placing || view.Running || _settings.AssistShowReady);
+            _framed.Add((id, window));
+            running |= view.Running;
         }
+
+        (_mayShow, _placingNow, _showReadyNow) = (true, placing, _settings.AssistShowReady);
+        EveryFrame(running);
 
         foreach ((int id, CooldownSkillWindow w) in _skills)
         {
@@ -336,6 +353,60 @@ public sealed class AssistController : IDisposable
         }
 
         RunEditBar(placing && shown.Count > 0, style);
+    }
+
+    /// <summary>Shows the cooldowns every frame of the screen (about 60 times a second) while one of them runs; idle, nothing is done between the ticks.</summary>
+    private void EveryFrame(bool on)
+    {
+        if (on == _everyFrame)
+        {
+            return;
+        }
+
+        _everyFrame = on;
+        if (on)
+        {
+            System.Windows.Media.CompositionTarget.Rendering += OnFrame;
+        }
+        else
+        {
+            System.Windows.Media.CompositionTarget.Rendering -= OnFrame;
+        }
+    }
+
+    /// <summary>
+    /// One frame: each shown cooldown at this very moment - the tenths change every tenth of a second, the bars and the sweeps glide - and one that ended
+    /// goes (or one that started comes) at once, as the tick would have it.
+    /// </summary>
+    private void OnFrame(object? sender, EventArgs e)
+    {
+        if (e is System.Windows.Media.RenderingEventArgs r)
+        {
+            if (r.RenderingTime == _lastFrame)
+            {
+                return; // raised twice for one frame
+            }
+
+            _lastFrame = r.RenderingTime;
+        }
+
+        if (!_mayShow)
+        {
+            return;
+        }
+
+        DateTime now = DateTime.Now; // the capture stamps its frames with the local clock
+        foreach ((int id, CooldownSkillWindow window) in _framed)
+        {
+            CooldownView view = Aion2Cooldowns.View(id, now);
+            bool show = _placingNow || view.Running || _showReadyNow;
+            if (show)
+            {
+                window.Show(view);
+            }
+
+            window.ShowOverlay(show);
+        }
     }
 
     /// <summary>

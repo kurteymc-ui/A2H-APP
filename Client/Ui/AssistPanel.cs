@@ -328,7 +328,7 @@ public sealed class AssistPanel : StackPanel
     /// <summary>Updates the effects on the player; the count shown.</summary>
     private int RefreshEffects(Aion2EntityDirectory? dir, DateTime now)
     {
-        var shown = new List<(int Id, string Time, bool Active, double Fraction)>();
+        var shown = new List<(int Id, string Time, bool Active, double Fraction, double Left)>();
         if (dir is not null && dir.LocalPlayerId is >= 0 and int self)
         {
             // one entry per effect: a short effect that is renewed all the time (the Chanter's mantras) gets a new instance or a new end every few
@@ -397,7 +397,7 @@ public sealed class AssistPanel : StackPanel
                 double left = endless ? 0 : Math.Max(0, (b.Ends!.Value - now).TotalSeconds);
                 string time = !active || endless ? "" : EffectText(left);
                 double fraction = endless ? 1 : b.DurationMs > 0 ? Math.Clamp(left * 1000 / b.DurationMs, 0, 1) : 0;
-                shown.Add((skill, time, active, fraction));
+                shown.Add((skill, time, active, fraction, active && !endless ? left : 0));
             }
         }
 
@@ -412,7 +412,7 @@ public sealed class AssistPanel : StackPanel
                 _effectLayout = look;
                 _effectGrid.Children.Clear();
                 _effectStack.Children.Clear();
-                foreach ((int id, _, _, _) in shown)
+                foreach ((int id, _, _, _, _) in shown)
                 {
                     if (bars)
                     {
@@ -425,11 +425,11 @@ public sealed class AssistPanel : StackPanel
                 }
             }
 
-            foreach ((int id, string time, bool active, double fraction) in shown)
+            foreach ((int id, string time, bool active, double fraction, double left) in shown)
             {
                 if (bars)
                 {
-                    _effectBars[id].Show(time, active, fraction);
+                    _effectBars[id].Show(time, active, fraction, left);
                 }
                 else
                 {
@@ -444,7 +444,7 @@ public sealed class AssistPanel : StackPanel
         {
             _effectLayout = layout;
             _effectList.Children.Clear();
-            foreach ((int id, _, _, _) in shown)
+            foreach ((int id, _, _, _, _) in shown)
             {
                 ListRow row = EffectRowOf(id);
                 row.Box.IsChecked = !Hidden.Contains(id);
@@ -458,7 +458,7 @@ public sealed class AssistPanel : StackPanel
             }
         }
 
-        foreach ((int id, string time, bool active, _) in shown)
+        foreach ((int id, string time, bool active, _, _) in shown)
         {
             ListRow row = _effectRows[id];
             row.SetStatus(time.Length > 0 ? time : active ? "∞" : "", active && time.Length > 0);
@@ -649,12 +649,17 @@ public sealed class AssistPanel : StackPanel
         }
     }
 
-    /// <summary>An effect as a bar on the screen: its picture, its name and the time left, the part still to go filled in; faded a moment after it ended.</summary>
+    /// <summary>
+    /// An effect as a bar on the screen: its picture, its name and the time left, the part still to go filled in; faded a moment after it ended. The fill
+    /// glides down to nothing at the effect's end, every frame of the screen (an animation over the time left, started again only when the end moves).
+    /// </summary>
     private sealed class EffectBar : Border
     {
         private readonly Border _fill;
+        private readonly RectangleGeometry _fillClip = new(new Rect(0, 0, 0, CooldownArt.BarHeight), 3, 3);
         private readonly TextBlock _time;
         private readonly double _width;
+        private DateTime? _glidingTo;
 
         public EffectBar(int id, double width)
         {
@@ -668,7 +673,7 @@ public sealed class AssistPanel : StackPanel
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            _fill = new Border { HorizontalAlignment = HorizontalAlignment.Left, Background = CooldownArt.EffectFill, Width = 0, CornerRadius = new CornerRadius(3) };
+            _fill = new Border { HorizontalAlignment = HorizontalAlignment.Left, Background = CooldownArt.EffectFill, Width = width, Clip = _fillClip };
             Grid.SetColumnSpan(_fill, 3);
             grid.Children.Add(_fill);
             FrameworkElement picture = CooldownArt.Picture(CooldownArt.IconOf(id), CooldownArt.BarHeight - 2);
@@ -687,15 +692,36 @@ public sealed class AssistPanel : StackPanel
             Child = grid;
         }
 
-        public void Show(string time, bool active, double fraction)
+        /// <summary>Shows the effect; <paramref name="left"/> is the seconds to its end while it runs down (0: endless, or over).</summary>
+        public void Show(string time, bool active, double fraction, double left)
         {
             if (_time.Text != time)
             {
                 _time.Text = time;
             }
 
-            _fill.Width = Math.Round(_width * fraction);
             Opacity = active ? 1 : 0.45;
+            double h = CooldownArt.BarHeight;
+            if (left > 0.05)
+            {
+                DateTime end = DateTime.Now.AddSeconds(left);
+                if (_glidingTo is not DateTime to || Math.Abs((to - end).TotalSeconds) > 0.2)
+                {
+                    _glidingTo = end; // new, or renewed: from where it stands now to nothing at its end
+                    var glide = new System.Windows.Media.Animation.RectAnimation(new Rect(0, 0, _width * Math.Clamp(fraction, 0, 1), h), new Rect(0, 0, 0, h), TimeSpan.FromSeconds(left));
+                    _fillClip.BeginAnimation(RectangleGeometry.RectProperty, glide);
+                }
+
+                return;
+            }
+
+            if (_glidingTo is not null)
+            {
+                _glidingTo = null;
+                _fillClip.BeginAnimation(RectangleGeometry.RectProperty, null);
+            }
+
+            _fillClip.Rect = new Rect(0, 0, _width * Math.Clamp(fraction, 0, 1), h);
         }
     }
 
