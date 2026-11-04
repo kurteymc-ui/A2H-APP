@@ -20,7 +20,8 @@ public sealed class OverlayDock
 /// <summary>
 /// Placing overlays on a grid and docking them to each other (two switches in the settings). While an overlay is dragged its place snaps to the grid and,
 /// close to another overlay, flush against its edge; letting go there docks it. A docked overlay follows its parent: when the parent is moved or changes its
-/// size (also by itself, when its content grows) the docked ones keep their place at its side. Dragging a docked overlay away undocks it.
+/// size (also by itself, when its content grows) the docked ones keep their place at its side. Dragging a docked overlay away undocks it. The skills'
+/// cooldowns (a group) always snap and dock; one of them dragged moves alone, with Shift held together with those hanging on it.
 /// </summary>
 public static class OverlayDocking
 {
@@ -101,6 +102,10 @@ public static class OverlayDocking
                 if (msg == WM_ENTERSIZEMOVE)
                 {
                     _dragging = true;
+                    if (Groups.ContainsKey(window.Title) && (GetAsyncKeyState(VK_SHIFT) & 0x8000) == 0)
+                    {
+                        LetGo(window.Title);
+                    }
                 }
                 else if (msg == WM_MOVING)
                 {
@@ -124,6 +129,34 @@ public static class OverlayDocking
         {
             window.SourceInitialized += (_, _) => Hook();
         }
+    }
+
+    [DllImport("user32.dll")]
+    private static extern short GetAsyncKeyState(int key);
+
+    private const int VK_SHIFT = 0x10;
+
+    /// <summary>
+    /// A box of a group (a skill's cooldown) is dragged on its own: the boxes hanging on it stay where they are, so every box goes wherever it is put. With
+    /// Shift held they come along (the whole column, dragged by its first box).
+    /// </summary>
+    private static void LetGo(string title)
+    {
+        var s = MeterSettings.Load();
+        var children = s.OverlayDocks.Where(kv => kv.Value.Parent == title).Select(kv => kv.Key).ToList();
+        if (children.Count == 0)
+        {
+            return;
+        }
+
+        foreach (string child in children)
+        {
+            s.OverlayDocks.Remove(child);
+        }
+
+        s.Save();
+        _cache = s;
+        _cacheAt = DateTime.UtcNow;
     }
 
     private static Rect2 Bounds(Window w) => new(w.Left, w.Top, w.ActualWidth, w.ActualHeight);

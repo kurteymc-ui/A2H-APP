@@ -231,8 +231,8 @@ public sealed class MeterSettings
     /// before they are used when the skill bar is not known.</summary>
     public List<int> AssistKnownSkills { get; set; } = new();
 
-    /// <summary>Per skill the times between its last uses with no cooldown number of the game in between (seconds, the last 16; see Aion2Cooldowns): what
-    /// the length of its cooldown on the character is learned from.</summary>
+    /// <summary>Per skill variant (its specializations: the cast id with its last digit cleared) the times between its last uses with no cooldown number of the
+    /// game in between (seconds, the last 16; see Aion2Cooldowns): what the length of its cooldown on the character is learned from.</summary>
     public Dictionary<int, List<double>> AssistCooldownGaps { get; set; } = new();
 
     /// <summary>How the cooldowns look: "Bars" (a row per skill: picture, name, time left or "Ready") or "Tiles" (the skill's picture with the time on it).</summary>

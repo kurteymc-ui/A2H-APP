@@ -30,9 +30,11 @@ public readonly record struct CooldownView(bool Running, double Seconds, double 
 /// are never sent when they are used (4 November 2026, the owner's Templar: Taunt, Shield Rush, Shield Smite, Debilitating Smash, Battlefield Banner, Noble
 /// Armor and Defiance came only with the whole list): before, they showed only after a login, and as ready while they were cooling down.</para>
 /// <para>So a use starts the cooldown (<see cref="NoteOwnCast"/>, the own cast frame) with the skill's length, and every number of the game sets the
-/// time left exactly. The length is learned on the character: the time between two uses with no number of the game in between, when the skill is used as
-/// soon as it is back - the tenth shortest of its last 16 (a few uses come earlier: an effect the game does not send took time off). Until four are known,
-/// the lengths measured on the owner's characters (assets/aion2/skills/assist_skill_lists.json) or the first number after a use stand in.</para>
+/// time left exactly. The length is the game's own, by the skill's specialization: the cast frame's id is the variant (Warding Strike 12350150 with the
+/// specializations 1 and 5, 25 s; without them 30 s), and the client's skill table has each variant's cooldown (assets/aion2/skills/assist_skill_lists.json,
+/// "cooldowns", every class). The character's cooldown reduction shortens it a little (the owner's Templar: 5 % on most skills, none on Defiance), so the
+/// length is also learned on the character: the time between two uses with no number of the game in between, when the skill is used as soon as it is back -
+/// the tenth shortest of its last 16, never more than the table's (a few uses come earlier: an effect the game does not send took time off).</para>
 /// </summary>
 public static class Aion2Cooldowns
 {
@@ -70,10 +72,14 @@ public static class Aion2Cooldowns
     /// <summary>Per skill its last use (the first cast frame of it) and the last cast frame of it at all.</summary>
     private static readonly Dictionary<int, DateTime> LastUse = new(), LastCastFrame = new();
 
+    /// <summary>Per skill (base id) the variant of its last use: the cast frame's id with its last digit cleared (the specializations chosen).</summary>
+    private static readonly Dictionary<int, int> Variants = new();
+
     /// <summary>The skills the game sent a number for since their last use: the time to the next use then says nothing of the length.</summary>
     private static readonly HashSet<int> Framed = new();
 
-    /// <summary>Per skill the times between two uses with no number of the game in between (seconds, the last 16, oldest first): what its length is learned from.</summary>
+    /// <summary>Per skill variant the times between two uses with no number of the game in between (seconds, the last 16, oldest first): what its length is
+    /// learned from.</summary>
     private static readonly Dictionary<int, List<double>> Gaps = new();
 
     /// <summary>Per skill the length the game's first number after a use gave (time since the use + time left), this session.</summary>
@@ -184,6 +190,7 @@ public static class Aion2Cooldowns
                     LastUse.Clear();
                     LastCastFrame.Clear();
                     Framed.Clear();
+                    Variants.Clear();
                 }
 
                 _class = cls;
@@ -297,6 +304,7 @@ public static class Aion2Cooldowns
         }
 
         int id = BaseOf(skillId);
+        int variant = id == skillId ? id : skillId / 10 * 10;
         lock (Gate)
         {
             if (_class == 0 && ClassOf(id) != 0)
@@ -311,11 +319,13 @@ public static class Aion2Cooldowns
             }
 
             LastCastFrame[id] = at;
-            if (LastUse.TryGetValue(id, out DateTime last) && at > last && !Framed.Contains(id))
+            bool sameVariant = !Variants.TryGetValue(id, out int before) || before == variant;
+            if (LastUse.TryGetValue(id, out DateTime last) && at > last && !Framed.Contains(id) && sameVariant)
             {
-                AddGap(id, (at - last).TotalSeconds);
+                AddGap(variant, id, (at - last).TotalSeconds);
             }
 
+            Variants[id] = variant;
             LastUse[id] = at;
             Framed.Remove(id);
             if (LengthOf(id) is double length && length > NoCooldownSeconds && NotWorth(id) is null)
@@ -339,16 +349,16 @@ public static class Aion2Cooldowns
         }
     }
 
-    private static void AddGap(int id, double seconds)
+    private static void AddGap(int variant, int id, double seconds)
     {
         if (seconds < 0.3 || seconds > 600)
         {
             return;
         }
 
-        if (!Gaps.TryGetValue(id, out List<double>? gaps))
+        if (!Gaps.TryGetValue(variant, out List<double>? gaps))
         {
-            Gaps[id] = gaps = new List<double>();
+            Gaps[variant] = gaps = new List<double>();
         }
 
         gaps.Add(Math.Round(seconds, 2));
@@ -362,8 +372,9 @@ public static class Aion2Cooldowns
     }
 
     /// <summary>
-    /// The length of a skill's cooldown on this character in seconds, null while not known: the tenth shortest of its last gaps of more than 2 s (at least
-    /// four); else the measured length of the skill lists; else the game's first number after a use; else the shortest of two or three gaps.
+    /// The length of a skill's cooldown on this character in seconds (by the variant of its last use), null while not known: the tenth shortest of its last
+    /// gaps of more than 2 s (at least four), at most the table's; else the client's table; else the game's first number after a use; else the shortest of two
+    /// or three gaps.
     /// </summary>
     public static double? Length(int skillId)
     {
@@ -375,15 +386,18 @@ public static class Aion2Cooldowns
 
     private static double? LengthOf(int id)
     {
-        List<double> gaps = Gaps.TryGetValue(id, out List<double>? all) ? all.Where(g => g > NoCooldownSeconds).OrderBy(g => g).ToList() : new List<double>();
-        if (gaps.Count >= GapsForLength)
+        int variant = Variants.TryGetValue(id, out int v) ? v : id;
+        double? table = TableOf(variant, id);
+        List<double> gaps = Gaps.TryGetValue(variant, out List<double>? all) ? all.Where(g => g > NoCooldownSeconds).OrderBy(g => g).ToList() : new List<double>();
+        if (gaps.Count >= GapsForLength && table is not (<= NoCooldownSeconds))
         {
-            return gaps[(int)(0.1 * gaps.Count)];
+            double learned = gaps[(int)(0.1 * gaps.Count)];
+            return table is double most ? Math.Min(learned, most) : learned;
         }
 
-        if (Seeds().TryGetValue(id, out double seed))
+        if (table is double length)
         {
-            return seed;
+            return length;
         }
 
         if (FirstTotals.TryGetValue(id, out double total))
@@ -481,7 +495,7 @@ public static class Aion2Cooldowns
         }
     }
 
-    /// <summary>The learned gaps per skill, for the settings.</summary>
+    /// <summary>The learned gaps per skill variant, for the settings.</summary>
     public static Dictionary<int, List<double>> LearnedGaps()
     {
         lock (Gate)
@@ -517,6 +531,7 @@ public static class Aion2Cooldowns
             LastUse.Clear();
             LastCastFrame.Clear();
             Framed.Clear();
+            Variants.Clear();
             Gaps.Clear();
             FirstTotals.Clear();
             GapsVersion++;
@@ -563,7 +578,7 @@ public static class Aion2Cooldowns
 
         var sorted = gaps.OrderBy(g => g).ToList();
         double middle = sorted[sorted.Count / 2];
-        bool none = middle < NoCooldownMiddle && !(Seeds().TryGetValue(id, out double seed) && seed > NoCooldownSeconds);
+        bool none = middle < NoCooldownMiddle && !(TableOf(Variants.TryGetValue(id, out int v) ? v : id, id) is > NoCooldownSeconds);
         if (none && Learned.Add(id))
         {
             LearnedVersion++;
@@ -611,12 +626,20 @@ public static class Aion2Cooldowns
                 return NotWorthListing.Chain;
             }
 
-            return noCooldown.Contains(id) || Learned.Contains(id) ? NotWorthListing.NoCooldown : (NotWorthListing?)null;
+            // the lists, what was learned, or the client's table for the variant in use (Judgment with the specializations 3 and 5 has none) - unless the
+            // game sent a cooldown of more than 2 s for it
+            bool none = noCooldown.Contains(id) || Learned.Contains(id)
+                || (!Timed.Contains(id) && TableOf(Variants.TryGetValue(id, out int v) ? v : id, id) is <= NoCooldownSeconds);
+            return none ? NotWorthListing.NoCooldown : null;
         }
     }
 
-    /// <summary>The lengths measured on the owner's characters (the skill lists' "cooldowns", seconds), by base id.</summary>
-    private static Dictionary<int, double> Seeds() => (_lists ??= LoadLists()).Lengths;
+    /// <summary>The client's cooldowns (the skill lists' "cooldowns", seconds): a variant's own when it differs from its skill's, else the skill's.</summary>
+    private static Dictionary<int, double> Table() => (_lists ??= LoadLists()).Lengths;
+
+    /// <summary>The client's cooldown of a variant (falling back on its skill's), null for a skill the table does not have.</summary>
+    private static double? TableOf(int variant, int id) =>
+        Table().TryGetValue(variant, out double own) ? own : Table().TryGetValue(id, out double skill) ? skill : null;
 
     private static (HashSet<int>, HashSet<int>, Dictionary<int, double>) LoadLists()
     {

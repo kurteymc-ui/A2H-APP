@@ -27,6 +27,8 @@ for (const follow of Object.values(JSON.parse(fs.readFileSync(chainsJson, 'utf8'
   }
 }
 const sorted = (s) => [...s].sort((a, b) => a - b);
-fs.writeFileSync(out, JSON.stringify({noCooldown: sorted(noCooldown), chain: sorted(chain)}) + '\n');
+// the cooldowns of the client's skill table (and the note on where they come from) are kept as they are
+const kept = fs.existsSync(out) ? JSON.parse(fs.readFileSync(out, 'utf8')) : {};
+fs.writeFileSync(out, JSON.stringify({about: kept.about, noCooldown: sorted(noCooldown), chain: sorted(chain), cooldowns: kept.cooldowns}) + '\n');
 console.log(noCooldown.size, 'skills with no cooldown,', chain.size, 'chain skills; follow-ups kept as skills of their own:',
   sorted(new Set(Object.values(JSON.parse(fs.readFileSync(chainsJson, 'utf8'))).flat().map(([n]) => base(n)).filter((n) => n >= 1e7 && standalone.has(n)))).join(', ') || 'none');

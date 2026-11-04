@@ -8625,16 +8625,16 @@
     "ko": "걸린 효과가 없습니다."
   },
   "Assist.Note": {
-    "en": "A use starts the cooldown with the skill's length on this character, learned from your own uses (stones and stats change it). When the game sends a number (a second taken off, a reset), the time follows it exactly.",
-    "de": "Ein Einsatz startet die Abklingzeit mit der Länge der Fertigkeit bei diesem Charakter, gelernt aus deinen eigenen Einsätzen (Steine und Werte ändern sie). Schickt das Spiel eine Zahl (eine Sekunde weniger, ein Zurücksetzen), folgt die Zeit ihr genau.",
-    "fr": "Une utilisation lance la recharge avec la durée de la compétence sur ce personnage, apprise de tes propres utilisations (pierres et stats la changent). Quand le jeu envoie un nombre (une seconde en moins, une remise à zéro), le temps le suit exactement.",
-    "es": "Un uso inicia el enfriamiento con la duración de la habilidad en este personaje, aprendida de tus propios usos (las piedras y estadísticas la cambian). Cuando el juego envía un número (un segundo menos, un reinicio), el tiempo lo sigue con exactitud.",
-    "ru": "Применение запускает откат с длиной навыка у этого персонажа, выученной по твоим применениям (камни и характеристики её меняют). Когда игра присылает число (минус секунда, сброс), время точно следует ему.",
-    "zh": "使用技能后，按此角色该技能的冷却时长开始计时（由你自己的使用记录得出，石头和属性会改变它）。游戏发来数值时（减少一秒、重置），时间会精确跟随。",
-    "zh-TW": "使用技能後，按此角色該技能的冷卻時長開始計時（由你自己的使用紀錄得出，石頭和屬性會改變它）。遊戲傳來數值時（減少一秒、重置），時間會精確跟隨。",
-    "pt": "Um uso inicia a recarga com a duração da habilidade neste personagem, aprendida com seus próprios usos (pedras e atributos a mudam). Quando o jogo envia um número (um segundo a menos, um reset), o tempo o segue com exatidão.",
-    "ja": "スキルを使うと、このキャラクターでの長さ（自分の使用から学習、石やステータスで変化）でクールタイムが始まります。ゲームが数値を送ったとき（1秒短縮、リセット）は、その時間に正確に合わせます。",
-    "ko": "스킬을 사용하면 이 캐릭터의 쿨타임 길이(직접 사용한 기록으로 학습, 석판과 능력치에 따라 변함)로 시작합니다. 게임이 수치를 보내면(1초 감소, 초기화) 그 시간에 정확히 맞춥니다."
+    "en": "A use starts the cooldown with the game's own length for the skill and the specializations you chose; your uses then teach it your character's exact length (cooldown reduction). When the game sends a number (a second taken off, a reset), the time follows it exactly.",
+    "de": "Ein Einsatz startet die Abklingzeit mit der Länge, die das Spiel für die Fertigkeit und deine gewählten Spezialisierungen hat; deine Einsätze lehren dann die genaue Länge deines Charakters (Abklingzeitverringerung). Schickt das Spiel eine Zahl (eine Sekunde weniger, ein Zurücksetzen), folgt die Zeit ihr genau.",
+    "fr": "Une utilisation lance la recharge avec la durée du jeu pour la compétence et les spécialisations choisies ; tes utilisations lui apprennent ensuite la durée exacte de ton personnage (réduction de recharge). Quand le jeu envoie un nombre (une seconde en moins, une remise à zéro), le temps le suit exactement.",
+    "es": "Un uso inicia el enfriamiento con la duración del juego para la habilidad y las especializaciones elegidas; tus usos le enseñan luego la duración exacta de tu personaje (reducción de enfriamiento). Cuando el juego envía un número (un segundo menos, un reinicio), el tiempo lo sigue con exactitud.",
+    "ru": "Применение запускает откат с длиной из игры для навыка и выбранных специализаций; затем твои применения уточняют точную длину для твоего персонажа (сокращение отката). Когда игра присылает число (минус секунда, сброс), время точно следует ему.",
+    "zh": "使用技能后，按游戏中该技能及你所选专精的冷却时长开始计时；之后你的使用会学到你角色的准确时长（冷却缩减）。游戏发来数值时（减少一秒、重置），时间会精确跟随。",
+    "zh-TW": "使用技能後，按遊戲中該技能及你所選專精的冷卻時長開始計時；之後你的使用會學到你角色的準確時長（冷卻縮減）。遊戲傳來數值時（減少一秒、重置），時間會精確跟隨。",
+    "pt": "Um uso inicia a recarga com a duração do jogo para a habilidade e as especializações escolhidas; seus usos depois ensinam a duração exata do seu personagem (redução de recarga). Quando o jogo envia um número (um segundo a menos, um reset), o tempo o segue com exatidão.",
+    "ja": "スキルを使うと、ゲームが持つそのスキルと選んだ特化のクールタイムで始まります。その後、使用からキャラクターの正確な長さ（クールタイム短縮）を学習します。ゲームが数値を送ったとき（1秒短縮、リセット）は、その時間に正確に合わせます。",
+    "ko": "스킬을 사용하면 게임에 있는 해당 스킬과 선택한 특화의 쿨타임으로 시작합니다. 이후 사용 기록으로 캐릭터의 정확한 길이(쿨타임 감소)를 학습합니다. 게임이 수치를 보내면(1초 감소, 초기화) 그 시간에 정확히 맞춥니다."
   },
   "Assist.ShowOverlay": {
     "en": "Show as overlay",
@@ -20110,16 +20110,16 @@
     "de": "Für deine Klasse gibt es noch keine Liste idealer Zeilen: die sechs Zeilen dieses Teils, die am meisten Kampfkraft geben, jede mit ihrem Höchstwert."
   },
   "Assist.Place": {
-    "en": "Place the cooldowns (drag each skill where you want it; close ones snap together)",
-    "de": "Abklingzeiten platzieren (jede Fertigkeit dorthin ziehen, wo du sie willst; nahe rasten aneinander ein)",
-    "fr": "Placer les recharges (glisse chaque compétence où tu veux ; celles qui sont proches s'aimantent)",
-    "es": "Colocar los enfriamientos (arrastra cada habilidad donde quieras; las cercanas se encajan)",
-    "ru": "Расставить откаты (перетащи каждый навык куда нужно; близкие примагничиваются)",
-    "zh": "摆放冷却（把每个技能拖到想要的位置；靠近时会自动吸附）",
-    "zh-TW": "擺放冷卻（把每個技能拖到想要的位置；靠近時會自動吸附）",
-    "pt": "Posicionar as recargas (arraste cada habilidade para onde quiser; as próximas se encaixam)",
-    "ja": "クールタイムを配置（各スキルを好きな場所へドラッグ。近づけるとくっつきます）",
-    "ko": "쿨타임 배치 (각 스킬을 원하는 곳으로 끌어 놓기, 가까이 두면 서로 붙음)"
+    "en": "Place the cooldowns: drag each one anywhere, close ones snap together (hold Shift to move one with those snapped to it)",
+    "de": "Abklingzeiten platzieren: jede beliebig hinziehen, nahe rasten aneinander ein (mit gedrückter Umschalttaste samt den angerasteten)",
+    "fr": "Placer les recharges : glisse chacune où tu veux, les proches s'aimantent (Maj enfoncée : avec celles qui y sont collées)",
+    "es": "Colocar los enfriamientos: arrastra cada uno donde quieras, los cercanos se encajan (con Mayús, junto con los pegados a él)",
+    "ru": "Расставить откаты: перетащи каждый куда угодно, близкие примагничиваются (с Shift — вместе с прилипшими к нему)",
+    "zh": "摆放冷却：每个都可拖到任意位置，靠近时自动吸附（按住 Shift 可连同吸附在它上面的一起移动）",
+    "zh-TW": "擺放冷卻：每個都可拖到任意位置，靠近時自動吸附（按住 Shift 可連同吸附在它上面的一起移動）",
+    "pt": "Posicionar as recargas: arraste cada uma para onde quiser, as próximas se encaixam (com Shift, junto com as encaixadas nela)",
+    "ja": "クールタイムを配置：それぞれ好きな場所へドラッグ、近づけるとくっつきます（Shift を押しながらで、くっついているものごと移動）",
+    "ko": "쿨타임 배치: 각각 원하는 곳으로 끌어 놓기, 가까우면 서로 붙음 (Shift를 누르고 끌면 붙어 있는 것까지 함께 이동)"
   },
   "Assist.Look": {
     "en": "Look",
@@ -20242,16 +20242,16 @@
     "ko": "다시 사용 가능하면 음성으로 알림"
   },
   "Assist.LengthTip": {
-    "en": "The cooldown's length on this character, learned from your own uses",
-    "de": "Die Länge der Abklingzeit bei diesem Charakter, aus deinen eigenen Einsätzen gelernt",
-    "fr": "La durée de la recharge sur ce personnage, apprise de tes propres utilisations",
-    "es": "La duración del enfriamiento en este personaje, aprendida de tus propios usos",
-    "ru": "Длина отката у этого персонажа, по твоим собственным применениям",
-    "zh": "此角色的冷却时长，由你自己的使用记录得出",
-    "zh-TW": "此角色的冷卻時長，由你自己的使用紀錄得出",
-    "pt": "A duração da recarga neste personagem, aprendida com seus próprios usos",
-    "ja": "このキャラクターでのクールタイムの長さ（自分の使用から学習）",
-    "ko": "이 캐릭터의 쿨타임 길이 (직접 사용한 기록으로 학습)"
+    "en": "The cooldown's length: the game's for your specializations, then what your own uses showed",
+    "de": "Die Länge der Abklingzeit: die des Spiels für deine Spezialisierungen, dann was deine Einsätze gezeigt haben",
+    "fr": "La durée de la recharge : celle du jeu pour tes spécialisations, puis ce que tes utilisations ont montré",
+    "es": "La duración del enfriamiento: la del juego para tus especializaciones, luego lo que mostraron tus usos",
+    "ru": "Длина отката: из игры для твоих специализаций, затем по твоим применениям",
+    "zh": "冷却时长：先用游戏中你所选专精的数值，之后按你的使用记录",
+    "zh-TW": "冷卻時長：先用遊戲中你所選專精的數值，之後按你的使用紀錄",
+    "pt": "A duração da recarga: a do jogo para suas especializações, depois o que seus usos mostraram",
+    "ja": "クールタイムの長さ：まず選んだ特化のゲームの値、その後は自分の使用から",
+    "ko": "쿨타임 길이: 먼저 선택한 특화의 게임 수치, 이후 직접 사용한 기록 기준"
   },
   "Assist.VoiceReady": {
     "en": "{0} ready",

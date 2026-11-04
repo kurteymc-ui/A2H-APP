@@ -293,8 +293,8 @@ public sealed class CooldownTile : Grid, ICooldownLook
 
 /// <summary>
 /// One skill's cooldown on the screen (a bar or a tile): placed on its own, anywhere; dragged close to another skill's it snaps flush against it and hangs on
-/// it, so a column of bars or a row of tiles moves as one by its first (<see cref="OverlayDocking"/>, the group "cooldowns"). Locked it lets every click
-/// through; the size is the same for all of them (the assist window).
+/// it (<see cref="OverlayDocking"/>, the group "cooldowns"). Dragged, it moves alone; with Shift held the ones hanging on it come along (a column of bars or
+/// a row of tiles by its first). Locked it lets every click through; the size is the same for all of them (the assist window).
 /// </summary>
 public sealed class CooldownSkillWindow : MovableOverlay
 {

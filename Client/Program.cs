@@ -1756,15 +1756,15 @@ internal static class Program
         Ui.ThemeManager.Apply(app, settings);
         Ui.MainWindow.Headless = true;
         var table = Aion2.Protocol.Aion2SkillNames.Load();
-        // a Templar's skill bar (made-up times): its uses start the cooldowns with the lengths of the skill lists (Taunt 23.8 s, Banner 57 s ...), the game's
-        // number for Punishment sets its time exactly; Vicious Strike (a basic attack) is never listed
+        // a Templar's skill bar (made-up times): its uses (the cast ids carry the specializations) start the cooldowns with the client's lengths (Taunt with
+        // the specialization 4 25 s, Banner 60 s ...), the game's number for Punishment sets its time exactly; Vicious Strike (a basic attack) is never listed
         int[] bar = { 12350000, 12300000, 12120000, 12430000, 12100000, 12130000, 12260000, 12230000, 12270000, 12450000, 12090000, 12010000 };
         var now = DateTime.Now;
         Aion2.Aion2Cooldowns.Reset();
-        (int Id, double Ago)[] uses = { (12350000, 19.6), (12120000, 5.3), (12100000, 6.4), (12260000, 14.2), (12230000, 18.5), (12450000, 20.1), (12090000, 4.2) };
+        (int Id, double Ago)[] uses = { (12350150, 19.6), (12120040, 5.3), (12100340, 6.4), (12260000, 14.2), (12230030, 18.5), (12450040, 20.1), (12090350, 4.2) };
         foreach ((int id, double ago) in uses)
         {
-            Aion2.Aion2Cooldowns.NoteOwnCast(id + 150, now.AddSeconds(-ago));
+            Aion2.Aion2Cooldowns.NoteOwnCast(id, now.AddSeconds(-ago));
         }
 
         Aion2.Aion2Cooldowns.Receive(new List<Aion2.CooldownEntry> { new(12090000, 12_350) }, now);
