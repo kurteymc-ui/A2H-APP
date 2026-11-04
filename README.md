@@ -31,7 +31,7 @@ A damage and healing meter for **AION 2**, made for [aion2helper.com](https://ai
 - For every piece: its soul-binding lines (skill lines too), the six ideal lines for your class on that slot, and the best piece of its kind for your race
 
 **Skill Assist**
-- Your cooldowns where you want them: every skill of your skill bar as a bar or a square of its own, placed anywhere on the screen, snapping to the others; basic attacks are left out
+- Your cooldowns where you want them: every skill of your skill bar as a bar or a square of its own, dragged anywhere on the screen, one by one or all together; while you place them a small bar at the top switches the look and the size; basic attacks are left out
 - A voice that tells you a skill is back, for the skills you pick
 - The effects on you, each with its time left
 

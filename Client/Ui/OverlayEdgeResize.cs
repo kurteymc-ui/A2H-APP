@@ -126,12 +126,24 @@ internal sealed class OverlayEdgeResize
         }
     }
 
+    /// <summary>The marks drawn light and quiet instead of orange (the effects overlay, placed together with the skills' cooldowns).</summary>
+    public void Quiet()
+    {
+        foreach (Thumb t in _handles)
+        {
+            bool corner = double.IsFinite(t.Width) && double.IsFinite(t.Height);
+            t.Template = corner ? CornerTemplate(QuietMark, QuietMarkBorder) : EdgeTemplate(t.Cursor == Cursors.SizeWE, QuietMark, QuietMarkBorder);
+        }
+    }
+
     private enum Edge { Left, Right, Top, Bottom }
 
     private static readonly Brush Mark = new SolidColorBrush(Color.FromRgb(0xFF, 0xBA, 0x42));
     private static readonly Brush MarkBorder = new SolidColorBrush(Color.FromRgb(0x0E, 0x18, 0x20));
+    private static readonly Brush QuietMark = new SolidColorBrush(Color.FromArgb(0xB4, 0xFF, 0xFF, 0xFF));
+    private static readonly Brush QuietMarkBorder = new SolidColorBrush(Color.FromArgb(0x80, 0x00, 0x00, 0x00));
 
-    private static ControlTemplate EdgeTemplate(bool vertical)
+    private static ControlTemplate EdgeTemplate(bool vertical, Brush? mark = null, Brush? markBorder = null)
     {
         var template = new ControlTemplate(typeof(Thumb));
         var grid = new FrameworkElementFactory(typeof(Grid));
@@ -139,8 +151,8 @@ internal sealed class OverlayEdgeResize
         var bar = new FrameworkElementFactory(typeof(Border));
         bar.SetValue(FrameworkElement.WidthProperty, vertical ? 4.0 : 28.0);
         bar.SetValue(FrameworkElement.HeightProperty, vertical ? 28.0 : 4.0);
-        bar.SetValue(Border.BackgroundProperty, Mark);
-        bar.SetValue(Border.BorderBrushProperty, MarkBorder);
+        bar.SetValue(Border.BackgroundProperty, mark ?? Mark);
+        bar.SetValue(Border.BorderBrushProperty, markBorder ?? MarkBorder);
         bar.SetValue(Border.BorderThicknessProperty, new Thickness(1));
         bar.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
         bar.SetValue(FrameworkElement.HorizontalAlignmentProperty, HorizontalAlignment.Center);
@@ -150,7 +162,7 @@ internal sealed class OverlayEdgeResize
         return template;
     }
 
-    private static ControlTemplate CornerTemplate()
+    private static ControlTemplate CornerTemplate(Brush? mark = null, Brush? markBorder = null)
     {
         var template = new ControlTemplate(typeof(Thumb));
         var grid = new FrameworkElementFactory(typeof(Grid));
@@ -158,8 +170,8 @@ internal sealed class OverlayEdgeResize
         var square = new FrameworkElementFactory(typeof(Border));
         square.SetValue(FrameworkElement.WidthProperty, 10.0);
         square.SetValue(FrameworkElement.HeightProperty, 10.0);
-        square.SetValue(Border.BackgroundProperty, Mark);
-        square.SetValue(Border.BorderBrushProperty, MarkBorder);
+        square.SetValue(Border.BackgroundProperty, mark ?? Mark);
+        square.SetValue(Border.BorderBrushProperty, markBorder ?? MarkBorder);
         square.SetValue(Border.BorderThicknessProperty, new Thickness(1));
         square.SetValue(Border.CornerRadiusProperty, new CornerRadius(2));
         grid.AppendChild(square);

@@ -8,8 +8,8 @@ namespace AionDPS.Ui;
 /// <summary>
 /// The assist window (Tools menu, Skill Assist): two tabs, Cooldowns and Buffs, each with its switches and its list (an <see cref="AssistPanel"/>) of the
 /// local player's cooldowns or the effects on him. Cooldowns (4 November 2026): every skill on the skill bar, ticked to be shown on the screen - each where
-/// the player puts it, snapping to the others (<see cref="CooldownSkillWindow"/>) - and to be said out loud when it is back; the look (bars or tiles), the
-/// size, the bars' width and the voice's volume. The tab chosen last opens again. Built in code, in the look of the other windows.
+/// the player puts it, alone or all of them together (<see cref="CooldownSkillWindow"/>) - and to be said out loud when it is back; the look (bars or
+/// squares), the size, the bars' width and the voice's volume. The tab chosen last opens again. Built in code, in the look of the other windows.
 /// </summary>
 public sealed class AssistWindow : Window
 {
@@ -21,7 +21,10 @@ public sealed class AssistWindow : Window
     private readonly DockPanel _cooldownsPage = new();
     private readonly DockPanel _buffsPage = new();
     private readonly List<CheckBox> _lockBoxes = new();
+    private readonly List<RadioButton> _lookButtons = new();
     private readonly CooldownVoice _voiceTest = new();
+    private CheckBox? _togetherBox;
+    private Slider? _sizeSlider;
 
     /// <summary>The tabs' names in the settings (<see cref="MeterSettings.AssistTab"/>) and for the tools window's size per tab.</summary>
     public const string CooldownsTab = "cooldowns", BuffsTab = "buffs";
@@ -77,9 +80,14 @@ public sealed class AssistWindow : Window
         var cooldownSwitches = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
         cooldownSwitches.Children.Add(Switch(loc["Assist.ShowCooldownsOverlay"], settings.ShowAssistOverlay, on => Change(s => s.ShowAssistOverlay = on)));
         cooldownSwitches.Children.Add(LockSwitch(settings, loc["Assist.Place"]));
+        _togetherBox = Switch(loc["Assist.MoveTogetherSwitch"], settings.AssistCooldownsTogether, on => Change(s => s.AssistCooldownsTogether = on));
+        _togetherBox.ToolTip = loc["Assist.MoveTogetherTip"];
+        cooldownSwitches.Children.Add(_togetherBox);
         cooldownSwitches.Children.Add(Switch(loc["Assist.ShowReady"], settings.AssistShowReady, on => Change(s => s.AssistShowReady = on)));
         cooldownSwitches.Children.Add(LookRow(settings));
-        cooldownSwitches.Children.Add(SliderRow(loc["Assist.Size"], 0.6, 2.0, settings.AssistCooldownScale, v => $"{v * 100:0} %", v => Change(s => s.AssistCooldownScale = Math.Round(v, 2))));
+        DockPanel size = SliderRow(loc["Assist.Size"], 0.6, 2.0, settings.AssistCooldownScale, v => $"{v * 100:0} %", v => Change(s => s.AssistCooldownScale = Math.Round(v, 2)));
+        _sizeSlider = size.Children.OfType<Slider>().FirstOrDefault();
+        cooldownSwitches.Children.Add(size);
         cooldownSwitches.Children.Add(SliderRow(loc["Assist.BarWidth"], 110, 320, settings.AssistBarWidth, v => $"{v:0}", v => Change(s => s.AssistBarWidth = Math.Round(v))));
         var volume = SliderRow(loc["Assist.VoiceVolume"], 0, 100, settings.AssistVoiceVolume, v => $"{v:0} %", v => Change(s => s.AssistVoiceVolume = (int)Math.Round(v)));
         var test = new Button { Content = loc["Assist.VoiceTest"], Padding = new Thickness(10, 1, 10, 1), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
@@ -124,7 +132,12 @@ public sealed class AssistWindow : Window
             shown.Refresh(_directory());
         };
         _tick.Start();
-        Closed += (_, _) => _tick.Stop();
+        AssistController.EditBarChanged += FromEditBar; // the bar at the top of the screen changed the look, the size, together or Done
+        Closed += (_, _) =>
+        {
+            _tick.Stop();
+            AssistController.EditBarChanged -= FromEditBar;
+        };
         ShowTab(settings.AssistTab == BuffsTab ? BuffsTab : CooldownsTab, remember: false);
     }
 
@@ -199,6 +212,35 @@ public sealed class AssistWindow : Window
         page.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list });
     }
 
+    /// <summary>Shows what the bar at the top of the screen (while placing) changed.</summary>
+    private void FromEditBar()
+    {
+        MeterSettings s = MeterSettings.Load();
+        foreach (CheckBox box in _lockBoxes)
+        {
+            box.IsChecked = !s.AssistOverlayLocked;
+        }
+
+        if (_togetherBox is not null)
+        {
+            _togetherBox.IsChecked = s.AssistCooldownsTogether;
+        }
+
+        foreach (RadioButton button in _lookButtons)
+        {
+            bool tiles = Equals(button.Tag, CooldownArt.Tiles);
+            if (tiles == (s.AssistCooldownStyle == CooldownArt.Tiles) && button.IsChecked != true)
+            {
+                button.IsChecked = true;
+            }
+        }
+
+        if (_sizeSlider is not null && Math.Abs(_sizeSlider.Value - s.AssistCooldownScale) > 0.001)
+        {
+            _sizeSlider.Value = Math.Clamp(s.AssistCooldownScale, _sizeSlider.Minimum, _sizeSlider.Maximum);
+        }
+    }
+
     /// <summary>"Place them": one setting for the cooldowns and the effects, on both tabs (the two boxes follow each other).</summary>
     private CheckBox LockSwitch(MeterSettings settings, string text)
     {
@@ -215,7 +257,7 @@ public sealed class AssistWindow : Window
     }
 
     /// <summary>The look of the cooldowns and the effects: bars or tiles (two buttons, the chosen one marked).</summary>
-    private static UIElement LookRow(MeterSettings settings)
+    private UIElement LookRow(MeterSettings settings)
     {
         LocalizationManager loc = LocalizationManager.Instance;
         var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
@@ -226,11 +268,12 @@ public sealed class AssistWindow : Window
         foreach ((string look, string name) in new[] { (CooldownArt.Bars, loc["Assist.LookBars"]), (CooldownArt.Tiles, loc["Assist.LookTiles"]) })
         {
             var button = new RadioButton { Content = name, GroupName = "assistLook", IsChecked = (settings.AssistCooldownStyle == CooldownArt.Tiles) == (look == CooldownArt.Tiles),
-                Margin = new Thickness(0, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
+                Margin = new Thickness(0, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center, Tag = look };
             button.SetResourceReference(ForegroundProperty, "Brush.Text");
             string chosen = look;
             button.Checked += (_, _) => Change(s => s.AssistCooldownStyle = chosen);
             buttons.Add(button);
+            _lookButtons.Add(button);
             row.Children.Add(button);
         }
 
@@ -278,11 +321,12 @@ public sealed class AssistWindow : Window
         return box;
     }
 
-    /// <summary>Changes one setting in the file; the overlay's controller reads it within a second.</summary>
+    /// <summary>Changes one setting in the file; the overlays' controller reads it at its next tick.</summary>
     private static void Change(Action<MeterSettings> apply)
     {
         MeterSettings settings = MeterSettings.Load();
         apply(settings);
         settings.Save();
+        AssistController.AskReload();
     }
 }

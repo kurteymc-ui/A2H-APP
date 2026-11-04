@@ -20,8 +20,7 @@ public sealed class OverlayDock
 /// <summary>
 /// Placing overlays on a grid and docking them to each other (two switches in the settings). While an overlay is dragged its place snaps to the grid and,
 /// close to another overlay, flush against its edge; letting go there docks it. A docked overlay follows its parent: when the parent is moved or changes its
-/// size (also by itself, when its content grows) the docked ones keep their place at its side. Dragging a docked overlay away undocks it. The skills'
-/// cooldowns (a group) always snap and dock; one of them dragged moves alone, with Shift held together with those hanging on it.
+/// size (also by itself, when its content grows) the docked ones keep their place at its side. Dragging a docked overlay away undocks it.
 /// </summary>
 public static class OverlayDocking
 {
@@ -47,17 +46,6 @@ public static class OverlayDocking
     }
 
     private sealed record Entry(Window Window, Action Save);
-
-    /// <summary>Overlays of a group (the skills' cooldowns) snap to and dock on each other whatever the two switches say: they are made to be laid out together.</summary>
-    private static readonly Dictionary<string, string> Groups = new();
-
-    /// <summary>Puts an overlay into a group (by its title): it snaps to and docks on the others of the group always.</summary>
-    public static void JoinGroup(Window window, string group) => Groups[window.Title] = group;
-
-    private static bool SameGroup(string a, string b) => Groups.TryGetValue(a, out string? ga) && Groups.TryGetValue(b, out string? gb) && ga == gb;
-
-    /// <summary>Whether the two overlays may dock: the switch is on, or they are of one group.</summary>
-    private static bool MayDock(MeterSettings s, string a, string b) => s.OverlayDocking || SameGroup(a, b);
 
     [StructLayout(LayoutKind.Sequential)]
     private struct Rect { public int Left, Top, Right, Bottom; }
@@ -102,10 +90,6 @@ public static class OverlayDocking
                 if (msg == WM_ENTERSIZEMOVE)
                 {
                     _dragging = true;
-                    if (Groups.ContainsKey(window.Title) && (GetAsyncKeyState(VK_SHIFT) & 0x8000) == 0)
-                    {
-                        LetGo(window.Title);
-                    }
                 }
                 else if (msg == WM_MOVING)
                 {
@@ -131,33 +115,8 @@ public static class OverlayDocking
         }
     }
 
-    [DllImport("user32.dll")]
-    private static extern short GetAsyncKeyState(int key);
-
-    private const int VK_SHIFT = 0x10;
-
-    /// <summary>
-    /// A box of a group (a skill's cooldown) is dragged on its own: the boxes hanging on it stay where they are, so every box goes wherever it is put. With
-    /// Shift held they come along (the whole column, dragged by its first box).
-    /// </summary>
-    private static void LetGo(string title)
-    {
-        var s = MeterSettings.Load();
-        var children = s.OverlayDocks.Where(kv => kv.Value.Parent == title).Select(kv => kv.Key).ToList();
-        if (children.Count == 0)
-        {
-            return;
-        }
-
-        foreach (string child in children)
-        {
-            s.OverlayDocks.Remove(child);
-        }
-
-        s.Save();
-        _cache = s;
-        _cacheAt = DateTime.UtcNow;
-    }
+    /// <summary>An overlay leaves again: it neither snaps nor docks, and nothing docks to it (a skill's cooldown, placed by its own drag).</summary>
+    public static void Detach(Window window) => Windows.Remove(window.Title);
 
     private static Rect2 Bounds(Window w) => new(w.Left, w.Top, w.ActualWidth, w.ActualHeight);
 
@@ -172,8 +131,7 @@ public static class OverlayDocking
     private static void Snap(Window window, IntPtr lParam)
     {
         var s = Current();
-        bool grouped = Groups.ContainsKey(window.Title);
-        if (!s.OverlayGridSnap && !s.OverlayDocking && !grouped)
+        if (!s.OverlayGridSnap && !s.OverlayDocking)
         {
             return;
         }
@@ -192,12 +150,12 @@ public static class OverlayDocking
         double x = tl.X, y = tl.Y, w = br.X - tl.X, h = br.Y - tl.Y;
         bool snappedX = false, snappedY = false;
 
-        if (s.OverlayDocking || grouped)
+        if (s.OverlayDocking)
         {
             var carried = Descendants(window.Title);
             foreach (var (title, entry) in Windows)
             {
-                if (entry.Window == window || !entry.Window.IsVisible || carried.Contains(title) || !MayDock(s, window.Title, title))
+                if (entry.Window == window || !entry.Window.IsVisible || carried.Contains(title))
                 {
                     continue;
                 }
@@ -230,7 +188,7 @@ public static class OverlayDocking
             }
         }
 
-        if (s.OverlayGridSnap && !grouped)
+        if (s.OverlayGridSnap)
         {
             double cell = Math.Clamp(s.OverlayGridSize, 5, 200);
             if (!snappedX) { x = Math.Round(x / cell) * cell; }
@@ -253,14 +211,14 @@ public static class OverlayDocking
         var s = MeterSettings.Load();
         string title = window.Title;
         s.OverlayDocks.Remove(title);
-        if (s.OverlayDocking || Groups.ContainsKey(title))
+        if (s.OverlayDocking)
         {
             var carried = Descendants(title);
             var me = Bounds(window);
             const double tol = 3;
             foreach (var (otherTitle, entry) in Windows)
             {
-                if (entry.Window == window || !entry.Window.IsVisible || carried.Contains(otherTitle) || !MayDock(s, title, otherTitle))
+                if (entry.Window == window || !entry.Window.IsVisible || carried.Contains(otherTitle))
                 {
                     continue;
                 }
@@ -319,7 +277,7 @@ public static class OverlayDocking
         }
 
         var s = Current();
-        if ((!s.OverlayDocking && !Groups.ContainsKey(title)) || s.OverlayDocks.Count == 0)
+        if (!s.OverlayDocking || s.OverlayDocks.Count == 0)
         {
             return;
         }
@@ -372,7 +330,7 @@ public static class OverlayDocking
 
                 foreach (var (child, dock) in s.OverlayDocks)
                 {
-                    if (dock.Parent != parent || !MayDock(s, parent, child) || !done.Add(child) || !Windows.TryGetValue(child, out Entry? c))
+                    if (dock.Parent != parent || !done.Add(child) || !Windows.TryGetValue(child, out Entry? c))
                     {
                         continue;
                     }

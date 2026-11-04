@@ -19,6 +19,11 @@ public sealed class AssistOverlayWindow : MovableOverlay
     {
         Panel.Part = effects ? AssistPart.Effects : AssistPart.Cooldowns;
         Flush();
+        // placed together with the skills' cooldowns, so as quiet as they are: a faint light outline and light marks, no orange (4 November 2026)
+        UnlockedBorder = new SolidColorBrush(Color.FromArgb(0x59, 0xFF, 0xFF, 0xFF));
+        UnlockedBackground = new SolidColorBrush(Color.FromArgb(0x26, 0x00, 0x00, 0x00));
+        QuietHandles();
+        ApplyLocked(IsLocked);
         Body = new Grid { Children = { Panel } }; // no box around it (4 November 2026: the backdrop was in the way): the bars and pictures carry their own
     }
 
@@ -83,9 +88,10 @@ public sealed class AssistOverlayWindow : MovableOverlay
 
 /// <summary>
 /// Runs the skills' cooldowns and the effects overlay: eight times a second. Every skill on the skill bar (its cooldown known or not yet) gets a window of its
-/// own (<see cref="CooldownSkillWindow"/>), placed where the player put it; the effects are one overlay. Shown only while the game is in front (never on the
-/// desktop); unlocked, every ticked skill shows (also when ready) to be placed. Also keeps what the cooldowns learned in the settings and says the skills
-/// ticked for it when they come back.
+/// own (<see cref="CooldownSkillWindow"/>), placed where the player put it - a column of bars or a row of squares until then; the effects are one overlay.
+/// Shown only while the game is in front (never on the desktop). Unlocked (placing them, as a game's interface editor): every ticked skill shows, also when
+/// ready and also with the assist window in front, with a small bar at the top of the screen for the look, moving together, the size and Done. Also keeps
+/// what the cooldowns learned in the settings and says the skills ticked for it when they come back.
 /// </summary>
 public sealed class AssistController : IDisposable
 {
@@ -98,6 +104,11 @@ public sealed class AssistController : IDisposable
     private DateTime _settingsAt = DateTime.UtcNow;
     private HashSet<int> _hidden = new();
     private int _placesSeen = PlacesVersion;
+    private CooldownEditBar? _editBar;
+
+    /// <summary>The look, size and bar width the windows were last laid out with: a change rearranges them (the arrangement kept, scaled).</summary>
+    private string _laidStyle = "";
+    private double _laidScale, _laidWidth;
 
     /// <summary>The <see cref="Aion2Cooldowns.LearnedVersion"/>, <see cref="Aion2Cooldowns.KnownVersion"/> and <see cref="Aion2Cooldowns.GapsVersion"/> the
     /// settings have.</summary>
@@ -106,18 +117,47 @@ public sealed class AssistController : IDisposable
     /// <summary>Counts every "reset places" of the cooldowns: the windows are made again at their first places.</summary>
     public static int PlacesVersion { get; private set; }
 
-    /// <summary>Every skill's cooldown back at its first place (one column of bars or one row of tiles, hanging together).</summary>
+    /// <summary>Every skill's cooldown back at its first place (one column of bars, one row of squares).</summary>
     public static void ResetCooldownPlaces()
     {
         var s = MeterSettings.Load();
         s.AssistCooldownPlaces.Clear();
-        foreach (string title in s.OverlayDocks.Keys.Where(CooldownSkillWindow.IsCooldownTitle).ToList())
+        s.AssistCooldownTilePlaces.Clear();
+        DropDocks(s);
+        s.Save();
+        PlacesVersion++;
+    }
+
+    /// <summary>The cooldowns of 1.20.13 hung on each other through the overlays' docking; they are placed on their own now, so those ties go.</summary>
+    private static bool DropDocks(MeterSettings s)
+    {
+        var titles = s.OverlayDocks.Where(kv => CooldownSkillWindow.IsCooldownTitle(kv.Key) || CooldownSkillWindow.IsCooldownTitle(kv.Value?.Parent)).Select(kv => kv.Key).ToList();
+        foreach (string title in titles)
         {
             s.OverlayDocks.Remove(title);
         }
 
+        return titles.Count > 0;
+    }
+
+    /// <summary>Raised when the bar at the top changed a setting (the look, together, the size, Done): the assist window shows it too.</summary>
+    public static event Action? EditBarChanged;
+
+    private static bool _reloadAsked;
+
+    /// <summary>The assist window changed a setting: read again at the next tick (an eighth of a second), not up to a second later.</summary>
+    public static void AskReload() => _reloadAsked = true;
+
+    /// <summary>Changes the settings now (the bar at the top while placing): saved, and taken at once.</summary>
+    private void Change(Action<MeterSettings> apply)
+    {
+        var s = MeterSettings.Load();
+        apply(s);
         s.Save();
-        PlacesVersion++;
+        _settings = s;
+        _settingsAt = DateTime.UtcNow;
+        _hidden = s.AssistOverlayHidden.ToHashSet();
+        EditBarChanged?.Invoke();
     }
 
     public AssistController(Func<Aion2EntityDirectory?> directory)
@@ -129,6 +169,11 @@ public sealed class AssistController : IDisposable
         _learnedSaved = Aion2Cooldowns.LearnedVersion;
         _knownSaved = Aion2Cooldowns.KnownVersion;
         _gapsSaved = Aion2Cooldowns.GapsVersion;
+        if (DropDocks(_settings))
+        {
+            _settings.Save();
+        }
+
         _timer.Tick += (_, _) => Tick();
         _timer.Start();
     }
@@ -140,12 +185,18 @@ public sealed class AssistController : IDisposable
         {
             w.RaiseToFront();
         }
+
+        if (_editBar is { IsVisible: true })
+        {
+            NativeOverlay.KeepOnTop(new System.Windows.Interop.WindowInteropHelper(_editBar).Handle); // over the cooldowns it places
+        }
     }
 
     public void Dispose()
     {
         _timer.Stop();
         _effects?.Close();
+        _editBar?.Close();
         foreach (CooldownSkillWindow w in _skills.Values)
         {
             w.Close();
@@ -156,8 +207,9 @@ public sealed class AssistController : IDisposable
 
     private void Tick()
     {
-        if ((DateTime.UtcNow - _settingsAt).TotalSeconds >= 1)
+        if (_reloadAsked || (DateTime.UtcNow - _settingsAt).TotalSeconds >= 1)
         {
+            _reloadAsked = false;
             _settings = MeterSettings.Load();
             _settingsAt = DateTime.UtcNow;
             _hidden = _settings.AssistOverlayHidden.ToHashSet();
@@ -208,13 +260,18 @@ public sealed class AssistController : IDisposable
             changed = true;
         }
 
+        if (DropDocks(_settings))
+        {
+            changed = true; // a tie to a skill's cooldown came back (written by an older version): gone again
+        }
+
         if (changed)
         {
             _settings.Save();
         }
     }
 
-    /// <summary>The skills' windows: the skills on the bar (else those known to have a cooldown) that are ticked; a new one goes after the last one shown.</summary>
+    /// <summary>The skills' windows: the skills on the bar (else those known to have a cooldown) that are ticked, each where it was put.</summary>
     private void RunSkills(bool inGame)
     {
         Aion2EntityDirectory? dir = _directory();
@@ -232,39 +289,42 @@ public sealed class AssistController : IDisposable
             }
 
             _skills.Clear();
+            _laidStyle = "";
         }
 
-        if (!_settings.ShowAssistOverlay || !inGame)
+        bool placing = !_settings.AssistOverlayLocked;
+        if (!_settings.ShowAssistOverlay || (!inGame && !placing))
         {
-            // hidden while the game is not in front (locked or not: never on the desktop)
+            // hidden while the game is not in front (never on the desktop) - but shown while they are being placed, also from the assist window
             foreach (CooldownSkillWindow w in _skills.Values)
             {
                 w.ShowOverlay(false);
             }
 
+            _editBar?.Hide();
             return;
         }
 
-        bool locked = _settings.AssistOverlayLocked;
         string style = _settings.AssistCooldownStyle == CooldownArt.Tiles ? CooldownArt.Tiles : CooldownArt.Bars;
         double scale = Math.Clamp(_settings.AssistCooldownScale, 0.5, 3);
         double width = Math.Clamp(_settings.AssistBarWidth, 90, 400);
-        CooldownSkillWindow? previous = null;
+        CooldownSkillWindow.Together = _settings.AssistCooldownsTogether;
+        Arrange(style, scale, width, listed);
         foreach (int id in shown)
         {
             if (!_skills.TryGetValue(id, out CooldownSkillWindow? window))
             {
-                window = Create(id, previous, style, scale, width);
+                (double left, double top) = SlotOf(listed.IndexOf(id), style, scale, width);
+                window = new CooldownSkillWindow(id, left, top);
                 _skills[id] = window;
             }
 
             window.Use(style, width);
             window.UseScale(scale);
-            window.ApplyLockedIfChanged(locked);
+            window.ApplyLockedIfChanged(!placing);
             CooldownView view = Aion2Cooldowns.View(id, now);
             window.Show(view);
-            window.ShowOverlay(!locked || view.Running || _settings.AssistShowReady);
-            previous = window;
+            window.ShowOverlay(placing || view.Running || _settings.AssistShowReady);
         }
 
         foreach ((int id, CooldownSkillWindow w) in _skills)
@@ -274,29 +334,118 @@ public sealed class AssistController : IDisposable
                 w.ShowOverlay(false);
             }
         }
+
+        RunEditBar(placing && shown.Count > 0, style);
     }
 
-    /// <summary>A skill's window. Without a place of its own it goes under the bar before it (to the right of the tile before it) and hangs on it, so the
-    /// first ones moved carry the others; the first of all at the left of the screen.</summary>
-    private CooldownSkillWindow Create(int id, CooldownSkillWindow? previous, string style, double scale, double width)
+    /// <summary>
+    /// The default place of the skill at <paramref name="index"/> of the list: one column of bars, one row of squares, at the left of the screen a third of
+    /// the way down.
+    /// </summary>
+    private static (double Left, double Top) SlotOf(int index, string style, double scale, double width)
     {
-        bool tiles = style == CooldownArt.Tiles;
-        double w = (tiles ? CooldownArt.TileSize + 2 : width) * scale + 2, h = (tiles ? CooldownArt.TileSize + 2 : CooldownArt.BarHeight) * scale + 2;
-        double left = SystemParameters.WorkArea.Left + 60, top = SystemParameters.WorkArea.Top + SystemParameters.WorkArea.Height * 0.35;
-        bool placed = CooldownSkillWindow.HasPlace(_settings, id);
-        if (!placed && previous is not null && double.IsFinite(previous.Left) && double.IsFinite(previous.Top))
+        Rect area = WindowPlacement.Primary();
+        double left = area.Left + 60, top = area.Top + area.Height * 0.35;
+        index = Math.Max(0, index);
+        return style == CooldownArt.Tiles
+            ? (left + index * ((CooldownArt.TileSize + 2) * scale + 2), top)
+            : (left, top + index * ((CooldownArt.BarHeight + 2) * scale + 2));
+    }
+
+    /// <summary>
+    /// After a change of the look the windows go to that look's places (or its column or row); after a change of the size or the bars' width the
+    /// arrangement stays as it was, larger or smaller around its top left corner - the other look's places too (the bars' width counts for the bars only).
+    /// </summary>
+    private void Arrange(string style, double scale, double width, List<int> listed)
+    {
+        if (_laidStyle.Length == 0 || _skills.Count == 0)
         {
-            double pw = previous.ActualWidth > 0 ? previous.ActualWidth : w, ph = previous.ActualHeight > 0 ? previous.ActualHeight : h;
-            (left, top) = tiles ? (previous.Left + pw, previous.Top) : (previous.Left, previous.Top + ph);
-            var s = MeterSettings.Load();
-            s.OverlayDocks[CooldownSkillWindow.TitleOf(id)] = new OverlayDock { Parent = previous.Title, Side = tiles ? "Right" : "Bottom", Offset = 0 };
-            s.Save();
+            (_laidStyle, _laidScale, _laidWidth) = (style, scale, width);
+            return;
         }
 
-        var window = new CooldownSkillWindow(id, left, top);
-        window.Use(style, width);
-        window.UseScale(scale);
-        return window;
+        if (style != _laidStyle)
+        {
+            Dictionary<int, double[]> places = CooldownSkillWindow.PlacesOf(MeterSettings.Load(), style);
+            foreach ((int id, CooldownSkillWindow w) in _skills)
+            {
+                (double left, double top) = places.TryGetValue(id, out double[]? p) && p.Length == 2 ? (p[0], p[1]) : SlotOf(listed.IndexOf(id), style, scale, width);
+                w.MoveTo(left, top);
+            }
+
+            (_laidStyle, _laidScale, _laidWidth) = (style, scale, width);
+            return;
+        }
+
+        double ratio = scale / _laidScale, widthRatio = width / _laidWidth;
+        if (Math.Abs(ratio - 1) > 0.001 || Math.Abs(widthRatio - 1) > 0.002)
+        {
+            var s = MeterSettings.Load();
+            Dictionary<int, double[]> mine = CooldownSkillWindow.PlacesOf(s, style);
+            foreach ((int id, CooldownSkillWindow w) in _skills)
+            {
+                mine[id] = new[] { Math.Round(w.Left, 1), Math.Round(w.Top, 1) }; // where it is now (its slot until moved by hand)
+            }
+
+            CooldownSkillWindow.Rescale(mine, ratio * (style == CooldownArt.Bars ? widthRatio : 1), ratio);
+            string other = style == CooldownArt.Tiles ? CooldownArt.Bars : CooldownArt.Tiles;
+            CooldownSkillWindow.Rescale(CooldownSkillWindow.PlacesOf(s, other), ratio * (other == CooldownArt.Bars ? widthRatio : 1), ratio);
+            s.Save();
+            foreach ((int id, CooldownSkillWindow w) in _skills)
+            {
+                w.MoveTo(mine[id][0], mine[id][1]);
+            }
+        }
+
+        (_laidStyle, _laidScale, _laidWidth) = (style, scale, width);
+    }
+
+    /// <summary>The bar at the top of the screen while the cooldowns are being placed.</summary>
+    private void RunEditBar(bool show, string style)
+    {
+        if (!show)
+        {
+            _editBar?.Hide();
+            return;
+        }
+
+        if (_editBar is null)
+        {
+            _editBar = new CooldownEditBar(
+                look => Change(s => s.AssistCooldownStyle = look),
+                () => Change(s => s.AssistCooldownsTogether = !s.AssistCooldownsTogether),
+                () => Change(s => s.AssistCooldownScale = Math.Round(Math.Clamp(s.AssistCooldownScale - 0.1, 0.6, 2.0), 2)),
+                () => Change(s => s.AssistCooldownScale = Math.Round(Math.Clamp(s.AssistCooldownScale + 0.1, 0.6, 2.0), 2)),
+                () => Change(s => s.AssistOverlayLocked = true));
+            _editBar.SizeChanged += (_, _) => PlaceEditBar();
+        }
+
+        string state = style + "|" + _settings.AssistCooldownsTogether;
+        if (!Equals(_editBar.Tag, state))
+        {
+            _editBar.Tag = state;
+            _editBar.ShowState(style, _settings.AssistCooldownsTogether);
+        }
+
+        if (!_editBar.IsVisible)
+        {
+            _editBar.Show();
+            PlaceEditBar();
+        }
+    }
+
+    /// <summary>The bar's place: the middle of the top of the first screen.</summary>
+    private void PlaceEditBar()
+    {
+        if (_editBar is null)
+        {
+            return;
+        }
+
+        Rect area = WindowPlacement.Primary();
+        double w = _editBar.ActualWidth > 0 ? _editBar.ActualWidth : 520;
+        _editBar.Left = area.Left + (area.Width - w) / 2;
+        _editBar.Top = area.Top + 12;
     }
 
     private void Run(ref AssistOverlayWindow? window, bool on, bool inGame)
@@ -314,9 +463,10 @@ public sealed class AssistController : IDisposable
         window.Panel.SortByTime = _settings.AssistSortByTime;
         window.Panel.Look = _settings.AssistCooldownStyle == CooldownArt.Tiles ? CooldownArt.Tiles : CooldownArt.Bars;
         window.Panel.BarWidth = Math.Clamp(_settings.AssistBarWidth, 90, 400);
-        if (!inGame)
+        if (!inGame && locked)
         {
-            // Hidden while the game is not in front (locked or not: never on the desktop): the panel is not rebuilt for nobody to see.
+            // Hidden while the game is not in front (never on the desktop): the panel is not rebuilt for nobody to see. While being placed it shows, as the
+            // skills' cooldowns do.
             window.ShowOverlay(false);
             return;
         }

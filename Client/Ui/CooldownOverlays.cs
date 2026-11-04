@@ -33,17 +33,12 @@ public static class CooldownArt
     public static readonly Brush CoolFill = Frozen(Color.FromArgb(0x2E, 0xFF, 0xFF, 0xFF));
     public static readonly Brush EffectBack = Frozen(Color.FromArgb(0xB0, 0x0C, 0x0E, 0x12));
     public static readonly Brush EffectFill = Frozen(Color.FromArgb(0x55, 0x3E, 0x7C, 0xC9));
-    public static readonly Brush ReadyEdge = Frozen(Color.FromRgb(0xF5, 0xC5, 0x42));
-    public static readonly Brush CoolEdge = Frozen(Color.FromRgb(0x4C, 0xC9, 0x6A));
     public static readonly Brush Shade = Frozen(Color.FromArgb(0x5A, 0x00, 0x00, 0x00));
     public static readonly Brush Sweep = Frozen(Color.FromArgb(0x8C, 0x00, 0x00, 0x00));
     public static readonly Brush PictureEdge = Frozen(Color.FromArgb(0xB0, 0x00, 0x00, 0x00));
 
     /// <summary>Keeps light text readable on any picture or background.</summary>
     public static readonly Effect Outline = FrozenShadow(Colors.Black, 3, 1);
-
-    /// <summary>The glow around a ready tile.</summary>
-    public static readonly Effect ReadyGlow = FrozenShadow(Color.FromRgb(0xF5, 0xC5, 0x42), 9, 0.9);
 
     /// <summary>The time left as the cooldowns show it: tenths under ten seconds (1.6), whole seconds above (18), minutes from a minute on (1:35).</summary>
     public static string Time(double seconds)
@@ -215,8 +210,8 @@ public sealed class CooldownBar : Border, ICooldownLook
 }
 
 /// <summary>
-/// A skill's cooldown as a tile: its picture with a gold edge and glow while ready; cooling down darker, the part still to go swept off clockwise, a green
-/// edge and the time left in the middle (amber the last ten seconds).
+/// A skill's cooldown as a square: its picture, clean while ready; cooling down darker, the part still to go swept off clockwise and the time left in the
+/// middle (amber the last ten seconds). A thin dark edge only - no coloured frame.
 /// </summary>
 public sealed class CooldownTile : Grid, ICooldownLook
 {
@@ -224,7 +219,6 @@ public sealed class CooldownTile : Grid, ICooldownLook
     private readonly Rectangle _shade;
     private readonly ShapePath _sweep;
     private readonly TextBlock _time;
-    private readonly Border _edge;
     private bool? _running;
     private double _fraction = -1;
     private string _shown = "";
@@ -241,15 +235,13 @@ public sealed class CooldownTile : Grid, ICooldownLook
         inner.Children.Add(_shade);
         inner.Children.Add(_sweep);
         Children.Add(inner);
-        _edge = new Border { BorderThickness = new Thickness(2), CornerRadius = new CornerRadius(radius), BorderBrush = CooldownArt.ReadyEdge };
-        Children.Add(_edge);
+        Children.Add(new Border { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(radius), BorderBrush = CooldownArt.PictureEdge });
         _time = new TextBlock
         {
             Foreground = CooldownArt.Text, FontWeight = FontWeights.Bold, FontSize = Math.Round(size * 0.36), HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center, Effect = CooldownArt.Outline, Visibility = Visibility.Collapsed,
         };
         Children.Add(_time);
-        Margin = new Thickness(1);
     }
 
     public void Show(CooldownView view)
@@ -257,8 +249,6 @@ public sealed class CooldownTile : Grid, ICooldownLook
         if (_running != view.Running)
         {
             _running = view.Running;
-            _edge.BorderBrush = view.Running ? CooldownArt.CoolEdge : CooldownArt.ReadyEdge;
-            _edge.Effect = view.Running ? null : CooldownArt.ReadyGlow;
             _shade.Visibility = _time.Visibility = view.Running ? Visibility.Visible : Visibility.Collapsed;
             if (!view.Running)
             {
@@ -292,40 +282,89 @@ public sealed class CooldownTile : Grid, ICooldownLook
 }
 
 /// <summary>
-/// One skill's cooldown on the screen (a bar or a tile): placed on its own, anywhere; dragged close to another skill's it snaps flush against it and hangs on
-/// it (<see cref="OverlayDocking"/>, the group "cooldowns"). Dragged, it moves alone; with Shift held the ones hanging on it come along (a column of bars or
-/// a row of tiles by its first). Locked it lets every click through; the size is the same for all of them (the assist window).
+/// One skill's cooldown on the screen (a bar or a square), placed on its own anywhere. Locked it lets every click through. Unlocked (placing them) it is
+/// dragged with the mouse - alone, flush against the others when it comes close to one, or all of them together (<see cref="Together"/>) - and only a thin
+/// light outline under the mouse shows it can be taken. Each look keeps its own places; the size is the same for all of them (the assist window).
 /// </summary>
 public sealed class CooldownSkillWindow : MovableOverlay
 {
-    public const string Group = "cooldowns";
+    /// <summary>How close (screen units) an edge comes to another skill's before it is pulled flush against it.</summary>
+    private const double Reach = 10;
+
+    private static readonly Brush HoverEdge = FrozenBrush(Color.FromArgb(0x8C, 0xFF, 0xFF, 0xFF));
+
+    /// <summary>Every skill's window that is open: what one dragged snaps to, and what moves along with it.</summary>
+    private static readonly HashSet<CooldownSkillWindow> Live = new();
 
     private readonly Grid _host = new();
+    private readonly Border _hover = new() { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(3), IsHitTestVisible = false, Visibility = Visibility.Collapsed };
     private ICooldownLook? _look;
     private string _style = "";
     private double _width;
 
+    // a drag: where the cursor took hold (screen units), where the window was, and the others that move along
+    private bool _dragging;
+    private Point _grab;
+    private double _fromLeft, _fromTop;
+    private List<(CooldownSkillWindow Window, double Left, double Top)>? _carried;
+
     public int SkillId { get; }
 
-    /// <summary>The window's title (the key of its docking): one per skill.</summary>
+    /// <summary>Placing: one dragged moves all of them (their arrangement kept).</summary>
+    public static bool Together { get; set; }
+
+    /// <summary>Raised when a drag let go: the windows that moved (their places are saved already).</summary>
+    public static event Action? Moved;
+
+    /// <summary>The window's title: one per skill.</summary>
     public static string TitleOf(int skillId) => "Aion DPS Cooldown " + skillId.ToString(CultureInfo.InvariantCulture);
 
-    public static bool IsCooldownTitle(string title) => title.StartsWith("Aion DPS Cooldown ", StringComparison.Ordinal);
+    public static bool IsCooldownTitle(string? title) => title is not null && title.StartsWith("Aion DPS Cooldown ", StringComparison.Ordinal);
 
     public CooldownSkillWindow(int skillId, double defaultLeft, double defaultTop)
-        : base(TitleOf(skillId), new Grid(), () => Load(skillId), (left, top, _) => Save(skillId, left, top), defaultLeft, defaultTop,
+        : base(TitleOf(skillId), new Grid(), () => Load(skillId), (left, top, _) => Save(new[] { (skillId, left, top) }), defaultLeft, defaultTop,
             () => (null, null), (_, _) => { }, OverlayEdgeMode.None)
     {
         SkillId = skillId;
+        UnlockedBorder = Brushes.Transparent; // no frame around it: the bar or the square is all there is (4 November 2026: the orange frames were in the way)
+        UnlockedBackground = Brushes.Transparent;
+        NeverActivate = true; // taken and dragged without the game losing the keyboard (or a full-screen game going to the task bar)
+        OverlayDocking.Detach(this); // placed by its own drag: never docked to the other overlays, nor they to it
         Flush();
-        Body = _host; // not a Border: the overlays' opacity setting does not touch the bar's own colours
-        OverlayDocking.JoinGroup(this, Group);
+        _hover.BorderBrush = HoverEdge;
+        _host.Children.Add(_hover);
+        Body = _host;
+        ApplyLocked(IsLocked);
+        Live.Add(this);
+        Closed += (_, _) => Live.Remove(this);
     }
 
-    /// <summary>Whether the skill has a place of its own in the settings (otherwise it is put after the others).</summary>
-    public static bool HasPlace(MeterSettings s, int skillId) => s.AssistCooldownPlaces.TryGetValue(skillId, out double[]? p) && p.Length == 2;
+    /// <summary>Whether the skill has a place of its own for this look in the settings (otherwise it takes its slot in the column or the row).</summary>
+    public static bool HasPlace(MeterSettings s, int skillId, string style) => PlacesOf(s, style).TryGetValue(skillId, out double[]? p) && p.Length == 2;
 
-    /// <summary>Builds the bar or the tile (again when the look or the bar's width changed).</summary>
+    /// <summary>The places of a look: bars and squares are arranged apart.</summary>
+    public static Dictionary<int, double[]> PlacesOf(MeterSettings s, string style) => style == CooldownArt.Tiles ? s.AssistCooldownTilePlaces : s.AssistCooldownPlaces;
+
+    /// <summary>
+    /// Places for another size: the arrangement kept, its top left corner where it is, the distances from it <paramref name="sx"/> and <paramref name="sy"/>
+    /// times as long (two squares side by side stay side by side, neither apart nor overlapping).
+    /// </summary>
+    public static void Rescale(Dictionary<int, double[]> places, double sx, double sy)
+    {
+        var valid = places.Where(kv => kv.Value is { Length: 2 } p && double.IsFinite(p[0]) && double.IsFinite(p[1])).ToList();
+        if (valid.Count == 0 || !double.IsFinite(sx) || !double.IsFinite(sy) || sx <= 0 || sy <= 0)
+        {
+            return;
+        }
+
+        double x0 = valid.Min(kv => kv.Value[0]), y0 = valid.Min(kv => kv.Value[1]);
+        foreach ((int id, double[] p) in valid)
+        {
+            places[id] = new[] { Math.Round(x0 + (p[0] - x0) * sx, 1), Math.Round(y0 + (p[1] - y0) * sy, 1) };
+        }
+    }
+
+    /// <summary>Builds the bar or the square (again when the look or the bar's width changed).</summary>
     public void Use(string style, double barWidth)
     {
         if (style == _style && (style != CooldownArt.Bars || Math.Abs(barWidth - _width) < 0.5))
@@ -339,26 +378,323 @@ public sealed class CooldownSkillWindow : MovableOverlay
         UIElement element = style == CooldownArt.Tiles ? new CooldownTile(SkillId) : new CooldownBar(SkillId, barWidth);
         _look = (ICooldownLook)element;
         _host.Children.Add(element);
+        _host.Children.Add(_hover);
     }
 
     public void Show(CooldownView view) => _look?.Show(view);
 
-    private static (double?, double?, double) Load(int skillId)
+    /// <summary>Puts the window somewhere (not saved).</summary>
+    public void MoveTo(double left, double top)
     {
-        var s = MeterSettings.Load();
-        return s.AssistCooldownPlaces.TryGetValue(skillId, out double[]? p) && p.Length == 2 ? (p[0], p[1], s.AssistCooldownScale) : (null, null, s.AssistCooldownScale);
+        if (Math.Abs(Left - left) > 0.4)
+        {
+            Left = left;
+        }
+
+        if (Math.Abs(Top - top) > 0.4)
+        {
+            Top = top;
+        }
     }
 
-    private static void Save(int skillId, double left, double top)
+    // ---------- dragging (no window message loop of its own: the windows move as the cursor does, and snap here) ----------
+
+    protected override void OnMouseEnter(System.Windows.Input.MouseEventArgs e)
     {
-        if (!double.IsFinite(left) || !double.IsFinite(top))
+        base.OnMouseEnter(e);
+        _hover.Visibility = IsLocked ? Visibility.Collapsed : Visibility.Visible;
+        Cursor = IsLocked ? null : System.Windows.Input.Cursors.SizeAll;
+    }
+
+    protected override void OnMouseLeave(System.Windows.Input.MouseEventArgs e)
+    {
+        base.OnMouseLeave(e);
+        if (!_dragging)
+        {
+            _hover.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    protected override void OnPreviewMouseLeftButtonDown(System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (IsLocked)
+        {
+            base.OnPreviewMouseLeftButtonDown(e);
+            return;
+        }
+
+        e.Handled = true; // not the overlays' own drag: this one snaps to the other skills and can carry them
+        if (CursorOnScreen() is not Point at)
         {
             return;
         }
 
+        _dragging = true;
+        _grab = at;
+        _fromLeft = Left;
+        _fromTop = Top;
+        // together: all the others come along, also those not shown at the moment (unticked, or another specialization's), so the arrangement stays whole
+        _carried = Together ? Live.Where(w => w != this).Select(w => (w, w.Left, w.Top)).ToList() : null;
+        CaptureMouse();
+    }
+
+    protected override void OnPreviewMouseMove(System.Windows.Input.MouseEventArgs e)
+    {
+        base.OnPreviewMouseMove(e);
+        if (!_dragging || CursorOnScreen() is not Point at)
+        {
+            return;
+        }
+
+        double left = _fromLeft + at.X - _grab.X, top = _fromTop + at.Y - _grab.Y;
+        if (_carried is null)
+        {
+            (left, top) = Snap(left, top);
+        }
+        else
+        {
+            foreach ((CooldownSkillWindow w, double l, double t) in _carried)
+            {
+                w.MoveTo(l + left - _fromLeft, t + top - _fromTop);
+            }
+        }
+
+        MoveTo(left, top);
+    }
+
+    protected override void OnPreviewMouseLeftButtonUp(System.Windows.Input.MouseButtonEventArgs e)
+    {
+        if (!_dragging)
+        {
+            base.OnPreviewMouseLeftButtonUp(e);
+            return;
+        }
+
+        e.Handled = true;
+        EndDrag();
+    }
+
+    protected override void OnLostMouseCapture(System.Windows.Input.MouseEventArgs e)
+    {
+        base.OnLostMouseCapture(e);
+        if (_dragging)
+        {
+            EndDrag();
+        }
+    }
+
+    private void EndDrag()
+    {
+        _dragging = false;
+        if (IsMouseCaptured)
+        {
+            ReleaseMouseCapture();
+        }
+
+        _hover.Visibility = IsMouseOver && !IsLocked ? Visibility.Visible : Visibility.Collapsed;
+        var moved = new List<(int, double, double)> { (SkillId, Left, Top) };
+        if (_carried is not null)
+        {
+            moved.AddRange(_carried.Select(c => (c.Window.SkillId, c.Window.Left, c.Window.Top)));
+        }
+
+        _carried = null;
+        Save(moved);
+        Moved?.Invoke();
+    }
+
+    /// <summary>The cursor in this window's screen units (null without a screen).</summary>
+    private Point? CursorOnScreen()
+    {
+        if (!NativeCursor.TryGet(out int x, out int y) || PresentationSource.FromVisual(this)?.CompositionTarget is not { } target)
+        {
+            return null;
+        }
+
+        return target.TransformFromDevice.Transform(new Point(x, y));
+    }
+
+    /// <summary>A place pulled flush against a skill close to it (side by side or one under the other), its edges lined up with it when they nearly are.</summary>
+    private (double Left, double Top) Snap(double left, double top)
+    {
+        double w = ActualWidth, h = ActualHeight;
+        double bestX = Reach + 1, bestY = Reach + 1, x = left, y = top;
+        foreach (CooldownSkillWindow o in Live)
+        {
+            if (o == this || !o.IsVisible)
+            {
+                continue;
+            }
+
+            double ol = o.Left, ot = o.Top, or = o.Left + o.ActualWidth, ob = o.Top + o.ActualHeight;
+            bool besideY = top < ob + Reach && top + h > ot - Reach, besideX = left < or + Reach && left + w > ol - Reach;
+            if (besideY)
+            {
+                // next to it: flush right or left of it, or the same left or right edge
+                foreach (double candidate in new[] { or, ol - w, ol, or - w })
+                {
+                    double d = Math.Abs(candidate - left);
+                    if (d < bestX)
+                    {
+                        bestX = d;
+                        x = candidate;
+                    }
+                }
+            }
+
+            if (besideX)
+            {
+                // above or under it: flush under or over it, or the same top or bottom edge
+                foreach (double candidate in new[] { ob, ot - h, ot, ob - h })
+                {
+                    double d = Math.Abs(candidate - top);
+                    if (d < bestY)
+                    {
+                        bestY = d;
+                        y = candidate;
+                    }
+                }
+            }
+        }
+
+        return (bestX <= Reach ? x : left, bestY <= Reach ? y : top);
+    }
+
+    // ---------- the places ----------
+
+    private static (double?, double?, double) Load(int skillId)
+    {
         var s = MeterSettings.Load();
-        s.AssistCooldownPlaces[skillId] = new[] { Math.Round(left, 1), Math.Round(top, 1) };
-        s.Save();
+        return PlacesOf(s, s.AssistCooldownStyle).TryGetValue(skillId, out double[]? p) && p.Length == 2 ? (p[0], p[1], s.AssistCooldownScale) : (null, null, s.AssistCooldownScale);
+    }
+
+    /// <summary>Keeps where these skills are, for the look in use.</summary>
+    public static void Save(IEnumerable<(int SkillId, double Left, double Top)> places)
+    {
+        var s = MeterSettings.Load();
+        Dictionary<int, double[]> kept = PlacesOf(s, s.AssistCooldownStyle);
+        bool any = false;
+        foreach ((int id, double left, double top) in places)
+        {
+            if (double.IsFinite(left) && double.IsFinite(top))
+            {
+                kept[id] = new[] { Math.Round(left, 1), Math.Round(top, 1) };
+                any = true;
+            }
+        }
+
+        if (any)
+        {
+            s.Save();
+        }
+    }
+
+    private static SolidColorBrush FrozenBrush(Color color)
+    {
+        var brush = new SolidColorBrush(color);
+        brush.Freeze();
+        return brush;
+    }
+}
+
+/// <summary>
+/// The small bar shown at the top of the screen while the cooldowns are being placed: their look (squares or bars), whether they move together, their
+/// size, and Done (locks them again).
+/// </summary>
+public sealed class CooldownEditBar : Window
+{
+    private readonly StackPanel _row = new() { Orientation = Orientation.Horizontal };
+    private readonly Action<string> _look;
+    private readonly Action _together, _smaller, _larger, _done;
+
+    public CooldownEditBar(Action<string> look, Action together, Action smaller, Action larger, Action done)
+    {
+        _look = look;
+        _together = together;
+        _smaller = smaller;
+        _larger = larger;
+        _done = done;
+        Title = "Aion DPS Placing Bar"; // not a cooldown's title (IsCooldownTitle)
+        WindowStyle = WindowStyle.None;
+        AllowsTransparency = true;
+        Background = Brushes.Transparent;
+        ResizeMode = ResizeMode.NoResize;
+        ShowInTaskbar = false;
+        ShowActivated = false;
+        Topmost = true;
+        SizeToContent = SizeToContent.WidthAndHeight;
+        AltTabHidden.Apply(this);
+        Content = BarFrame(_row);
+        SourceInitialized += (_, _) =>
+        {
+            using var native = new NativeOverlay(this);
+            native.SetNoActivate(true); // clicked without the game losing the keyboard
+        };
+    }
+
+    /// <summary>Shows what is chosen now.</summary>
+    public void ShowState(string style, bool together)
+    {
+        _row.Children.Clear();
+        Fill(_row, style, together, _look, _together, _smaller, _larger, _done);
+    }
+
+    /// <summary>The bar's look, also for the picture the build makes.</summary>
+    public static Border BarFrame(UIElement row) => new()
+    {
+        Background = new SolidColorBrush(Color.FromArgb(0xE6, 0x12, 0x16, 0x1C)), BorderBrush = new SolidColorBrush(Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)),
+        BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(6), Child = row,
+    };
+
+    /// <summary>The bar's buttons: a hint, the look (two), together, the size (smaller, larger), done.</summary>
+    public static void Fill(System.Windows.Controls.Panel row, string style, bool together, Action<string> look, Action toggleTogether, Action smaller, Action larger, Action done)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        row.Children.Add(Words(loc["Assist.EditHint"]));
+        row.Children.Add(Gap());
+        row.Children.Add(Chip(loc["Assist.LookTiles"], style == CooldownArt.Tiles, () => look(CooldownArt.Tiles)));
+        row.Children.Add(Chip(loc["Assist.LookBars"], style != CooldownArt.Tiles, () => look(CooldownArt.Bars)));
+        row.Children.Add(Gap());
+        row.Children.Add(Chip((together ? "\uE72E  " : "\uE785  ") + loc["Assist.MoveTogether"], together, toggleTogether, glyph: true, tip: loc["Assist.MoveTogetherTip"]));
+        row.Children.Add(Gap());
+        row.Children.Add(Words(loc["Assist.Size"]));
+        row.Children.Add(Chip("\u2212", false, smaller, tip: loc["Assist.Smaller"]));
+        row.Children.Add(Chip("+", false, larger, tip: loc["Assist.Larger"]));
+        row.Children.Add(Gap());
+        row.Children.Add(Chip(loc["Assist.Done"], true, done, accent: true));
+    }
+
+    private static UIElement Gap() => new Border { Width = 1, Margin = new Thickness(6, 4, 6, 4), Background = new SolidColorBrush(Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)) };
+
+    private static UIElement Words(string text) => new TextBlock
+    {
+        Text = text, FontSize = 12.5, Margin = new Thickness(6, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(Color.FromRgb(0xA7, 0xB0, 0xBA)),
+    };
+
+    private static Border Chip(string text, bool on, Action click, bool glyph = false, string? tip = null, bool accent = false)
+    {
+        var label = new TextBlock { Text = text, FontSize = 12.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+        if (glyph)
+        {
+            // the lock's glyph from the system's icon font, the words in the normal one
+            label.Text = "";
+            label.Inlines.Add(new System.Windows.Documents.Run(text[..1]) { FontFamily = new FontFamily("Segoe MDL2 Assets") });
+            label.Inlines.Add(new System.Windows.Documents.Run(text[1..]));
+        }
+
+        label.Foreground = on ? Brushes.White : new SolidColorBrush(Color.FromRgb(0xA7, 0xB0, 0xBA));
+        var chip = new Border
+        {
+            Child = label, Padding = new Thickness(10, 4, 10, 4), Margin = new Thickness(2, 0, 2, 0), CornerRadius = new CornerRadius(5), ToolTip = tip,
+            Cursor = System.Windows.Input.Cursors.Hand,
+            Background = accent ? new SolidColorBrush(Color.FromArgb(0xCC, 0x2F, 0x7D, 0x4A)) : on ? new SolidColorBrush(Color.FromArgb(0x40, 0xFF, 0xFF, 0xFF)) : Brushes.Transparent,
+        };
+        chip.MouseLeftButtonUp += (_, e) =>
+        {
+            e.Handled = true;
+            click();
+        };
+        return chip;
     }
 }
 

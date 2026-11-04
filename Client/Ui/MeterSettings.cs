@@ -238,8 +238,14 @@ public sealed class MeterSettings
     /// <summary>How the cooldowns look: "Bars" (a row per skill: picture, name, time left or "Ready") or "Tiles" (the skill's picture with the time on it).</summary>
     public string AssistCooldownStyle { get; set; } = "Bars";
 
-    /// <summary>Where each skill's cooldown is on the screen (left, top), by skill id: every skill is placed on its own, and snaps to the others.</summary>
+    /// <summary>Where each skill's cooldown bar is on the screen (left, top), by skill id: every skill is placed on its own, and snaps to the others.</summary>
     public Dictionary<int, double[]> AssistCooldownPlaces { get; set; } = new();
+
+    /// <summary>The same for the squares: each look keeps its own arrangement (a column of bars, a row of squares).</summary>
+    public Dictionary<int, double[]> AssistCooldownTilePlaces { get; set; } = new();
+
+    /// <summary>Placing the cooldowns: on, one dragged moves all of them together (the arrangement kept); off, each moves on its own.</summary>
+    public bool AssistCooldownsTogether { get; set; }
 
     /// <summary>The size of the cooldowns (1 = a bar 22 high, a tile 40), the same for every skill.</summary>
     public double AssistCooldownScale { get; set; } = 1.0;

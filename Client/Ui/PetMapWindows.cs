@@ -270,6 +270,19 @@ public abstract class MovableOverlay : Window, IOverlayPlace
         }
     }
 
+    /// <summary>The outline while unlocked (null: the orange one of the overlays); a cooldown or the effects draw a quiet one of their own.</summary>
+    protected Brush? UnlockedBorder { get; set; }
+
+    /// <summary>The shade behind the content while unlocked (null: a light dark one).</summary>
+    protected Brush? UnlockedBackground { get; set; }
+
+    /// <summary>A click never makes it the active window, unlocked too: the game keeps the keyboard while the overlay is placed (a skill's cooldown, moved by
+    /// its own drag rather than by Windows' move loop).</summary>
+    protected bool NeverActivate { get; set; }
+
+    /// <summary>The handles for the size drawn as quiet light marks instead of the orange ones.</summary>
+    protected void QuietHandles() => _edges.Quiet();
+
     /// <summary>Locked: click-through, no outline, no grip. Unlocked: clickable and outlined, so it can be found, moved and scaled.</summary>
     public void ApplyLocked(bool locked)
     {
@@ -289,8 +302,8 @@ public abstract class MovableOverlay : Window, IOverlayPlace
 
         _edges.Show(!locked);
         _frame.Cursor = locked ? Cursors.Arrow : Cursors.SizeAll;
-        _frame.BorderBrush = locked ? Brushes.Transparent : new SolidColorBrush(Color.FromRgb(0xFF, 0xBA, 0x42));
-        _frame.Background = locked ? Brushes.Transparent : new SolidColorBrush(Color.FromArgb(0x30, 0, 0, 0));
+        _frame.BorderBrush = locked ? Brushes.Transparent : UnlockedBorder ?? new SolidColorBrush(Color.FromRgb(0xFF, 0xBA, 0x42));
+        _frame.Background = locked ? Brushes.Transparent : UnlockedBackground ?? new SolidColorBrush(Color.FromArgb(0x30, 0, 0, 0));
         ApplyClickThrough();
     }
 
@@ -301,7 +314,7 @@ public abstract class MovableOverlay : Window, IOverlayPlace
         {
             using var native = new NativeOverlay(this);
             native.SetClickThrough(_locked && !_hoverInput);
-            native.SetNoActivate(_locked && _hoverInput); // a click on a locked overlay (its buttons) never takes the keyboard from the game
+            native.SetNoActivate((_locked && _hoverInput) || NeverActivate); // a click on a locked overlay (its buttons) never takes the keyboard from the game
         }
     }
 

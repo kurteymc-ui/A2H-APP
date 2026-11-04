@@ -1781,8 +1781,17 @@ internal static class Program
         int scale = int.TryParse(Environment.GetEnvironmentVariable("AIONDPS_RENDER_SCALE"), out int sc) && sc is >= 1 and <= 4 ? sc : 1; // 2 = a sharp picture for the website
         if (language == "overlays")
         {
-            // as the game shows them, no box around them: the cooldowns as bars (a column, as placed by default) and as tiles (a row), then the effects
-            var row = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x3a, 0x45, 0x3c)) };
+            // as the game shows them, no box around them: the cooldowns as bars (a column, as placed by default) and as tiles (a row), then the effects; above
+            // them the bar shown at the top of the screen while they are being placed
+            var page = new System.Windows.Controls.StackPanel { Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x3a, 0x45, 0x3c)) };
+            var editRow = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
+            Ui.CooldownEditBar.Fill(editRow, Ui.CooldownArt.Tiles, true, _ => { }, () => { }, () => { }, () => { }, () => { });
+            var editBar = Ui.CooldownEditBar.BarFrame(editRow);
+            editBar.Margin = new System.Windows.Thickness(12, 12, 12, 0);
+            editBar.HorizontalAlignment = System.Windows.HorizontalAlignment.Left;
+            page.Children.Add(editBar);
+            var row = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal };
+            page.Children.Add(row);
             var shown = Aion2.Aion2Cooldowns.Skills(bar).Where(id => Ui.AssistPanel.Listed(id, bar)).ToList();
             var bars = new System.Windows.Controls.StackPanel { Margin = new System.Windows.Thickness(12) };
             var tiles = new System.Windows.Controls.WrapPanel { Margin = new System.Windows.Thickness(12), MaxWidth = 6 * 44, VerticalAlignment = System.Windows.VerticalAlignment.Top };
@@ -1792,7 +1801,7 @@ internal static class Program
                 var barLook = new Ui.CooldownBar(id, 170) { Margin = new System.Windows.Thickness(0, 0, 0, 2) };
                 barLook.Show(view);
                 bars.Children.Add(barLook);
-                var tile = new Ui.CooldownTile(id);
+                var tile = new Ui.CooldownTile(id) { Margin = new System.Windows.Thickness(1) }; // as placed: a unit of edge and a gap of two between them
                 tile.Show(view);
                 tiles.Children.Add(tile);
             }
@@ -1803,11 +1812,11 @@ internal static class Program
             overlayPanel.Refresh(dir);
             row.Children.Add(overlayPanel);
 
-            row.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
-            row.Arrange(new System.Windows.Rect(row.DesiredSize));
-            row.UpdateLayout();
-            var shot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(row.DesiredSize.Width) * scale, (int)Math.Ceiling(row.DesiredSize.Height) * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
-            shot.Render(row);
+            page.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+            page.Arrange(new System.Windows.Rect(page.DesiredSize));
+            page.UpdateLayout();
+            var shot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(page.DesiredSize.Width) * scale, (int)Math.Ceiling(page.DesiredSize.Height) * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
+            shot.Render(page);
             var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
             png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(shot));
             using (var file = File.Create(path))

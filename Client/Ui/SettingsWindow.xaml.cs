@@ -720,6 +720,8 @@ public partial class SettingsWindow : Window
         _settings.AssistCooldownGaps = onDisk.AssistCooldownGaps;
         _settings.AssistCooldownStyle = onDisk.AssistCooldownStyle; // the assist window's look, places, size and voices
         _settings.AssistCooldownPlaces = onDisk.AssistCooldownPlaces;
+        _settings.AssistCooldownTilePlaces = onDisk.AssistCooldownTilePlaces;
+        _settings.AssistCooldownsTogether = onDisk.AssistCooldownsTogether;
         _settings.AssistCooldownScale = onDisk.AssistCooldownScale;
         _settings.AssistBarWidth = onDisk.AssistBarWidth;
         _settings.AssistVoiceSkills = onDisk.AssistVoiceSkills;

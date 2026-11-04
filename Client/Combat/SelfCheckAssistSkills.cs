@@ -80,6 +80,7 @@ public static class SelfCheckAssistSkills
         Countdown(Check);
         Lengths(Check);
         BarAndVoice(Check);
+        Places(Check);
 
         // the effects list: the Abyss's zone states, the artifacts' faction bonus and the game's test states are left off (seen on 2026-10-31 in Reshanta);
         // a class skill's standing effect, a scroll and a boss's timed zone stay
@@ -236,6 +237,25 @@ public static class SelfCheckAssistSkills
         Aion2Cooldowns.NoteOwnCast(variant, t0.AddHours(1));
         check("the gaps kept from the last session", Aion2Cooldowns.Length(warding) == 22.2, $"{Aion2Cooldowns.Length(warding)} s");
         Aion2Cooldowns.Reset();
+    }
+
+    /// <summary>The cooldowns' places at another size: the arrangement kept around its top left corner (squares side by side neither apart nor overlapping).</summary>
+    private static void Places(Action<string, bool, string> check)
+    {
+        // two squares side by side at size 1 (42 units each, 2 apart) and one under the first; at size 1.5 a square is 63 units
+        var places = new Dictionary<int, double[]> { [1] = new[] { 60.0, 300.0 }, [2] = new[] { 104.0, 300.0 }, [3] = new[] { 60.0, 344.0 } };
+        Ui.CooldownSkillWindow.Rescale(places, 1.5, 1.5);
+        bool corner = places[1][0] == 60 && places[1][1] == 300;
+        bool beside = places[2][0] == 126 && places[2][1] == 300 && places[2][0] >= 60 + 42 * 1.5;
+        bool under = places[3][0] == 60 && places[3][1] == 366;
+        check("the places at size 1.5: the corner stays, side by side and one under the other stay so", corner && beside && under,
+            $"{places[2][0]},{places[2][1]} {places[3][0]},{places[3][1]}");
+
+        var none = new Dictionary<int, double[]>();
+        Ui.CooldownSkillWindow.Rescale(none, 2, 2);
+        var odd = new Dictionary<int, double[]> { [1] = new[] { 10.0, 20.0 } };
+        Ui.CooldownSkillWindow.Rescale(odd, double.NaN, 0);
+        check("no places, or no size: nothing changes", none.Count == 0 && odd[1][0] == 10 && odd[1][1] == 20, $"{odd[1][0]},{odd[1][1]}");
     }
 
     /// <summary>The skill bar (its slots' order) decides the list; the voice says a ticked skill once when it is back.</summary>
