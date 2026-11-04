@@ -2392,7 +2392,7 @@ public partial class MainWindow : Window
             // numbered run's iDPS must come from that same run's own window, the same
             // one-source-of-truth reasoning the PVP branch above already follows (see
             // BuildEncounterUpload's own remarks on the totalDamage/idps bug this once caused).
-            row.Dps = damageIndexed ? (_pvpOnly ? _index.PvpBySource : _index.BySource).GetValueOrDefault(sourceId)?.Rate
+            row.Dps = damageIndexed ? SharedRate(row.Damage, filteredSpan)
                 : _pvpOnly
                 ? DpsCalculator.AllDpsWallClock(pvpBySource!.GetValueOrDefault(sourceId) ?? new List<DamageEvent>(), sourceId)
                 : _selectedTargetId is not null
@@ -2864,6 +2864,22 @@ public partial class MainWindow : Window
             row.ShowDamageTaken = false;
             row.Faction = directory?.FactionOf(sourceId) ?? "";
         }
+    }
+
+    /// <summary>
+    /// A player's DPS over the window the list shows - the fight, from its first hit to its last - the same for everyone (4 November 2026: each
+    /// player's own first-to-last hit made a Chanter who buffed for five seconds before his first hit 7 % faster than he was, and his rDPS with it;
+    /// the fight's window is what the fight report, rDPS and the other meters divide by).
+    /// </summary>
+    private static double? SharedRate(long damage, (DateTime From, DateTime To)? span)
+    {
+        if (span is not (DateTime from, DateTime to))
+        {
+            return null;
+        }
+
+        double seconds = (to - from).TotalSeconds;
+        return seconds > 0 ? damage / seconds : null;
     }
 
     /// <summary>The heals by players inside a span, without those on summoned spirits (see <see cref="RefreshHealRows"/>).</summary>
