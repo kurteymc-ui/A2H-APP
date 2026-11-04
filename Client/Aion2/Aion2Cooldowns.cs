@@ -658,7 +658,7 @@ public static class Aion2Cooldowns
                 {
                     foreach (JsonProperty p in cooldowns.EnumerateObject())
                     {
-                        if (int.TryParse(p.Name, out int id) && p.Value.TryGetDouble(out double seconds) && seconds > 0)
+                        if (int.TryParse(p.Name, out int id) && p.Value.TryGetDouble(out double seconds) && seconds >= 0) // 0: a variant with none
                         {
                             lengths[id] = seconds;
                         }
