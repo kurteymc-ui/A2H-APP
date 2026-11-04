@@ -1,28 +1,23 @@
 namespace AionDPS.Combat;
 
 /// <summary>
-/// A boss fight is the boss and its adds: the hits on them from the first to the last blow on the
-/// boss count toward the fight, the way players read a boss's DPS - not the hits on the monsters
-/// around the boss that were there before it was pulled (4 November 2026, the owner: the meter
-/// counted random monsters near the boss; see Aion2EntityDirectory.IsAddOf). Kept apart from the
-/// window so the rules can be checked on their own (see SelfCheckFightClock).
+/// A boss fight is the hits on the boss (and on another boss fought with it) from the first to the last blow on the boss - also the blows the game
+/// reports just after the kill - the way the meters players compare against count a boss's DPS (5 November 2026: three fights of a party of five
+/// matched to the hit, every player). The adds and the monsters around the boss are left out: they are not the boss's DPS (4 November 2026 they were
+/// counted as part of the fight, which put every player 1-30 % above those meters). Kept apart from the window so the rules can be checked on their
+/// own (see SelfCheckFightClock).
 /// </summary>
 public static class BossFight
 {
     /// <summary>
-    /// The damage shown for one selected target. For a boss: every hit on the boss or on one of its
-    /// adds between the first and the last hit on the boss inside the run window. For anything
-    /// else: the hits on that target inside the run window, as before.
+    /// The damage shown for one selected target. For a boss: every hit on it, and on another boss, between the first and the last hit on it inside the
+    /// run window. For anything else: the hits on that target inside the run window.
     /// </summary>
     /// <param name="damage">Damage events only (no heals).</param>
     /// <param name="from">Run window start, or null for the target's whole history.</param>
     /// <param name="to">Run window end (null with <paramref name="from"/>).</param>
     /// <param name="isBoss">True for a known boss.</param>
-    /// <param name="isAdd">True for an add of the fight that began at the given time (a monster that came with the fight, not one of the place).</param>
-    /// <param name="diedAt">When a boss died (its hit points read 0), if it did: the fight ends there, and hits the game reports after it - on a
-    /// dead boss - are left out (they ran the clock past the kill; 4 Nov 2026, up to 0.37 s after Transcendent Bakarma died).</param>
-    public static List<DamageEvent> ShownHits(IEnumerable<DamageEvent> damage, int targetId, DateTime? from, DateTime? to,
-        Func<int, bool> isBoss, Func<int, DateTime, bool> isAdd, Func<int, DateTime?>? diedAt = null)
+    public static List<DamageEvent> ShownHits(IEnumerable<DamageEvent> damage, int targetId, DateTime? from, DateTime? to, Func<int, bool> isBoss)
     {
         var all = damage as IReadOnlyList<DamageEvent> ?? damage.ToList();
         var onTarget = all.Where(ev => ev.TargetObjectId == targetId && InWindow(ev, from, to)).ToList();
@@ -33,14 +28,9 @@ public static class BossFight
 
         DateTime first = onTarget.Min(ev => ev.Timestamp);
         DateTime last = onTarget.Max(ev => ev.Timestamp);
-        if (diedAt?.Invoke(targetId) is DateTime died && died >= first && died < last)
-        {
-            last = died;
-        }
-
-        var adds = new Dictionary<int, bool>(); // asked once per target, not per hit
+        var bosses = new Dictionary<int, bool>(); // asked once per target, not per hit
         return all.Where(ev => ev.Timestamp >= first && ev.Timestamp <= last
-                && (ev.TargetObjectId == targetId || (adds.TryGetValue(ev.TargetObjectId, out bool add) ? add : adds[ev.TargetObjectId] = isAdd(ev.TargetObjectId, first))))
+                && (ev.TargetObjectId == targetId || (bosses.TryGetValue(ev.TargetObjectId, out bool boss) ? boss : bosses[ev.TargetObjectId] = isBoss(ev.TargetObjectId))))
             .ToList();
     }
 

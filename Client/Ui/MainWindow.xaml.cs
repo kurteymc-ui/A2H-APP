@@ -2421,16 +2421,13 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// The hits shown for the selected target and run: for a boss, the boss and its adds over the
-    /// boss fight, not the monsters around it (see <see cref="BossFight.ShownHits"/>); for anything else, that target alone.
+    /// The hits shown for the selected target and run: for a boss, the hits on it from the first to the last blow on it, not its adds nor the monsters
+    /// around it (see <see cref="BossFight.ShownHits"/>); for anything else, that target alone.
     /// </summary>
     private List<DamageEvent> ShownFightHits(IEnumerable<DamageEvent> damage, int targetId)
     {
         var directory = _source?.Entities as Aion2.Aion2EntityDirectory;
-        return BossFight.ShownHits(damage, targetId, _selectedRunWindowStart, _selectedRunWindowEnd,
-            id => directory?.BossNpcIdOf(id) is not null,
-            (id, fightStart) => directory?.IsAddOf(id, fightStart) == true,
-            id => directory?.HitPoints.DiedAt(id));
+        return BossFight.ShownHits(damage, targetId, _selectedRunWindowStart, _selectedRunWindowEnd, id => directory?.BossNpcIdOf(id) is not null);
     }
 
     /// <summary>The shown hits that landed on the selected target itself (the boss without its
@@ -2721,17 +2718,10 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>The class prefix of a class's skill codes (11 Gladiator .. 18 Chanter, 19 Brawler), for RaidDps.</summary>
-    private static int JobPrefixOf(string? className) => className switch
-    {
-        "Gladiator" => 11, "Templar" => 12, "Assassin" => 13, "Ranger" => 14, "Sorcerer" => 15,
-        "Spiritmaster" => 16, "Cleric" => 17, "Chanter" => 18, "Brawler" => 19, _ => 0,
-    };
-
     /// <summary>
-    /// The rDPS view (Combat/RaidDps): every shown player's rDPS over the fight on screen, from the party buffs on them, the debuffs on
-    /// the boss and the extra hits party effects dealt. Worked out at most every 1.5 s (the buff log is sliced and walked), so a long
-    /// fight costs nothing between two updates; the rows keep the last values meanwhile.
+    /// The rDPS view (Combat/RaidDps): every shown player's rDPS over the fight on screen, hit by hit from the effects on them and on the boss.
+    /// Worked out at most every 1.5 s (the buff log is sliced and walked), so a long fight costs nothing between two updates; the rows keep the last
+    /// values meanwhile.
     /// </summary>
     private void UpdateRaidDps((DateTime From, DateTime To)? span)
     {
@@ -2760,31 +2750,23 @@ public partial class MainWindow : Window
             var ids = players.Select(r => r.ObjectId).ToHashSet();
             int? bossId = _selectedTargetId is int target && !directory.IsKnownPlayer(target) ? target : null;
             var (onPlayers, onBoss) = RaidDps.BuffsIn(directory.Combat.BuffsAround(from, to), ids, bossId, from, to);
-            var granted = new Dictionary<int, Dictionary<int, long>>();
-            foreach (DamageEvent ev in _aggregator.Events)
-            {
-                if (ev.IsHeal || ev.Timestamp < from || ev.Timestamp > to || !ids.Contains(ev.SourceObjectId) || RaidDps.GrantedDamageSource(ev.SkillId) is not (> 0 and int source))
-                {
-                    continue;
-                }
 
-                var bySource = granted.TryGetValue(ev.SourceObjectId, out var known) ? known : granted[ev.SourceObjectId] = new Dictionary<int, long>();
-                bySource[source] = bySource.GetValueOrDefault(source) + ev.Amount;
-            }
-
-            // every player's hits in the window, for rDPS hit by hit (milliseconds from the window's start, as the effects' spans)
+            // every player's direct hits of the fight, for rDPS hit by hit (milliseconds from the window's start, as the effects' spans): in a boss's
+            // fight the hits on the boss, as its DPS counts them; damage-over-time ticks take no part in the split
             var hitsBy = new Dictionary<int, List<(long, long)>>();
+            var bossTargets = new Dictionary<int, bool>();
+            bool OnFight(int hitTarget) => bossId is null ? !ids.Contains(hitTarget)
+                : hitTarget == bossId || (bossTargets.TryGetValue(hitTarget, out bool isBoss) ? isBoss : bossTargets[hitTarget] = directory.BossNpcIdOf(hitTarget) is not null);
             foreach (DamageEvent ev in _aggregator.Events)
             {
-                if (!ev.IsHeal && ev.Amount > 0 && ev.Timestamp >= from && ev.Timestamp <= to && ids.Contains(ev.SourceObjectId) && !ids.Contains(ev.TargetObjectId))
+                if (!ev.IsHeal && !ev.IsTick && ev.Amount > 0 && ev.Timestamp >= from && ev.Timestamp <= to && ids.Contains(ev.SourceObjectId) && OnFight(ev.TargetObjectId))
                 {
                     (hitsBy.TryGetValue(ev.SourceObjectId, out var l) ? l : hitsBy[ev.SourceObjectId] = new List<(long, long)>()).Add(((long)(ev.Timestamp - from).TotalMilliseconds, ev.Amount));
                 }
             }
 
             var participants = players.Select(r => new RaidParticipant(r.ObjectId, r.Dps ?? 0,
-                onPlayers.TryGetValue(r.ObjectId, out var buffs) ? buffs : new List<RaidBuff>(),
-                granted.TryGetValue(r.ObjectId, out var g) ? g : new Dictionary<int, long>(), JobPrefixOf(r.ClassName), hitsBy.GetValueOrDefault(r.ObjectId))).ToList();
+                onPlayers.TryGetValue(r.ObjectId, out var buffs) ? buffs : new List<RaidBuff>(), hitsBy.GetValueOrDefault(r.ObjectId))).ToList();
             Dictionary<int, RaidDpsResult> results = RaidDps.Compute(participants, onBoss, (to - from).TotalSeconds);
             // Nobody in the list buffed anyone (open world, a solo run, a group without a Chanter or Cleric): rDPS and nDPS would only repeat DPS,
             // which looked like a fault ("rDPS shows the same as DPS"). The columns then show "–" (their tips say why); the rDPS view shows each
@@ -3774,16 +3756,10 @@ public partial class MainWindow : Window
         // own fields): heals never target the boss, so they can only be scoped to this encounter by
         // time window, and that window has to be compared against DamageEvent.Timestamp's own
         // (local) DateTimeKind, not a UTC-converted copy.
+        // The fight runs from the first to the last hit on the boss, the blows the game reports just after the kill included, as the meter shows it
+        // and as the other meters count it (5 November 2026; until then it ended at the boss's death).
         DateTime windowStart = targetHits.Min(e => e.Timestamp);
         DateTime windowEnd = targetHits.Max(e => e.Timestamp);
-        // The fight ends when the boss died (its hit points read 0). Hits the game reports after that struck a dead boss - a projectile still
-        // in the air, a tick - and they ran the fight's clock past the kill (4 Nov 2026: three hits up to 0.37 s after Transcendent Bakarma
-        // died made everyone's DPS 0.4 % lower than the game's own fight time gives).
-        if ((_source?.Entities as Aion2EntityDirectory)?.HitPoints.DiedAt(targetId) is DateTime died && died >= windowStart && died < windowEnd)
-        {
-            targetHits = targetHits.Where(e => e.Timestamp <= died).ToList();
-            windowEnd = died;
-        }
 
         return BuildEncounterUpload(targetId, serverFingerprint, serverName, targetHits, windowStart, windowEnd);
     }

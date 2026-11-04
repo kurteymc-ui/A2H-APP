@@ -89,7 +89,9 @@ public static class SessionAnalyzer
             {
                 foreach ((DateTime cutFrom, DateTime cutTo, List<DamageEvent> cutHits) in SplitAtResets(fight, resets))
                 {
-                    (DateTime from, DateTime to, List<DamageEvent> hits) = AsFought(cutFrom, cutTo, cutHits, hp);
+                    // the attempt runs from the first to the last hit on the boss, the blows the game reports just after the kill included, as the meter
+                    // shows it (5 November 2026; until then it ended at the boss's death)
+                    (DateTime from, DateTime to, List<DamageEvent> hits) = (cutFrom, cutTo, cutHits);
                     if (hits.Count == 0)
                     {
                         continue;
@@ -159,29 +161,6 @@ public static class SessionAnalyzer
             HpCheckVerdict.Missing => new SessionFinding(FindingLevel.Info, "Sessions.Check.HpMissing", new object[] { label, percent, check.Lost.ToString("N0") }),
             _ => new SessionFinding(FindingLevel.Ok, "Sessions.Check.HpOk", new object[] { label, percent, check.Lost.ToString("N0") }),
         };
-    }
-
-    /// <summary>
-    /// An attempt as it was fought: it ends when the boss died - its first 0 reading after the last one above 0. Hits the game reports after that
-    /// struck a dead boss (a projectile still in the air, a tick) and ran the clock past the kill (4 Nov 2026: up to 0.37 s after Transcendent
-    /// Bakarma died).
-    /// </summary>
-    internal static (DateTime From, DateTime To, List<DamageEvent> Hits) AsFought(DateTime from, DateTime to, List<DamageEvent> hits, TargetHp? hp)
-    {
-        if (hp is null || hits.Count == 0)
-        {
-            return (from, to, hits);
-        }
-
-        var samples = hp.Samples.Where(s => s.At >= from && s.At <= to.AddSeconds(1)).ToList();
-        int lastAlive = samples.FindLastIndex(s => s.Hp > 0);
-        if (lastAlive >= 0 && lastAlive < samples.Count - 1 && samples[lastAlive + 1].At < to)
-        {
-            to = samples[lastAlive + 1].At;
-            hits = hits.Where(h => h.Timestamp <= to).ToList();
-        }
-
-        return (from, to, hits);
     }
 
     /// <summary>A boss that came back to full health under the same id, or left combat alive (a wipe), starts another attempt: the fight is cut at each

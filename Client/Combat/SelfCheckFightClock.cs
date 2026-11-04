@@ -76,73 +76,38 @@ public static class SelfCheckFightClock
         return open && closed && none && pull && keep;
     }
 
-    /// <summary>A boss fight ends when the boss died (its first 0 reading): hits reported after it struck a dead boss and are left out, on the meter, in the
-    /// upload and in the History (4 Nov 2026: three hits up to 0.37 s after Transcendent Bakarma died stretched the fight and lowered every DPS by 0.4 %).</summary>
+    /// <summary>A boss fight runs to the last hit on the boss, the blows the game reports just after the kill included, as the other meters count it
+    /// (5 November 2026: three fights of a party of five matched to the hit; until then the fight ended at the boss's death, 0.1-0.9 % short).</summary>
     private static bool EndsAtDeath()
     {
-        var hp = new Aion2HitPoints();
         var t0 = new DateTime(2026, 11, 4, 12, 21, 0);
-        hp.Note(900, t0, 1000);
-        hp.Note(900, t0.AddSeconds(50), 300);
-        hp.Note(900, t0.AddSeconds(99.19), 0);
-        hp.Note(900, t0.AddSeconds(99.5), 0); // the game repeats the 0 reading
-        bool died = hp.DiedAt(900) == t0.AddSeconds(99.19) && hp.DiedAt(901) is null;
-        var alive = new Aion2HitPoints();
-        alive.Note(902, t0, 1000);
-        alive.Note(902, t0.AddSeconds(5), 0);
-        alive.Note(902, t0.AddSeconds(30), 1000); // back for another attempt: not dead now
-        died &= alive.DiedAt(902) is null;
-
         var hits = new List<DamageEvent>
         {
             new(t0, 1, 900, 1000, IsHeal: false), new(t0.AddSeconds(99.19), 2, 900, 500, IsHeal: false),
             new(t0.AddSeconds(99.25), 1, 900, 10_000, IsHeal: false), new(t0.AddSeconds(99.56), 3, 900, 6_000, IsHeal: false),
         };
-        var shown = BossFight.ShownHits(hits, 900, null, null, id => id == 900, (_, _) => false, id => hp.DiedAt(id));
-        bool meter = shown.Count == 2 && Math.Abs(BossFight.SecondsOnTarget(shown, 900) - 99.19) < 1e-6
-            && BossFight.ShownHits(hits, 900, null, null, id => id == 900, (_, _) => false).Count == 4; // without the death: as before
-
-        var target = new AionDPS.History.TargetHp(1000, new List<HpSample> { new(t0, 1000), new(t0.AddSeconds(50), 300), new(t0.AddSeconds(99.19), 0), new(t0.AddSeconds(99.5), 0) },
-            Array.Empty<DateTime>());
-        (DateTime from, DateTime to, List<DamageEvent> kept) = AionDPS.History.SessionAnalyzer.AsFought(t0, t0.AddSeconds(99.56), hits, target);
-        bool history = from == t0 && to == t0.AddSeconds(99.19) && kept.Count == 2 && kept.Sum(h => h.Amount) == 1500;
-        // a boss still alive at the end (a wipe): nothing cut
-        var wipe = new AionDPS.History.TargetHp(1000, new List<HpSample> { new(t0, 1000), new(t0.AddSeconds(50), 300) }, Array.Empty<DateTime>());
-        history &= AionDPS.History.SessionAnalyzer.AsFought(t0, t0.AddSeconds(99.56), hits, wipe).Hits.Count == 4;
-
-        Console.WriteLine($"  -> the fight ends when the boss died: its death read from the 0 readings={died}, the meter leaves out the hits after it={meter}, so does the History={history}");
-        return died && meter && history;
+        var shown = BossFight.ShownHits(hits, 900, null, null, id => id == 900);
+        bool meter = shown.Count == 4 && Math.Abs(BossFight.SecondsOnTarget(shown, 900) - 99.56) < 1e-6;
+        Console.WriteLine($"  -> the fight runs to the last hit on the boss, those just after the kill included: {meter}");
+        return meter;
     }
 
     /// <summary>
-    /// A boss fight counts the boss and its adds, not the monsters around it (4 November 2026, the owner: the meter counted random monsters near the boss).
-    /// Made-up fight: boss 900 pulled at 0 s; monster 901 of kind 50 was there before; 902 of kind 60 appears with the pull (an add); 903 of kind 50
-    /// appears during the fight (a respawn of the place's kind); 904 of kind 70 was there a minute before.
+    /// A boss fight counts the hits on the boss (and on another boss fought with it), not its adds nor the monsters around it - the boss's DPS as the
+    /// other meters show it (5 November 2026; until then the adds counted too). Made-up fight: boss 900 pulled at 0 s; monster 901 was there before; 902
+    /// appears with the pull (an add); 905 is a second boss of the encounter.
     /// </summary>
     private static bool OnlyAdds()
     {
-        var dir = new Aion2EntityDirectory();
         var t0 = new DateTime(2026, 11, 4, 17, 0, 0);
-        void Appear(int id, int npc, double at)
-        {
-            dir.NoteSpawned(id);
-            dir.RegisterNpc(id, npc);
-            dir.NoteAppeared(id, npc, t0.AddSeconds(at));
-        }
-
-        Appear(900, 9_999_001, -120);
-        Appear(901, 50, -90);
-        Appear(904, 70, -60);
-        Appear(902, 60, 1);
-        Appear(903, 50, 20);
         var hits = new List<DamageEvent>
         {
             new(t0, 1, 900, 5000, IsHeal: false), new(t0.AddSeconds(5), 1, 901, 700, IsHeal: false), new(t0.AddSeconds(6), 1, 902, 800, IsHeal: false),
-            new(t0.AddSeconds(25), 1, 903, 900, IsHeal: false), new(t0.AddSeconds(26), 1, 904, 400, IsHeal: false), new(t0.AddSeconds(30), 1, 900, 6000, IsHeal: false),
+            new(t0.AddSeconds(25), 1, 905, 900, IsHeal: false), new(t0.AddSeconds(30), 1, 900, 6000, IsHeal: false), new(t0.AddSeconds(31), 1, 905, 400, IsHeal: false),
         };
-        var shown = BossFight.ShownHits(hits, 900, null, null, id => id == 900, dir.IsAddOf);
-        bool ok = shown.Select(h => h.TargetObjectId).Distinct().OrderBy(i => i).SequenceEqual(new[] { 900, 902 }) && shown.Sum(h => h.Amount) == 11_800;
-        Console.WriteLine($"  -> a boss fight counts the boss and its add, not the monsters around it nor a respawn of theirs: {string.Join(", ", shown.Select(h => h.TargetObjectId).Distinct())}: {ok}");
+        var shown = BossFight.ShownHits(hits, 900, null, null, id => id is 900 or 905);
+        bool ok = shown.Select(h => h.TargetObjectId).Distinct().OrderBy(i => i).SequenceEqual(new[] { 900, 905 }) && shown.Sum(h => h.Amount) == 11_900;
+        Console.WriteLine($"  -> a boss fight counts the boss (and another boss within its fight), not its adds nor the monsters around it: {string.Join(", ", shown.Select(h => h.TargetObjectId).Distinct())}: {ok}");
         return ok;
     }
 }

@@ -212,7 +212,7 @@ public partial class MainWindow
                 }
 
                 var badges = new List<SupportBadge>();
-                foreach (var effect in buffs.Where(b => !b.BossScope).GroupBy(b => b.DisplayBase))
+                foreach (var effect in buffs.Where(b => !b.BossScope && RaidDps.IsSynergy(b.DisplayBase)).GroupBy(b => b.DisplayBase))
                 {
                     double covered = Covered(effect.SelectMany(b => b.Spans));
                     int percent = (int)Math.Round(Math.Clamp(100.0 * covered / windowMs, 0, 100));

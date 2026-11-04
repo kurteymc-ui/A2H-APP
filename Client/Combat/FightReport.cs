@@ -319,24 +319,13 @@ public sealed class FightReport
         try
         {
             var (onPlayers, onBoss) = RaidDps.BuffsIn(input.Extras.Buffs, playerIds, input.BossId, start, end);
-            var granted = new Dictionary<int, Dictionary<int, long>>();
-            foreach ((int id, List<DamageEvent> list) in damageBy)
-            {
-                foreach (DamageEvent e in list)
-                {
-                    if (RaidDps.GrantedDamageSource(e.SkillId) is > 0 and int source)
-                    {
-                        var bySource = granted.TryGetValue(id, out var known) ? known : granted[id] = new Dictionary<int, long>();
-                        bySource[source] = bySource.GetValueOrDefault(source) + e.Amount;
-                    }
-                }
-            }
 
-            // every player's hits, for rDPS hit by hit (milliseconds from the fight's start, as the effects' spans)
-            List<(long, long)> HitsOf(int id) => (damageBy.GetValueOrDefault(id) ?? new List<DamageEvent>()).Where(e => !e.IsHeal && e.Amount > 0)
+            // every player's direct hits, for rDPS hit by hit (milliseconds from the fight's start, as the effects' spans); damage-over-time ticks take no
+            // part in the split
+            List<(long, long)> HitsOf(int id) => (damageBy.GetValueOrDefault(id) ?? new List<DamageEvent>()).Where(e => !e.IsHeal && !e.IsTick && e.Amount > 0)
                 .Select(e => ((long)(e.Timestamp - start).TotalMilliseconds, e.Amount)).ToList();
             var participants = lines.Select(l => new RaidParticipant(l.Player.Id, l.Dps, onPlayers.TryGetValue(l.Player.Id, out var b) ? b : new List<RaidBuff>(),
-                granted.TryGetValue(l.Player.Id, out var g) ? g : new Dictionary<int, long>(), JobPrefix(l.Player.ClassName), HitsOf(l.Player.Id))).ToList();
+                HitsOf(l.Player.Id))).ToList();
             Dictionary<int, RaidDpsResult> results = RaidDps.Compute(participants, onBoss, seconds, byBuff);
             foreach (ReportPlayerLine line in lines)
             {
@@ -482,13 +471,6 @@ public sealed class FightReport
     /// <summary>An effect the game has no name for is shown nowhere (its number says nothing to a player).</summary>
     // a name, and none of what the game puts on everybody ("Test_PLATE Equippable", the Abyss's zone states, an artifact's faction bonus: see Aion2Artwork)
     private static bool Named(string name) => name.Any(char.IsLetter) && !Aion2.Protocol.Aion2Artwork.IsWorldEffectName(name);
-
-    /// <summary>The class's job prefix of the rDPS tables (the first two digits of its skill ids); 0 when unknown.</summary>
-    private static int JobPrefix(string className) => className switch
-    {
-        "Gladiator" => 11, "Templar" => 12, "Assassin" => 13, "Ranger" => 14, "Sorcerer" => 15, "Spiritmaster" => 16, "Cleric" => 17, "Chanter" => 18,
-        _ => 0,
-    };
 
     private static void Add(Dictionary<int, List<DamageEvent>> map, int key, DamageEvent e)
     {

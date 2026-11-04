@@ -1,98 +1,74 @@
 namespace AionDPS.Combat;
 
-/// <summary>rDPS (RaidDps): the maths against a worked example, the buff spans from buff events, and the pairs that don't stack.</summary>
+/// <summary>rDPS (RaidDps): the split of a hit among the effects on it (the player's own take their share), the spans read from buff events, and the
+/// values of the effects as the meter has them.</summary>
 public static class SelfCheckRaidDps
 {
     public static bool Run()
     {
         Console.WriteLine("[selftest] rDPS:");
-        const int dps = 1, chanter = 2, cleric = 3;
-        var mantra25 = new RaidBuff(RaidDps.ChanterMantra, chanter, 100, 25, false, new List<(long, long)> { (0, 60_000) });
+        const int dps = 1, chanter = 2, templar = 3;
+        bool valuesOk = RaidDpsValues.Of(18_190_041) > 0.1 && RaidDpsValues.Of(12_780_001) > 0.05 && RaidDpsValues.Of(17_070_240) > 0.02
+            && RaidDpsValues.Of(18_250_011) == 0 && RaidDpsValues.Of(0) == 0;
+        Console.WriteLine($"  -> the effects' values are read (the Chanter's Mantra {RaidDpsValues.Of(18_190_041):P1}, the Templar's Fury {RaidDpsValues.Of(12_780_001):P1}, " +
+            $"attack speed nothing): {valuesOk}");
 
-        // Mantra at level 25, on the whole fight: +22.5 % amplification over a 174.9 % bucket, +5 % crit damage, +5 % smite, +10 % perfect,
-        // each against the default character: 1.0818 × 1.0204 × 1.0341 × 1.0076 − 1 = 15.02 %.
-        double gain = RaidDps.Gain(mantra25, BuffGainContext.Default);
-        bool gainOk = Math.Abs(gain - 0.1502) < 0.0015;
-        Console.WriteLine($"  -> Mantra L25 for the whole fight is worth {gain:P2} to its recipient (expected ~15.02 %): {gainOk}");
-
+        // One hit of 10,000 under the Chanter's Mantra (v1), the Templar's Fury (v2) and the player's own effect (v3), all on the whole 60 s: the hit
+        // would have done 10,000 / ((1+v1)(1+v2)(1+v3)) without them; the difference goes to the three in proportion to log(1 + v), the own share
+        // stays with the player.
+        var window = new List<(long, long)> { (0, 60_000) };
+        RaidBuff Effect(int code, int caster) => new(RaidDps.DisplayBase(code), caster, 100, 20, false, window, code);
+        double v1 = RaidDpsValues.Of(18_190_041), v2 = RaidDpsValues.Of(12_780_001), v3 = RaidDpsValues.Of(13_270_037);
+        var hits = new List<(long, long)> { (30_000, 10_000) };
         var result = RaidDps.Compute(new[]
         {
-            new RaidParticipant(dps, 10_000, new[] { mantra25 }, new Dictionary<int, long>(), 13),
-            new RaidParticipant(chanter, 3_000, Array.Empty<RaidBuff>(), new Dictionary<int, long>(), 18),
+            new RaidParticipant(dps, 10_000 / 60.0, new[] { Effect(18_190_041, chanter), Effect(12_780_001, templar), Effect(13_270_037, dps) }, hits),
+            new RaidParticipant(chanter, 0, Array.Empty<RaidBuff>(), new List<(long, long)>()),
+            new RaidParticipant(templar, 0, Array.Empty<RaidBuff>(), new List<(long, long)>()),
         }, Array.Empty<RaidBuff>(), 60);
-        double ndps = 10_000 / (1 + gain), rdpsChanter = 3_000 + ndps * gain;
-        bool creditOk = Math.Abs(result[dps].Rdps - ndps) < 1 && Math.Abs(result[chanter].Rdps - rdpsChanter) < 1 && Math.Abs(result[chanter].Given - ndps * gain) < 1;
-        Console.WriteLine($"  -> the DPS keeps {result[dps].Rdps:0} (nDPS), the Chanter is credited {result[chanter].Given:0}: {creditOk}");
+        double l1 = Math.Log(1 + v1), l2 = Math.Log(1 + v2), l3 = Math.Log(1 + v3), added = 10_000 * (1 - 1 / ((1 + v1) * (1 + v2) * (1 + v3)));
+        double toChanter = added * l1 / (l1 + l2 + l3) / 60, toTemplar = added * l2 / (l1 + l2 + l3) / 60;
+        bool splitOk = v3 > 0 && Math.Abs(result[chanter].Given - toChanter) < 0.01 && Math.Abs(result[templar].Given - toTemplar) < 0.01
+            && Math.Abs(result[dps].Ndps - (10_000 / 60.0 - toChanter - toTemplar)) < 0.01 && Math.Abs(result[chanter].Rdps - toChanter) < 0.01;
+        Console.WriteLine($"  -> a hit under two party effects and an own one: the Chanter gets {result[chanter].Given:0.00} DPS (expected {toChanter:0.00}), the Templar " +
+            $"{result[templar].Given:0.00} ({toTemplar:0.00}), the player keeps his own share: {splitOk}");
 
-        // Protective Light and Mantra don't stack: at equal levels Mantra wins, the Cleric's light counts only where Mantra was off.
-        var light = new RaidBuff(RaidDps.ClericProtectLight, cleric, 100, 25, false, new List<(long, long)> { (0, 60_000) });
-        var both = RaidDps.Compute(new[]
+        // An effect on the boss counts on every player's hits; a hit at the very moment an effect lands was struck before it.
+        double v4 = RaidDpsValues.Of(17_070_240);
+        var bossDebuff = new RaidBuff(RaidDps.DisplayBase(17_070_240), templar, 50, 15, true, new List<(long, long)> { (10_000, 40_000) }, 17_070_240);
+        var onBoss = RaidDps.Compute(new[]
         {
-            new RaidParticipant(dps, 10_000, new[] { mantra25, light }, new Dictionary<int, long>(), 13),
-            new RaidParticipant(chanter, 3_000, Array.Empty<RaidBuff>(), new Dictionary<int, long>(), 18),
-            new RaidParticipant(cleric, 2_000, Array.Empty<RaidBuff>(), new Dictionary<int, long>(), 17),
-        }, Array.Empty<RaidBuff>(), 60);
-        bool pairOk = both[cleric].Given < 1 && Math.Abs(both[chanter].Given - ndps * gain) < 1;
-        Console.WriteLine($"  -> overlapping Protective Light and Mantra: only the Mantra counts: {pairOk}");
+            new RaidParticipant(dps, 30_000 / 60.0, Array.Empty<RaidBuff>(), new List<(long, long)> { (10_000, 10_000), (20_000, 10_000), (50_000, 10_000) }),
+            new RaidParticipant(templar, 0, Array.Empty<RaidBuff>(), new List<(long, long)>()),
+        }, new[] { bossDebuff }, 60);
+        double expect = 10_000 * (1 - 1 / (1 + v4)) / 60;
+        bool bossOk = Math.Abs(onBoss[templar].Given - expect) < 0.01;
+        Console.WriteLine($"  -> an effect on the boss is credited on the one hit inside it ({onBoss[templar].Given:0.00} DPS, expected {expect:0.00}): {bossOk}");
 
-        // The spans: an application at 10 s for 20 s on the DPS, renewed at 25 s for 20 s more, cast at level 22: on from 10 s to 45 s
-        // of a 60 s window (58.3 %), at level 22; an effect that isn't a party buff is left out.
-        DateTime t0 = new(2026, 10, 31, 12, 0, 0);
-        int skill = RaidDps.ChanterMantra / 10_000 * 100_000 + 51; // a rank code of the Mantra family
+        // The spans: an application at 10 s for 20 s on the player, renewed at 25 s for 20 s more, at level 20: on from 10 s to 45 s of a 60 s window;
+        // the slot then taken over by another effect at 40 s (the game hands it the instance) ends it there; an effect worth nothing is left out.
+        DateTime t0 = new(2026, 11, 5, 12, 0, 0);
         var events = new List<BuffEvent>
         {
-            new(t0.AddSeconds(10), BuffKind.On, dps, 7, skill, chanter, 20_000, 22),
-            new(t0.AddSeconds(25), BuffKind.Renewed, dps, 7, skill, chanter, 20_000, 22),
-            new(t0.AddSeconds(12), BuffKind.On, dps, 8, 2_000_123, dps, 30_000, 0),
+            new(t0.AddSeconds(10), BuffKind.On, dps, 7, 18_190_041, chanter, 20_000, 20),
+            new(t0.AddSeconds(25), BuffKind.Renewed, dps, 7, 18_190_041, chanter, 20_000, 20),
+            new(t0.AddSeconds(40), BuffKind.Renewed, dps, 7, 12_780_001, templar, 20_000, 20),
+            new(t0.AddSeconds(12), BuffKind.On, dps, 8, 18_250_011, chanter, 30_000, 20),
         };
-        var (onPlayers, _) = RaidDps.BuffsIn(events, new[] { dps }, null, t0, t0.AddSeconds(60));
-        RaidBuff? read = onPlayers.TryGetValue(dps, out var list) && list.Count == 1 ? list[0] : null;
-        bool spansOk = read is { } b && b.DisplayBase == RaidDps.ChanterMantra && b.Caster == chanter && b.Level == 22 && Math.Abs(b.UptimePercent - 58.33) < 0.1;
-        Console.WriteLine($"  -> buff events become one span of the Mantra from the Chanter at level 22, {read?.UptimePercent:0.0} % of the fight: {spansOk}");
+        var (onPlayers, _) = RaidDps.BuffsIn(events, new[] { dps, chanter, templar }, null, t0, t0.AddSeconds(60));
+        var read = onPlayers.GetValueOrDefault(dps) ?? new List<RaidBuff>();
+        RaidBuff? mantra = read.Where(b => b.EffectId == 18_190_041).Cast<RaidBuff?>().FirstOrDefault();
+        RaidBuff? fury = read.Where(b => b.EffectId == 12_780_001).Cast<RaidBuff?>().FirstOrDefault();
+        bool spansOk = read.Count == 2 && mantra is { } m && m.Caster == chanter && m.Level == 20 && m.Spans.Count == 1 && m.Spans[0] == (10_000, 40_000)
+            && fury is { } f && f.Caster == templar && f.Spans[0] == (40_000, 60_000) && m.DisplayBase == RaidDps.ChanterMantra;
+        Console.WriteLine($"  -> buff events become spans per effect and caster, a slot taken over ends the first effect: {spansOk}");
 
-        // the 8-digit codes the buff frames carry for a class effect on the party (a real fight: Fury on the others 12780001, the counter 11780007)
+        // the 8-digit codes the buff frames carry for a class effect on the party fold to their family (names, the support tab)
         bool eightOk = RaidDps.DisplayBase(12_780_001) == RaidDps.GuardianFervor && RaidDps.DisplayBase(11_780_007) == RaidDps.SwordCounter
-            && RaidDps.DisplayBase(18_190_003) == RaidDps.ChanterMantra && RaidDps.DisplayBase(RaidDps.ClericEarthBlessing) == RaidDps.ClericEarthBlessing
-            && RaidDps.IsSynergy(RaidDps.DisplayBase(12_780_001))
-            // the Cleric's Earth's Blessing on the party as the buff frames carry it (Transcendent Bakarma, 4 Nov 2026: 17400038, 30 times; Earth Punishment's mark on the boss, 17400040, stays apart)
-            && RaidDps.DisplayBase(17_400_038) == RaidDps.ClericEarthBlessing && RaidDps.DisplayBase(17_400_027) == RaidDps.ClericEarthBlessing
-            && RaidDps.DisplayBase(17_400_040) != RaidDps.ClericEarthBlessing;
-        var furyEvents = new List<BuffEvent> { new(t0.AddSeconds(5), BuffKind.On, dps, 9, 12_780_001, chanter, 30_000, 15) };
-        var (furyOn, _) = RaidDps.BuffsIn(furyEvents, new[] { dps, chanter }, null, t0, t0.AddSeconds(60));
-        bool furyRead = furyOn.TryGetValue(dps, out var fl) && fl.Count == 1 && fl[0].DisplayBase == RaidDps.GuardianFervor;
-        var blessingEvents = new List<BuffEvent> { new(t0.AddSeconds(5), BuffKind.On, dps, 10, 17_400_038, chanter, 20_000, 20) };
-        var (blessOn, _) = RaidDps.BuffsIn(blessingEvents, new[] { dps, chanter }, null, t0, t0.AddSeconds(60));
-        bool blessRead = blessOn.TryGetValue(dps, out var bl) && bl.Count == 1 && bl[0].DisplayBase == RaidDps.ClericEarthBlessing && bl[0].Level == 20
-            && RaidDps.Gain(bl[0], BuffGainContext.Default) > 0;
-        furyRead &= blessRead;
-        Console.WriteLine($"  -> 8-digit party effect codes fold to their family (Fury 12780001, counter 11780007, Earth's Blessing 17400038): {eightOk}, Fury and Earth's Blessing on another player are read and priced: {furyRead}");
+            && RaidDps.DisplayBase(18_190_003) == RaidDps.ChanterMantra && RaidDps.DisplayBase(17_400_038) == RaidDps.ClericEarthBlessing
+            && RaidDps.IsSynergy(RaidDps.DisplayBase(12_780_001));
+        Console.WriteLine($"  -> 8-digit party effect codes fold to their family: {eightOk}");
 
-        // hit by hit: Mantra L25 on the first half of a 60 s fight only; ten 6,000 hits inside it and ten outside. Only the first ten are buffed: each
-        // gives 6,000 × (1 - 1/1.1502) to the Chanter; the uptime estimate would have charged all twenty hits half as much.
-        var halfMantra = mantra25 with { UptimePercent = 50, Spans = new List<(long, long)> { (0, 30_000) } };
-        var hits = Enumerable.Range(0, 10).Select(i => ((long)(1_000 + i * 2_000), 6_000L)).Concat(Enumerable.Range(0, 10).Select(i => ((long)(31_000 + i * 2_000), 6_000L))).ToList();
-        var perHit = RaidDps.Compute(new[]
-        {
-            new RaidParticipant(dps, 2_000, new[] { halfMantra }, new Dictionary<int, long>(), 13, hits),
-            new RaidParticipant(chanter, 1_000, Array.Empty<RaidBuff>(), new Dictionary<int, long>(), 18, new List<(long, long)>()),
-        }, Array.Empty<RaidBuff>(), 60);
-        double expectGiven = 10 * 6_000 * (1 - 1 / (1 + gain)) / 60;
-        bool hitOk = Math.Abs(perHit[chanter].Given - expectGiven) < 1 && Math.Abs(perHit[dps].Ndps - (2_000 - expectGiven)) < 1;
-        Console.WriteLine($"  -> hit by hit, Mantra on half the fight credits the Chanter {perHit[chanter].Given:0.0} DPS (expected {expectGiven:0.0}), the DPS keeps {perHit[dps].Ndps:0.0}: {hitOk}");
-
-        // hit by hit, the Chanter's own hits under his own Mantra (L25) and the Cleric's Light (L25) at once: the two do not stack and the Mantra wins at equal
-        // levels, so the Cleric gets nothing for them (the own Mantra used to be left out before the pair was settled, and the Cleric's Light "won");
-        // the DPS's hits under both give the Mantra's share to the Chanter and nothing to the Cleric either
-        var chanterHits = Enumerable.Range(0, 10).Select(i => ((long)(1_000 + i * 2_000), 6_000L)).ToList();
-        var ownMantra = RaidDps.Compute(new[]
-        {
-            new RaidParticipant(chanter, 1_000, new[] { mantra25, light }, new Dictionary<int, long>(), 18, chanterHits),
-            new RaidParticipant(cleric, 500, Array.Empty<RaidBuff>(), new Dictionary<int, long>(), 17, new List<(long, long)>()),
-            new RaidParticipant(dps, 2_000, new[] { mantra25, light }, new Dictionary<int, long>(), 13, chanterHits),
-        }, Array.Empty<RaidBuff>(), 60);
-        bool ownWins = ownMantra[cleric].Given < 0.01 && Math.Abs(ownMantra[chanter].Ndps - 1_000) < 0.01 && Math.Abs(ownMantra[chanter].Given - expectGiven) < 1;
-        Console.WriteLine($"  -> hit by hit, the Chanter's own Mantra wins over the Cleric's Light on his own hits: the Cleric gets {ownMantra[cleric].Given:0.0}, the Chanter keeps his hits and is credited {ownMantra[chanter].Given:0.0} for the DPS's: {ownWins}");
-
-        return gainOk && creditOk && pairOk && spansOk && eightOk && furyRead && hitOk && ownWins;
+        return valuesOk && splitOk && bossOk && spansOk && eightOk;
     }
 }
