@@ -26,6 +26,8 @@
 // too, which stays with him; the others' shares go to their casters. Damage-over-time ticks are left out of the split. nDPS = (damage - what the others'
 // effects added) / time; rDPS = nDPS + what one's own effects added to the others. Extra hits a party effect deals stay on the meter they land on.
 
+using System.IO;
+
 namespace AionDPS.Combat;
 
 /// <summary>One effect (a buff on a player or a debuff on the boss) as the model sees it: its family (display base, for names and the support tab), who cast it,
