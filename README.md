@@ -51,7 +51,7 @@ A damage and healing meter for **AION 2**, made for [aion2helper.com](https://ai
   <img src="docs/screenshots/cpcalc-gear.png" alt="CP calculator: gear and ideal lines" width="49%">
 </p>
 <p>
-  <img src="docs/screenshots/assist-overlays.png" alt="Skill Assist overlays: cooldowns and effects" width="552">
+  <img src="docs/screenshots/assist-overlays.png" alt="Skill Assist: cooldowns as bars and as squares, and the effects on you" width="664">
 </p>
 <p>
   <img src="docs/screenshots/app-home.png" alt="Home" width="49%">

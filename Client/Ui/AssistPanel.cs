@@ -251,8 +251,8 @@ public sealed class AssistPanel : StackPanel
             CooldownView view = Aion2Cooldowns.View(id, now);
             ListRow row = _skillRows[id];
             row.Tile.Show(view);
-            string length = Aion2Cooldowns.Length(id) is double l and > Aion2Cooldowns.NoCooldownSeconds ? CooldownArt.Time(l) + " s" : "";
-            row.SetStatus(view.Running ? CooldownArt.Time(view.Seconds) + " s" : loc["Assist.Ready"], view.Running);
+            string length = Aion2Cooldowns.Length(id) is double l and > Aion2Cooldowns.NoCooldownSeconds ? LengthText(l) : "";
+            row.SetStatus(view.Running ? LeftText(view.Seconds) : loc["Assist.Ready"], view.Running);
             row.SetDetail(length);
         }
 
@@ -303,6 +303,25 @@ public sealed class AssistPanel : StackPanel
     /// <summary>Whole seconds as the tiles show them: 75 as 1:15.</summary>
     private static string CooldownText(int whole) =>
         whole >= 60 ? $"{whole / 60}:{whole % 60:00}" : whole.ToString(CultureInfo.CurrentCulture);
+
+    /// <summary>The time left in the window's list: as the cooldowns show it, "s" after the seconds (3.5 s, 19 s, 1:35).</summary>
+    private static string LeftText(double seconds)
+    {
+        string text = CooldownArt.Time(seconds);
+        return text.Contains(':', StringComparison.Ordinal) ? text : text + " s";
+    }
+
+    /// <summary>A cooldown's length: tenths under a minute (23.5 s), else minutes and seconds (1:54).</summary>
+    private static string LengthText(double seconds)
+    {
+        if (seconds < 59.95)
+        {
+            return seconds.ToString("0.#", CultureInfo.CurrentCulture) + " s";
+        }
+
+        int whole = (int)Math.Round(seconds);
+        return $"{whole / 60}:{whole % 60:00}";
+    }
 
     // ---------- effects ----------
 
@@ -727,17 +746,43 @@ public sealed class AssistPanel : StackPanel
             if (voiceTip is not null)
             {
                 // a speaker: the skill is said out loud when it is back
-                Voice = new System.Windows.Controls.Primitives.ToggleButton
+                // a speaker: the skill is said out loud when it is back (on: the speaker in the accent colour; off: a muted one)
+                var glyph = new TextBlock { FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 15, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+                var voice = new System.Windows.Controls.Primitives.ToggleButton
                 {
-                    Content = new TextBlock { Text = "\uE767", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 13 }, ToolTip = voiceTip, Width = 28, Height = 24,
-                    Margin = new Thickness(10, 0, 0, 0), Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center, Cursor = System.Windows.Input.Cursors.Hand,
+                    Content = glyph, Template = PlainToggle(), Background = Brushes.Transparent, ToolTip = voiceTip, Width = 30, Height = 26,
+                    Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Cursor = System.Windows.Input.Cursors.Hand,
                 };
-                Grid.SetColumn(Voice, 4);
-                body.Children.Add(Voice);
+                void Look()
+                {
+                    bool on = voice.IsChecked == true;
+                    glyph.Text = on ? "\uE767" : "\uE74F";
+                    glyph.SetResourceReference(TextBlock.ForegroundProperty, on ? "Brush.Accent" : "Brush.TextSubtle");
+                }
+
+                voice.Checked += (_, _) => Look();
+                voice.Unchecked += (_, _) => Look();
+                Look();
+                Voice = voice;
+                Grid.SetColumn(voice, 4);
+                body.Children.Add(voice);
             }
             Grid.SetColumn(body, 1);
             Children.Add(body);
             _body = body;
+        }
+
+        /// <summary>A toggle that draws only its content (no button face): the speaker of a row.</summary>
+        private static ControlTemplate PlainToggle()
+        {
+            var face = new FrameworkElementFactory(typeof(Border));
+            face.SetValue(Border.BackgroundProperty, Brushes.Transparent);
+            face.SetValue(Border.CornerRadiusProperty, new CornerRadius(4));
+            var content = new FrameworkElementFactory(typeof(ContentPresenter));
+            content.SetValue(HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            content.SetValue(VerticalAlignmentProperty, VerticalAlignment.Center);
+            face.AppendChild(content);
+            return new ControlTemplate(typeof(System.Windows.Controls.Primitives.ToggleButton)) { VisualTree = face };
         }
 
         /// <summary>An unticked row is faded.</summary>

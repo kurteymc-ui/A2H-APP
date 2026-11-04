@@ -222,7 +222,7 @@ public sealed class AssistController : IDisposable
         var listed = Aion2Cooldowns.Skills(bar).Where(id => AssistPanel.Listed(id, bar)).ToList();
         var shown = listed.Where(id => !_hidden.Contains(id)).ToList();
         DateTime now = DateTime.Now; // the capture stamps its frames with the local clock
-        _voice.Tick(shown, _settings, now, inGame && _settings.ShowAssistOverlay);
+        _voice.Tick(listed, _settings, now, inGame); // ticked for the voice: said also when it is not on the screen
         if (PlacesVersion != _placesSeen)
         {
             _placesSeen = PlacesVersion;

@@ -227,6 +227,7 @@ public sealed class AssistWindow : Window
         {
             var button = new RadioButton { Content = name, GroupName = "assistLook", IsChecked = (settings.AssistCooldownStyle == CooldownArt.Tiles) == (look == CooldownArt.Tiles),
                 Margin = new Thickness(0, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
+            button.SetResourceReference(ForegroundProperty, "Brush.Text");
             string chosen = look;
             button.Checked += (_, _) => Change(s => s.AssistCooldownStyle = chosen);
             buttons.Add(button);
