@@ -397,7 +397,7 @@ public static class CpCalc
     private static readonly string[] PerUnitStats =
     {
         "WeaponFixingDamage", "Critical", "WeaponAccuracy", "CriticalAddDamage", "DamageRatio", "AmplifyAllDamage", "AmplifyWeaponDamage", "AmplifyCriticalDamage",
-        "CombatSpeed", "AdditionalHitRate", "Perfect", "HardHit", "PvEAmplifyDamage", "HPMax", "ArmorDefense",
+        "CombatSpeed", "AdditionalHitRate", "Perfect", "HardHit", "PvEAmplifyDamage", "HPMax", "ArmorDefense", "DecreaseDamage",
     };
 
     /// <summary>What one more point (or 1 %) of each stat Combat Power counts is worth for the character, as the calculator counts it.</summary>
@@ -493,7 +493,8 @@ public static class CpCalc
     /// frame the game sends: Attack = max attack + attack + additional attack, Accuracy with weapon accuracy, Defense with armour defense; else what the worn
     /// pieces add up to); the increases that raise each point of Attack ("Attack increase" lines + 0.1 % per point of Might and of Destruction), Critical
     /// Hit (Precision and Death), Accuracy (Precision and Freedom) and HP (Vitality and Life) - the attribute points are the frame's ids 1 to 17; the
-    /// progression factor of the character's Item Level; the factors measured on the character.
+    /// progression factor of the character's Item Level; the factors measured on the character; the offence and guard its percentages count with
+    /// (<see cref="Strength"/>; 0, the weights as they are, without the frame).
     /// </summary>
     public static CpTotals Totals(IReadOnlyDictionary<int, int>? frame, IReadOnlyList<CpPiece> pieces, CpCharacter? character = null, CpModel? model = null)
     {
@@ -503,17 +504,49 @@ public static class CpCalc
         double Pick(double fromFrame, double fromGear) => fromFrame > 0 ? fromFrame : fromGear;
         double Points(params int[] ids) => frame is null ? 0 : ids.Sum(id => Math.Max(0, frame.GetValueOrDefault(id)));
         double soulIncrease = pieces.SelectMany(p => p.Lines).Where(l => l is { Kind: CpLineKind.Soul, Stat: "DamageRatio" }).Sum(l => l.Value) / 10000;
+        double attack = Pick(F("WeaponDamage", "WeaponFixingDamage", "FixingDamage"), G("WeaponDamage", "WeaponFixingDamage", "FixingDamage"));
+        double critical = Pick(F("Critical"), G("Critical")), accuracy = Pick(F("Accuracy", "WeaponAccuracy"), G("Accuracy", "WeaponAccuracy"));
+        double hp = Pick(F("HPMax"), G("HPMax")), defense = Pick(F("Defense", "ArmorDefense"), G("Defense", "ArmorDefense"));
+        double attackIncrease = soulIncrease + 0.001 * Points(1, 13), critIncrease = 0.001 * Points(5, 14), accuracyIncrease = 0.001 * Points(5, 8);
+        double hpIncrease = 0.001 * Points(4, 10);
+
+        // what the percentages count with: the game's own stat list (the worn pieces alone are far from the character's strength: without it, not known)
+        var (offense, guard) = frame is { Count: > 0 } ? Strength(frame, model) : (0.0, 0.0);
         return new CpTotals(
-            Pick(F("WeaponDamage", "WeaponFixingDamage", "FixingDamage"), G("WeaponDamage", "WeaponFixingDamage", "FixingDamage")),
-            Pick(F("Critical"), G("Critical")),
-            Pick(F("Accuracy", "WeaponAccuracy"), G("Accuracy", "WeaponAccuracy")),
-            Pick(F("HPMax"), G("HPMax")),
-            Pick(F("Defense", "ArmorDefense"), G("Defense", "ArmorDefense")),
-            AttackIncrease: soulIncrease + 0.001 * Points(1, 13),
-            CritIncrease: 0.001 * Points(5, 14),
-            AccuracyIncrease: 0.001 * Points(5, 8),
-            HpIncrease: 0.001 * Points(4, 10),
+            attack,
+            critical,
+            accuracy,
+            hp,
+            defense,
+            AttackIncrease: attackIncrease,
+            CritIncrease: critIncrease,
+            AccuracyIncrease: accuracyIncrease,
+            HpIncrease: hpIncrease,
             Scale: model.Progression(character?.ItemLevel),
-            Factors: character?.Factors);
+            Factors: character?.Factors,
+            Offense: offense,
+            Guard: guard);
+    }
+
+    /// <summary>
+    /// The character's offence and guard (<see cref="CpTotals.Offense"/>, <see cref="CpTotals.Guard"/>), which its percentages count with, from the game's
+    /// own stat list: Attack (max attack + attack + additional attack) with all of its "Attack increase" and 0.1 % a point of Might and of Destruction,
+    /// Critical Hit with Precision and Death, Accuracy (weapon and PvE accuracy with it) with Precision and Freedom, Critical Attack, PvE and Boss Attack;
+    /// HP with Vitality and Life, Defense with the armour's. The references (<see cref="Aion2CpData.OffenseReference"/>) were measured the same way.
+    /// </summary>
+    public static (double Offense, double Guard) Strength(IReadOnlyDictionary<int, int> frame, CpModel model)
+    {
+        double F(params string[] tokens) => tokens.Sum(t => Aion2CpData.StatId(t) is int id and > 0 ? Math.Max(0, frame.GetValueOrDefault(id)) : 0);
+        double Points(params int[] ids) => ids.Sum(id => Math.Max(0, frame.GetValueOrDefault(id)));
+        double offense = Aion2CpData.OffenseOf(key => key switch
+        {
+            "atk" => F("WeaponDamage", "WeaponFixingDamage", "FixingDamage"),
+            "crit" => F("Critical"),
+            "acc" => F("Accuracy", "WeaponAccuracy", "PvEAccuracy"),
+            "critAtk" => F("CriticalAddDamage"),
+            "pveAtk" => F("PvEAddDamage", "BossNpcAddDamage"),
+            _ => 0,
+        }, F("DamageRatio") / 10000 + 0.001 * Points(1, 13), 0.001 * Points(5, 14), 0.001 * Points(5, 8), model);
+        return (offense, Aion2CpData.GuardOf(F("HPMax"), F("Defense", "ArmorDefense"), 0.001 * Points(4, 10), 0, model));
     }
 }

@@ -39,9 +39,10 @@ public static class CpShare
     /// <summary>Whether measured changes are sent: the player switched it on and the privacy terms are accepted.</summary>
     public static bool On => !PrivacyConsent.Restricted && PrivacyConsent.CanUpload && MeterSettings.Load().ShareCpMeasurements;
 
-    /// <summary>The model's stats, each weighed one, without progression: what a change counts as then is how much each stat moved.</summary>
+    /// <summary>The website model's stats, each weighed one, without progression and without the offence or guard a percentage counts with: what a change
+    /// counts as then is how much each stat moved. The meter's own weights (stats the website has none for) don't count: the website takes only its own.</summary>
     internal static CpModel Unit(CpModel model) =>
-        new(model.Weights.Keys.Concat(GearKeys).Distinct().ToDictionary(k => k, _ => 1.0, StringComparer.Ordinal), model.Confidence, false);
+        new(model.Weights.Keys.Concat(GearKeys).Distinct().ToDictionary(k => k, _ => 1.0, StringComparer.Ordinal), model.Confidence, false, PercentRef: 0, GuardRef: 0, Own: false);
 
     /// <summary>
     /// The upload of a measured change; null when it isn't one to send: stats that didn't move as the tables say (a gap), stones whose values are a range

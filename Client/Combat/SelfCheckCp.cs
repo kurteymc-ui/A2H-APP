@@ -130,14 +130,15 @@ public static class SelfCheckCp
         Console.WriteLine($"  -> changes: breakthrough 2 -> 3 shows +{breakGain:0} CP, +11 -> +12 +{enhanceGain:0}, another weapon a swap, the same gear nothing: {diff}");
 
         bool counted = Counting(model);
+        bool strengths = Strength(model);
         bool packed = PackedModel();
         bool measured = Measuring(model);
         bool whole = Whole(model);
         bool costs = Costs(model);
         bool worn = WornTitles();
         bool skillLines = SkillLines(model);
-        return table && levels && weights && at11 && piece && ranked && graded && bis && stones && pageRead && diff && counted && packed && measured && whole && costs && worn
-            && skillLines;
+        return table && levels && weights && at11 && piece && ranked && graded && bis && stones && pageRead && diff && counted && strengths && packed && measured && whole && costs
+            && worn && skillLines;
     }
 
     /// <summary>
@@ -314,29 +315,93 @@ public static class SelfCheckCp
 
     /// <summary>
     /// A point of Attack counts with the character's Attack increase (the soul-binding lines and 0.1 % a point of Might and of Destruction), as the website's model
-    /// counts Attack; "Attack increase" itself takes its share of the Attack points; the Item Level's progression factor and a measured factor go on top.
+    /// counts Attack; "Attack increase" itself takes its share of the Attack points; the Item Level's progression factor and a measured factor go on top; a
+    /// percentage of the attack counts with the offence the stat list gives (<see cref="CpCalc.Strength"/>).
     /// </summary>
     private static bool Counting(CpModel model)
     {
-        var frame = new Dictionary<int, int> { [31] = 1200, [317] = 1300, [19] = 300, [128] = 1000, [104] = 1800, [193] = 30000, [52] = 3000, [1] = 80, [13] = 30, [5] = 60, [14] = 40, [8] = 35, [4] = 40, [10] = 35 };
+        var frame = new Dictionary<int, int>
+        {
+            [31] = 1200, [317] = 1300, [19] = 300, [425] = 200, [128] = 1000, [104] = 1800, [193] = 30000, [52] = 3000, [1] = 80, [13] = 30, [5] = 60, [14] = 40, [8] = 35, [4] = 40, [10] = 35,
+        };
         var gear = new List<Aion2EquippedItem> { new(1, 110120003, 15, null, new[] { new Aion2RolledStat(425, 200) }) };
         var plain = new CpModel(model.Weights, model.Confidence, false, 0.05, 2500);
         var (_, totals) = CpCalc.Evaluate(gear, frame, plain, character: new CpCharacter(3500));
         bool increases = Near(totals.AttackIncrease, 0.02 + 0.11) && Near(totals.CritIncrease, 0.1) && Near(totals.AccuracyIncrease, 0.095) && Near(totals.HpIncrease, 0.075)
             && Near(totals.Scale, 1.05) && Near(totals.Attack, 2800);
+
+        // the offence and guard from the stat list: Attack 2,800 x 15 x 1.13, Critical Hit 1,000 x 8 x 1.1, Accuracy 1,800 x 6 x 1.095; HP 30,000 x 0.15 x
+        // 1.075 and Defense 3,000; a percentage of the attack at 68,086 / 170,000 of its weight, without a stat list at all of it
+        double percent = Aion2CpData.PercentFactor(totals, plain);
+        bool strength = Near(totals.Offense, 2800 * plain.Weight("atk") * 1.13 + 1000 * plain.Weight("crit") * 1.1 + 1800 * plain.Weight("acc") * 1.095)
+            && Near(totals.Guard, 30000 * plain.Weight("hp") * 1.075 + 3000 * plain.Weight("def")) && Near(percent, totals.Offense / Aion2CpData.OffenseReference)
+            && percent is > 0.3 and < 0.5 && CpCalc.Totals(null, CpCalc.Pieces(gear, new CpTotals(0, 0, 0, 0, 0), plain), null, plain) is { Offense: 0, Guard: 0 };
         bool attack = Near(Aion2CpData.Cp("WeaponFixingDamage", 10, totals, plain), 10 * plain.Weight("atk") * 1.13 * 1.05)
             && Near(Aion2CpData.Cp("DamageRatio", 100, totals, plain), 2800 * 0.01 * plain.Weight("atk") * 1.05)
-            && Near(Aion2CpData.Cp("AmplifyAllDamage", 100, totals, plain), plain.Weight("dmg") * 1.05);
+            && Near(Aion2CpData.Cp("AmplifyAllDamage", 100, totals, plain), plain.Weight("dmg") * 1.05 * percent);
         var measuredTotals = totals with { Factors = new Dictionary<string, double> { ["atk"] = 1.1 } };
         bool factor = Near(Aion2CpData.Cp("WeaponFixingDamage", 10, measuredTotals, plain), 10 * plain.Weight("atk") * 1.13 * 1.05 * 1.1)
-            && Near(Aion2CpData.Cp("AmplifyAllDamage", 100, measuredTotals, plain), plain.Weight("dmg") * 1.05)
+            && Near(Aion2CpData.Cp("AmplifyAllDamage", 100, measuredTotals, plain), plain.Weight("dmg") * 1.05 * percent)
             && plain.Progression(null) == 1 && Near(plain.Progression(2000), 0.975);
         IReadOnlyList<CpPerUnit> perUnit = CpCalc.PerUnit(totals, plain);
         CpPerUnit? onePoint = perUnit.FirstOrDefault(u => u.Stat == "WeaponFixingDamage");
         bool table = onePoint is { Amount: 1 } && Near(onePoint.Cp, plain.Weight("atk") * 1.13 * 1.05)
             && perUnit.FirstOrDefault(u => u.Stat == "AmplifyAllDamage") is { Amount: 100, Key: "dmg" };
-        Console.WriteLine($"  -> counting: Attack +13 % (an increase line and Might, Destruction), Item Level 3,500 x1.05: a point of Attack {onePoint?.Cp:0.##} CP, measured x1.1 on top: {increases && attack && factor && table}");
-        return increases && attack && factor && table;
+        Console.WriteLine($"  -> counting: Attack +13 % (an increase line and Might, Destruction), Item Level 3,500 x1.05: a point of Attack {onePoint?.Cp:0.##} CP, measured x1.1 on top; "
+            + $"offence {totals.Offense:N0}, so 1 % Damage Boost {Aion2CpData.Cp("AmplifyAllDamage", 100, totals, plain):0} CP ({percent:P1} of its weight), guard {totals.Guard:N0}: "
+            + $"{increases && strength && attack && factor && table}");
+        return increases && strength && attack && factor && table;
+    }
+
+    /// <summary>
+    /// Percentages count with the character's strength (measured in the game, 3 and 4 November 2026): the same Genus Insight board - which every character
+    /// of an account on a server shares - gives a character with a quarter of the offence and guard a quarter of its PvE Damage Boost and Damage Tolerance,
+    /// and the same CP for its points (Critical Hit; PvE Defense a fifth of Defense). The meter's own weights (Damage Tolerance, Regeneration, MP ...) count
+    /// where the website has none, its own wins; the strength is the game's stat list where the calculator has it; the CP measurements' upload counts plain
+    /// amounts and only the website's stats.
+    /// </summary>
+    private static bool Strength(CpModel model)
+    {
+        var strong = new Dictionary<int, int>
+        {
+            [31] = 1200, [317] = 1300, [19] = 300, [425] = 200, [128] = 1000, [104] = 1800, [193] = 30000, [52] = 3000, [1] = 80, [13] = 30, [5] = 60, [14] = 40, [8] = 35, [4] = 40, [10] = 35,
+        };
+        var weak = strong.ToDictionary(kv => kv.Key, kv => kv.Key is 31 or 317 or 19 or 128 or 104 or 193 or 52 ? kv.Value / 4 : kv.Value);
+        int pve = Aion2CpData.StatId("PvEAmplifyDamage"), pveDefense = Aion2CpData.StatId("PvEDamageDefense"), tolerance = Aion2CpData.StatId("DecreaseDamage");
+        var board = new[]
+        {
+            new Aion2SpeciesKnowledge(2, 10, 0, new[]
+            {
+                new Aion2SpeciesEffect(1, 1, pveDefense, 100, 5), new Aion2SpeciesEffect(1, 2, 128, 30, 5), new Aion2SpeciesEffect(1, 3, pve, 300, 5), new Aion2SpeciesEffect(1, 6, tolerance, 252, 5),
+            }),
+        };
+        CpWholeResult Of(Dictionary<int, int> stats) => CpWhole.Evaluate(new CpWholeInput("Templar", Array.Empty<Aion2EquippedItem>(), Genus: board, Stats: stats), model);
+        CpWholeResult a = Of(strong), b = Of(weak);
+        double? Line(CpWholeResult r, string stat) => r.Genus.SelectMany(g => g.Lines).FirstOrDefault(l => l.Stat == stat)?.Cp;
+        var (offense, guard) = CpCalc.Strength(strong, model);
+        bool scaled = Near(a.Totals.Offense, offense) && Near(a.Totals.Guard, guard) && Near(b.Totals.Offense, offense / 4) && Near(b.Totals.Guard, guard / 4)
+            && Line(a, "PvEAmplifyDamage") is double pa && Line(b, "PvEAmplifyDamage") is double pb && Near(pa, 3 * model.Weight("pve") * offense / Aion2CpData.OffenseReference) && Near(pb, pa / 4)
+            && Line(a, "DecreaseDamage") is double ta && Line(b, "DecreaseDamage") is double tb && Near(ta, 2.52 * model.Weight("dmgRed") * guard / Aion2CpData.GuardReference) && Near(tb, ta / 4)
+            && Line(a, "Critical") is double ca && Near(ca, 30 * model.Weight("crit")) && Line(b, "Critical") is double cb && Near(cb, ca)
+            && Line(a, "PvEDamageDefense") is double da && Near(da, 100 / 5.0 * model.Weight("def")) && Line(b, "PvEDamageDefense") is double db && Near(db, da)
+            && Near(a.Parts[CpSource.Genus], pa + ta + ca + da) && b.Parts[CpSource.Genus] < a.Parts[CpSource.Genus];
+
+        // the meter's own weights at the guard they were measured at; the website's weight once it has one; the factor's bounds; plain amounts for the upload
+        var atReference = new CpTotals(0, 0, 0, 0, 0, Offense: Aion2CpData.OffenseReference, Guard: Aion2CpData.GuardReference);
+        var site = model with { Weights = new Dictionary<string, double>(model.Weights) { ["dmgRed"] = 200 } };
+        CpModel unit = AionDPS.Upload.CpShare.Unit(model);
+        bool own = Near(Aion2CpData.Cp("DecreaseDamage", 100, atReference, model), 151) && Near(Aion2CpData.Cp("Restoration", 100, atReference, model), 19)
+            && Near(Aion2CpData.Cp("MPMax", 100, atReference, model), 27) && Near(Aion2CpData.Cp("AmplifyAllDamage", 100, atReference, model), model.Weight("dmg"))
+            && Near(Aion2CpData.Cp("DecreaseDamage", 100, atReference, site), 200) && Aion2CpData.Cp("Evasion", 100, atReference, model) is null
+            && Near(Aion2CpData.PercentFactor(atReference with { Offense = 1 }, model), 0.05) && Near(Aion2CpData.PercentFactor(atReference with { Offense = 1e7 }, model), 1.5)
+            && Near(Aion2CpData.PercentFactor(atReference with { Offense = 0 }, model), 1) && Near(Aion2CpData.GuardFactor(atReference with { Guard = 0 }, model), 1)
+            && Aion2CpData.Cp("DecreaseDamage", 100, a.Totals, unit) is null && Aion2CpData.Cp("MPMax", 100, a.Totals, unit) is null
+            && Near(Aion2CpData.Cp("PvEAmplifyDamage", 100, a.Totals, unit), 1) && Near(Aion2CpData.Cp("WeaponFixingDamage", 10, a.Totals, unit), 10);
+        Console.WriteLine($"  -> percentages count with the strength: the same board, PvE Damage Boost 3 % {Line(a, "PvEAmplifyDamage"):0} CP at offence {offense:N0}, "
+            + $"{Line(b, "PvEAmplifyDamage"):0} at a quarter of it; Damage Tolerance 2.52 % {Line(a, "DecreaseDamage"):0} and {Line(b, "DecreaseDamage"):0}; "
+            + $"Critical Hit 30 {Line(a, "Critical"):0} and {Line(b, "Critical"):0}, PvE Defense 100 {Line(a, "PvEDamageDefense"):0}; the meter's own weights, the website's first, "
+            + $"plain amounts for the upload: {scaled && own}");
+        return scaled && own;
     }
 
     /// <summary>The website's weekly model comes scrambled (every printable character swapped for the one at its place in a key): read back exactly.</summary>

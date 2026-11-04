@@ -18,12 +18,19 @@ public sealed record CpItemData(int Id, string Group, string Category, int Level
 /// <see cref="Confidence"/> is the website's word for each weight (confirmed, fitted, rough, disputed); <see cref="FromWebsite"/> tells the built-in model from
 /// the one fetched at runtime. <see cref="IlMult"/>: how much more every stat is worth per 1,000 Item Level above <see cref="IlRef"/> (the model's
 /// progression factor: Combat Power grows with progression in ways the stats don't show). <see cref="Base"/>: the Combat Power of each class's base
-/// stats at level 45 (the website's fit; "Spiritmaster" is the meter's Elementalist).
+/// stats at level 45 (the website's fit; "Spiritmaster" is the meter's Elementalist). <see cref="PercentRef"/>: the offence at which the percentages of
+/// the attack (Damage Boost, Double Chance ...) are worth their full weight, <see cref="GuardRef"/>: the guard at which those of the defence (Damage
+/// Tolerance, Regeneration) are (see <see cref="CpTotals.Offense"/>); 0: they always are. <see cref="Own"/>: whether the meter's own weights count for the
+/// stats the website's model has none for (<see cref="Aion2CpData.OwnWeights"/>). The CP measurements' upload counts plain amounts: no reference, no own weights.
 /// </summary>
 public sealed record CpModel(IReadOnlyDictionary<string, double> Weights, IReadOnlyDictionary<string, string> Confidence, bool FromWebsite, double IlMult = 0, double IlRef = 2500,
-    IReadOnlyDictionary<string, double>? Base = null)
+    IReadOnlyDictionary<string, double>? Base = null, double PercentRef = Aion2CpData.OffenseReference, double GuardRef = Aion2CpData.GuardReference, bool Own = true)
 {
-    public double Weight(string key) => Weights.GetValueOrDefault(key);
+    /// <summary>The weight of a model stat: the website's, else the meter's own for the few the website's model has none for.</summary>
+    public double Weight(string key) => Weights.TryGetValue(key, out double w) ? w : Own ? Aion2CpData.OwnWeights.GetValueOrDefault(key) : 0;
+
+    /// <summary>Whether the model counts a model stat at all (the website's weight or the meter's own).</summary>
+    public bool Counts(string key) => Weights.ContainsKey(key) || (Own && Aion2CpData.OwnWeights.ContainsKey(key));
 
     /// <summary>The class's base (the meter's class names; an unknown class gets the average of the others, as on the website).</summary>
     public double BaseOf(string? className)
@@ -49,9 +56,16 @@ public sealed record CpModel(IReadOnlyDictionary<string, double> Weights, IReadO
 /// <see cref="Split"/>: the totals of the whole character (<see cref="AionDPS.Combat.CpWhole"/>), where every line's CP is its share of the character's
 /// Combat Power: a point of Attack and the increase that raises it share what they make together half and half, so all lines add up to the total
 /// (without it a line's CP is what it adds on its own, and an Attack line and a Might line both count the Attack the Might raises).
+/// <see cref="Offense"/>: the CP of the character's offence points (Attack with its increase, Critical Hit, Accuracy, Critical Attack, PvE and Boss
+/// Attack, at the model's weights); a percentage of the attack (Damage Boost, PvE Damage Boost, Double Chance, Combat Speed ...) multiplies that offence, so
+/// it is worth as much as the offence is: its weight at <see cref="CpModel.PercentRef"/>, proportionally less below (<see cref="Aion2CpData.PercentFactor"/>).
+/// <see cref="Guard"/>: the same for the defence, the CP of the character's HP and Defense points, which a percentage of the defence (Damage Tolerance,
+/// Regeneration) counts with (<see cref="Aion2CpData.GuardFactor"/>). A point of a stat is worth the same on every character: only percentages scale.
+/// 0: not known, the weights as they are.
 /// </summary>
 public sealed record CpTotals(double Attack, double Critical, double Accuracy, double Hp, double Defense, double AttackIncrease = 0, double CritIncrease = 0,
-    double AccuracyIncrease = 0, double HpIncrease = 0, double Scale = 1, IReadOnlyDictionary<string, double>? Factors = null, double DefenseIncrease = 0, bool Split = false)
+    double AccuracyIncrease = 0, double HpIncrease = 0, double Scale = 1, IReadOnlyDictionary<string, double>? Factors = null, double DefenseIncrease = 0, bool Split = false,
+    double Offense = 0, double Guard = 0)
 {
     /// <summary>The same totals counting what a change adds on its own (what one more point gives).</summary>
     public CpTotals Marginal => this with { Split = false };
@@ -68,6 +82,57 @@ public sealed record CpTotals(double Attack, double Critical, double Accuracy, d
 /// </summary>
 public static class Aion2CpData
 {
+    /// <summary>
+    /// The offence (<see cref="CpTotals.Offense"/>, from the game's own stat list) at which the percentages of the attack are worth the model's full
+    /// weight. Measured in the game (4 Nov 2026): on a character of 72,600 offence 1.5 % PvE Damage Boost from new titles raised Combat Power by 327, 218 a
+    /// percent against the 507 the model's weight gives at its Item Level, 0.43 of it: about 170,000. The four characters of that account on its server
+    /// share their Genus Insight boards line for line (the game counts them in full on each, as their stat lists show), and the level 20 one of 18,499
+    /// Combat Power and 11,200 offence has no room for the 13,300 CP the full weights would give its percentages (900 at its offence).
+    /// </summary>
+    public const double OffenseReference = 170_000;
+
+    /// <summary>The guard (<see cref="CpTotals.Guard"/>, from the game's own stat list) the meter's own weights of the percentages of the defence were
+    /// measured at: 15,700 (21,000 HP and 12,300 Defense with the armour's) on the character of <see cref="OffenseReference"/>.</summary>
+    public const double GuardReference = 15_700;
+
+    /// <summary>The model stats of the percentages of the attack: they multiply the offence (<see cref="PercentFactor"/>).</summary>
+    public static readonly IReadOnlySet<string> PercentKeys = new HashSet<string>(StringComparer.Ordinal) { "dmg", "wdb", "cdmg", "front", "cspd", "multi", "perf", "dbl", "pve", "cdr" };
+
+    /// <summary>The model stats of the percentages of the defence (Damage Tolerance, Regeneration): they count with the guard (<see cref="GuardFactor"/>).</summary>
+    public static readonly IReadOnlySet<string> GuardKeys = new HashSet<string>(StringComparer.Ordinal) { "dmgRed", "regen" };
+
+    /// <summary>
+    /// The meter's own weights for stats the website's model has none for, measured in the game: 13 Genus Insight Analyses in a row on one board
+    /// (3 Nov 2026), each changing three lines and the game's Combat Power at once; the 13 changes fit to within a CP each, Critical Hit, PvE Accuracy and
+    /// PvE Defense coming out at 7.9, 6.0 and 0.19 a point besides. Damage Tolerance ("dmgRed") 151 CP a percent, Regeneration ("regen") 19 a percent, MP
+    /// 0.27 a point, Front Attack Defense and Critical Damage Defense 0.09, Back Attack Critical Resist 0.48 - at Item Level 2,500 (the model's base) and,
+    /// the percentages, at <see cref="GuardReference"/>. The website's weight wins once it has one.
+    /// </summary>
+    public static readonly IReadOnlyDictionary<string, double> OwnWeights = new Dictionary<string, double>(StringComparer.Ordinal)
+    {
+        ["dmgRed"] = 151, ["regen"] = 19, ["mp"] = 0.27, ["frontDef"] = 0.09, ["critDef"] = 0.09, ["backCritRes"] = 0.48,
+    };
+
+    /// <summary>How much of its weight a percentage of the attack is worth on this character: its offence against the model's reference (5 % at the least,
+    /// 150 % at most); 1 when the offence isn't known or the model counts plain amounts.</summary>
+    public static double PercentFactor(CpTotals totals, CpModel model) =>
+        model.PercentRef > 0 && totals.Offense > 0 ? Math.Clamp(totals.Offense / model.PercentRef, 0.05, 1.5) : 1;
+
+    /// <summary>How much of its weight a percentage of the defence is worth on this character: its guard against the reference (5 % to 150 %); 1 when
+    /// the guard isn't known or the model counts plain amounts.</summary>
+    public static double GuardFactor(CpTotals totals, CpModel model) =>
+        model.GuardRef > 0 && totals.Guard > 0 ? Math.Clamp(totals.Guard / model.GuardRef, 0.05, 1.5) : 1;
+
+    /// <summary>The offence (<see cref="CpTotals.Offense"/>) of points per model stat ("atk", "crit", "acc", "critAtk", "pveAtk") and the increases that raise
+    /// Attack, Critical Hit and Accuracy.</summary>
+    public static double OffenseOf(Func<string, double> points, double attackIncrease, double critIncrease, double accuracyIncrease, CpModel model) =>
+        points("atk") * model.Weight("atk") * (1 + attackIncrease) + points("crit") * model.Weight("crit") * (1 + critIncrease)
+        + points("acc") * model.Weight("acc") * (1 + accuracyIncrease) + points("critAtk") * model.Weight("critAtk") + points("pveAtk") * model.Weight("pveAtk");
+
+    /// <summary>The guard (<see cref="CpTotals.Guard"/>) of HP and Defense points and the increases that raise them.</summary>
+    public static double GuardOf(double hp, double defense, double hpIncrease, double defenseIncrease, CpModel model) =>
+        hp * model.Weight("hp") * (1 + hpIncrease) + defense * model.Weight("def") * (1 + defenseIncrease);
+
     private static readonly object Gate = new();
     private static Data? _data;
     private static CpModel? _live;
@@ -161,7 +226,9 @@ public static class Aion2CpData
     /// <summary>
     /// The CP a stat value is worth (the game's units: a percentage in hundredths), or null when Combat Power doesn't count the stat. A stat that adds a
     /// share of a total (Might, "Attack increase", HP %) is worked out from <paramref name="totals"/>; a point of Attack, Critical Hit, Accuracy or HP
-    /// is raised by the character's increase of it, and every stat by the progression factor and the factor measured on the character.
+    /// is raised by the character's increase of it; a percentage is worth as much as the character's offence (Damage Boost, Double Chance ...:
+    /// <see cref="PercentFactor"/>) or guard (Damage Tolerance: <see cref="GuardFactor"/>); every stat by the progression factor and the factor measured
+    /// on the character.
     /// </summary>
     public static double? Cp(string token, double value, CpTotals totals, CpModel? model = null) =>
         CpParts(token, value, totals, model) is { } parts ? parts.Sum(p => p.Cp) : null;
@@ -171,13 +238,16 @@ public static class Aion2CpData
     public static IReadOnlyList<(string Key, double Cp)>? CpParts(string token, double value, CpTotals totals, CpModel? model = null)
     {
         model ??= Model;
-        double At(string key) => totals.Scale * totals.Factor(key);
+        double percent = PercentFactor(totals, model), guard = GuardFactor(totals, model);
+        double At(string key) => totals.Scale * totals.Factor(key) * (PercentKeys.Contains(key) ? percent : GuardKeys.Contains(key) ? guard : 1);
         if (D.Map.TryGetValue(token, out var map))
         {
-            if (!model.Weights.TryGetValue(map.Key, out double w))
+            if (!model.Counts(map.Key))
             {
                 return null;
             }
+
+            double w = model.Weight(map.Key);
 
             double raise = map.Key switch
             {
@@ -205,7 +275,7 @@ public static class Aion2CpData
             "crit" => new[] { ("crit", totals.Critical * part * model.Weight("crit") * At("crit")) },
             "acc" => new[] { ("acc", totals.Accuracy * part * model.Weight("acc") * At("acc")) },
             "critacc" => new[] { ("crit", totals.Critical * part * model.Weight("crit") * At("crit")), ("acc", totals.Accuracy * part * model.Weight("acc") * At("acc")) },
-            _ => new[] { (share.Total, part * model.Weight(share.Total) * At(share.Total)) }, // percentage points of Combat Speed, Perfect, Double, Cooldown Reduction
+            _ => new[] { (share.Total, part * model.Weight(share.Total) * At(share.Total)) }, // percentage points of Combat Speed, Perfect, Double, Cooldown Reduction (with the offence)
         };
     }
 
@@ -338,7 +408,8 @@ public static class Aion2CpData
             }
         }
 
-        return new CpModel(weights, confidence, fromWebsite, Number("ilMult", 0), Number("ilRef", 2500), bases);
+        // the website may set the references one day
+        return new CpModel(weights, confidence, fromWebsite, Number("ilMult", 0), Number("ilRef", 2500), bases, Number("percentRef", OffenseReference), Number("guardRef", GuardReference));
     }
 
     private static Data Load(string path)

@@ -19050,6 +19050,18 @@
     "ko": "이 캐릭터 기준: 공격력은 1포인트마다 공격력 증가({0} %)를 반영해 계산합니다.",
     "zh-TW": "對這個角色：每點攻擊力都按你的攻擊力增加（{0} %）計算。"
   },
+  "CpCalc.Strength": {
+    "en": "Percentages count with the character's strength: Damage Boost, Double Chance and the other percentages of the attack at {0} % of their full weight here (its offence), Damage Tolerance and Regeneration at {1} % (its HP and Defense).",
+    "de": "Prozentwerte zählen mit der Stärke des Charakters: Schadensverstärkung, Wucht und die übrigen Prozentwerte des Angriffs hier mit {0} % ihres vollen Gewichts (seine Offensive), Schadensresistenz und Regeneration mit {1} % (seine LP und Verteidigung).",
+    "fr": "Les pourcentages comptent selon la force du personnage : Boost de DGT, Coup puissant et les autres pourcentages d'attaque ici à {0} % de leur poids plein (son offensive), Tolérance aux DGT et Restauration à {1} % (ses PV et sa défense).",
+    "es": "Los porcentajes cuentan según la fuerza del personaje: Amplificación de Daño, Golpe y los demás porcentajes de ataque aquí al {0} % de su peso completo (su ofensiva), Tolerancia a Daño y Recuperación al {1} % (sus Puntos de Vida y su Defensa).",
+    "ru": "Проценты считаются по силе персонажа: Увелич. урона, Мощный удар и другие проценты атаки здесь дают {0} % полного веса (его атака), Стойкость к урону и Регенерация — {1} % (его ОЗ и защита).",
+    "zh": "百分比属性按角色的强度计算：伤害增幅、强击等攻击类百分比在这里按完整权重的 {0} % 计算（其攻击），伤害耐性和再生按 {1} %（其生命力和防御力）。",
+    "pt": "As porcentagens contam com a força do personagem: Amplificação de Dano, Golpe Potente e as outras porcentagens de ataque aqui a {0} % do peso total (a ofensiva dele), Tolerância a Dano e Regeneração a {1} % (os PV e a Defesa dele).",
+    "ja": "割合のステータスはキャラクターの強さに応じて計算します：ダメージ増幅、強打など攻撃の割合はここでは本来の重みの{0} %（攻撃面）、ダメージ耐性と再生は{1} %（HPと防御力）です。",
+    "ko": "비율 능력치는 캐릭터의 강함에 따라 계산됩니다: 피해 증폭, 강타 등 공격 비율은 여기서 원래 가중치의 {0} %(공격 능력), 피해 내성과 재생은 {1} %(생명력과 방어력)입니다.",
+    "zh-TW": "百分比屬性按角色的強度計算：傷害增幅、強擊等攻擊類百分比在這裡按完整權重的 {0} % 計算（其攻擊），傷害耐性和再生按 {1} %（其生命力和防禦力）。"
+  },
   "CpCalc.PerUnit.Level": {
     "en": "Item Level {0}: ×{1}.",
     "de": "Gegenstandsstufe {0}: ×{1}.",
@@ -19757,6 +19769,18 @@
   "CpCalc.Genus.Note": {
     "en": "Genus-named stats (Fera Critical Hit, Cogni Block ...) only work against monsters of that genus and don't count in Combat Power. The odds are the game's own per Insight level.",
     "de": "Werte mit Speziesnamen (Fera-Krit. Treffer, Cogni-Block ...) wirken nur gegen Monster dieser Spezies und zählen nicht zur Kampfkraft. Die Chancen sind die des Spiels je Kenntnisstufe."
+  },
+  "CpCalc.Genus.Shared": {
+    "en": "All characters of an account share these boards, so the same lines give a weaker character less Combat Power.",
+    "de": "Alle Charaktere eines Kontos teilen diese Tafeln, deshalb bringen dieselben Zeilen einem schwächeren Charakter weniger Kampfkraft.",
+    "fr": "Tous les personnages d'un compte partagent ces tableaux : les mêmes lignes rapportent donc moins de puissance de combat à un personnage plus faible.",
+    "es": "Todos los personajes de una cuenta comparten estos tableros, así que las mismas líneas dan menos poder de combate a un personaje más débil.",
+    "ru": "Все персонажи аккаунта делят эти таблицы, поэтому те же строки дают более слабому персонажу меньше боевой мощи.",
+    "zh": "同一账号的所有角色共享这些面板，所以同样的词条给较弱的角色带来的战斗力更少。",
+    "pt": "Todos os personagens de uma conta compartilham esses painéis, então as mesmas linhas dão menos poder de combate a um personagem mais fraco.",
+    "ja": "このボードはアカウントの全キャラクターで共通なので、同じラインでも弱いキャラクターほど戦闘力の上がり方は小さくなります。",
+    "ko": "이 보드는 계정의 모든 캐릭터가 공유하므로, 같은 줄이라도 약한 캐릭터에게는 전투력이 덜 오릅니다.",
+    "zh-TW": "同一帳號的所有角色共用這些面板，所以同樣的詞條給較弱的角色帶來的戰鬥力更少。"
   },
   "CpCalc.Genus.None": {
     "en": "Genus Insight comes with the pet list at login.",

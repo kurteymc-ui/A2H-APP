@@ -212,7 +212,8 @@ public sealed class CpCalcPage : Grid
             directory?.LocalSpecies,
             directory?.LocalPetStates,
             _character is null ? null : CpChecks.Factors(_character, _server),
-            HeldBy(_character, _server));
+            HeldBy(_character, _server),
+            directory?.LocalStats);
     }
 
     /// <summary>How many of an item the character holds: its bag and storage and its account's storage on the server, as the meter last saw them (null when
@@ -1110,6 +1111,11 @@ public sealed class CpCalcPage : Grid
         }
 
         page.Children.Add(cards);
+        if (StrengthNote(v.Totals, Aion2CpData.Model) is { } strength)
+        {
+            page.Children.Add(Label(strength + " " + Loc("CpCalc.Genus.Shared"), 11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 2, 0, 4)));
+        }
+
         page.Children.Add(Label(Loc("CpCalc.Genus.Note"), 11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 2, 0, 0)));
         return page;
     }
@@ -1666,8 +1672,20 @@ public sealed class CpCalcPage : Grid
 
         stack.Children.Add(grid);
         stack.Children.Add(Label(F("CpCalc.PerUnit.Note", (totals.AttackIncrease * 100).ToString("0.#", CultureInfo.CurrentCulture)), 11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 8, 0, 0)));
+        if (StrengthNote(totals, model) is { } strength)
+        {
+            stack.Children.Add(Label(strength, 11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 4, 0, 0)));
+        }
+
         return stack;
     }
+
+    /// <summary>What the character's percentages count at: those of the attack with its offence, those of the defence with its guard (Aion2CpData.PercentFactor);
+    /// null when the game's stat list isn't there to tell its strength.</summary>
+    private static string? StrengthNote(CpTotals totals, CpModel model) =>
+        totals.Offense > 0 && model.PercentRef > 0
+            ? F("CpCalc.Strength", (Aion2CpData.PercentFactor(totals, model) * 100).ToString("0", CultureInfo.CurrentCulture), (Aion2CpData.GuardFactor(totals, model) * 100).ToString("0", CultureInfo.CurrentCulture))
+            : null;
 
     private string StonesNote() =>
         Loc(_character is not null && CpChecks.Reading(_character, _server) ? "CpCalc.StonesLoading" : Official is not null ? "CpCalc.StonesExact" : "CpCalc.StonesRange");

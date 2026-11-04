@@ -25,6 +25,8 @@ public enum CpSource
 /// <param name="TitlesOwned">The ids of every title the character owns; null when the login list didn't come (then the worn titles' "owned" stats count, as on the website).</param>
 /// <param name="WingsOwned">The ids of every wing the character owns; null when unknown.</param>
 /// <param name="Held">How many of an item the character holds (bag, storage, the account's storage); null when unknown (then nothing counts as held).</param>
+/// <param name="Stats">The game's own stat list of the character (the stat frame), for the offence and guard its percentages count with
+/// (<see cref="CpCalc.Strength"/>); null: what the calculator's own lines add up to.</param>
 public sealed record CpWholeInput(
     string? ClassName,
     IReadOnlyList<Aion2EquippedItem> Gear,
@@ -39,7 +41,8 @@ public sealed record CpWholeInput(
     IReadOnlyList<Aion2SpeciesKnowledge>? Genus = null,
     IReadOnlyList<Aion2PetState>? Pets = null,
     IReadOnlyDictionary<string, double>? Factors = null,
-    Func<int, long>? Held = null);
+    Func<int, long>? Held = null,
+    IReadOnlyDictionary<int, int>? Stats = null);
 
 /// <summary>A stat a source gives: its token, its value (the game's units) and its CP, its share of the character's Combat Power (null: CP doesn't count it).</summary>
 public sealed record CpSourceLine(string Stat, double Value, double? Cp);
@@ -213,7 +216,9 @@ public sealed class CpWholeResult
 /// The CP calculator for the whole character: gear (<see cref="CpCalc"/>), Stigmas and skill levels, Daevanion, Genus Insight, the pet collection, titles worn and
 /// owned, the wing, Arcana and the attribute points nothing of that explains, plus the class's base - every stat from the item data or the game's login lists,
 /// its CP from the website's model (<see cref="Aion2CpData"/>). The parts add up to the total: a point of Attack and an increase that raises it (Might, "Attack
-/// increase") share what they make together half and half (<see cref="CpTotals.Split"/>). <see cref="Evaluate"/>'s scale fits the model to the game's own number
+/// increase") share what they make together half and half (<see cref="CpTotals.Split"/>). A percentage is worth as much as the character's offence (Damage
+/// Boost, Double Chance ...) or guard (Damage Tolerance), a point the same on every character (<see cref="CpTotals.Offense"/>): the same Genus Insight board,
+/// which every character of an account on a server shares, gives a weaker character less. <see cref="Evaluate"/>'s scale fits the model to the game's own number
 /// (the page passes the game's Combat Power at the last login against the calculator's at the same gear). What a step gives is what it adds on its own.
 /// </summary>
 public static class CpWhole
@@ -345,8 +350,10 @@ public static class CpWhole
         // the totals: points per model stat, the increases that raise them
         double Points(string key) => lines.Sum(l => Aion2CpData.MapOf(l.Stat) is { } m && m.Key == key ? l.Value / m.Unit : 0);
         double Increase(string key) => lines.Sum(l => Aion2CpData.ShareOf(l.Stat) is { } s && (s.Total == key || (s.Total == "critacc" && key is "crit" or "acc")) ? s.Per * l.Value : 0);
+        var (offense, guard) = input.Stats is { Count: > 0 } statList ? CpCalc.Strength(statList, model)
+            : (Aion2CpData.OffenseOf(Points, Increase("atk"), Increase("crit"), Increase("acc"), model), Aion2CpData.GuardOf(Points("hp"), Points("def"), Increase("hp"), Increase("def"), model));
         var totals = new CpTotals(Points("atk"), Points("crit"), Points("acc"), Points("hp"), Points("def"), Increase("atk"), Increase("crit"), Increase("acc"), Increase("hp"),
-            scale, input.Factors, Increase("def"), Split: true);
+            scale, input.Factors, Increase("def"), Split: true, Offense: offense, Guard: guard);
         CpTotals marginal = totals.Marginal;
         double Cp(string stat, double value) => Aion2CpData.Cp(stat, value, totals, model) ?? 0;
         double? CpOrNull(string stat, double value) => Aion2CpData.Cp(stat, value, totals, model);
