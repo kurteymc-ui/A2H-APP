@@ -594,10 +594,11 @@
                             <StackPanel>
                                 <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.DisplayCompact}"/>
                                 <CheckBox x:Name="MeterOverlayOnBox" Content="{local:Loc Settings.MeterOverlayOn}"/>
-                                <CheckBox x:Name="MeterPopUpForBossBox" Content="{local:Loc Settings.MeterPopUpForBoss}" Margin="0,6,0,0"
-                                          ToolTip="{local:Loc Settings.MeterPopUpForBoss.Tooltip}"/>
                                 <CheckBox x:Name="MeterOverlayAutoHideBox" Content="{local:Loc Settings.MeterOverlayAutoHide}" Margin="0,6,0,0"
                                           IsEnabled="{Binding IsChecked, ElementName=MeterOverlayOnBox}"/>
+                                <CheckBox x:Name="MeterPopUpForBossBox" Content="{local:Loc Settings.MeterPopUpForBoss}" Margin="20,6,0,0"
+                                          ToolTip="{local:Loc Settings.MeterPopUpForBoss.Tooltip}"
+                                          IsEnabled="{Binding IsChecked, ElementName=MeterOverlayAutoHideBox}"/>
                                 <Grid Margin="0,6,0,2">
                                     <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="170"/></Grid.ColumnDefinitions>
                                     <TextBlock Text="{local:Loc Settings.MeterOverlayHide}" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>

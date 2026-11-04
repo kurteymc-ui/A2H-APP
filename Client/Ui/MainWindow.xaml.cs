@@ -1099,12 +1099,25 @@ public partial class MainWindow : Window
         }
 
         // Once a second, an always-on-top meter goes back to the front: a borderless full-screen
-        // game can take the front of the topmost band when it gets the focus back.
-        if (Topmost && IsVisible)
+        // game can take the front of the topmost band when it gets the focus back. While one of the meter's menus is open
+        // nothing is raised: a window put over the menu took it out of sight and out of reach of the mouse.
+        if (!_overlayMenuOpen)
         {
-            NativeOverlay.KeepOnTop(new System.Windows.Interop.WindowInteropHelper(this).Handle);
+            if (Topmost && IsVisible)
+            {
+                NativeOverlay.KeepOnTop(new System.Windows.Interop.WindowInteropHelper(this).Handle);
+            }
+
+            RaiseOverlays();
         }
 
+        FollowBossAutomatically();
+        TickHistory();
+    }
+
+    /// <summary>Once a second: the meter, then the other overlays above it.</summary>
+    private void RaiseOverlays()
+    {
         _meterOverlay?.KeepOnTop();
 
         // The timetable overlay always sits above the meter: raised right after it, in the same tick.
@@ -1121,9 +1134,10 @@ public partial class MainWindow : Window
         _dummy?.RaiseToFront();
         _petFarm?.RaiseToFront();
         _petMapController?.RaiseToFront();
+    }
 
-        FollowBossAutomatically();
-
+    private void TickHistory()
+    {
         // Every five seconds is plenty: a fight only counts as finished 120 s after its last hit.
         if (++_historyTickCounter >= 5)
         {
@@ -1547,7 +1561,8 @@ public partial class MainWindow : Window
 
     /// <summary>
     /// A few times a second (with the game gate): the overlay is on screen while it is switched on, the game (or this app) is in front and, with
-    /// "show only in fights", the player is in an instance or fought in the last half minute (Settings: how long) - or the eye button just asked for it.
+    /// "only during boss fights", the own character fights a boss or went on fighting after one (Settings: how long) - or the eye button just asked for
+    /// it (see <see cref="MeterOverlayRule"/>).
     /// </summary>
     private void UpdateMeterOverlay()
     {
@@ -1557,13 +1572,10 @@ public partial class MainWindow : Window
         }
 
         DateTime now = DateTime.Now;
-        // not for every mob: in a dungeon or arena from the entry on, while a boss is fought nearby, and at a training dummy once you hit it
-        // once up, it stays while the player goes on fighting (found by the user: attacking a scarecrow, it left after 30 s when the dummy was not recognised):
-        // what brings it up is a dungeon, a boss or a dummy, what keeps it is any fight of the own character
-        bool inFight = !_meterOverlayAutoHide || InInstanceNow() || now - _lastBossFight < _meterOverlayHideAfter || now - _lastDummyHit < _meterOverlayHideAfter
-            || (_meterOverlay.Wanted && now - _lastOwnCombat < _meterOverlayHideAfter)
-            || now < _overlayPeekUntil
-            || _meterOverlay.IsMouseOver || _overlayMenuOpen || _dummy?.Model.State is DummyState.Armed or DummyState.Running or DummyState.Finished;
+        bool kept = now < _overlayPeekUntil || _meterOverlay.IsMouseOver || _overlayMenuOpen
+            || _dummy?.Model.State is DummyState.Armed or DummyState.Running or DummyState.Finished;
+        bool inFight = MeterOverlayRule.Shown(_meterOverlayAutoHide, _meterPopUpForBoss, _meterOverlayHideAfter, now - _lastOwnBossFight, now - _lastBossFight,
+            now - _lastOwnCombat, _meterOverlay.Wanted, kept);
         _meterOverlay.ShowOverlay(MeterOverlayActive && _gameGateOpen && inFight);
     }
 
@@ -1700,7 +1712,7 @@ public partial class MainWindow : Window
             }
         }
 
-        // a boss fought by anyone nearby (the group, or another party starting it): the meter comes up for it
+        // a boss fought by anyone nearby (the group, or another party starting it): with the own fighting right then, the meter comes up for it
         foreach (DamageEvent ev in events)
         {
             if (!ev.IsHeal && (directory.BossNpcIdOf(ev.TargetObjectId) is not null || directory.BossNpcIdOf(ev.SourceObjectId) is not null))
@@ -1710,7 +1722,7 @@ public partial class MainWindow : Window
             }
         }
 
-        // the own character in a boss fight (it hit the boss, or the boss hit it): a new one brings the overlay up, also when it was put away
+        // the own character in a boss fight (it hit the boss, or the boss hit it): the overlay comes up for it (only while it is switched on)
         if (local >= 0)
         {
             foreach (DamageEvent ev in events)
@@ -1751,29 +1763,18 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// A boss fight of the own character began: the overlay comes up by itself (Settings: "Bring it up when a boss fight starts", on by default), also when
-    /// the eye button, its hotkey or the tray had switched it off - the owner had to click it on for every boss (4 Nov 2026). The eye button still puts it
-    /// away during the fight; the next boss brings it back.
+    /// A boss fight of the own character began: the overlay comes up by itself right away (Settings: "Come up by itself for boss fights", on by default).
+    /// Only while the meter is switched on: switched off (the eye button, the overlay's X, its hotkey, the tray or Settings), it stays off - players
+    /// had it coming back at every boss after they had closed it (4 Nov 2026).
     /// </summary>
     private void PopUpForBoss()
     {
-        if (!_meterPopUpForBoss || _meterOverlay is null || Headless || _historyMode)
+        if (!_meterPopUpForBoss || !MeterOverlayActive || Headless || _historyMode)
         {
             return;
         }
 
-        if (!_meterOverlayOn)
-        {
-            _meterOverlayOn = true;
-            var settings = MeterSettings.Load();
-            settings.MeterOverlayOn = true;
-            settings.Save();
-            _settingsWindow?.SyncMeterOverlay(true);
-            UpdateScopeControls();
-            RefreshUpdateBadge();
-        }
-
-        UpdateMeterOverlay(); // the boss fight is under way (_lastBossFight): it shows, and steps aside again as usual after the fight
+        UpdateMeterOverlay(); // the boss fight is under way (_lastOwnBossFight): it shows, and steps aside again as usual after the fight
     }
 
     /// <summary>The eye button, its hotkey and the tray: with the overlay off it comes on; on but stepped aside between fights it shows now (until a
@@ -8301,14 +8302,27 @@ public partial class MainWindow : Window
             menu.Items.Add(item);
         }
 
-        // the meter stays up while its menu is open and a while after (it may be between fights)
+        // the meter stays up while its menu is open and a while after (it may be between fights); nothing is raised over the menu meanwhile
         menu.Opened += (_, _) => _overlayMenuOpen = true;
         menu.Closed += (_, _) =>
         {
             _overlayMenuOpen = false;
             _overlayPeekUntil = DateTime.Now + _meterOverlayHideAfter;
+            ShowHeaderButtons();
         };
+        _overlayMenuOpen = true;   // at once, not only when the menu says it opened: a check in between must not put the meter (and its menu) away
+        // a menu of a window that is not the active one closes at once when it cannot take the mouse (the game kept the focus): the meter's window
+        // is made the active one first (a player: the mode menu closed instantly, 4 Nov 2026)
+        if (_meterOverlay is { IsVisible: true } overlay && Window.GetWindow(anchor) == overlay && !overlay.IsActive)
+        {
+            overlay.Activate();
+        }
+
         menu.IsOpen = true;
+        if (!menu.IsOpen)
+        {
+            _overlayMenuOpen = false;
+        }
     }
 
     private MenuItem OverlayItem(string header, Action act, bool check = false, bool enabled = true)
@@ -8455,8 +8469,9 @@ public partial class MainWindow : Window
             OverlayItem("Black", () => ChangeOverlaySetting(s => s.OverlayLook = "Black"), panel == "Black"),
             opacity,
             new Separator(),
-            OverlayItem("Only in dungeons, boss fights and at dummies", () => ChangeOverlaySetting(s => s.MeterOverlayAutoHide = !s.MeterOverlayAutoHide), settings.MeterOverlayAutoHide),
-            OverlayItem("Pop up by itself when a boss fight starts", () => ChangeOverlaySetting(s => s.MeterPopUpForBoss = !s.MeterPopUpForBoss), settings.MeterPopUpForBoss),
+            OverlayItem("Only during boss fights (hidden in between)", () => ChangeOverlaySetting(s => s.MeterOverlayAutoHide = !s.MeterOverlayAutoHide), settings.MeterOverlayAutoHide),
+            OverlayItem("Come up by itself when I fight a boss", () => ChangeOverlaySetting(s => s.MeterPopUpForBoss = !s.MeterPopUpForBoss), settings.MeterPopUpForBoss,
+                settings.MeterOverlayAutoHide),
             OverlayItem("Everyone in dungeons, only me at dummies", () => ChangeOverlaySetting(s => s.AutoScope = !s.AutoScope), settings.AutoScope),
             OverlayItem("Party buffs under the names", () => ChangeOverlaySetting(s => s.ShowPartyBuffs = !s.ShowPartyBuffs), settings.ShowPartyBuffs),
             OverlayItem("Boss timers: the next casts and the enrage", () => ChangeOverlaySetting(s => s.OverlayBossTimers = !s.OverlayBossTimers), settings.OverlayBossTimers),

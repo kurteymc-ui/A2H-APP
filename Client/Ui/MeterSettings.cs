@@ -529,15 +529,16 @@ public sealed class MeterSettings
     public double OverlayRowsHeight { get; set; }
 
     /// <summary>The meter overlay: the compact panel in a window of its own over the game, beside the client window (history, settings, the fight
-    /// report). On by default; the eye button, its hotkey and the tray menu switch it.</summary>
+    /// report). On by default; the eye button, the overlay's X, its hotkey and the tray menu switch it. Switched off, it stays off: no boss fight brings it back.</summary>
     public bool MeterOverlayOn { get; set; } = true;
 
-    /// <summary>The overlay shows itself in instances and while the player fights (hits or is hit), and steps aside in the open world
-    /// <see cref="MeterOverlayHideSeconds"/> after the last fight. Off: it stays up while the game is in front.</summary>
+    /// <summary>"Only during boss fights": the overlay is on screen while the own character fights a boss and goes on fighting after it, and steps aside
+    /// <see cref="MeterOverlayHideSeconds"/> after the last fight (a dungeon or a dummy alone no longer brings it up: see MeterOverlayRule). Off: it stays
+    /// up while the game is in front.</summary>
     public bool MeterOverlayAutoHide { get; set; } = true;
 
-    /// <summary>A boss fight of the own character (it hit a boss or a boss hit it, after a minute without one) brings the overlay up by itself - also
-    /// when the eye button, its hotkey or the tray had put it away (4 Nov 2026, the owner: having to click it on for every boss). Off: only those bring it back.</summary>
+    /// <summary>With <see cref="MeterOverlayAutoHide"/>: a boss fight of the own character brings the overlay up by itself, while the overlay is switched on
+    /// (4 Nov 2026: no more switching it on again after the player closed it). Off: only the eye button or its hotkey shows it.</summary>
     public bool MeterPopUpForBoss { get; set; } = true;
 
     /// <summary>The open world is counted too (the Open world button on the meter page). Off: the meter counts dungeons, arenas, boss fights and training dummies only.</summary>

@@ -13587,7 +13587,7 @@
     "en": "Open the meter window (history, settings, fight report)"
   },
   "Main.Overlay.HideOverlay": {
-    "en": "Hide the overlay (the eye button or Ctrl+Alt+H brings it back)"
+    "en": "Close the overlay (it stays closed until the eye button or Ctrl+Alt+H brings it back)"
   },
   "Main.CloseToTray.Title": {
     "en": "A2HMeter keeps running"
@@ -13599,15 +13599,15 @@
     "en": "Show the meter overlay over the game"
   },
   "Settings.MeterPopUpForBoss": {
-    "en": "Pop up by itself when a boss fight starts (also after the eye button hid it)",
-    "de": "Bei einem Bosskampf von selbst einblenden (auch nachdem der Augen-Knopf es ausgeblendet hat)"
+    "en": "Come up by itself when you fight a boss",
+    "de": "Bei einem Bosskampf von selbst einblenden"
   },
   "Settings.MeterPopUpForBoss.Tooltip": {
-    "en": "When you hit a boss or a boss hits you, the overlay comes up without a click. The eye button still hides it during the fight; the next boss brings it back.",
-    "de": "Sobald du einen Boss triffst oder er dich, erscheint das Overlay ohne Klick. Der Augen-Knopf blendet es im Kampf weiter aus; der nächste Boss holt es zurück."
+    "en": "When you hit a boss or a boss hits you, the overlay comes up without a click, and hides itself again after the fight. Only while the overlay is switched on: closed with its X or the eye button, it stays closed.",
+    "de": "Sobald du einen Boss triffst oder er dich, erscheint das Overlay ohne Klick und blendet sich nach dem Kampf wieder aus. Nur solange das Overlay eingeschaltet ist: mit dem X oder dem Augen-Knopf geschlossen, bleibt es zu."
   },
   "Settings.MeterOverlayAutoHide": {
-    "en": "Only in dungeons, during boss fights and at training dummies (it hides itself otherwise)"
+    "en": "Only during boss fights (it hides itself in between)"
   },
   "Settings.MeterOverlayHide": {
     "en": "Hide it after this long without a fight"
@@ -13912,8 +13912,8 @@
     "de": "Meter"
   },
   "Shell.OvMeterWhat": {
-    "en": "The DPS meter: in dungeons, during boss fights and at training dummies, with past fights, modes and the dummy countdown.",
-    "de": "Der DPS-Meter: in Dungeons, bei Bosskämpfen und an Trainingspuppen, mit früheren Kämpfen, Modi und dem Puppen-Countdown."
+    "en": "The DPS meter: during boss fights (or the whole time), with past fights, modes and the dummy countdown.",
+    "de": "Der DPS-Meter: bei Bosskämpfen (oder die ganze Zeit), mit früheren Kämpfen, Modi und dem Puppen-Countdown."
   },
   "Shell.OvCombatWhat": {
     "en": "The boss's cast bar, the target of the target and the healer's target.",

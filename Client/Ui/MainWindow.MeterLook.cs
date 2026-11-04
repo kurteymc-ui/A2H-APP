@@ -112,7 +112,7 @@ public partial class MainWindow
     /// <summary>The buttons in the meter's head: always there, or only while the mouse is over the meter.</summary>
     private void ShowHeaderButtons()
     {
-        bool show = !_headerOnHover || CompactOverlayPanel.IsMouseOver;
+        bool show = !_headerOnHover || CompactOverlayPanel.IsMouseOver || _overlayMenuOpen;   // a menu's button stays while its menu is open
         foreach (UIElement part in OverlayHeader.Children)
         {
             if (DockPanel.GetDock(part) == Dock.Right && part != CompactUpdateBadge)
