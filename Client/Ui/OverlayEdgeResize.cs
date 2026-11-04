@@ -20,6 +20,9 @@ public enum OverlayEdgeMode
 
     /// <summary>Every handle scales everything evenly around the middle.</summary>
     Uniform,
+
+    /// <summary>No handles: the overlay is only moved (a skill's cooldown, sized for all of them at once in its window).</summary>
+    None,
 }
 
 /// <summary>
@@ -59,7 +62,12 @@ internal sealed class OverlayEdgeResize
     {
         var grid = new Grid();
         grid.Children.Add(content);
-        var edges = _mode == OverlayEdgeMode.Width ? new[] { Edge.Left, Edge.Right } : new[] { Edge.Left, Edge.Right, Edge.Top, Edge.Bottom };
+        var edges = _mode switch
+        {
+            OverlayEdgeMode.None => Array.Empty<Edge>(),
+            OverlayEdgeMode.Width => new[] { Edge.Left, Edge.Right },
+            _ => new[] { Edge.Left, Edge.Right, Edge.Top, Edge.Bottom },
+        };
         foreach (Edge edge in edges)
         {
             bool vertical = edge is Edge.Left or Edge.Right;
@@ -83,7 +91,7 @@ internal sealed class OverlayEdgeResize
             grid.Children.Add(thumb);
         }
 
-        if (_setScale is not null)
+        if (_setScale is not null && _mode != OverlayEdgeMode.None)
         {
             foreach (var (left, top) in new[] { (true, true), (false, true), (true, false), (false, false) })
             {

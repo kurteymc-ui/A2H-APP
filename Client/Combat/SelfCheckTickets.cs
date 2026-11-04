@@ -234,31 +234,29 @@ public static class SelfCheckTickets
         Aion2Cooldowns.Reset();
         Console.WriteLine($"  -> cooldown list 0x4738: 25 entries and the numbers read={cooldownOk}, a short frame changes only its skill={shortKeeps}");
 
-        // the speed of a skill's own counter, from real numbers of the recording of 2026-10-29 (Aahz, skill 11,300,000: 36,850 at the use, then every 0.6 to 1 s) - about 2,200 a second, not the assumed 2,400
+        // the numbers of one skill (made-up, shaped like the recording of 2026-10-29: 36,850 at the use, then a frame every 0.6 to 1 s as hits took time off):
+        // each is the milliseconds left and sets the countdown exactly; between frames it runs with the clock
         Aion2Cooldowns.Reset();
         var u0 = new DateTime(2026, 10, 29, 17, 20, 0);
         (double Offset, int Value)[] series = { (0.0, 36850), (1.051, 34800), (1.602, 33250), (2.652, 31200), (3.301, 29550), (3.999, 27850), (4.75, 26100) };
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(11300000, series[0].Value) }, u0);
-        bool rateNotYet = Aion2Cooldowns.MeasuredRate(11300000) is null && !Aion2Cooldowns.Left(11300000, series[0].Value, u0, u0).Measured;
-        foreach ((double offset, int value) in series.Skip(1))
+        bool everyFrame = true;
+        foreach ((double offset, int value) in series)
         {
             Aion2Cooldowns.Receive(new List<CooldownEntry> { new(11300000, value) }, u0.AddSeconds(offset));
+            everyFrame &= Math.Abs(Aion2Cooldowns.View(11300000, u0.AddSeconds(offset)).Seconds - value / 1000.0) < 1e-6;
         }
 
-        double? measured = Aion2Cooldowns.MeasuredRate(11300000);
-        (double leftSeconds, _, bool isMeasured) = Aion2Cooldowns.Left(11300000, 26100, u0.AddSeconds(4.75), u0.AddSeconds(4.75));
-        bool rateOk = measured is > 2100 and < 2300 && isMeasured && Math.Abs(leftSeconds - 26100 / measured!.Value) < 0.001;
-        // a stone takes 10 s of the counter off at once (a jump): the speed is that of the numbers after it
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(11300000, 16000) }, u0.AddSeconds(5.35));
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(11300000, 14600) }, u0.AddSeconds(6.0));
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(11300000, 13100) }, u0.AddSeconds(6.6));
-        double? afterJump = Aion2Cooldowns.MeasuredRate(11300000);
-        bool jumpOk = afterJump is > 2000 and < 2600;
-        // used again: the counter starts over and the old speed is forgotten
+        CooldownView ranOn = Aion2Cooldowns.View(11300000, u0.AddSeconds(5.75));
+        bool clockOk = ranOn.Running && Math.Abs(ranOn.Seconds - 25.1) < 1e-6 && Math.Abs(ranOn.Fraction - 25.1 / 36.85) < 1e-6;
+        // a stone takes 10 s off at once: shown at once
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(11300000, 15000) }, u0.AddSeconds(6.0));
+        bool jumpOk = Math.Abs(Aion2Cooldowns.View(11300000, u0.AddSeconds(6.5)).Seconds - 14.5) < 1e-6;
+        // used again (a number well above the countdown): a new one from it
         Aion2Cooldowns.Receive(new List<CooldownEntry> { new(11300000, 40000) }, u0.AddSeconds(60));
-        bool restartOk = Aion2Cooldowns.MeasuredRate(11300000) is null;
+        CooldownView usedAgain = Aion2Cooldowns.View(11300000, u0.AddSeconds(60));
+        bool restartOk = usedAgain.Running && Math.Abs(usedAgain.Seconds - 40) < 1e-6 && Math.Abs(usedAgain.Fraction - 1) < 1e-6;
         Aion2Cooldowns.Reset();
-        Console.WriteLine($"  -> cooldown speed per skill: not before two numbers={rateNotYet}, measured {measured:F0} a second from the recording={rateOk}, after a jump of the counter={jumpOk}, used again starts over={restartOk}");
+        Console.WriteLine($"  -> cooldown numbers are milliseconds: each frame sets the time left={everyFrame}, then the clock runs it down={clockOk}, a jump shows at once={jumpOk}, used again starts over={restartOk}");
 
         // the hand-ticked part: count of the five daily tasks (cleared at 16:00) and the weekly scroll counters (cleared Wednesday 16:00)
         string tmp = Path.Combine(Path.GetTempPath(), $"checklist-{Guid.NewGuid():N}.json");
@@ -405,7 +403,7 @@ public static class SelfCheckTickets
         bool odyleOk = tickLearnt && projected && liveExact && withoutClock && capped && lockedOdyle && rosterBuilt;
 
         Aion2Tickets.Reset();
-        bool ok = odyleOk && missionsReset && missionsStale && stamped && firstLogin && sameDay && newcomer && maskBit2 && startedInGame && relogKeeps && remoteRead && listRead && listedEntries && deletedGone && listKept && membership && premiumKnown && plainCaps && ticketFrame && noTicket && ticketAlone && passFrame && passLevels && lostTomorrow && rules && dungeonRefill && korean && locks && missionsRead && ticks && keptUntilReset && dailyCleared && weeklyCleared && resetTimes && cooldownOk && shortKeeps && rateNotYet && rateOk && jumpOk && restartOk && listOk && truncated && gain && used && refill && notYet && bound && changed && refills && Aion2Tickets.Catalog.Count == 70;
+        bool ok = odyleOk && missionsReset && missionsStale && stamped && firstLogin && sameDay && newcomer && maskBit2 && startedInGame && relogKeeps && remoteRead && listRead && listedEntries && deletedGone && listKept && membership && premiumKnown && plainCaps && ticketFrame && noTicket && ticketAlone && passFrame && passLevels && lostTomorrow && rules && dungeonRefill && korean && locks && missionsRead && ticks && keptUntilReset && dailyCleared && weeklyCleared && resetTimes && cooldownOk && shortKeeps && everyFrame && clockOk && jumpOk && restartOk && listOk && truncated && gain && used && refill && notYet && bound && changed && refills && Aion2Tickets.Catalog.Count == 70;
         Console.WriteLine(ok ? "  -> OK" : "  -> FAILED");
         ServerTime.Reset();
         return ok;

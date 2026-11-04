@@ -47,6 +47,17 @@ public static class OverlayDocking
 
     private sealed record Entry(Window Window, Action Save);
 
+    /// <summary>Overlays of a group (the skills' cooldowns) snap to and dock on each other whatever the two switches say: they are made to be laid out together.</summary>
+    private static readonly Dictionary<string, string> Groups = new();
+
+    /// <summary>Puts an overlay into a group (by its title): it snaps to and docks on the others of the group always.</summary>
+    public static void JoinGroup(Window window, string group) => Groups[window.Title] = group;
+
+    private static bool SameGroup(string a, string b) => Groups.TryGetValue(a, out string? ga) && Groups.TryGetValue(b, out string? gb) && ga == gb;
+
+    /// <summary>Whether the two overlays may dock: the switch is on, or they are of one group.</summary>
+    private static bool MayDock(MeterSettings s, string a, string b) => s.OverlayDocking || SameGroup(a, b);
+
     [StructLayout(LayoutKind.Sequential)]
     private struct Rect { public int Left, Top, Right, Bottom; }
 
@@ -128,7 +139,8 @@ public static class OverlayDocking
     private static void Snap(Window window, IntPtr lParam)
     {
         var s = Current();
-        if (!s.OverlayGridSnap && !s.OverlayDocking)
+        bool grouped = Groups.ContainsKey(window.Title);
+        if (!s.OverlayGridSnap && !s.OverlayDocking && !grouped)
         {
             return;
         }
@@ -147,12 +159,12 @@ public static class OverlayDocking
         double x = tl.X, y = tl.Y, w = br.X - tl.X, h = br.Y - tl.Y;
         bool snappedX = false, snappedY = false;
 
-        if (s.OverlayDocking)
+        if (s.OverlayDocking || grouped)
         {
             var carried = Descendants(window.Title);
             foreach (var (title, entry) in Windows)
             {
-                if (entry.Window == window || !entry.Window.IsVisible || carried.Contains(title))
+                if (entry.Window == window || !entry.Window.IsVisible || carried.Contains(title) || !MayDock(s, window.Title, title))
                 {
                     continue;
                 }
@@ -185,7 +197,7 @@ public static class OverlayDocking
             }
         }
 
-        if (s.OverlayGridSnap)
+        if (s.OverlayGridSnap && !grouped)
         {
             double cell = Math.Clamp(s.OverlayGridSize, 5, 200);
             if (!snappedX) { x = Math.Round(x / cell) * cell; }
@@ -208,14 +220,14 @@ public static class OverlayDocking
         var s = MeterSettings.Load();
         string title = window.Title;
         s.OverlayDocks.Remove(title);
-        if (s.OverlayDocking)
+        if (s.OverlayDocking || Groups.ContainsKey(title))
         {
             var carried = Descendants(title);
             var me = Bounds(window);
             const double tol = 3;
             foreach (var (otherTitle, entry) in Windows)
             {
-                if (entry.Window == window || !entry.Window.IsVisible || carried.Contains(otherTitle))
+                if (entry.Window == window || !entry.Window.IsVisible || carried.Contains(otherTitle) || !MayDock(s, title, otherTitle))
                 {
                     continue;
                 }
@@ -274,7 +286,7 @@ public static class OverlayDocking
         }
 
         var s = Current();
-        if (!s.OverlayDocking || s.OverlayDocks.Count == 0)
+        if ((!s.OverlayDocking && !Groups.ContainsKey(title)) || s.OverlayDocks.Count == 0)
         {
             return;
         }
@@ -327,7 +339,7 @@ public static class OverlayDocking
 
                 foreach (var (child, dock) in s.OverlayDocks)
                 {
-                    if (dock.Parent != parent || !done.Add(child) || !Windows.TryGetValue(child, out Entry? c))
+                    if (dock.Parent != parent || !MayDock(s, parent, child) || !done.Add(child) || !Windows.TryGetValue(child, out Entry? c))
                     {
                         continue;
                     }

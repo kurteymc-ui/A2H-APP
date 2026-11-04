@@ -6,9 +6,10 @@ using AionDPS.Aion2;
 namespace AionDPS.Ui;
 
 /// <summary>
-/// The assist window (Tools menu, Skill Assist): two tabs, Cooldowns and Buffs (2 Nov 2026: one tab each, they were side by side on one page), each with its
-/// overlay's switch, its place and see-through, and its list (an <see cref="AssistPanel"/>) of the local player's cooldowns or the effects on him. The tab
-/// chosen last opens again; the Overlays page opens the one of the overlay asked about. Built in code, in the look of the other windows.
+/// The assist window (Tools menu, Skill Assist): two tabs, Cooldowns and Buffs, each with its switches and its list (an <see cref="AssistPanel"/>) of the
+/// local player's cooldowns or the effects on him. Cooldowns (4 November 2026): every skill on the skill bar, ticked to be shown on the screen - each where
+/// the player puts it, snapping to the others (<see cref="CooldownSkillWindow"/>) - and to be said out loud when it is back; the look (bars or tiles), the
+/// size, the bars' width and the voice's volume. The tab chosen last opens again. Built in code, in the look of the other windows.
 /// </summary>
 public sealed class AssistWindow : Window
 {
@@ -20,6 +21,7 @@ public sealed class AssistWindow : Window
     private readonly DockPanel _cooldownsPage = new();
     private readonly DockPanel _buffsPage = new();
     private readonly List<CheckBox> _lockBoxes = new();
+    private readonly CooldownVoice _voiceTest = new();
 
     /// <summary>The tabs' names in the settings (<see cref="MeterSettings.AssistTab"/>) and for the tools window's size per tab.</summary>
     public const string CooldownsTab = "cooldowns", BuffsTab = "buffs";
@@ -61,27 +63,45 @@ public sealed class AssistWindow : Window
         });
         _effects.ShowInOverlayChanged = _panel.ShowInOverlayChanged;
         _effects.SortByTime = settings.AssistSortByTime;
+        _panel.Voiced = settings.AssistVoiceSkills.ToHashSet();
+        _panel.VoiceChanged = (id, on) => Change(s =>
+        {
+            s.AssistVoiceSkills.Remove(id);
+            if (on)
+            {
+                s.AssistVoiceSkills.Add(id);
+            }
+        });
 
-        // Cooldowns: its overlay, then the skills
+        // Cooldowns: on the screen or not, placing them, the look, then the skills
         var cooldownSwitches = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
         cooldownSwitches.Children.Add(Switch(loc["Assist.ShowCooldownsOverlay"], settings.ShowAssistOverlay, on => Change(s => s.ShowAssistOverlay = on)));
-        cooldownSwitches.Children.Add(LockSwitch(settings));
+        cooldownSwitches.Children.Add(LockSwitch(settings, loc["Assist.Place"]));
         cooldownSwitches.Children.Add(Switch(loc["Assist.ShowReady"], settings.AssistShowReady, on => Change(s => s.AssistShowReady = on)));
-        cooldownSwitches.Children.Add(OverlayControls.OpacityRow(OverlayPlaces.Assist, 0.6));
-        cooldownSwitches.Children.Add(OverlayControls.ResetButton(OverlayPlaces.Assist));
+        cooldownSwitches.Children.Add(LookRow(settings));
+        cooldownSwitches.Children.Add(SliderRow(loc["Assist.Size"], 0.6, 2.0, settings.AssistCooldownScale, v => $"{v * 100:0} %", v => Change(s => s.AssistCooldownScale = Math.Round(v, 2))));
+        cooldownSwitches.Children.Add(SliderRow(loc["Assist.BarWidth"], 110, 320, settings.AssistBarWidth, v => $"{v:0}", v => Change(s => s.AssistBarWidth = Math.Round(v))));
+        var volume = SliderRow(loc["Assist.VoiceVolume"], 0, 100, settings.AssistVoiceVolume, v => $"{v:0} %", v => Change(s => s.AssistVoiceVolume = (int)Math.Round(v)));
+        var test = new Button { Content = loc["Assist.VoiceTest"], Padding = new Thickness(10, 1, 10, 1), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        test.Click += (_, _) => _voiceTest.Say(new[] { loc["Assist.VoiceSample"] }, MeterSettings.Load());
+        DockPanel.SetDock(test, Dock.Right);
+        volume.Children.Insert(0, test);
+        cooldownSwitches.Children.Add(volume);
+        var reset = new Button { Content = loc["Assist.ResetPlaces"], HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 0), Padding = new Thickness(12, 3, 12, 3) };
+        reset.Click += (_, _) => AssistController.ResetCooldownPlaces();
+        cooldownSwitches.Children.Add(reset);
         Fill(_cooldownsPage, cooldownSwitches, loc["Assist.PickHint"], _panel);
 
         // Buffs: its overlay, the order, then the effects on the player
         var buffSwitches = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
         buffSwitches.Children.Add(Switch(loc["Assist.ShowEffectsOverlay"], settings.EffectsOverlayOn, on => Change(s => s.ShowEffectsOverlay = on)));
-        buffSwitches.Children.Add(LockSwitch(settings));
+        buffSwitches.Children.Add(LockSwitch(settings, LocalizationManager.Instance["Settings.PetFarm.Locked"]));
         buffSwitches.Children.Add(Switch(loc["Assist.SortByTime"], settings.AssistSortByTime, on =>
         {
             _effects.SortByTime = on;
             Change(s => s.AssistSortByTime = on);
             _effects.Refresh(_directory());
         }));
-        buffSwitches.Children.Add(OverlayControls.OpacityRow(OverlayPlaces.Effects, 0.6));
         buffSwitches.Children.Add(OverlayControls.ResetButton(OverlayPlaces.Effects));
         Fill(_buffsPage, buffSwitches, loc["Assist.PickHintBuffs"], _effects);
 
@@ -179,10 +199,10 @@ public sealed class AssistWindow : Window
         page.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = list });
     }
 
-    /// <summary>"Position overlay": one setting for both overlays, on both tabs (the two boxes follow each other).</summary>
-    private CheckBox LockSwitch(MeterSettings settings)
+    /// <summary>"Place them": one setting for the cooldowns and the effects, on both tabs (the two boxes follow each other).</summary>
+    private CheckBox LockSwitch(MeterSettings settings, string text)
     {
-        CheckBox box = Switch(LocalizationManager.Instance["Settings.PetFarm.Locked"], !settings.AssistOverlayLocked, on =>
+        CheckBox box = Switch(text, !settings.AssistOverlayLocked, on =>
         {
             Change(s => s.AssistOverlayLocked = !on);
             foreach (CheckBox other in _lockBoxes)
@@ -192,6 +212,57 @@ public sealed class AssistWindow : Window
         });
         _lockBoxes.Add(box);
         return box;
+    }
+
+    /// <summary>The look of the cooldowns and the effects: bars or tiles (two buttons, the chosen one marked).</summary>
+    private static UIElement LookRow(MeterSettings settings)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
+        var label = new TextBlock { Text = loc["Assist.Look"], VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0), MinWidth = 90 };
+        label.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
+        row.Children.Add(label);
+        var buttons = new List<RadioButton>();
+        foreach ((string look, string name) in new[] { (CooldownArt.Bars, loc["Assist.LookBars"]), (CooldownArt.Tiles, loc["Assist.LookTiles"]) })
+        {
+            var button = new RadioButton { Content = name, GroupName = "assistLook", IsChecked = (settings.AssistCooldownStyle == CooldownArt.Tiles) == (look == CooldownArt.Tiles),
+                Margin = new Thickness(0, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
+            string chosen = look;
+            button.Checked += (_, _) => Change(s => s.AssistCooldownStyle = chosen);
+            buttons.Add(button);
+            row.Children.Add(button);
+        }
+
+        return row;
+    }
+
+    /// <summary>A labelled slider; the value is written a moment after the last move.</summary>
+    private static DockPanel SliderRow(string text, double min, double max, double value, Func<double, string> shown, Action<double> changed)
+    {
+        var row = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
+        var label = new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0), MinWidth = 90 };
+        label.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
+        DockPanel.SetDock(label, Dock.Left);
+        var amount = new TextBlock { Text = shown(Math.Clamp(value, min, max)), VerticalAlignment = VerticalAlignment.Center, MinWidth = 48, TextAlignment = TextAlignment.Right };
+        amount.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+        DockPanel.SetDock(amount, Dock.Right);
+        var slider = new Slider { Minimum = min, Maximum = max, Value = Math.Clamp(value, min, max), VerticalAlignment = VerticalAlignment.Center };
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(400) };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+            changed(slider.Value);
+        };
+        slider.ValueChanged += (_, _) =>
+        {
+            amount.Text = shown(slider.Value);
+            timer.Stop();
+            timer.Start();
+        };
+        row.Children.Add(label);
+        row.Children.Add(amount);
+        row.Children.Add(slider);
+        return row;
     }
 
     private static CheckBox Switch(string text, bool on, Action<bool> changed)

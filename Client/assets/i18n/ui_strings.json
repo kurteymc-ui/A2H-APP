@@ -8601,16 +8601,16 @@
     "ko": "사용 가능"
   },
   "Assist.NoCooldowns": {
-    "en": "No skills yet: they show up as soon as the game sends your cooldowns (at login and when you use a skill).",
-    "de": "Noch keine Fertigkeiten: Sie erscheinen, sobald das Spiel deine Abklingzeiten sendet (beim Einloggen und wenn du eine Fertigkeit einsetzt).",
-    "fr": "Aucune compétence pour l'instant : elles apparaissent dès que le jeu envoie vos temps de recharge (à la connexion et quand vous utilisez une compétence).",
-    "es": "Aún no hay habilidades: aparecen en cuanto el juego envía tus enfriamientos (al iniciar sesión y al usar una habilidad).",
-    "ru": "Умений пока нет: они появятся, как только игра пришлёт ваши перезарядки (при входе и при использовании умения).",
-    "zh": "暂无技能：游戏发送你的冷却后即会显示（登录时以及使用技能时）。",
-    "zh-TW": "暫無技能：遊戲傳送你的冷卻後即會顯示（登入時以及使用技能時）。",
-    "pt": "Ainda não há habilidades: aparecem assim que o jogo envia as suas recargas (ao entrar e ao usar uma habilidade).",
-    "ja": "まだスキルがありません。ゲームがクールダウンを送るとすぐに表示されます（ログイン時とスキル使用時）。",
-    "ko": "아직 스킬이 없습니다. 게임이 재사용 대기시간을 보내면 바로 표시됩니다 (로그인 시와 스킬 사용 시)."
+    "en": "No skills yet: they show up when the game sends your skill bar (at login) and when you use a skill.",
+    "de": "Noch keine Fertigkeiten: Sie erscheinen, sobald das Spiel deine Fertigkeitsleiste schickt (beim Einloggen) und wenn du eine Fertigkeit einsetzt.",
+    "fr": "Aucune compétence pour l'instant : elles apparaissent quand le jeu envoie ta barre de compétences (à la connexion) et quand tu utilises une compétence.",
+    "es": "Aún no hay habilidades: aparecen cuando el juego envía tu barra de habilidades (al iniciar sesión) y cuando usas una habilidad.",
+    "ru": "Пока нет навыков: они появятся, когда игра пришлёт панель навыков (при входе) и когда ты применишь навык.",
+    "zh": "还没有技能：游戏发送你的技能栏（登录时）或你使用技能后就会显示。",
+    "zh-TW": "還沒有技能：遊戲傳送你的技能列（登入時）或你使用技能後就會顯示。",
+    "pt": "Ainda sem habilidades: elas aparecem quando o jogo envia sua barra de habilidades (ao entrar) e quando você usa uma habilidade.",
+    "ja": "まだスキルがありません。ゲームがスキルバーを送ったとき（ログイン時）とスキルを使ったときに表示されます。",
+    "ko": "아직 스킬이 없습니다. 게임이 스킬 바를 보낼 때(로그인 시)와 스킬을 사용할 때 표시됩니다."
   },
   "Assist.NoBuffs": {
     "en": "No effect on you.",
@@ -8625,16 +8625,16 @@
     "ko": "걸린 효과가 없습니다."
   },
   "Assist.Note": {
-    "en": "The game sends each cooldown as a number that runs down at its own pace (stones and stats change it). The seconds are worked out from it and only ever count down; they can be about a second off. Ready shows when the game says so.",
-    "de": "Das Spiel sendet jede Abklingzeit als Zahl, die in ihrem eigenen Tempo sinkt (Steine und Werte ändern es). Die Sekunden werden daraus berechnet und zählen nur abwärts; sie können etwa eine Sekunde abweichen. Bereit erscheint, wenn das Spiel es meldet.",
-    "fr": "Le jeu envoie chaque temps de recharge sous forme d'un nombre qui baisse à son propre rythme (pierres et statistiques le modifient). Les secondes en sont déduites et ne font que décompter ; elles peuvent varier d'environ une seconde. « Prêt » s'affiche quand le jeu l'indique.",
-    "es": "El juego envía cada enfriamiento como un número que baja a su propio ritmo (las piedras y los atributos lo cambian). Los segundos se calculan a partir de él y solo cuentan hacia abajo; pueden variar alrededor de un segundo. «Listo» aparece cuando el juego lo indica.",
-    "ru": "Игра передаёт каждую перезарядку числом, которое уменьшается в своём темпе (камни и характеристики его меняют). Секунды вычисляются из него и только убывают; погрешность — около секунды. «Готово» появляется, когда об этом сообщает игра.",
-    "zh": "游戏以数值发送每个冷却，该数值按各自的速度下降（石头和属性会改变它）。秒数由此计算，只会递减，可能有约一秒的误差。游戏确认后才显示就绪。",
-    "zh-TW": "遊戲以數值傳送每個冷卻，該數值按各自的速度下降（石頭和屬性會改變它）。秒數由此計算，只會遞減，可能有約一秒的誤差。遊戲確認後才顯示就緒。",
-    "pt": "O jogo envia cada recarga como um número que desce ao seu próprio ritmo (pedras e atributos alteram-no). Os segundos são calculados a partir dele e só contam para baixo; podem variar cerca de um segundo. «Pronto» aparece quando o jogo o indica.",
-    "ja": "ゲームは各クールダウンを、それぞれの速さで減る数値として送ります（石やステータスで変わります）。秒数はそこから計算され、減る一方です。1秒ほどずれることがあります。「使用可」はゲームが知らせたときに表示されます。",
-    "ko": "게임은 각 재사용 대기시간을 각자의 속도로 줄어드는 수치로 보냅니다 (스톤과 능력치가 영향을 줍니다). 초는 이 수치로 계산되며 줄어들기만 하고, 1초 정도 차이가 날 수 있습니다. '사용 가능'은 게임이 알려 줄 때 표시됩니다."
+    "en": "A use starts the cooldown with the skill's length on this character, learned from your own uses (stones and stats change it). When the game sends a number (a second taken off, a reset), the time follows it exactly.",
+    "de": "Ein Einsatz startet die Abklingzeit mit der Länge der Fertigkeit bei diesem Charakter, gelernt aus deinen eigenen Einsätzen (Steine und Werte ändern sie). Schickt das Spiel eine Zahl (eine Sekunde weniger, ein Zurücksetzen), folgt die Zeit ihr genau.",
+    "fr": "Une utilisation lance la recharge avec la durée de la compétence sur ce personnage, apprise de tes propres utilisations (pierres et stats la changent). Quand le jeu envoie un nombre (une seconde en moins, une remise à zéro), le temps le suit exactement.",
+    "es": "Un uso inicia el enfriamiento con la duración de la habilidad en este personaje, aprendida de tus propios usos (las piedras y estadísticas la cambian). Cuando el juego envía un número (un segundo menos, un reinicio), el tiempo lo sigue con exactitud.",
+    "ru": "Применение запускает откат с длиной навыка у этого персонажа, выученной по твоим применениям (камни и характеристики её меняют). Когда игра присылает число (минус секунда, сброс), время точно следует ему.",
+    "zh": "使用技能后，按此角色该技能的冷却时长开始计时（由你自己的使用记录得出，石头和属性会改变它）。游戏发来数值时（减少一秒、重置），时间会精确跟随。",
+    "zh-TW": "使用技能後，按此角色該技能的冷卻時長開始計時（由你自己的使用紀錄得出，石頭和屬性會改變它）。遊戲傳來數值時（減少一秒、重置），時間會精確跟隨。",
+    "pt": "Um uso inicia a recarga com a duração da habilidade neste personagem, aprendida com seus próprios usos (pedras e atributos a mudam). Quando o jogo envia um número (um segundo a menos, um reset), o tempo o segue com exatidão.",
+    "ja": "スキルを使うと、このキャラクターでの長さ（自分の使用から学習、石やステータスで変化）でクールタイムが始まります。ゲームが数値を送ったとき（1秒短縮、リセット）は、その時間に正確に合わせます。",
+    "ko": "스킬을 사용하면 이 캐릭터의 쿨타임 길이(직접 사용한 기록으로 학습, 석판과 능력치에 따라 변함)로 시작합니다. 게임이 수치를 보내면(1초 감소, 초기화) 그 시간에 정확히 맞춥니다."
   },
   "Assist.ShowOverlay": {
     "en": "Show as overlay",
@@ -8981,16 +8981,16 @@
     "ko": "오버레이에 표시"
   },
   "Assist.PickHint": {
-    "en": "Untick a skill to take it off the overlay. A skill shows up here once the game has shown it with a cooldown; basic attacks and chain skills are never listed.",
-    "de": "Entferne den Haken bei einer Fertigkeit, um sie aus dem Overlay zu nehmen. Eine Fertigkeit erscheint hier, sobald das Spiel sie mit einer Abklingzeit gezeigt hat; Grundangriffe und Kettenskills werden nie aufgeführt.",
-    "fr": "Décochez une compétence pour la retirer de l'overlay. Une compétence apparaît ici dès que le jeu l'a montrée avec un temps de recharge ; les attaques de base et les compétences en chaîne ne sont jamais listées.",
-    "es": "Desmarca una habilidad para quitarla del overlay. Una habilidad aparece aquí en cuanto el juego la ha mostrado con un enfriamiento; los ataques básicos y las habilidades en cadena nunca se muestran.",
-    "ru": "Снимите галочку с умения, чтобы убрать его из оверлея. Умение появляется здесь, как только игра покажет его с перезарядкой; базовые атаки и цепные умения никогда не показываются.",
-    "zh": "取消勾选技能即可将其从悬浮窗中移除。游戏显示某技能进入冷却后，它就会出现在这里；普通攻击和连锁技能从不显示。",
-    "zh-TW": "取消勾選技能即可將其從懸浮視窗中移除。遊戲顯示某技能進入冷卻後，它就會出現在這裡；普通攻擊和連鎖技能從不顯示。",
-    "pt": "Desmarque uma habilidade para a retirar do overlay. Uma habilidade aparece aqui assim que o jogo a mostrar com uma recarga; ataques básicos e habilidades em cadeia nunca são listados.",
-    "ja": "スキルのチェックを外すとオーバーレイから外れます。ゲームがクールダウン付きで表示したスキルがここに現れます。基本攻撃とチェーンスキルは表示されません。",
-    "ko": "스킬의 체크를 해제하면 오버레이에서 빠집니다. 게임이 재사용 대기시간과 함께 보여 준 스킬이 여기에 나타나며, 기본 공격과 연계 스킬은 표시되지 않습니다."
+    "en": "Untick a skill to take it off the screen; click its speaker to hear when it is back. The skills of your skill bar are listed; basic attacks and chain skills never are.",
+    "de": "Entferne den Haken, um eine Fertigkeit vom Bildschirm zu nehmen; klicke ihren Lautsprecher, um zu hören, wann sie wieder bereit ist. Die Fertigkeiten deiner Leiste stehen hier; Grundangriffe und Kettenfertigkeiten nie.",
+    "fr": "Décoche une compétence pour la retirer de l'écran ; clique son haut-parleur pour entendre quand elle revient. Les compétences de ta barre sont listées ; jamais les attaques de base ni les enchaînements.",
+    "es": "Desmarca una habilidad para quitarla de la pantalla; pulsa su altavoz para oír cuándo vuelve. Se listan las habilidades de tu barra; nunca los ataques básicos ni las habilidades en cadena.",
+    "ru": "Сними галочку, чтобы убрать навык с экрана; нажми его динамик, чтобы слышать, когда он готов. Здесь навыки твоей панели; базовые атаки и цепные навыки — никогда.",
+    "zh": "取消勾选可将技能从屏幕上移除；点击喇叭可在技能就绪时听到提醒。这里列出你技能栏的技能；普通攻击和连锁技能不会列出。",
+    "zh-TW": "取消勾選可將技能從螢幕上移除；點擊喇叭可在技能就緒時聽到提醒。這裡列出你技能列的技能；普通攻擊和連鎖技能不會列出。",
+    "pt": "Desmarque uma habilidade para tirá-la da tela; clique no alto-falante para ouvir quando ela voltar. As habilidades da sua barra são listadas; ataques básicos e habilidades em cadeia nunca.",
+    "ja": "チェックを外すと画面から消えます。スピーカーをクリックすると、使えるようになったときに音声で知らせます。スキルバーのスキルが並び、通常攻撃と連携スキルは表示されません。",
+    "ko": "체크를 해제하면 화면에서 사라집니다. 스피커를 누르면 다시 사용 가능할 때 음성으로 알려 줍니다. 스킬 바의 스킬이 표시되며, 기본 공격과 연계 스킬은 표시되지 않습니다."
   },
   "Assist.ShowAll": {
     "en": "Show all",
@@ -15287,9 +15287,16 @@
     "fr": "Kibelisk : {0}"
   },
   "Assist.ShowCooldownsOverlay": {
-    "en": "Show the cooldowns as an overlay",
-    "de": "Abklingzeiten als Overlay zeigen",
-    "fr": "Afficher les temps de recharge en overlay"
+    "en": "Show the cooldowns on the screen (each skill on its own, where you put it)",
+    "de": "Abklingzeiten auf dem Bildschirm zeigen (jede Fertigkeit einzeln, wo du sie hinlegst)",
+    "fr": "Afficher les recharges à l'écran (chaque compétence à part, là où tu la places)",
+    "es": "Mostrar los enfriamientos en pantalla (cada habilidad por separado, donde la pongas)",
+    "ru": "Показывать откаты на экране (каждый навык отдельно, где ты его поставишь)",
+    "zh": "在屏幕上显示冷却（每个技能单独显示，放在你想要的位置）",
+    "zh-TW": "在螢幕上顯示冷卻（每個技能單獨顯示，放在你想要的位置）",
+    "pt": "Mostrar as recargas na tela (cada habilidade separada, onde você colocar)",
+    "ja": "クールタイムを画面に表示（スキルごとに、置いた場所に）",
+    "ko": "쿨타임을 화면에 표시 (스킬마다 따로, 원하는 위치에)"
   },
   "Assist.ShowEffectsOverlay": {
     "en": "Show the effects on you as an overlay (its own, placed apart)",
@@ -20051,16 +20058,16 @@
     "de": "{0}: {1} auf +{2} (du hast es)"
   },
   "Assist.ShowReady": {
-    "en": "Show ready skills too (every skill keeps its place)",
-    "de": "Bereite Fertigkeiten auch zeigen (jede behält ihren Platz)",
-    "fr": "Afficher aussi les compétences prêtes (chacune garde sa place)",
-    "es": "Mostrar también las habilidades listas (cada una conserva su sitio)",
-    "ru": "Показывать и готовые умения (у каждого своё место)",
-    "zh": "也显示已就绪的技能（每个技能位置固定）",
-    "zh-TW": "也顯示已就緒的技能（每個技能位置固定）",
-    "pt": "Mostrar também as habilidades prontas (cada uma mantém o seu lugar)",
-    "ja": "使用可のスキルも表示（各スキルの位置は固定）",
-    "ko": "사용 가능한 스킬도 표시 (각 스킬은 제자리 유지)"
+    "en": "Show ready skills too (otherwise a skill shows only while it is cooling down)",
+    "de": "Auch bereite Fertigkeiten zeigen (sonst nur, solange sie abklingen)",
+    "fr": "Afficher aussi les compétences prêtes (sinon seulement pendant la recharge)",
+    "es": "Mostrar también las habilidades listas (si no, solo durante el enfriamiento)",
+    "ru": "Показывать и готовые навыки (иначе только во время отката)",
+    "zh": "也显示已就绪的技能（否则只在冷却中显示）",
+    "zh-TW": "也顯示已就緒的技能（否則只在冷卻中顯示）",
+    "pt": "Mostrar também as habilidades prontas (senão só durante a recarga)",
+    "ja": "使用可能なスキルも表示（オフ：クールタイム中のみ表示）",
+    "ko": "사용 가능한 스킬도 표시 (끄면 쿨타임 중에만 표시)"
   },
   "CpCalc.SkillLine": {
     "en": "skill level",
@@ -20101,5 +20108,161 @@
   "CpCalc.Ideal.ByCpTip": {
     "en": "No list of ideal lines for your class yet: the six lines of this piece's pool worth most Combat Power, each at its top value.",
     "de": "Für deine Klasse gibt es noch keine Liste idealer Zeilen: die sechs Zeilen dieses Teils, die am meisten Kampfkraft geben, jede mit ihrem Höchstwert."
+  },
+  "Assist.Place": {
+    "en": "Place the cooldowns (drag each skill where you want it; close ones snap together)",
+    "de": "Abklingzeiten platzieren (jede Fertigkeit dorthin ziehen, wo du sie willst; nahe rasten aneinander ein)",
+    "fr": "Placer les recharges (glisse chaque compétence où tu veux ; celles qui sont proches s'aimantent)",
+    "es": "Colocar los enfriamientos (arrastra cada habilidad donde quieras; las cercanas se encajan)",
+    "ru": "Расставить откаты (перетащи каждый навык куда нужно; близкие примагничиваются)",
+    "zh": "摆放冷却（把每个技能拖到想要的位置；靠近时会自动吸附）",
+    "zh-TW": "擺放冷卻（把每個技能拖到想要的位置；靠近時會自動吸附）",
+    "pt": "Posicionar as recargas (arraste cada habilidade para onde quiser; as próximas se encaixam)",
+    "ja": "クールタイムを配置（各スキルを好きな場所へドラッグ。近づけるとくっつきます）",
+    "ko": "쿨타임 배치 (각 스킬을 원하는 곳으로 끌어 놓기, 가까이 두면 서로 붙음)"
+  },
+  "Assist.Look": {
+    "en": "Look",
+    "de": "Aussehen",
+    "fr": "Apparence",
+    "es": "Aspecto",
+    "ru": "Вид",
+    "zh": "样式",
+    "zh-TW": "樣式",
+    "pt": "Aparência",
+    "ja": "表示",
+    "ko": "모양"
+  },
+  "Assist.LookBars": {
+    "en": "Bars",
+    "de": "Balken",
+    "fr": "Barres",
+    "es": "Barras",
+    "ru": "Полосы",
+    "zh": "条",
+    "zh-TW": "條",
+    "pt": "Barras",
+    "ja": "バー",
+    "ko": "막대"
+  },
+  "Assist.LookTiles": {
+    "en": "Squares",
+    "de": "Kacheln",
+    "fr": "Carrés",
+    "es": "Cuadros",
+    "ru": "Квадраты",
+    "zh": "方块",
+    "zh-TW": "方塊",
+    "pt": "Quadrados",
+    "ja": "アイコン",
+    "ko": "아이콘"
+  },
+  "Assist.Size": {
+    "en": "Size",
+    "de": "Größe",
+    "fr": "Taille",
+    "es": "Tamaño",
+    "ru": "Размер",
+    "zh": "大小",
+    "zh-TW": "大小",
+    "pt": "Tamanho",
+    "ja": "サイズ",
+    "ko": "크기"
+  },
+  "Assist.BarWidth": {
+    "en": "Bar width",
+    "de": "Balkenbreite",
+    "fr": "Largeur des barres",
+    "es": "Ancho de barra",
+    "ru": "Ширина полосы",
+    "zh": "条宽度",
+    "zh-TW": "條寬度",
+    "pt": "Largura da barra",
+    "ja": "バーの幅",
+    "ko": "막대 너비"
+  },
+  "Assist.VoiceVolume": {
+    "en": "Voice volume",
+    "de": "Lautstärke der Stimme",
+    "fr": "Volume de la voix",
+    "es": "Volumen de la voz",
+    "ru": "Громкость голоса",
+    "zh": "语音音量",
+    "zh-TW": "語音音量",
+    "pt": "Volume da voz",
+    "ja": "音声の音量",
+    "ko": "음성 볼륨"
+  },
+  "Assist.VoiceTest": {
+    "en": "Test",
+    "de": "Testen",
+    "fr": "Tester",
+    "es": "Probar",
+    "ru": "Проверить",
+    "zh": "试听",
+    "zh-TW": "試聽",
+    "pt": "Testar",
+    "ja": "テスト",
+    "ko": "테스트"
+  },
+  "Assist.VoiceSample": {
+    "en": "Skill",
+    "de": "Fertigkeit",
+    "fr": "Compétence",
+    "es": "Habilidad",
+    "ru": "Навык",
+    "zh": "技能",
+    "zh-TW": "技能",
+    "pt": "Habilidade",
+    "ja": "スキル",
+    "ko": "스킬"
+  },
+  "Assist.ResetPlaces": {
+    "en": "Put the cooldowns back in a column",
+    "de": "Abklingzeiten wieder untereinander anordnen",
+    "fr": "Remettre les recharges en colonne",
+    "es": "Volver a poner los enfriamientos en columna",
+    "ru": "Вернуть откаты в столбик",
+    "zh": "把冷却重新排成一列",
+    "zh-TW": "把冷卻重新排成一列",
+    "pt": "Voltar as recargas para uma coluna",
+    "ja": "クールタイムを縦一列に戻す",
+    "ko": "쿨타임을 다시 한 줄로 정렬"
+  },
+  "Assist.VoiceTip": {
+    "en": "Say it out loud when it is back",
+    "de": "Ansagen, wenn sie wieder bereit ist",
+    "fr": "L'annoncer à voix haute quand elle revient",
+    "es": "Avisar en voz alta cuando vuelva",
+    "ru": "Сообщать голосом, когда готов",
+    "zh": "技能就绪时语音提醒",
+    "zh-TW": "技能就緒時語音提醒",
+    "pt": "Avisar em voz alta quando voltar",
+    "ja": "使えるようになったら音声で知らせる",
+    "ko": "다시 사용 가능하면 음성으로 알림"
+  },
+  "Assist.LengthTip": {
+    "en": "The cooldown's length on this character, learned from your own uses",
+    "de": "Die Länge der Abklingzeit bei diesem Charakter, aus deinen eigenen Einsätzen gelernt",
+    "fr": "La durée de la recharge sur ce personnage, apprise de tes propres utilisations",
+    "es": "La duración del enfriamiento en este personaje, aprendida de tus propios usos",
+    "ru": "Длина отката у этого персонажа, по твоим собственным применениям",
+    "zh": "此角色的冷却时长，由你自己的使用记录得出",
+    "zh-TW": "此角色的冷卻時長，由你自己的使用紀錄得出",
+    "pt": "A duração da recarga neste personagem, aprendida com seus próprios usos",
+    "ja": "このキャラクターでのクールタイムの長さ（自分の使用から学習）",
+    "ko": "이 캐릭터의 쿨타임 길이 (직접 사용한 기록으로 학습)"
+  },
+  "Assist.VoiceReady": {
+    "en": "{0} ready",
+    "de": "{0} bereit",
+    "fr": "{0} disponible",
+    "es": "{0} disponible",
+    "ru": "{0}: готово",
+    "zh": "{0}就绪",
+    "zh-TW": "{0}就緒",
+    "pt": "{0} disponível",
+    "ja": "{0} 準備完了",
+    "ko": "{0} 준비 완료"
   }
 }

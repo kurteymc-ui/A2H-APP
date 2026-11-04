@@ -218,6 +218,22 @@ public abstract class MovableOverlay : Window, IOverlayPlace
         set => _shiftHost.Child = value;
     }
 
+    /// <summary>No room around the content (the frame's outline stays, seen only unlocked): overlays that sit flush against each other, a skill's cooldown.</summary>
+    protected void Flush()
+    {
+        _frame.Padding = new Thickness(0);
+        _frame.CornerRadius = new CornerRadius(2);
+    }
+
+    /// <summary>Sets the scale (the one size of a group of overlays, kept elsewhere) without saving it.</summary>
+    public void UseScale(double scale)
+    {
+        if (Math.Abs(_scale.ScaleX - scale) > 0.001)
+        {
+            SetScale(scale);
+        }
+    }
+
     /// <summary>Applies the lock only when it changed (the controller asks every tick).</summary>
     public void ApplyLockedIfChanged(bool locked)
     {

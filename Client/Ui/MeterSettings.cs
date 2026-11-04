@@ -219,21 +219,39 @@ public sealed class MeterSettings
     /// <summary>The skills and effects (skill ids) the player unticked in the assist window: the overlay does not show them (everything shows by default).</summary>
     public List<int> AssistOverlayHidden { get; set; } = new();
 
-    /// <summary>Skills the meter learned to have no cooldown (a basic attack such as a Templar's Judgment: used three times and never on a cooldown of more than
-    /// 2 s, see Aion2Cooldowns.NoteOwnUse). The assist never lists them, nor the basic attacks of the class lists.</summary>
-    public List<int> AssistNoCooldown { get; set; } = new();
+    /// <summary>Skills the meter learned to have no cooldown (a filler such as a Templar's Judgment from level 16: six uses at least, most of them less than
+    /// 2.5 s apart, and never a cooldown from the game; see Aion2Cooldowns). The assist never lists them, nor the basic attacks of the class lists. (The list
+    /// kept before 4 November 2026, AssistNoCooldown, had every skill the game never sends a cooldown for, Taunt and Shield Rush among them: no longer read.)</summary>
+    public List<int> AssistNoCooldownSkills { get; set; } = new();
 
-    /// <summary>The cooldowns overlay shows the ready skills too (their picture, bright), each skill in its place; off: only the ones cooling down, still in
-    /// their order.</summary>
+    /// <summary>The cooldowns show the ready skills too (a bar with "Ready", a bright picture); off: only the ones cooling down.</summary>
     public bool AssistShowReady { get; set; } = true;
 
-    /// <summary>The skills seen with a cooldown of more than 2 s (every character; the assist shows those of the one in the game), in the order of the
-    /// game's list (see Aion2Cooldowns.KnownSkills): the overlay knows them before they are used.</summary>
+    /// <summary>The skills known to have a cooldown (every character; the assist shows those of the one in the game; see Aion2Cooldowns.KnownSkills): listed
+    /// before they are used when the skill bar is not known.</summary>
     public List<int> AssistKnownSkills { get; set; } = new();
 
-    /// <summary>Per skill the typical speed of its cooldown counter (units per second, from its last uses; see Aion2Cooldowns.TypicalRates): the first
-    /// second of a cooldown is right too.</summary>
-    public Dictionary<int, double> AssistCooldownRates { get; set; } = new();
+    /// <summary>Per skill the times between its last uses with no cooldown number of the game in between (seconds, the last 16; see Aion2Cooldowns): what
+    /// the length of its cooldown on the character is learned from.</summary>
+    public Dictionary<int, List<double>> AssistCooldownGaps { get; set; } = new();
+
+    /// <summary>How the cooldowns look: "Bars" (a row per skill: picture, name, time left or "Ready") or "Tiles" (the skill's picture with the time on it).</summary>
+    public string AssistCooldownStyle { get; set; } = "Bars";
+
+    /// <summary>Where each skill's cooldown is on the screen (left, top), by skill id: every skill is placed on its own, and snaps to the others.</summary>
+    public Dictionary<int, double[]> AssistCooldownPlaces { get; set; } = new();
+
+    /// <summary>The size of the cooldowns (1 = a bar 22 high, a tile 40), the same for every skill.</summary>
+    public double AssistCooldownScale { get; set; } = 1.0;
+
+    /// <summary>The width of a cooldown bar (at size 1).</summary>
+    public double AssistBarWidth { get; set; } = 170;
+
+    /// <summary>The skills whose return is said out loud (the voice of the voice settings): "Taunt ready".</summary>
+    public List<int> AssistVoiceSkills { get; set; } = new();
+
+    /// <summary>The volume of the cooldowns' voice, 0 to 100.</summary>
+    public int AssistVoiceVolume { get; set; } = 80;
 
     /// <summary>The effects on the player as an overlay of their own (the assist overlay shows the cooldowns). Null (never switched): as the assist overlay.
     /// It shares the assist overlay's lock and the list of what is hidden.</summary>

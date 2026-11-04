@@ -15,14 +15,13 @@ namespace AionDPS.Ui;
 public enum AssistPart { All, Cooldowns, Effects }
 
 /// <summary>
-/// The content of the assist: the local player's skill cooldowns (frame 0x4738, see <see cref="Aion2Cooldowns"/>) and the effects running on the
-/// character (frames 0x2a38 / 0x2b38 / 0x2c38, see <see cref="Aion2CombatState.BuffsOn"/>).
-/// <para>The overlays (4 November 2026, rebuilt from rows sorted by time left): a grid of skill pictures, each skill in its own place, as a skill bar shows them -
-/// ready: the picture as it is; cooling down: darker, with a sweep that uncovers it clockwise and the whole seconds left in the middle (a countdown that only
-/// goes down, <see cref="Aion2Cooldowns.View"/>). The effects: their pictures in the order they came, the time left under each. One look, light on dark, no
-/// colours of its own.</para>
-/// <para>The window: the same pictures in a list with the names and a box per skill or effect (ticked: the overlay shows it). Its rows are built once and
-/// only updated, so a box can be clicked while the times run. Basic attacks (every class), chain skills and passives are never listed.</para>
+/// The content of the assist: the local player's skill cooldowns (see <see cref="Aion2Cooldowns"/>) and the effects running on the character (frames
+/// 0x2a38 / 0x2b38 / 0x2c38, see <see cref="Aion2CombatState.BuffsOn"/>).
+/// <para>The window: every skill on the skill bar in a list with its picture, name and time left, a box (ticked: shown on the screen, each skill where the
+/// player put it, <see cref="CooldownSkillWindow"/>) and a speaker (ticked: said out loud when it is back); the effects in a list of their own. Its rows are
+/// built once and only updated, so a box can be clicked while the times run. Basic attacks (every class), fillers, chain skills and passives are never listed.</para>
+/// <para>The effects overlay: no box around it (4 November 2026); a bar per effect (picture, name, time left, the part still to go filled in) or the pictures
+/// with the time under each, as the cooldowns look.</para>
 /// </summary>
 public sealed class AssistPanel : StackPanel
 {
@@ -47,7 +46,7 @@ public sealed class AssistPanel : StackPanel
     private const int FirstSkillId = 10_000_000;
 
     /// <summary>The size of a skill's picture in the overlay and in the window's list.</summary>
-    private const double OverlayTile = 40, OverlayEffectTile = 34, ListTile = 30;
+    private const double OverlayEffectTile = 34, ListTile = 30;
 
     private static readonly Brush OverlayText = Brushes.White;
     private static readonly Brush OverlayMuted = Frozen(Color.FromRgb(0xB8, 0xBE, 0xC4));
@@ -88,9 +87,6 @@ public sealed class AssistPanel : StackPanel
     /// placed on its own (one box with both was hard to read). The window shows both, in cards of their own.</summary>
     public AssistPart Part { get; set; } = AssistPart.All;
 
-    /// <summary>The overlay shows the ready skills too, each in its place (<see cref="MeterSettings.AssistShowReady"/>); off: only the ones cooling down.</summary>
-    public bool ShowReady { get; set; } = true;
-
     private readonly Dictionary<int, EffectRow> _effects = new();
     private int _order;
 
@@ -103,12 +99,25 @@ public sealed class AssistPanel : StackPanel
     public HashSet<int> Hidden { get; set; } = new();
 
     /// <summary>
-    /// Whether a skill is listed (the overlay and the window): a skill the game has shown with a cooldown of more than 2 s - never a basic attack (Rending Blow,
-    /// Keen Strike, Vicious Strike ... of every class, and those learned to have no cooldown, <see cref="Aion2Cooldowns.NotWorth"/>), a chain skill or a passive.
-    /// A skill not used yet shows up with its first cooldown.
+    /// Whether a skill is listed (the window and the screen): a skill on the skill bar (<paramref name="bar"/>), or known to have a cooldown - never a basic
+    /// attack or filler (Rending Blow, Keen Strike, Vicious Strike, Pummel ... and those learned to have no cooldown, <see cref="Aion2Cooldowns.NotWorth"/>),
+    /// a chain skill or a passive.
     /// </summary>
-    public static bool Listed(int skillId) =>
-        skillId >= FirstSkillId && !Aion2Artwork.IsPassive(skillId) && Aion2Cooldowns.NotWorth(skillId) is null && Aion2Cooldowns.IsKnown(skillId);
+    public static bool Listed(int skillId, IReadOnlyList<int>? bar = null) =>
+        skillId >= FirstSkillId && !Aion2Artwork.IsPassive(skillId) && Aion2Cooldowns.NotWorth(skillId) is null
+        && ((bar is not null && bar.Contains(skillId)) || Aion2Cooldowns.IsKnown(skillId));
+
+    /// <summary>The skills said out loud when they are back (see <see cref="MeterSettings.AssistVoiceSkills"/>).</summary>
+    public HashSet<int> Voiced { get; set; } = new();
+
+    /// <summary>The window's speaker of a skill was clicked: the id and whether it is said now.</summary>
+    public Action<int, bool>? VoiceChanged { get; set; }
+
+    /// <summary>How the effects overlay draws them: <see cref="CooldownArt.Bars"/> or <see cref="CooldownArt.Tiles"/>.</summary>
+    public string Look { get; set; } = CooldownArt.Bars;
+
+    /// <summary>The width of an effect's bar.</summary>
+    public double BarWidth { get; set; } = 170;
 
     /// <summary>The window's box of a skill or effect was clicked: the id and whether the overlay shows it now.</summary>
     public Action<int, bool>? ShowInOverlayChanged { get; set; }
@@ -117,12 +126,12 @@ public sealed class AssistPanel : StackPanel
     public bool HasContent { get; private set; }
 
     // ---------- what is built once ----------
-    private readonly Dictionary<int, SkillTile> _skillTiles = new();
     private readonly Dictionary<int, EffectTile> _effectTiles = new();
+    private readonly Dictionary<int, EffectBar> _effectBars = new();
     private readonly Dictionary<int, ListRow> _skillRows = new();
     private readonly Dictionary<int, ListRow> _effectRows = new();
-    private readonly WrapPanel _skillGrid = new();
     private readonly WrapPanel _effectGrid = new();
+    private readonly StackPanel _effectStack = new();
     private readonly StackPanel _skillList = new();
     private readonly StackPanel _effectList = new();
     private TextBlock? _noSkills;
@@ -142,16 +151,16 @@ public sealed class AssistPanel : StackPanel
         }
 
         bool skills = Part != AssistPart.Effects, effects = Part != AssistPart.Cooldowns;
-        int skillCount = skills ? RefreshSkills(now) : 0;
+        int skillCount = skills && !_overlay ? RefreshSkills(dir, now) : 0;
         int effectCount = effects ? RefreshEffects(dir, now) : 0;
         HasContent = skillCount + effectCount > 0;
         if (_overlay && _placeholder is not null)
         {
             // nothing to show (seen only while it is unlocked, to be placed): its name says which of the two overlays it is
             _placeholder.Visibility = HasContent ? Visibility.Collapsed : Visibility.Visible;
-            _skillGrid.Visibility = skillCount > 0 ? Visibility.Visible : Visibility.Collapsed;
-            _effectGrid.Visibility = effectCount > 0 ? Visibility.Visible : Visibility.Collapsed;
-            _effectGrid.Margin = new Thickness(0, skillCount > 0 && effectCount > 0 ? 6 : 0, 0, 0);
+            bool bars = Look != CooldownArt.Tiles;
+            _effectGrid.Visibility = effectCount > 0 && !bars ? Visibility.Visible : Visibility.Collapsed;
+            _effectStack.Visibility = effectCount > 0 && bars ? Visibility.Visible : Visibility.Collapsed;
         }
     }
 
@@ -164,14 +173,10 @@ public sealed class AssistPanel : StackPanel
         {
             _placeholder = Label(Part == AssistPart.Effects ? loc["Assist.Buffs"] : loc["Assist.Cooldowns"], "Brush.Text", 11, bold: true);
             Children.Add(_placeholder);
-            if (skills)
-            {
-                Children.Add(_skillGrid);
-            }
-
             if (effects)
             {
                 Children.Add(_effectGrid);
+                Children.Add(_effectStack);
             }
 
             return;
@@ -208,53 +213,16 @@ public sealed class AssistPanel : StackPanel
 
     // ---------- cooldowns ----------
 
-    /// <summary>Updates the skills; the count of those shown (the overlay) or listed (the window).</summary>
-    private int RefreshSkills(DateTime now)
+    /// <summary>Updates the window's list of skills; the count listed.</summary>
+    private int RefreshSkills(Aion2EntityDirectory? dir, DateTime now)
     {
-        // every skill in its place, in the game's order: the ones seen with a cooldown; basic attacks, chain skills and passives never
-        var main = new List<int>();
-        foreach (int id in Aion2Cooldowns.Skills())
-        {
-            if (Listed(id) && (!_overlay || !Hidden.Contains(id)))
-            {
-                main.Add(id);
-            }
-        }
+        // every skill on the bar in the bar's order (else the ones known to have a cooldown); basic attacks, fillers, chain skills and passives never
+        IReadOnlyList<int>? bar = dir?.LocalBarOrder is { Count: > 0 } order ? order : null;
+        var main = Aion2Cooldowns.Skills(bar).Where(id => Listed(id, bar)).ToList();
 
-        if (_overlay)
-        {
-            var shown = new List<(int Id, CooldownView View)>();
-            foreach (int id in main)
-            {
-                CooldownView view = Aion2Cooldowns.View(id, now);
-                if (view.Running || ShowReady)
-                {
-                    shown.Add((id, view));
-                }
-            }
-
-            string layout = string.Join(",", shown.Select(s => s.Id));
-            if (layout != _skillLayout)
-            {
-                _skillLayout = layout;
-                _skillGrid.Children.Clear();
-                foreach ((int id, _) in shown)
-                {
-                    _skillGrid.Children.Add(SkillTileOf(id, OverlayTile));
-                }
-            }
-
-            foreach ((int id, CooldownView view) in shown)
-            {
-                _skillTiles[id].Show(view);
-            }
-
-            return shown.Count;
-        }
-
-        // the window: the list in the same order (an unticked skill stays in its place, faded)
+        // the list in the same order (an unticked skill stays in its place, faded)
         LocalizationManager loc = LocalizationManager.Instance;
-        string windowLayout = string.Join(",", main.Select(i => Hidden.Contains(i) ? "-" + i : i.ToString(CultureInfo.InvariantCulture)));
+        string windowLayout = string.Join(",", main.Select(i => (Hidden.Contains(i) ? "-" : "") + (Voiced.Contains(i) ? "v" : "") + i.ToString(CultureInfo.InvariantCulture)));
         if (windowLayout != _skillLayout)
         {
             _skillLayout = windowLayout;
@@ -263,6 +231,11 @@ public sealed class AssistPanel : StackPanel
             {
                 ListRow row = SkillRowOf(id);
                 row.Box.IsChecked = !Hidden.Contains(id);
+                if (row.Voice is not null)
+                {
+                    row.Voice.IsChecked = Voiced.Contains(id);
+                }
+
                 row.Fade();
                 _skillList.Children.Add(row);
             }
@@ -278,20 +251,12 @@ public sealed class AssistPanel : StackPanel
             CooldownView view = Aion2Cooldowns.View(id, now);
             ListRow row = _skillRows[id];
             row.Tile.Show(view);
-            row.SetStatus(view.Running ? (view.WholeSeconds >= 60 ? CooldownText(view.WholeSeconds) : view.WholeSeconds.ToString(CultureInfo.CurrentCulture) + " s") : loc["Assist.Ready"], view.Running);
+            string length = Aion2Cooldowns.Length(id) is double l and > Aion2Cooldowns.NoCooldownSeconds ? CooldownArt.Time(l) + " s" : "";
+            row.SetStatus(view.Running ? CooldownArt.Time(view.Seconds) + " s" : loc["Assist.Ready"], view.Running);
+            row.SetDetail(length);
         }
 
         return main.Count;
-    }
-
-    private SkillTile SkillTileOf(int id, double size)
-    {
-        if (!_skillTiles.TryGetValue(id, out SkillTile? tile))
-        {
-            _skillTiles[id] = tile = new SkillTile(IconOf(id, Aion2SkillNames.DisplayOf(id)), size) { Margin = new Thickness(0, 0, 4, 4) };
-        }
-
-        return tile;
     }
 
     private ListRow SkillRowOf(int id)
@@ -300,7 +265,21 @@ public sealed class AssistPanel : StackPanel
         {
             string name = Aion2SkillNames.DisplayOf(id);
             var tile = new SkillTile(IconOf(id, name), ListTile);
-            _skillRows[id] = row = new ListRow(id, tile, tile, name, LocalizationManager.Instance["Assist.ShowInList"]);
+            _skillRows[id] = row = new ListRow(id, tile, tile, name, LocalizationManager.Instance["Assist.ShowInList"], LocalizationManager.Instance["Assist.VoiceTip"]);
+            row.Voice!.Click += (_, _) =>
+            {
+                bool on = row.Voice?.IsChecked == true;
+                if (on)
+                {
+                    Voiced.Add(id);
+                }
+                else
+                {
+                    Voiced.Remove(id);
+                }
+
+                VoiceChanged?.Invoke(id, on);
+            };
             row.Box.Click += (_, _) =>
             {
                 bool on = row.Box.IsChecked == true;
@@ -330,7 +309,7 @@ public sealed class AssistPanel : StackPanel
     /// <summary>Updates the effects on the player; the count shown.</summary>
     private int RefreshEffects(Aion2EntityDirectory? dir, DateTime now)
     {
-        var shown = new List<(int Id, string Time, bool Active)>();
+        var shown = new List<(int Id, string Time, bool Active, double Fraction)>();
         if (dir is not null && dir.LocalPlayerId is >= 0 and int self)
         {
             // one entry per effect: a short effect that is renewed all the time (the Chanter's mantras) gets a new instance or a new end every few
@@ -396,27 +375,47 @@ public sealed class AssistPanel : StackPanel
 
                 bool active = row.LastActive == now;
                 bool endless = row.Aura || b.Ends is null;
-                string time = !active || endless ? "" : EffectText(Math.Max(0, (b.Ends!.Value - now).TotalSeconds));
-                shown.Add((skill, time, active));
+                double left = endless ? 0 : Math.Max(0, (b.Ends!.Value - now).TotalSeconds);
+                string time = !active || endless ? "" : EffectText(left);
+                double fraction = endless ? 1 : b.DurationMs > 0 ? Math.Clamp(left * 1000 / b.DurationMs, 0, 1) : 0;
+                shown.Add((skill, time, active, fraction));
             }
         }
 
         string layout = string.Join(",", shown.Select(s => s.Id));
         if (_overlay)
         {
-            if (layout != _effectLayout)
+            // as bars (picture, name, time left, the part still to go) or as pictures with the time under each, as the cooldowns look
+            bool bars = Look != CooldownArt.Tiles;
+            string look = (bars ? "b" + BarWidth.ToString("0", CultureInfo.InvariantCulture) : "t") + "|" + layout;
+            if (look != _effectLayout)
             {
-                _effectLayout = layout;
+                _effectLayout = look;
                 _effectGrid.Children.Clear();
-                foreach ((int id, _, _) in shown)
+                _effectStack.Children.Clear();
+                foreach ((int id, _, _, _) in shown)
                 {
-                    _effectGrid.Children.Add(EffectTileOf(id));
+                    if (bars)
+                    {
+                        _effectStack.Children.Add(EffectBarOf(id));
+                    }
+                    else
+                    {
+                        _effectGrid.Children.Add(EffectTileOf(id));
+                    }
                 }
             }
 
-            foreach ((int id, string time, bool active) in shown)
+            foreach ((int id, string time, bool active, double fraction) in shown)
             {
-                _effectTiles[id].Show(time, active);
+                if (bars)
+                {
+                    _effectBars[id].Show(time, active, fraction);
+                }
+                else
+                {
+                    _effectTiles[id].Show(time, active);
+                }
             }
 
             return shown.Count;
@@ -426,7 +425,7 @@ public sealed class AssistPanel : StackPanel
         {
             _effectLayout = layout;
             _effectList.Children.Clear();
-            foreach ((int id, _, _) in shown)
+            foreach ((int id, _, _, _) in shown)
             {
                 ListRow row = EffectRowOf(id);
                 row.Box.IsChecked = !Hidden.Contains(id);
@@ -440,7 +439,7 @@ public sealed class AssistPanel : StackPanel
             }
         }
 
-        foreach ((int id, string time, bool active) in shown)
+        foreach ((int id, string time, bool active, _) in shown)
         {
             ListRow row = _effectRows[id];
             row.SetStatus(time.Length > 0 ? time : active ? "∞" : "", active && time.Length > 0);
@@ -458,6 +457,16 @@ public sealed class AssistPanel : StackPanel
         }
 
         return tile;
+    }
+
+    private EffectBar EffectBarOf(int id)
+    {
+        if (!_effectBars.TryGetValue(id, out EffectBar? bar) || Math.Abs(bar.Width - BarWidth) > 0.5)
+        {
+            _effectBars[id] = bar = new EffectBar(id, BarWidth) { Margin = new Thickness(0, 0, 0, 2) };
+        }
+
+        return bar;
     }
 
     private ListRow EffectRowOf(int id)
@@ -621,16 +630,71 @@ public sealed class AssistPanel : StackPanel
         }
     }
 
+    /// <summary>An effect as a bar on the screen: its picture, its name and the time left, the part still to go filled in; faded a moment after it ended.</summary>
+    private sealed class EffectBar : Border
+    {
+        private readonly Border _fill;
+        private readonly TextBlock _time;
+        private readonly double _width;
+
+        public EffectBar(int id, double width)
+        {
+            _width = width;
+            Width = width;
+            Height = CooldownArt.BarHeight;
+            CornerRadius = new CornerRadius(3);
+            Background = CooldownArt.EffectBack;
+            ClipToBounds = true;
+            var grid = new Grid();
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            _fill = new Border { HorizontalAlignment = HorizontalAlignment.Left, Background = CooldownArt.EffectFill, Width = 0, CornerRadius = new CornerRadius(3) };
+            Grid.SetColumnSpan(_fill, 3);
+            grid.Children.Add(_fill);
+            FrameworkElement picture = CooldownArt.Picture(CooldownArt.IconOf(id), CooldownArt.BarHeight - 2);
+            picture.Margin = new Thickness(1);
+            grid.Children.Add(picture);
+            var name = new TextBlock
+            {
+                Text = Aion2SkillNames.DisplayOf(id), Foreground = CooldownArt.Text, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Margin = new Thickness(6, 0, 4, 0),
+                VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, Effect = CooldownArt.Outline,
+            };
+            Grid.SetColumn(name, 1);
+            grid.Children.Add(name);
+            _time = new TextBlock { FontSize = 11.5, FontWeight = FontWeights.Bold, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center, Foreground = CooldownArt.Text, Effect = CooldownArt.Outline };
+            Grid.SetColumn(_time, 2);
+            grid.Children.Add(_time);
+            Child = grid;
+        }
+
+        public void Show(string time, bool active, double fraction)
+        {
+            if (_time.Text != time)
+            {
+                _time.Text = time;
+            }
+
+            _fill.Width = Math.Round(_width * fraction);
+            Opacity = active ? 1 : 0.45;
+        }
+    }
+
     /// <summary>A row of the window's lists: the box (ticked: in the overlay), the picture, the name (the id in its tooltip) and what is left.</summary>
     private sealed class ListRow : Grid
     {
         public CheckBox Box { get; }
         public SkillTile Tile { get; }
+
+        /// <summary>The speaker of a skill's row (ticked: said when it is back); null for an effect.</summary>
+        public System.Windows.Controls.Primitives.ToggleButton? Voice { get; }
+
         private readonly FrameworkElement _body;
         private readonly TextBlock _status;
+        private readonly TextBlock _detail;
         private bool? _strong;
 
-        public ListRow(int id, SkillTile tile, FrameworkElement picture, string name, string tip)
+        public ListRow(int id, SkillTile tile, FrameworkElement picture, string name, string tip, string? voiceTip = null)
         {
             Tile = tile;
             Margin = new Thickness(0, 3, 0, 3);
@@ -643,6 +707,8 @@ public sealed class AssistPanel : StackPanel
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             picture.Margin = new Thickness(0, 0, 10, 0);
             picture.VerticalAlignment = VerticalAlignment.Center;
             body.Children.Add(picture);
@@ -650,9 +716,25 @@ public sealed class AssistPanel : StackPanel
             label.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
             Grid.SetColumn(label, 1);
             body.Children.Add(label);
-            _status = new TextBlock { FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), MinWidth = 44, TextAlignment = TextAlignment.Right };
-            Grid.SetColumn(_status, 2);
+            // the cooldown's length on this character, as learned (muted), then the time left
+            _detail = new TextBlock { FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), ToolTip = LocalizationManager.Instance["Assist.LengthTip"] };
+            _detail.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextSubtle");
+            Grid.SetColumn(_detail, 2);
+            body.Children.Add(_detail);
+            _status = new TextBlock { FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), MinWidth = 52, TextAlignment = TextAlignment.Right };
+            Grid.SetColumn(_status, 3);
             body.Children.Add(_status);
+            if (voiceTip is not null)
+            {
+                // a speaker: the skill is said out loud when it is back
+                Voice = new System.Windows.Controls.Primitives.ToggleButton
+                {
+                    Content = new TextBlock { Text = "\uE767", FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 13 }, ToolTip = voiceTip, Width = 28, Height = 24,
+                    Margin = new Thickness(10, 0, 0, 0), Padding = new Thickness(0), VerticalAlignment = VerticalAlignment.Center, Cursor = System.Windows.Input.Cursors.Hand,
+                };
+                Grid.SetColumn(Voice, 4);
+                body.Children.Add(Voice);
+            }
             Grid.SetColumn(body, 1);
             Children.Add(body);
             _body = body;
@@ -660,6 +742,15 @@ public sealed class AssistPanel : StackPanel
 
         /// <summary>An unticked row is faded.</summary>
         public void Fade() => _body.Opacity = Box.IsChecked == true ? 1 : 0.5;
+
+        /// <summary>The muted note before the time (the cooldown's length).</summary>
+        public void SetDetail(string text)
+        {
+            if (_detail.Text != text)
+            {
+                _detail.Text = text;
+            }
+        }
 
         /// <param name="strong">A running time (the text colour, semi-bold); else muted ("Ready", why a skill is not listed).</param>
         public void SetStatus(string text, bool strong)

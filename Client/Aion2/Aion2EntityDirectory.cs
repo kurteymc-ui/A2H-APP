@@ -242,6 +242,7 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
                 _ownedWings = null;
                 _stigmas.Clear();
                 _bar.Clear();
+                _barOrder.Clear();
                 _stones.Clear();
                 _presets.Clear();
                 _activePreset = 1;
@@ -2264,15 +2265,30 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
     }
 
     private readonly HashSet<int> _bar = new();
+    private readonly List<int> _barOrder = new();
+
+    /// <summary>The base skill ids on the first macro page of the skill bar in the order of its slots (empty before the bar came).</summary>
+    public IReadOnlyList<int> LocalBarOrder
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _barOrder.ToList();
+            }
+        }
+    }
 
     /// <summary>The base skill ids on the first macro page of the skill bar (what the game's skill window
-    /// shows as equipped); replaces the previous bar, since the frame lists all of it.</summary>
-    public void SetLocalBar(IReadOnlySet<int> ids)
+    /// shows as equipped), and their order by slot; replaces the previous bar, since the frame lists all of it.</summary>
+    public void SetLocalBar(IReadOnlySet<int> ids, IReadOnlyList<int>? order = null)
     {
         lock (_gate)
         {
             _bar.Clear();
             _bar.UnionWith(ids);
+            _barOrder.Clear();
+            _barOrder.AddRange(order ?? ids.OrderBy(id => id).ToList());
             if (_skills is not null)
             {
                 _skills = _skills.Select(s => s with { Equipped = _bar.Contains(s.SkillId) }).ToList();

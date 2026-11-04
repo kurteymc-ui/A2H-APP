@@ -865,6 +865,7 @@ public partial class MainWindow
         s.Save();
         SetCompactOverlayScale(1.0);
         ResetMeterOverlayPlace();
+        AssistController.ResetCooldownPlaces(); // the skills' own windows: back in a column
     }
 
     /// <summary>The layout of the pictures the build makes (no overlay windows there): a few overlays on one 1920 × 1080 monitor.</summary>

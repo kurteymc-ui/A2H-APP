@@ -1781,11 +1781,6 @@ public sealed class Aion2FrameDecoder
             NoDamageFrames++;
             if (TryReadVarint(frame, ref p, out long caster) && frame.Length >= p + 4)
             {
-                if (caster == _entities.LocalPlayerId && _entities.LocalPlayerId >= 0)
-                {
-                    Aion2Cooldowns.NoteOwnUse(unchecked((int)BinaryPrimitives.ReadUInt32LittleEndian(frame[p..])), timestamp); // for the skills with no cooldown
-                }
-
                 NoteCast(unchecked((int)caster), unchecked((int)BinaryPrimitives.ReadUInt32LittleEndian(frame[p..])), timestamp);
                 NoteFriendlyEffect(unchecked((int)caster), unchecked((int)target));
             }
@@ -1804,11 +1799,6 @@ public sealed class Aion2FrameDecoder
         TakeNotice((int)actor, (int)target, skillId);
         NoteCast((int)actor, skillId, timestamp);
         NoteFriendlyEffect((int)actor, (int)target);
-        if (actor == _entities.LocalPlayerId && _entities.LocalPlayerId >= 0)
-        {
-            Aion2Cooldowns.NoteOwnUse(skillId, timestamp); // a skill used by the own character: the assist learns which have no cooldown
-        }
-
         if (Aion2SkillNames.IsNonDamageEffect(skillId))
         {
             return Array.Empty<DamageEvent>();
@@ -2066,6 +2056,11 @@ public sealed class Aion2FrameDecoder
     {
         if (TryReadAim(frame, out int actor, out int skillId, out int target, out _, out _, out _, out _, out _, out _))
         {
+            if (actor == _entities.LocalPlayerId && _entities.LocalPlayerId >= 0)
+            {
+                Aion2Cooldowns.NoteOwnCast(skillId, timestamp); // a use of the own character starts its cooldown (the game sends most cooldowns only at login)
+            }
+
             _entities.Combat.NoteAim(actor, target, timestamp);
             if (!_entities.IsKnownMonster(actor))
             {
@@ -3630,6 +3625,7 @@ public sealed class Aion2FrameDecoder
     {
         IReadOnlyDictionary<int, string> names = Aion2SkillNames.Load();
         var equipped = new HashSet<int>();
+        var slots = new List<(int Slot, int Id)>(); // the bar's order: by slot, each skill at its first slot
         for (int i = 2; i + 12 < frame.Length; i++)
         {
             if (frame[i] != 3 || frame[i + 1] != 1 || frame[i + 7] != 4)
@@ -3643,6 +3639,7 @@ public sealed class Aion2FrameDecoder
                 continue;
             }
 
+            slots.Add((frame[i + 2], main / 10000 * 10000));
             for (int j = i + 8; j + 4 <= frame.Length; j += 4)
             {
                 int id = unchecked((int)BinaryPrimitives.ReadUInt32LittleEndian(frame[j..]));
@@ -3668,7 +3665,9 @@ public sealed class Aion2FrameDecoder
                 }
             }
 
-            _entities.SetLocalBar(equipped);
+            var order = slots.OrderBy(x => x.Slot).Select(x => x.Id).Where(equipped.Contains).Distinct().ToList();
+            order.AddRange(equipped.Where(id => !order.Contains(id)).OrderBy(id => id));
+            _entities.SetLocalBar(equipped, order);
         }
     }
 

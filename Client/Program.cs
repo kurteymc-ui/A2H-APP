@@ -1756,32 +1756,22 @@ internal static class Program
         Ui.ThemeManager.Apply(app, settings);
         Ui.MainWindow.Headless = true;
         var table = Aion2.Protocol.Aion2SkillNames.Load();
-        // a Gladiator's skills in the order the game lists them (made-up numbers): eight with a cooldown, four of them cooling down - the run of each
-        // started a while ago (its first number), the last number just now; the counter falls at 2,400 a second
-        int[] gladiator = { 11250000, 11190000, 11100000, 11280000, 11390000, 11400000, 11170000, 11200000, 11360000, 11290000, 11300000, 11060000, 11050000, 11440000, 11320000 };
-        var skills = gladiator.Where(id => table.ContainsKey(id) && Aion2.Protocol.Aion2SkillIcons.PathFor(id) is not null && !Aion2.Protocol.Aion2Artwork.IsPassive(id)
-                && Aion2.Aion2Cooldowns.NotWorth(id) is null).Take(8).ToList();
-        var effects = table.Where(kv => kv.Value.Contains("Armor") || kv.Value.Contains("Shield") || kv.Value.Contains("Boost") || kv.Value.Contains("Stance"))
-            .Where(kv => Aion2.Protocol.Aion2SkillIcons.PathFor(kv.Key) is not null).GroupBy(kv => kv.Value).Select(g => g.First().Key).Take(3).ToList();
-        (double Left, double Elapsed)[] runs = { (0, 0), (3.4, 12), (0, 0), (17.2, 8), (0, 0), (46, 30), (95, 15), (0, 0) };
+        // a Templar's skill bar (made-up times): its uses start the cooldowns with the lengths of the skill lists (Taunt 23.8 s, Banner 57 s ...), the game's
+        // number for Punishment sets its time exactly; Vicious Strike (a basic attack) is never listed
+        int[] bar = { 12350000, 12300000, 12120000, 12430000, 12100000, 12130000, 12260000, 12230000, 12270000, 12450000, 12090000, 12010000 };
         var now = DateTime.Now;
-        const double rate = 2400;
-        // the whole list at login, with a Gladiator's basic attacks on a lock of 4 s: they are never listed all the same
-        var basics = new[] { 11010000, 11020000 }.Where(id => !skills.Contains(id)).Select(id => new Aion2.CooldownEntry(id, (int)(4 * rate)));
-        Aion2.Aion2Cooldowns.Receive(skills.Select(id => new Aion2.CooldownEntry(id, 0)).Concat(basics).ToList(), now.AddSeconds(-60));
-        Aion2.Aion2Cooldowns.SeedKnown(skills);
-        Aion2.Aion2Cooldowns.SeedRates(skills.ToDictionary(id => id, _ => rate));
-        for (int i = 0; i < skills.Count; i++)
+        Aion2.Aion2Cooldowns.Reset();
+        (int Id, double Ago)[] uses = { (12350000, 19.6), (12120000, 5.3), (12100000, 6.4), (12260000, 14.2), (12230000, 18.5), (12450000, 20.1), (12090000, 4.2) };
+        foreach ((int id, double ago) in uses)
         {
-            (double left, double elapsed) = runs[i % runs.Length];
-            if (left > 0)
-            {
-                Aion2.Aion2Cooldowns.Receive(new List<Aion2.CooldownEntry> { new(skills[i], (int)((left + elapsed) * rate)) }, now.AddSeconds(-elapsed));
-                Aion2.Aion2Cooldowns.Receive(new List<Aion2.CooldownEntry> { new(skills[i], (int)(left * rate)) }, now);
-            }
+            Aion2.Aion2Cooldowns.NoteOwnCast(id + 150, now.AddSeconds(-ago));
         }
 
+        Aion2.Aion2Cooldowns.Receive(new List<Aion2.CooldownEntry> { new(12090000, 12_350) }, now);
+        var effects = table.Where(kv => kv.Value.Contains("Armor") || kv.Value.Contains("Shield") || kv.Value.Contains("Boost") || kv.Value.Contains("Stance"))
+            .Where(kv => Aion2.Protocol.Aion2SkillIcons.PathFor(kv.Key) is not null).GroupBy(kv => kv.Value).Select(g => g.First().Key).Take(3).ToList();
         var dir = new Aion2.Aion2EntityDirectory { LocalPlayerId = 8956 };
+        dir.SetLocalBar(bar.ToHashSet(), bar);
         int[] lasts = { 18_000, 42_000, -1 };
         for (int i = 0; i < effects.Count; i++)
         {
@@ -1791,24 +1781,32 @@ internal static class Program
         int scale = int.TryParse(Environment.GetEnvironmentVariable("AIONDPS_RENDER_SCALE"), out int sc) && sc is >= 1 and <= 4 ? sc : 1; // 2 = a sharp picture for the website
         if (language == "overlays")
         {
-            // the two overlays as the game shows them: the cooldowns, the effects - each a box of its own
+            // as the game shows them, no box around them: the cooldowns as bars (a column, as placed by default) and as tiles (a row), then the effects
             var row = new System.Windows.Controls.StackPanel { Orientation = System.Windows.Controls.Orientation.Horizontal, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x3a, 0x45, 0x3c)) };
-            foreach (var part in new[] { Ui.AssistPart.Cooldowns, Ui.AssistPart.Effects })
+            var shown = Aion2.Aion2Cooldowns.Skills(bar).Where(id => Ui.AssistPanel.Listed(id, bar)).ToList();
+            var bars = new System.Windows.Controls.StackPanel { Margin = new System.Windows.Thickness(12) };
+            var tiles = new System.Windows.Controls.WrapPanel { Margin = new System.Windows.Thickness(12), MaxWidth = 6 * 44, VerticalAlignment = System.Windows.VerticalAlignment.Top };
+            foreach (int id in shown)
             {
-                var overlayPanel = new Ui.AssistPanel(true) { Part = part, MinWidth = 44 };
-                overlayPanel.Refresh(dir);
-                row.Children.Add(new System.Windows.Controls.Border
-                {
-                    Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x73, 0x0B, 0x0D, 0x10)), BorderThickness = new System.Windows.Thickness(1),
-                    BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)), CornerRadius = new System.Windows.CornerRadius(6),
-                    Padding = new System.Windows.Thickness(6, 6, 2, 2), Margin = new System.Windows.Thickness(12), VerticalAlignment = System.Windows.VerticalAlignment.Top, Child = overlayPanel,
-                });
+                var view = Aion2.Aion2Cooldowns.View(id, now);
+                var barLook = new Ui.CooldownBar(id, 170) { Margin = new System.Windows.Thickness(0, 0, 0, 2) };
+                barLook.Show(view);
+                bars.Children.Add(barLook);
+                var tile = new Ui.CooldownTile(id);
+                tile.Show(view);
+                tiles.Children.Add(tile);
             }
+
+            row.Children.Add(bars);
+            row.Children.Add(tiles);
+            var overlayPanel = new Ui.AssistPanel(true) { Part = Ui.AssistPart.Effects, MinWidth = 44, Margin = new System.Windows.Thickness(12), VerticalAlignment = System.Windows.VerticalAlignment.Top };
+            overlayPanel.Refresh(dir);
+            row.Children.Add(overlayPanel);
 
             row.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
             row.Arrange(new System.Windows.Rect(row.DesiredSize));
             row.UpdateLayout();
-            var shot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(row.DesiredSize.Width), (int)Math.Ceiling(row.DesiredSize.Height), 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            var shot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(row.DesiredSize.Width) * scale, (int)Math.Ceiling(row.DesiredSize.Height) * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
             shot.Render(row);
             var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
             png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(shot));

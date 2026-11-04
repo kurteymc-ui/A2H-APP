@@ -3,14 +3,15 @@ using AionDPS.Aion2;
 namespace AionDPS.Combat;
 
 /// <summary>
-/// The skills the assist leaves off its cooldown list while they are ready (Aion2Cooldowns.NotWorth): basic attacks with no cooldown and chain skills from the
-/// two lists, and the skills learned to have none from use (three uses without a cooldown of more than 2 s; a longer one takes a skill off again).
+/// The assist's cooldowns (Aion2Cooldowns): the skills left off (basic attacks and fillers with no cooldown, chain skills - from the two lists, or learned
+/// from six quick uses), the countdown (a use starts it with the skill's length, the game's milliseconds set it exactly), the lengths learned from the uses,
+/// the skill bar's order, and the voice when a skill is back. Made-up numbers shaped like the game's (4 November 2026).
 /// </summary>
 public static class SelfCheckAssistSkills
 {
     public static bool Run()
     {
-        Console.WriteLine("[selftest] Skills left off the assist's cooldown list (basic attacks, chain skills):");
+        Console.WriteLine("[selftest] The assist's cooldowns (skills left off, countdown, lengths, skill bar, voice):");
         bool ok = true;
 
         void Check(string what, bool good, string detail)
@@ -26,55 +27,40 @@ public static class SelfCheckAssistSkills
         Check("Rending Blow, Keen Strike", Of(11010000) == "NoCooldown" && Of(11020000) == "NoCooldown", $"{Of(11010000)}, {Of(11020000)}");
         Check("Rupture Strike, a Templar's Decisive Strike (stone variant)", Of(11030000) == "Chain" && Of(12020017) == "Chain", $"{Of(11030000)}, {Of(12020017)}");
         Check("Ruinous Blow, the dodge", Of(11100000) == "listed" && Of(11000100) == "listed", $"{Of(11100000)}, {Of(11000100)}");
+        Check("a Templar's Pummel (a filler)", Of(12040000) == "NoCooldown", Of(12040000));
 
         // every class's basic attack, also of the classes whose list has no cooldowns: Vicious Strike, Quick Slice, Flame Arrow, Cold Shock, Earth's Retribution, Onslaught
         int[] basics = { 12010000, 13010000, 15210000, 16010000, 17010000, 18010000 };
         Check("the basic attack of every class", basics.All(id => Of(id) == "NoCooldown"), string.Join(", ", basics.Select(Of)));
 
-        // learned: a Templar's Judgment hits five times in a second (one use), three uses 4 s apart, never a cooldown in the list: no cooldown
-        var t0 = new DateTime(2026, 10, 31, 16, 0, 0);
-        for (int use = 0; use < 3; use++)
+        // learned: a Templar's Judgment, seven uses 1.8 s apart (each a cast frame and its effects' frames: the same use), no number of the game: no cooldown
+        var t0 = new DateTime(2026, 11, 4, 16, 0, 0);
+        for (int use = 0; use < 7; use++)
         {
-            for (int hit = 0; hit < 5; hit++)
+            DateTime at = t0.AddSeconds(use * 1.8);
+            Aion2Cooldowns.NoteOwnCast(12240010, at);
+            Aion2Cooldowns.NoteOwnCast(12240017, at.AddSeconds(0.2));
+            Aion2Cooldowns.NoteOwnCast(12240010, at.AddSeconds(0.4));
+            if (use == 5)
             {
-                Aion2Cooldowns.NoteOwnUse(12240017, t0.AddSeconds(use * 4 + hit * 0.2));
-            }
-
-            Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12350000, 0) }, t0.AddSeconds(use * 4 + 2));
-            if (use == 1)
-            {
-                Check("after two uses", Of(12240000) == "listed", Of(12240000));
+                Check("after six uses (five gaps)", Of(12240000) == "listed", Of(12240000));
             }
         }
 
-        Check("Judgment after three uses", Of(12240000) == "NoCooldown" && Aion2Cooldowns.LearnedNoCooldown().SequenceEqual(new[] { 12240000 }), Of(12240000));
+        Check("Judgment after seven uses", Of(12240000) == "NoCooldown" && Aion2Cooldowns.LearnedNoCooldown().SequenceEqual(new[] { 12240000 }), Of(12240000));
 
-        // a skill with a cooldown: the list shows it right at the use (Warding Strike, 21,500 = about 9 s); three uses, still listed
-        var t1 = t0.AddMinutes(1);
-        for (int use = 0; use < 3; use++)
-        {
-            Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12350000, 21500) }, t1.AddSeconds(use * 12));
-            Aion2Cooldowns.NoteOwnUse(12350010, t1.AddSeconds(use * 12 + 0.4));
-            Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12350000, 0) }, t1.AddSeconds(use * 12 + 10));
-        }
-
-        Check("Warding Strike with its cooldown", Of(12350000) == "listed", Of(12350000));
-
-        // a moment's lock after a basic attack (1,500 = about 0.6 s) is no cooldown
-        var t2 = t0.AddMinutes(2);
-        for (int use = 0; use < 3; use++)
-        {
-            Aion2Cooldowns.NoteOwnUse(12010000, t2.AddSeconds(use * 3));
-            Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12010000, 1500) }, t2.AddSeconds(use * 3 + 0.1));
-            Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12010000, 0) }, t2.AddSeconds(use * 3 + 1.8));
-        }
-
-        Check("Vicious Strike with a moment's lock", Of(12010000) == "NoCooldown", Of(12010000));
-
-        // Judgment shows a cooldown of 12 s after all (a stone): listed again
+        // Judgment comes with 12 s from the game after all (a stone): listed again
         int before = Aion2Cooldowns.LearnedVersion;
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12240000, 28800) }, t0.AddMinutes(3));
-        Check("Judgment with a cooldown after all", Of(12240000) == "listed" && Aion2Cooldowns.LearnedVersion != before, Of(12240000));
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12240000, 12000) }, t0.AddMinutes(1));
+        Check("Judgment with a cooldown after all", Of(12240000) == "listed" && Aion2Cooldowns.LearnedVersion != before && Aion2Cooldowns.IsKnown(12240000), Of(12240000));
+
+        // a skill with a cooldown used as soon as it is back is never one without (Warding Strike, every 23.5 s)
+        for (int use = 0; use < 8; use++)
+        {
+            Aion2Cooldowns.NoteOwnCast(12350150, t0.AddMinutes(2).AddSeconds(use * 23.5));
+        }
+
+        Check("Warding Strike used eight times", Of(12350000) == "listed", Of(12350000));
 
         // kept in the settings: seeded at the next start
         Aion2Cooldowns.Reset();
@@ -83,6 +69,8 @@ public static class SelfCheckAssistSkills
         Aion2Cooldowns.Reset();
 
         Countdown(Check);
+        Lengths(Check);
+        BarAndVoice(Check);
 
         // the effects list: the Abyss's zone states, the artifacts' faction bonus and the game's test states are left off (seen on 2026-10-31 in Reshanta);
         // a class skill's standing effect, a scroll and a boss's timed zone stay
@@ -99,116 +87,155 @@ public static class SelfCheckAssistSkills
         return ok;
     }
 
-    /// <summary>
-    /// The countdown the assist shows (Aion2Cooldowns.View), on made-up numbers shaped like the game's (4 November 2026): one skill per frame, the counter
-    /// falling by about the same step each frame while the capture's timestamps jitter by a few tenths of a second.
-    /// </summary>
+    /// <summary>The countdown: a use starts it with the skill's length, the game's milliseconds set it exactly, and it runs with the clock.</summary>
     private static void Countdown(Action<string, bool, string> check)
     {
         Aion2Cooldowns.Reset();
         var t0 = new DateTime(2026, 11, 4, 18, 0, 0);
-        const int a = 12350000, b = 12090000;
+        const int taunt = 12120000, punishment = 12090000, warding = 12350000;
 
-        // the whole list at login (a Templar's skills, all ready), then nothing for 15 s, then one skill per frame: the others stay in the list
-        int[] login = { 1101, 12130000, 12430000, 12100000, 12230000, 12450000, 12300000, b, a, 12270000 };
+        // the whole list at login (a Templar's skills, all ready), then one skill per frame: the others stay in the list
+        int[] login = { 1101, 12130000, 12430000, 12100000, 12230000, 12450000, 12300000, punishment, warding, 12270000 };
         Aion2Cooldowns.Receive(login.Select(id => new CooldownEntry(id, 0)).ToList(), t0);
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(a, 19600) }, t0.AddSeconds(15));
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(b, 26400) }, t0.AddSeconds(15.4));
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(warding, 19600) }, t0.AddSeconds(15));
         var list = Aion2Cooldowns.Last.Entries;
-        check("one skill per frame after a pause keeps the list", list.Count == login.Length && list.First(e => e.Id == a).Remaining == 19600
-            && list.First(e => e.Id == b).Remaining == 26400 && list.Select(e => e.Id).SequenceEqual(login), $"{list.Count} entries");
-        check("the skills in the order of the game's list", Aion2Cooldowns.Skills().Take(2).SequenceEqual(new[] { b, a }), string.Join(",", Aion2Cooldowns.Skills().Take(2)));
+        check("one skill per frame keeps the list", list.Count == login.Length && list.First(e => e.Id == warding).Remaining == 19600 && list.Select(e => e.Id).SequenceEqual(login),
+            $"{list.Count} entries");
 
-        // a basic attack is never listed, not even on a lock of 4 s (the owner: not needed, for any class)
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12010000, 9600) }, t0.AddSeconds(15.6));
-        check("Vicious Strike on a lock of 4 s is not listed, the skills with a cooldown are",
-            !Ui.AssistPanel.Listed(12010000) && !Aion2Cooldowns.IsKnown(12010000) && Ui.AssistPanel.Listed(a) && Ui.AssistPanel.Listed(b), "basic attack left out");
+        // the game's number is the milliseconds left, running down with the clock: 19.6 s, 5 s later 14.6 s, ready after 19.6 s
+        CooldownView at0 = Aion2Cooldowns.View(warding, t0.AddSeconds(15)), at5 = Aion2Cooldowns.View(warding, t0.AddSeconds(20));
+        check("the game's milliseconds run down with the clock", at0.Running && Math.Abs(at0.Seconds - 19.6) < 1e-6 && Math.Abs(at5.Seconds - 14.6) < 1e-6
+            && Math.Abs(at0.Fraction - 1) < 1e-6 && !Aion2Cooldowns.View(warding, t0.AddSeconds(34.7)).Running, $"{at0.Seconds:F1} s, then {at5.Seconds:F1} s");
 
-        // skill a: 2,600 a frame, frames 0.49 to 1.3 s apart; shown every 0.1 s from the first number to the game's 0
-        double[] gaps = { 0.94, 0.61, 0.64, 0.49, 0.67, 1.30, 0.52, 0.69 };
-        DateTime Run(DateTime start, int first, out bool steady, out bool readyAtZero, out double firstShown)
+        // Taunt: the game never sends it at its use; the use starts it with the measured 23.8 s; the frames of its effects and a second frame of the use change nothing
+        DateTime use = t0.AddSeconds(40);
+        Aion2Cooldowns.NoteOwnCast(12120150, use);
+        Aion2Cooldowns.NoteOwnCast(12120157, use.AddSeconds(0.3));
+        Aion2Cooldowns.NoteOwnCast(12120150, use.AddSeconds(0.6));
+        CooldownView taunt1 = Aion2Cooldowns.View(taunt, use.AddSeconds(1));
+        check("a use starts the cooldown with its length (Taunt 23.8 s)", taunt1.Running && Math.Abs(taunt1.Seconds - 22.8) < 1e-6 && Aion2Cooldowns.IsKnown(taunt)
+            && Aion2Cooldowns.View(taunt, use.AddSeconds(23.7)).Running && !Aion2Cooldowns.View(taunt, use.AddSeconds(23.9)).Running, $"{taunt1.Seconds:F1} s after 1 s");
+
+        // Punishment: used, then Pummel takes a second off (the game's number), then a reset (0)
+        Aion2Cooldowns.NoteOwnCast(12090150, use);
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(punishment, 22_400) }, use.AddSeconds(5));
+        CooldownView cut = Aion2Cooldowns.View(punishment, use.AddSeconds(5.1));
+        check("a second taken off shows at once, the length kept", cut.Running && Math.Abs(cut.Seconds - 22.3) < 1e-6 && Math.Abs(cut.Fraction - 22.3 / 28.4) < 1e-6,
+            $"{cut.Seconds:F1} s of 28.4");
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(punishment, 0) }, use.AddSeconds(6));
+        check("a reset (0) is ready at once", !Aion2Cooldowns.View(punishment, use.AddSeconds(6.1)).Running, "ready");
+
+        // a use the meter did not see (the game's number with no run, or ending well after it): a new countdown from the number
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(punishment, 28_000) }, use.AddSeconds(30));
+        CooldownView unseen = Aion2Cooldowns.View(punishment, use.AddSeconds(30.1));
+        check("a use not seen starts with the game's number", unseen.Running && Math.Abs(unseen.Seconds - 27.9) < 1e-6 && unseen.Fraction > 0.99, $"{unseen.Seconds:F1} s");
+
+        // a basic attack is never listed, not even on a lock of 4 s, nor used or on the skill bar (the owner: not needed, for any class)
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12010000, 4000) }, use.AddSeconds(31));
+        Aion2Cooldowns.NoteOwnCast(12010150, use.AddSeconds(32));
+        check("Vicious Strike is never listed, the skills with a cooldown are",
+            !Ui.AssistPanel.Listed(12010000) && !Ui.AssistPanel.Listed(12010000, new[] { 12010000, taunt }) && !Aion2Cooldowns.IsKnown(12010000)
+            && Ui.AssistPanel.Listed(taunt) && Ui.AssistPanel.Listed(warding), "basic attack left out");
+
+        // a moment's lock (1,500 = under 2 s) shows as ready
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12300000, 1500) }, use.AddSeconds(33));
+        check("a moment's lock is no cooldown", !Aion2Cooldowns.View(12300000, use.AddSeconds(33.1)).Running, "ready");
+
+        // another character (a Gladiator's skill): the Templar's cooldowns are gone
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(11100000, 40000) }, use.AddSeconds(40));
+        check("another character's list replaces the last one", Aion2Cooldowns.Last.Entries.Count == 1 && Aion2Cooldowns.Skills().SequenceEqual(new[] { 11100000 })
+            && !Aion2Cooldowns.View(taunt, use.AddSeconds(40)).Running, string.Join(",", Aion2Cooldowns.Skills()));
+        Aion2Cooldowns.Reset();
+    }
+
+    /// <summary>The lengths: the measured ones of the skill lists, then the tenth shortest of the gaps between uses with no number of the game in between.</summary>
+    private static void Lengths(Action<string, bool, string> check)
+    {
+        Aion2Cooldowns.Reset();
+        var t0 = new DateTime(2026, 11, 4, 19, 0, 0);
+        const int warding = 12350000, shield = 12110000;
+        check("the measured length until uses teach one (Warding Strike 23.5 s)", Aion2Cooldowns.Length(warding) == 23.5, $"{Aion2Cooldowns.Length(warding)} s");
+
+        // four uses 22.4, 22.1, 22.6, 22.2 s apart on this character (a stone): the shortest of the four
+        double at = 0;
+        Aion2Cooldowns.NoteOwnCast(12350150, t0);
+        foreach (double gap in new[] { 22.4, 22.1, 22.6 })
         {
-            var frames = new List<(DateTime At, int Value)> { (start, first) };
-            DateTime at = start;
-            for (int i = 0; i < gaps.Length; i++)
-            {
-                at = at.AddSeconds(gaps[i]);
-                frames.Add((at, Math.Max(0, first - 2600 * (i + 1))));
-            }
-
-            steady = true;
-            readyAtZero = false;
-            firstShown = -1;
-            double last = double.MaxValue;
-            int lastWhole = int.MaxValue;
-            int next = 0;
-            for (DateTime now = start; now <= at.AddSeconds(0.3); now = now.AddSeconds(0.1))
-            {
-                while (next < frames.Count && frames[next].At <= now)
-                {
-                    Aion2Cooldowns.Receive(new List<CooldownEntry> { new(a, frames[next].Value) }, frames[next].At);
-                    next++;
-                }
-
-                CooldownView view = Aion2Cooldowns.View(a, now);
-                if (firstShown < 0)
-                {
-                    firstShown = view.Seconds;
-                }
-
-                if (next == frames.Count)
-                {
-                    readyAtZero = !view.Running;
-                }
-                else if (view.Running)
-                {
-                    steady &= view.Seconds <= last + 1e-9 && view.WholeSeconds <= lastWhole;
-                    last = view.Seconds;
-                    lastWhole = view.WholeSeconds;
-                }
-                else
-                {
-                    steady = false; // ready before the game said so
-                }
-            }
-
-            return at;
+            at += gap;
+            Aion2Cooldowns.NoteOwnCast(12350150, t0.AddSeconds(at));
         }
 
-        DateTime end = Run(t0.AddSeconds(15), 19600, out bool steady, out bool ready, out double shownFirst);
-        double real = (end - t0.AddSeconds(15)).TotalSeconds; // the game's 0 came 5.86 s after the first number
-        check("the shown time never goes up, ready at the game's 0", steady && ready, $"steady {steady}, ready {ready}");
-        check("a skill never seen: the first estimate from the assumed speed", Math.Abs(shownFirst - 19600 / Aion2Cooldowns.FallbackRate) < 0.01, $"{shownFirst:F1} s");
-        double? typical = Aion2Cooldowns.TypicalRate(a);
-        check("the finished use teaches the skill's speed", typical is > 2900 and < 3700, $"{typical:F0} a second (real {19600 / real:F0})");
+        check("three gaps: still the measured length", Aion2Cooldowns.Length(warding) == 23.5, $"{Aion2Cooldowns.Length(warding)} s");
+        at += 22.2;
+        Aion2Cooldowns.NoteOwnCast(12350150, t0.AddSeconds(at));
+        check("four gaps: the shortest of them", Aion2Cooldowns.Length(warding) == 22.1, $"{Aion2Cooldowns.Length(warding)} s");
 
-        // the next use starts right: its first estimate is the speed of the last use, within a second of the real length
-        DateTime second = end.AddSeconds(4);
-        Run(second, 19600, out bool steady2, out bool ready2, out double shownFirst2);
-        check("the next use starts with the learned speed", steady2 && ready2 && Math.Abs(shownFirst2 - real) < 1.0, $"{shownFirst2:F1} s for {real:F1} s");
+        // a gap with a number of the game in it (basic attacks took 2 s off) says nothing of the length
+        int gapsBefore = Aion2Cooldowns.LearnedGaps()[warding].Count;
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(warding, 12_000) }, t0.AddSeconds(at + 8));
+        at += 20.5;
+        Aion2Cooldowns.NoteOwnCast(12350150, t0.AddSeconds(at));
+        check("a gap with the game's number in it is not learned", Aion2Cooldowns.LearnedGaps()[warding].Count == gapsBefore, $"{gapsBefore} gaps");
 
-        // a stone takes 8 s off at once: shown at once, no slow slide; used again: a new countdown
-        DateTime third = second.AddSeconds(20);
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(a, 40000) }, third);
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(a, 37400) }, third.AddSeconds(0.8));
-        double before = Aion2Cooldowns.View(a, third.AddSeconds(0.9)).Seconds;
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(a, 37400 - 2600 - 8 * 3200) }, third.AddSeconds(1.5));
-        CooldownView cut = Aion2Cooldowns.View(a, third.AddSeconds(1.6));
-        double rest = (37400 - 2600 - 8 * 3200) / Aion2Cooldowns.TypicalRate(a)!.Value; // what is left at the speed before the jump
-        check("time taken off by a stone shows at once, the speed kept", cut.Seconds < before - 2 && Math.Abs(cut.Seconds - rest) < 0.6,
-            $"{before:F1} s, then {cut.Seconds:F1} s (about {rest:F1} s left)");
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(a, 40000) }, third.AddSeconds(2.2));
-        CooldownView again = Aion2Cooldowns.View(a, third.AddSeconds(2.3));
-        check("used again: a new countdown", again.Running && again.Seconds > 9 && again.Fraction > 0.95, $"{again.Seconds:F1} s");
+        // twelve gaps: the tenth shortest (the second of twelve) - a use that came early once (an effect took time off) does not shorten it
+        Aion2Cooldowns.Reset();
+        double[] gaps = { 22.3, 22.5, 18.0, 22.4, 22.2, 22.6, 22.3, 22.4, 22.5, 22.2, 22.7, 22.3 };
+        at = 0;
+        Aion2Cooldowns.NoteOwnCast(12350150, t0);
+        foreach (double gap in gaps)
+        {
+            at += gap;
+            Aion2Cooldowns.NoteOwnCast(12350150, t0.AddSeconds(at));
+        }
 
-        // a moment's lock (1,500 = well under 2 s) shows as ready
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(12300000, 1500) }, third.AddSeconds(3));
-        check("a moment's lock is no cooldown", !Aion2Cooldowns.View(12300000, third.AddSeconds(3.1)).Running, "ready");
+        check("twelve gaps: the tenth shortest, an early use left out", Aion2Cooldowns.Length(warding) == 22.2, $"{Aion2Cooldowns.Length(warding)} s");
 
-        // another character (a Gladiator's skill): the Templar's list is gone
-        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(11100000, 40000) }, third.AddSeconds(10));
-        check("another character's list replaces the last one", Aion2Cooldowns.Last.Entries.Count == 1 && Aion2Cooldowns.Skills().SequenceEqual(new[] { 11100000 }),
-            string.Join(",", Aion2Cooldowns.Skills()));
+        // a skill with no measured length: the game's first number after the use (0.4 s after it, 18.6 s left: 19 s in all)
+        Aion2Cooldowns.NoteOwnCast(12110150, t0.AddMinutes(10));
+        check("no length before the game's number", Aion2Cooldowns.Length(shield) is null && !Aion2Cooldowns.View(shield, t0.AddMinutes(10).AddSeconds(1)).Running, "none");
+        Aion2Cooldowns.Receive(new List<CooldownEntry> { new(shield, 18_600) }, t0.AddMinutes(10).AddSeconds(0.4));
+        check("the first number after a use gives the length", Math.Abs(Aion2Cooldowns.Length(shield)!.Value - 19.0) < 1e-6, $"{Aion2Cooldowns.Length(shield):F1} s");
+        Aion2Cooldowns.NoteOwnCast(12110150, t0.AddMinutes(11));
+        CooldownView next = Aion2Cooldowns.View(shield, t0.AddMinutes(11).AddSeconds(1));
+        check("the next use starts with it", next.Running && Math.Abs(next.Seconds - 18.0) < 1e-6, $"{next.Seconds:F1} s");
+
+        // kept in the settings: the next session starts with the gaps learned
+        Dictionary<int, List<double>> kept = Aion2Cooldowns.LearnedGaps();
+        Aion2Cooldowns.Reset();
+        Aion2Cooldowns.SeedGaps(kept);
+        check("the gaps kept from the last session", Aion2Cooldowns.Length(warding) == 22.2, $"{Aion2Cooldowns.Length(warding)} s");
+        Aion2Cooldowns.Reset();
+    }
+
+    /// <summary>The skill bar (its slots' order) decides the list; the voice says a ticked skill once when it is back.</summary>
+    private static void BarAndVoice(Action<string, bool, string> check)
+    {
+        Aion2Cooldowns.Reset();
+        var t0 = new DateTime(2026, 11, 4, 20, 0, 0);
+        int[] bar = { 12350000, 12120000, 12010000, 12100000 };
+        var dir = new Aion2EntityDirectory { LocalPlayerId = 8956 };
+        dir.SetLocalBar(bar.ToHashSet(), bar);
+
+        // Defiance used, not on the bar (moved off it): listed after the bar's skills; the basic attack on the bar is not
+        Aion2Cooldowns.NoteOwnCast(12260150, t0);
+        var listed = Aion2Cooldowns.Skills(dir.LocalBarOrder).Where(id => Ui.AssistPanel.Listed(id, dir.LocalBarOrder)).ToList();
+        check("the bar's order, then the skills used off it, no basic attack", listed.SequenceEqual(new[] { 12350000, 12120000, 12100000, 12260000 }), string.Join(",", listed));
+
+        // the voice: Taunt ticked, Shield Smite not; both used; said once, when Taunt is back
+        var voice = new Ui.CooldownVoice();
+        var voiced = new HashSet<int> { 12120000 };
+        int[] skills = { 12120000, 12100000 };
+        Aion2Cooldowns.NoteOwnCast(12120150, t0);
+        Aion2Cooldowns.NoteOwnCast(12100150, t0);
+        bool quiet = voice.Due(skills, voiced, t0.AddSeconds(1), true).Count == 0 && voice.Due(skills, voiced, t0.AddSeconds(10), true).Count == 0;
+        List<int> back = voice.Due(skills, voiced, t0.AddSeconds(24), true);
+        bool once = voice.Due(skills, voiced, t0.AddSeconds(25), true).Count == 0;
+        check("a ticked skill is said once when it is back, the others not", quiet && back.SequenceEqual(new[] { 12120000 }) && once, string.Join(",", back));
+
+        // not while the game is not in front
+        Aion2Cooldowns.NoteOwnCast(12120150, t0.AddSeconds(30));
+        voice.Due(skills, voiced, t0.AddSeconds(31), true);
+        check("nothing said while the game is not in front", voice.Due(skills, voiced, t0.AddSeconds(55), false).Count == 0, "quiet");
         Aion2Cooldowns.Reset();
     }
 }
