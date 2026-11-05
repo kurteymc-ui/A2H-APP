@@ -190,6 +190,23 @@ public sealed class AssistPanel : StackPanel
             _noSkills.TextWrapping = TextWrapping.Wrap;
             card.Children.Add(_noSkills);
             card.Children.Add(_skillList);
+            if (Part == AssistPart.Cooldowns)
+            {
+                // the class's other skills: not on the bar, ticked to show them on the screen too
+                var head = new StackPanel { Margin = new Thickness(ListRow.Inset, 16, ListRow.Inset, 6) };
+                var line = new Border { Height = 1, Margin = new Thickness(-ListRow.Inset, 0, -ListRow.Inset, 10) };
+                line.SetResourceReference(Border.BackgroundProperty, "Brush.Border");
+                head.Children.Add(line);
+                head.Children.Add(Label(loc["Assist.OtherSkills"], "Brush.Text", 13, bold: true));
+                var sub = Label(loc["Assist.OtherSkillsHint"], "Brush.TextMuted", 11.5);
+                sub.TextWrapping = TextWrapping.Wrap;
+                sub.Margin = new Thickness(0, 2, 0, 0);
+                head.Children.Add(sub);
+                _otherHead = head;
+                card.Children.Add(head);
+                card.Children.Add(_otherList);
+            }
+
             Children.Add(Card(card));
             var note = Label(loc["Assist.Note"], "Brush.TextSubtle", 11);
             note.TextWrapping = TextWrapping.Wrap;
@@ -217,12 +234,15 @@ public sealed class AssistPanel : StackPanel
     private int RefreshSkills(Aion2EntityDirectory? dir, DateTime now)
     {
         // every skill on the bar in the bar's order (else the ones known to have a cooldown); basic attacks, fillers, chain skills and passives never
-        IReadOnlyList<int>? bar = dir?.LocalBarOrder is { Count: > 0 } order ? order : null;
+        IReadOnlyList<int>? bar = SkillBars.For(dir); // the bar the game sent, else the character's remembered one
         var main = Aion2Cooldowns.Skills(bar).Where(id => Listed(id, bar)).ToList();
+        // the class's other skills, to tick onto the screen too (not on the bar: unticked until chosen)
+        var others = Aion2Cooldowns.ClassSkills(Aion2Cooldowns.CurrentClass(bar)).Where(id => !main.Contains(id) && Offered(id)).ToList();
 
         // the list in the same order (an unticked skill stays in its place, faded)
         LocalizationManager loc = LocalizationManager.Instance;
-        string windowLayout = string.Join(",", main.Select(i => (Hidden.Contains(i) ? "-" : "") + (Voiced.Contains(i) ? "v" : "") + i.ToString(CultureInfo.InvariantCulture)));
+        string windowLayout = string.Join(",", main.Select(i => (Hidden.Contains(i) ? "-" : "") + (Voiced.Contains(i) ? "v" : "") + i.ToString(CultureInfo.InvariantCulture)))
+            + "|" + string.Join(",", others.Select(i => (Extra.Contains(i) ? "+" : "") + (Voiced.Contains(i) ? "v" : "") + i.ToString(CultureInfo.InvariantCulture)));
         if (windowLayout != _skillLayout)
         {
             _skillLayout = windowLayout;
@@ -244,6 +264,34 @@ public sealed class AssistPanel : StackPanel
             {
                 _noSkills.Visibility = main.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
             }
+
+            _otherList.Children.Clear();
+            foreach (int id in others)
+            {
+                ListRow row = OtherRowOf(id);
+                row.Box.IsChecked = Extra.Contains(id);
+                if (row.Voice is not null)
+                {
+                    row.Voice.IsChecked = Voiced.Contains(id);
+                }
+
+                row.Fade();
+                _otherList.Children.Add(row);
+            }
+
+            if (_otherHead is not null)
+            {
+                _otherHead.Visibility = others.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            }
+        }
+
+        foreach (int id in others)
+        {
+            CooldownView view = Aion2Cooldowns.View(id, now);
+            ListRow row = _otherRows[id];
+            row.Tile.Show(view);
+            row.SetStatus(view.Running ? LeftText(view.Seconds) : "", view.Running);
+            row.SetDetail(Aion2Cooldowns.Length(id) is double l and > Aion2Cooldowns.NoCooldownSeconds ? LengthText(l) : "");
         }
 
         foreach (int id in main)
@@ -257,6 +305,60 @@ public sealed class AssistPanel : StackPanel
         }
 
         return main.Count;
+    }
+
+    /// <summary>A skill that may be offered to tick onto the screen: no passive, no basic attack or filler.</summary>
+    public static bool Offered(int skillId) => skillId >= FirstSkillId && !Aion2Artwork.IsPassive(skillId) && Aion2Cooldowns.NotWorth(skillId) is null;
+
+    /// <summary>The class's skills not on the skill bar that the player ticked to show on the screen too (see <see cref="MeterSettings.AssistExtraSkills"/>).</summary>
+    public HashSet<int> Extra { get; set; } = new();
+
+    /// <summary>The window's box of one of the other skills was clicked: the id and whether it is shown on the screen now.</summary>
+    public Action<int, bool>? ExtraChanged { get; set; }
+
+    private readonly Dictionary<int, ListRow> _otherRows = new();
+    private readonly StackPanel _otherList = new();
+    private FrameworkElement? _otherHead;
+
+    private ListRow OtherRowOf(int id)
+    {
+        if (!_otherRows.TryGetValue(id, out ListRow? row))
+        {
+            string name = Aion2SkillNames.DisplayOf(id);
+            var tile = new SkillTile(IconOf(id, name), ListTile);
+            _otherRows[id] = row = new ListRow(id, tile, tile, name, LocalizationManager.Instance["Assist.ShowInList"], LocalizationManager.Instance["Assist.VoiceTip"]);
+            row.Voice!.Click += (_, _) =>
+            {
+                bool on = row.Voice?.IsChecked == true;
+                if (on)
+                {
+                    Voiced.Add(id);
+                }
+                else
+                {
+                    Voiced.Remove(id);
+                }
+
+                VoiceChanged?.Invoke(id, on);
+            };
+            row.Box.Click += (_, _) =>
+            {
+                bool on = row.Box.IsChecked == true;
+                if (on)
+                {
+                    Extra.Add(id);
+                }
+                else
+                {
+                    Extra.Remove(id);
+                }
+
+                row.Fade();
+                ExtraChanged?.Invoke(id, on);
+            };
+        }
+
+        return row;
     }
 
     private ListRow SkillRowOf(int id)

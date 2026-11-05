@@ -460,6 +460,34 @@ public static class Aion2Cooldowns
         }
     }
 
+    /// <summary>The class of the skills of the moment (its two digits: 11 Gladiator, 12 Templar ...), 0 while none is known.</summary>
+    public static int CurrentClass(IReadOnlyList<int>? bar = null)
+    {
+        lock (Gate)
+        {
+            return _class != 0 ? _class : bar?.Select(ClassOf).FirstOrDefault(c => c != 0) ?? 0;
+        }
+    }
+
+    /// <summary>
+    /// Every skill of a class the client gives a cooldown (base ids, in id order): what the Skill Assist offers beyond the skill bar, to be ticked onto the
+    /// screen (5 November 2026). The basic attacks, fillers and chain skills of the lists are left out.
+    /// </summary>
+    public static IReadOnlyList<int> ClassSkills(int cls)
+    {
+        if (cls == 0)
+        {
+            return Array.Empty<int>();
+        }
+
+        lock (Gate)
+        {
+            var (noCooldown, chain, lengths) = _lists ??= LoadLists();
+            return lengths.Where(kv => kv.Key % 10000 == 0 && ClassOf(kv.Key) == cls && kv.Value > NoCooldownSeconds && !noCooldown.Contains(kv.Key) && !chain.Contains(kv.Key))
+                .Select(kv => kv.Key).OrderBy(id => id).ToList();
+        }
+    }
+
     /// <summary>Whether the skill is known to have a cooldown (the game sent more than 2 s, or a use started one; this session or an earlier one).</summary>
     public static bool IsKnown(int id)
     {

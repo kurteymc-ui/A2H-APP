@@ -2293,6 +2293,20 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
 
     private readonly HashSet<int> _bar = new();
     private readonly List<int> _barOrder = new();
+    private int _barPreset;
+
+    /// <summary>The skill preset that was active when the game last sent the skill bar (it sends it at every login and map change, not at a
+    /// preset switch): a switch since then may have changed what is on the bar.</summary>
+    public int LocalBarPreset
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _barPreset;
+            }
+        }
+    }
 
     /// <summary>The base skill ids on the first macro page of the skill bar in the order of its slots (empty before the bar came).</summary>
     public IReadOnlyList<int> LocalBarOrder
@@ -2316,6 +2330,7 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
             _bar.UnionWith(ids);
             _barOrder.Clear();
             _barOrder.AddRange(order ?? ids.OrderBy(id => id).ToList());
+            _barPreset = _activePreset;
             if (_skills is not null)
             {
                 _skills = _skills.Select(s => s with { Equipped = _bar.Contains(s.SkillId) }).ToList();

@@ -156,6 +156,7 @@ public sealed class AssistController : IDisposable
             Places = s.AssistCooldownPlaces.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
             TilePlaces = s.AssistCooldownTilePlaces.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
             Hidden = s.AssistOverlayHidden.ToList(),
+            Extra = s.AssistExtraSkills.ToList(),
         };
         s.AssistPresetActive = slot;
         s.Save();
@@ -182,6 +183,7 @@ public sealed class AssistController : IDisposable
         s.AssistCooldownPlaces = p.Places.Where(kv => kv.Value is { Length: 2 }).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
         s.AssistCooldownTilePlaces = p.TilePlaces.Where(kv => kv.Value is { Length: 2 }).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
         s.AssistOverlayHidden = p.Hidden.ToList();
+        s.AssistExtraSkills = p.Extra.ToList();
         s.AssistPresetActive = slot;
         DropDocks(s);
         s.Save();
@@ -339,8 +341,11 @@ public sealed class AssistController : IDisposable
     private void RunSkills(bool inGame)
     {
         Aion2EntityDirectory? dir = _directory();
-        IReadOnlyList<int>? bar = dir?.LocalBarOrder is { Count: > 0 } order ? order : null;
+        IReadOnlyList<int>? bar = SkillBars.For(dir); // the bar the game sent, else the character's remembered one
         var listed = Aion2Cooldowns.Skills(bar).Where(id => AssistPanel.Listed(id, bar)).ToList();
+        // the class's other skills the player ticked to show too (Skill Assist, "Other skills"), after the bar's
+        int cls = Aion2Cooldowns.CurrentClass(bar);
+        listed.AddRange(_settings.AssistExtraSkills.Where(id => Aion2Cooldowns.ClassOf(id) == cls && !listed.Contains(id) && AssistPanel.Offered(id)).Distinct().ToList());
         var shown = listed.Where(id => !_hidden.Contains(id)).ToList();
         DateTime now = DateTime.Now; // the capture stamps its frames with the local clock
         _voice.Tick(listed, _settings, now, inGame); // ticked for the voice: said also when it is not on the screen

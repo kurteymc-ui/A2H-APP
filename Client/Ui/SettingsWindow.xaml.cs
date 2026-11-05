@@ -731,6 +731,8 @@ public partial class SettingsWindow : Window
         _settings.AssistVoiceSkills = onDisk.AssistVoiceSkills;
         _settings.AssistVoiceVolume = onDisk.AssistVoiceVolume;
         _settings.AssistPresets = onDisk.AssistPresets;
+        _settings.AssistBars = onDisk.AssistBars;
+        _settings.AssistExtraSkills = onDisk.AssistExtraSkills;
         _settings.AssistPresetActive = onDisk.AssistPresetActive;
         _settings.TrackOpenWorld = onDisk.TrackOpenWorld; // the Open world button on the meter page
         _settings.MenuHideDefaulted = onDisk.MenuHideDefaulted;

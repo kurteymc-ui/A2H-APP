@@ -20713,5 +20713,29 @@
     "pt": "Só o fundo escuro das barras: imagens, nomes e tempos continuam nítidos.",
     "ja": "バーの暗い背景だけ：アイコン・名前・時間はくっきりしたままです。",
     "ko": "막대의 어두운 배경만: 아이콘, 이름, 시간은 선명하게 유지됩니다."
+  },
+  "Assist.OtherSkills": {
+    "en": "Other skills of your class",
+    "de": "Weitere Fertigkeiten deiner Klasse",
+    "fr": "Autres compétences de ta classe",
+    "es": "Otras habilidades de tu clase",
+    "ru": "Другие навыки твоего класса",
+    "zh": "你职业的其他技能",
+    "zh-TW": "你職業的其他技能",
+    "pt": "Outras habilidades da sua classe",
+    "ja": "クラスのその他のスキル",
+    "ko": "내 직업의 다른 스킬"
+  },
+  "Assist.OtherSkillsHint": {
+    "en": "Not on your skill bar right now. Tick one to show it on the screen too.",
+    "de": "Gerade nicht auf deiner Fertigkeitenleiste. Haken setzen, um sie trotzdem auf dem Bildschirm zu zeigen.",
+    "fr": "Pas sur ta barre de compétences en ce moment. Coche-en une pour l'afficher aussi à l'écran.",
+    "es": "No están en tu barra de habilidades ahora. Marca una para mostrarla también en pantalla.",
+    "ru": "Сейчас не на панели навыков. Отметь, чтобы тоже показывать на экране.",
+    "zh": "目前不在你的技能栏上。勾选即可同样显示在屏幕上。",
+    "zh-TW": "目前不在你的技能欄上。勾選即可同樣顯示在螢幕上。",
+    "pt": "Não estão na sua barra de habilidades agora. Marque uma para mostrá-la na tela também.",
+    "ja": "今はスキルバーにありません。チェックすると画面にも表示されます。",
+    "ko": "지금 스킬 바에 없습니다. 체크하면 화면에도 표시됩니다."
   }
 }

@@ -95,6 +95,11 @@ public static class SelfCheckAssistSkills
             Aion2.Protocol.Aion2Artwork.IsWorldEffectName("Test PLATE Equippable") && Aion2.Protocol.Aion2Artwork.IsWorldEffectName("Test_PLATE Equippable")
             && !Aion2.Protocol.Aion2Artwork.IsWorldEffectName("Poison") && !Aion2.Protocol.Aion2Artwork.IsWorldEffectName("Testudo Guard"), "names");
         Check("a scroll and a boss's timed zone stay", !Ui.AssistPanel.IsWorldEffect(4321, "Courage Scroll", false) && !Ui.AssistPanel.IsWorldEffect(4322, "Flame Zone", false), "timed");
+        // the class's other skills offered to tick onto the screen (5 November 2026): a Templar's Doom Shield and Shield of Protection are both there,
+        // a basic attack (Vicious Strike) and a filler (Pummel) are not; no class known, none
+        var templar = Aion2Cooldowns.ClassSkills(12);
+        Check("a Templar's other skills", templar.Contains(12070000) && templar.Contains(12110000) && !templar.Contains(12010000) && !templar.Contains(12040000)
+            && templar.All(id => id / 1_000_000 == 12 && id % 10000 == 0) && Aion2Cooldowns.ClassSkills(0).Count == 0, $"{templar.Count} skills");
         return ok;
     }
 

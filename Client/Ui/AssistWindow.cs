@@ -79,6 +79,16 @@ public sealed class AssistWindow : Window
         });
         _effects.ShowInOverlayChanged = _panel.ShowInOverlayChanged;
         _effects.SortByTime = settings.AssistSortByTime;
+        // the class's other skills ticked to show on the screen too
+        _panel.Extra = settings.AssistExtraSkills.ToHashSet();
+        _panel.ExtraChanged = (id, shown) => Change(s =>
+        {
+            s.AssistExtraSkills.Remove(id);
+            if (shown)
+            {
+                s.AssistExtraSkills.Add(id);
+            }
+        });
         _panel.Voiced = settings.AssistVoiceSkills.ToHashSet();
         _panel.VoiceChanged = (id, on) => Change(s =>
         {
@@ -261,11 +271,13 @@ public sealed class AssistWindow : Window
             _readyBox.IsChecked = s.AssistShowReady;
         }
 
-        // a preset loaded: its skills left off the screen
-        if (!_panel.Hidden.SetEquals(s.AssistOverlayHidden))
+        // a preset loaded: its skills left off the screen, and the other skills it shows
+        if (!_panel.Hidden.SetEquals(s.AssistOverlayHidden) || !_panel.Extra.SetEquals(s.AssistExtraSkills))
         {
             _panel.Hidden.Clear();
             _panel.Hidden.UnionWith(s.AssistOverlayHidden);
+            _panel.Extra.Clear();
+            _panel.Extra.UnionWith(s.AssistExtraSkills);
             Shown().Refresh(_directory());
         }
 

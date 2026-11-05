@@ -273,6 +273,14 @@ public sealed class MeterSettings
     /// <summary>The volume of the cooldowns' voice, 0 to 100.</summary>
     public int AssistVoiceVolume { get; set; } = 80;
 
+    /// <summary>Each character's skill bar as the game last sent it (base skill ids in slot order), by "name@server" and by "name@server#preset": the
+    /// Skill Assist shows the right skills from the start of a session, before the game sends the bar again (5 November 2026: started after the login,
+    /// it showed every Templar skill any character had used, Doom Shield among them, instead of the bar's Shield of Protection).</summary>
+    public Dictionary<string, List<int>> AssistBars { get; set; } = new();
+
+    /// <summary>Skills of the class not on the skill bar that the player ticked to show on the screen too (Skill Assist, "Other skills").</summary>
+    public List<int> AssistExtraSkills { get; set; } = new();
+
     /// <summary>The cooldowns' three saved layouts (Skill Assist, Presets), by slot 1 to 3: how they sit on the screen, to switch between.</summary>
     public Dictionary<int, CooldownPreset> AssistPresets { get; set; } = new();
 
@@ -1338,4 +1346,5 @@ public sealed class CooldownPreset
     public Dictionary<int, double[]> Places { get; set; } = new();
     public Dictionary<int, double[]> TilePlaces { get; set; } = new();
     public List<int> Hidden { get; set; } = new();
+    public List<int> Extra { get; set; } = new();
 }
