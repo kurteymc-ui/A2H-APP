@@ -199,11 +199,19 @@ public partial class MainWindow
     private const string DungeonIcon = "aion2/items/more/Icon_Ticket_Entrance_DailyDungeon_001.png";
     private const string AscensionIcon = "aion2/items/more/Icon_Ticket_Entrance_Awaken_001.png";
 
+    // the Sanctuary raids' challenge tickets (the game's own pictures of them)
+    private const string LudraIcon = "aion2/items/more/Icon_Ticket_Entrance_Raid_001.png";
+    private const string CorrodedIcon = "aion2/items/more/Icon_Ticket_Entrance_Raid_002.png";
+    private const string MuspelIcon = "aion2/items/more/Icon_Ticket_Entrance_Raid_003.png";
+
     /// <summary>The counters at the foot: Shugo Festival, Dimensional Invasion, Nightmare, the daily dungeon's weekly entries and Ascension Trial (the
-    /// characters page's roster has the same), after the Odyle Energy.</summary>
-    private static readonly (int Id, string Icon)[] FootTickets =
+    /// characters page's roster has the same), after the Odyle Energy; then the Sanctuary raids' weekly attempts (6 November 2026, the owner: "add ludra
+    /// etc"): Abyssal Forge: Ludra, Corroded Decontamination Facility, Chalice of Muspel, named after their instance (the game's own counter names are long:
+    /// "[Sanctuary] Abyssal Forge Attempt Count"). A raid the character has not opened yet is not shown (its counter is locked or not sent).</summary>
+    private static readonly (int Id, string Icon, int Zone)[] FootTickets =
     {
-        (1, ShugoIcon), (8, InvasionIcon), (4, NightmareIcon), (101, DungeonIcon), (80000001, AscensionIcon),
+        (1, ShugoIcon, 0), (8, InvasionIcon, 0), (4, NightmareIcon, 0), (101, DungeonIcon, 0), (80000001, AscensionIcon, 0),
+        (90000001, LudraIcon, 600082), (90000003, CorrodedIcon, 620011), (90000005, MuspelIcon, 620021),
     };
 
     private static readonly Dictionary<string, ImageSource?> TicketIcons = new();
@@ -280,7 +288,7 @@ public partial class MainWindow
                 odyle.Bonus > 0 ? "+" + odyle.Bonus.ToString("N0", CultureInfo.CurrentCulture) : null, next, tip, odyle.Full));
         }
 
-        foreach ((int id, string icon) in FootTickets)
+        foreach ((int id, string icon, int zone) in FootTickets)
         {
             if (Aion2Tickets.Find(id) is not { } def || Aion2Tickets.IsLocked(character, id) || !character.Tickets.TryGetValue(id, out TicketValue value))
             {
@@ -290,7 +298,8 @@ public partial class MainWindow
             int count = Aion2Tickets.Expected(def, value.Count, seenAt, now, premium);
             int cap = premium && def.SubscribeMax > def.Max ? def.SubscribeMax : def.Max;
             int lost = Aion2Tickets.LostAtNextRefill(def, count, premium);
-            string tip = $"{def.ShortIn(language)}: {count} / {Math.Max(cap, count)}" + (value.Bonus > 0 ? $"  (+{value.Bonus})" : "")
+            string label = zone > 0 ? Aion2.Protocol.Aion2Zones.NameOf(zone, language) ?? def.ShortIn(language) : def.ShortIn(language);
+            string tip = $"{label}: {count} / {Math.Max(cap, count)}" + (value.Bonus > 0 ? $"  (+{value.Bonus})" : "")
                 + (lost > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[lost == 1 ? "Checklist.WarnLostOne" : "Checklist.WarnLostMany"], lost) : "");
             list.Add(new OverlayTicket(icon, (count != value.Count ? "~" : "") + count.ToString(CultureInfo.CurrentCulture),
                 value.Bonus > 0 ? "+" + value.Bonus.ToString(CultureInfo.CurrentCulture) : null, null, tip, lost > 0));
@@ -348,7 +357,8 @@ public partial class MainWindow
                 text.Inlines.Add(more);
             }
 
-            var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 11, 0), Background = Brushes.Transparent, ToolTip = ticket.Tip };
+            // the counters wrap to a second line on a narrow meter (they were cut off at its edge)
+            var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 1, 11, 1), Background = Brushes.Transparent, ToolTip = ticket.Tip };
             item.Children.Add(glyph);
             item.Children.Add(text);
             OverlayTickets.Children.Add(item);
@@ -366,6 +376,9 @@ public partial class MainWindow
         new OverlayTicket(NightmareIcon, "14", null, null, "Nightmare: 14 / 14", Warn: true),
         new OverlayTicket(DungeonIcon, "6", "+6", null, "Daily Dungeon: 6 / 14"),
         new OverlayTicket(AscensionIcon, "3", null, null, "Ascension Trial: 3 / 3"),
+        new OverlayTicket(LudraIcon, "4", null, null, "Abyssal Forge: Ludra: 4 / 4"),
+        new OverlayTicket(CorrodedIcon, "2", null, null, "Corroded Decontamination Facility: 2 / 4"),
+        new OverlayTicket(MuspelIcon, "4", null, null, "Chalice of Muspel: 4 / 4"),
     };
 
     // ------------------------------------------------------------------ the dummy card

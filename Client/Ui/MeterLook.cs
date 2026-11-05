@@ -187,10 +187,30 @@ public sealed class MeterLook
             }
 
             width += Has("rank") ? 22 : 0;
-            width += BarParts ? 40 : 0; // the "+" figures beside the rate
             width -= Has("icon") ? 0 : 25;
             width *= 0.6 + 0.4 * TextScale;
             return Math.Round(Math.Clamp(width, 240, 1100));
+        }
+    }
+
+    /// <summary>
+    /// The narrowest a line can be with everything on it readable: its margins, the rank, the icon, some of the name and every column at its width. A meter
+    /// narrower than this (the player's own width) draws its lines smaller to fit (MainWindow.FitMeterLines) instead of pushing the figures past its edge.
+    /// </summary>
+    public double LineWidthNeeded
+    {
+        get
+        {
+            double width = Bar == "capsule" ? 25 : 20;
+            width += Has("rank") ? Math.Round(14 * TextScale) + 6 : 0;
+            width += Has("icon") ? IconSize + 7 : 0;
+            width += Math.Round(80 * TextScale); // the name side keeps at least this much (the "+" figures of the bar's parts stand at its end)
+            foreach (MeterColumn column in ColumnsOf(this))
+            {
+                width += column.Id == "dps" ? Math.Round(50 * RateSize / 13.5) + 8 : WidthOf(column);
+            }
+
+            return width;
         }
     }
 

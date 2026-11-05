@@ -384,6 +384,7 @@ public partial class MainWindow : Window
         _overlayView.SortDescriptions.Add(new SortDescription(nameof(PlayerRow.SortKey), ListSortDirection.Descending));
         _overlayView.IsLiveSorting = true;
         _overlayView.LiveSortingProperties.Add(nameof(PlayerRow.SortKey));
+        _overlayView.Filter = item => _overlayLines is null || (item is PlayerRow line && _overlayLines.Contains(line));
         CompactOverlayRows.ItemsSource = _overlayView;
         MeterRowView.RowClicked += ShowPlayerDetails;
 
@@ -736,7 +737,9 @@ public partial class MainWindow : Window
         _meterOverlay?.SetClickThrough(_compactClickThrough);
         UpdateScopeControls();
         SetCompactOverlayScale(settings.OverlayScale);
-        SetCompactOverlaySize(settings.OverlayExtraWidth, settings.OverlayRowsHeight);
+        // the player's width; a meter set before 6 November 2026 kept what was added to its look's width: the same width again
+        SetCompactOverlaySize(settings.OverlayWidth > 0 ? settings.OverlayWidth
+            : settings.OverlayExtraWidth != 0 ? BaseOverlayWidth(_meterLook) + settings.OverlayExtraWidth : 0, settings.OverlayRowsHeight);
         // the panel's colours (themed, see-through or graphite, at the opacity chosen) are part of the look: ApplyMeterLook, at the top, set them
         _meterOverlayLocked = settings.MeterOverlayLocked;
         ApplyOverlayLock();
@@ -2662,8 +2665,36 @@ public partial class MainWindow : Window
         HpCheckText.Visibility = Visibility.Visible;
     }
 
+    /// <summary>The most lines the meter over the game shows (6 November 2026, the owner: "cap the max users on meter to 10, so in mass boss fights, its 10
+    /// only"); the window's list keeps everyone.</summary>
+    private const int MaxOverlayLines = 10;
+
+    /// <summary>The lines the meter shows when there are more than <see cref="MaxOverlayLines"/>; null: all of them.</summary>
+    private HashSet<PlayerRow>? _overlayLines;
+
+    /// <summary>The best ten by what the list is sorted by; the player's own line takes the tenth place when they are further down, with their real rank.</summary>
+    private void PickOverlayLines()
+    {
+        if (_rows.Count <= MaxOverlayLines)
+        {
+            _overlayLines = null;
+            return;
+        }
+
+        List<PlayerRow> ordered = _rows.OrderByDescending(r => r.SortKey).ToList();
+        List<PlayerRow> shown = ordered.Take(MaxOverlayLines).ToList();
+        if (_source?.Entities is { } entities && !shown.Any(r => entities.IsLocalPlayer(r.ObjectId))
+            && ordered.FirstOrDefault(r => entities.IsLocalPlayer(r.ObjectId)) is { } me)
+        {
+            shown[^1] = me;
+        }
+
+        _overlayLines = shown.ToHashSet();
+    }
+
     private void RankRows()
     {
+        PickOverlayLines();
         // Live sorting alone left the list in the previous mode's order after a switch (PVE -> PVP kept the
         // PVE ranking); sorting explicitly here covers every mode, since each refresh ends in RankRows.
         _playersView?.Refresh();
@@ -2724,6 +2755,13 @@ public partial class MainWindow : Window
     private double _rdpsSeconds;
 
     private string _barLegendKey = "";
+
+    /// <summary>The pictures of the build: a meter the player made narrower, its lines ranked (and capped) as a fight's are.</summary>
+    internal void ShowSampleCrowd(double width)
+    {
+        SetCompactOverlaySize(width, 0);
+        RankRows();
+    }
 
     /// <summary>The pictures of the build: the sample lines' bars in parts, as RankRows draws them, and the line naming the colours.</summary>
     internal void ShowSampleBarParts(bool rdpsView, double seconds)
@@ -8246,7 +8284,9 @@ public partial class MainWindow : Window
     }
 
     private const double MinOverlayWidth = 240, MaxOverlayWidth = 1400, MinOverlayRowsHeight = 40, MaxOverlayRowsHeight = 1400;
-    private double _overlayExtraWidth;
+
+    /// <summary>The width the player dragged the meter to (before its scale), 0 for the width its look needs (MeterSettings.OverlayWidth).</summary>
+    private double _overlayUserWidth;
 
     /// <summary>The meter's width: what its look needs, plus what the player dragged on (or took off).</summary>
     /// <summary>The bar's own width (the character, the clock, the cube, the pill and seven buttons): a narrower look widens to it (5 November 2026).</summary>
@@ -8254,22 +8294,39 @@ public partial class MainWindow : Window
 
     private static double BaseOverlayWidth(MeterLook look) => Math.Max(look.PanelWidth, OverlayBarWidth);
 
-    private double CompactOverlayWidth(MeterLook look) => Math.Clamp(BaseOverlayWidth(look) + _overlayExtraWidth, MinOverlayWidth, MaxOverlayWidth);
+    /// <summary>The meter's width: the player's own when they dragged it, else what its look needs. The player's width stays whatever columns are switched on
+    /// (6 November 2026, the owner: "the meter should not exceed the size set by the user ... just compress instead"): the lines fit themselves to it.</summary>
+    private double CompactOverlayWidth(MeterLook look) => Math.Clamp(_overlayUserWidth > 0 ? _overlayUserWidth : BaseOverlayWidth(look), MinOverlayWidth, MaxOverlayWidth);
 
-    /// <summary>The meter's own size, before its scale: the width added to its look's, and the height of its player lines (0: as tall as the lines are).
+    /// <summary>The meter's own size, before its scale: the player's width (0: the look's), and the height of its player lines (0: as tall as the lines are).
     /// Lines that do not fit a shorter height are cut off at the bottom (the lowest rates).</summary>
-    private void SetCompactOverlaySize(double extraWidth, double rowsHeight)
+    private void SetCompactOverlaySize(double width, double rowsHeight)
     {
-        _overlayExtraWidth = double.IsFinite(extraWidth) ? Math.Clamp(extraWidth, -MaxOverlayWidth, MaxOverlayWidth) : 0;
+        _overlayUserWidth = double.IsFinite(width) && width > 0 ? Math.Clamp(width, MinOverlayWidth, MaxOverlayWidth) : 0;
         CompactOverlayPanel.Width = CompactOverlayWidth(_meterLook);
-        _overlayExtraWidth = CompactOverlayPanel.Width - BaseOverlayWidth(_meterLook); // what is left of it within the limits
         CompactOverlayRowsArea.Height = double.IsFinite(rowsHeight) && rowsHeight > 0 ? Math.Clamp(rowsHeight, MinOverlayRowsHeight, MaxOverlayRowsHeight) : double.NaN;
+        FitMeterLines();
+    }
+
+    /// <summary>
+    /// The lines (and their titles) on a meter narrower than they need (<see cref="MeterLook.LineWidthNeeded"/>: many columns, a narrow width) are drawn
+    /// smaller, all by the same amount so the columns stay in line, rather than pushing the rate, the share and the total past the meter's right edge. The
+    /// name gives up its room first (it is cut), only then the text gets smaller; never below 70 %.
+    /// </summary>
+    private void FitMeterLines()
+    {
+        double available = CompactOverlayPanel.Width - 2; // its border
+        double needed = _meterLook.LineWidthNeeded;
+        double scale = needed > available && available > 0 ? Math.Max(0.7, available / needed) : 1;
+        Transform fit = scale < 0.995 ? new ScaleTransform(scale, scale) : Transform.Identity;
+        CompactOverlayRows.LayoutTransform = fit;
+        CompactOverlayTitles.LayoutTransform = fit;
     }
 
     // The grip drag, measured on the screen from where it started (the grip itself moves, or not, as the meter grows: a meter that grows upwards keeps its
     // bottom edge, and the grip with it).
     private Point _resizeFrom;
-    private double _resizeExtra, _resizeWidth, _resizeRowsHeight, _resizeScale;
+    private double _resizeWidth, _resizeRowsHeight, _resizeScale;
 
     private Point MouseOnScreen()
     {
@@ -8281,7 +8338,6 @@ public partial class MainWindow : Window
     {
         _resizeFrom = MouseOnScreen();
         _resizeWidth = CompactOverlayPanel.Width;
-        _resizeExtra = _overlayExtraWidth;
         _resizeRowsHeight = double.IsNaN(CompactOverlayRowsArea.Height) ? CompactOverlayRowsArea.ActualHeight : CompactOverlayRowsArea.Height;
         _resizeScale = CompactOverlayScale.ScaleX;
     }
@@ -8299,7 +8355,7 @@ public partial class MainWindow : Window
 
         double scale = CompactOverlayScale.ScaleX;
         double rows = _resizeRowsHeight + moved.Y / scale;
-        SetCompactOverlaySize(_resizeExtra + moved.X / scale, Math.Abs(moved.Y) < 2 && double.IsNaN(CompactOverlayRowsArea.Height) ? 0 : rows);
+        SetCompactOverlaySize(_resizeWidth + moved.X / scale, Math.Abs(moved.Y) < 2 && double.IsNaN(CompactOverlayRowsArea.Height) ? 0 : rows);
     }
 
     /// <summary>A double-click on the grip: the meter's own width and height again (its scale stays).</summary>
@@ -8314,7 +8370,8 @@ public partial class MainWindow : Window
     {
         var settings = MeterSettings.Load();
         settings.OverlayScale = CompactOverlayScale.ScaleX;
-        settings.OverlayExtraWidth = _overlayExtraWidth;
+        settings.OverlayWidth = _overlayUserWidth;
+        settings.OverlayExtraWidth = 0; // the old way, read once (OverlayWidth)
         settings.OverlayRowsHeight = double.IsNaN(CompactOverlayRowsArea.Height) ? 0 : CompactOverlayRowsArea.Height;
         settings.Save();
     }

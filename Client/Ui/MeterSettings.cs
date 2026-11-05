@@ -584,6 +584,11 @@ public sealed class MeterSettings
     /// corner grip sideways. Kept apart from the look's own width, so a look with more columns still gets the room they need.</summary>
     public double OverlayExtraWidth { get; set; }
 
+    /// <summary>The meter's width as the player dragged it (before its scale); 0: the width its look needs. Kept as it is whatever columns are switched on
+    /// (6 November 2026, the owner: "the meter should not exceed the size set by the user"): the lines are made to fit it instead. Replaces
+    /// <see cref="OverlayExtraWidth"/>, which was added to the look's width (a meter set once grew with every column after); an old one is read once.</summary>
+    public double OverlayWidth { get; set; }
+
     /// <summary>Height of the compact overlay's player lines before its scale, set by dragging its corner grip up or down; 0 = as tall as the lines.</summary>
     public double OverlayRowsHeight { get; set; }
 

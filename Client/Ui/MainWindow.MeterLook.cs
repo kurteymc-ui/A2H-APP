@@ -36,6 +36,8 @@ public partial class MainWindow
             _supportAt = DateTime.MinValue; // the support badges come at once when that column was switched on
         }
 
+        FitMeterLines(); // the player's width stays: the lines fit themselves to it
+
         if (_overlayView is { } view)
         {
             var direction = settings.MeterBestLast ? ListSortDirection.Ascending : ListSortDirection.Descending;

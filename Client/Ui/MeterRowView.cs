@@ -299,7 +299,35 @@ public sealed class MeterRowView : Grid
 
             // no party buffs after the name any more (5 November 2026, the owner: "Undefeated Mantra · Predation" made every line long for no reason);
             // the meter window's list keeps them (Settings), the rDPS and Given columns say what the buffs were worth
-            Add(name, new GridLength(1, GridUnitType.Star));
+            var nameSide = new DockPanel { LastChildFill = true, VerticalAlignment = VerticalAlignment.Center, ClipToBounds = true };
+            if (look.BarParts)
+            {
+                // the "+" figures of the bar's parts at the end of the name side: what the buffs gave the others (grey; the Given column says it when
+                // shown) and the healing on the others (green), per second. They take their room from the name, not from the meter's width (6 November
+                // 2026, the owner: "the meter should not exceed the size set by the user").
+                var plus = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+                void Plus(string path, Brush brush)
+                {
+                    TextBlock figure = Text(look.TinySize, "Brush.TextMuted", bold: !table);
+                    figure.Foreground = brush;
+                    figure.Margin = new Thickness(6, 0, 0, 0);
+                    figure.SetBinding(TextBlock.TextProperty, new Binding(path) { Converter = table ? FigureParts.Lower : null, Mode = BindingMode.OneWay });
+                    figure.SetBinding(VisibilityProperty, new Binding(path) { Converter = FilledToVisible.Instance, Mode = BindingMode.OneWay });
+                    plus.Children.Add(figure);
+                }
+
+                if (!look.Has("given"))
+                {
+                    Plus(nameof(PlayerRow.BarGivenText), MeterBarParts.GivenText);
+                }
+
+                Plus(nameof(PlayerRow.BarHealText), MeterBarParts.HealText);
+                DockPanel.SetDock(plus, Dock.Right);
+                nameSide.Children.Add(plus);
+            }
+
+            nameSide.Children.Add(name);
+            Add(nameSide, new GridLength(1, GridUnitType.Star));
         }
 
         // the columns, in their fixed order
@@ -310,34 +338,6 @@ public sealed class MeterRowView : Grid
             {
                 case "dps":
                 {
-                    if (look.BarParts)
-                    {
-                        // the "+" figures of the bar's parts, before the rate: what the buffs gave the others (grey; the Given column says it when shown)
-                        // and the healing on the others (green), per second
-                        var plus = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
-                        if (!IsHeader)
-                        {
-                            void Plus(string path, Brush brush)
-                            {
-                                TextBlock figure = Text(look.TinySize, "Brush.TextMuted", bold: !table);
-                                figure.Foreground = brush;
-                                figure.Margin = new Thickness(6, 0, 0, 0);
-                                figure.SetBinding(TextBlock.TextProperty, new Binding(path) { Converter = table ? FigureParts.Lower : null, Mode = BindingMode.OneWay });
-                                figure.SetBinding(VisibilityProperty, new Binding(path) { Converter = FilledToVisible.Instance, Mode = BindingMode.OneWay });
-                                plus.Children.Add(figure);
-                            }
-
-                            if (!look.Has("given"))
-                            {
-                                Plus(nameof(PlayerRow.BarGivenText), MeterBarParts.GivenText);
-                            }
-
-                            Plus(nameof(PlayerRow.BarHealText), MeterBarParts.HealText);
-                        }
-
-                        Add(plus, GridLength.Auto, "Plus");
-                    }
-
                     TextBlock rate = IsHeader ? Title("", tip) : Text(table ? look.SmallSize : look.RateSize, "Brush.OverlayText", !table);
                     rate.Margin = new Thickness(8, 0, 0, 0);
                     rate.FontWeight = table ? FontWeights.Normal : IsHeader ? FontWeights.SemiBold : FontWeights.Bold;

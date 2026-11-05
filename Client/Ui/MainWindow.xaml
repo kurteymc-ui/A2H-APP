@@ -1568,7 +1568,7 @@
                     <Rectangle x:Name="OverlayStateDot" DockPanel.Dock="Left" Width="6" Height="6" RadiusX="1" RadiusY="1" Fill="Gray" VerticalAlignment="Center" Margin="2,0,8,0"/>
                     <TextBlock x:Name="OverlayStateText" DockPanel.Dock="Left" FontSize="10.5" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
-                    <StackPanel x:Name="OverlayTickets" Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="True"/>
+                    <WrapPanel x:Name="OverlayTickets" Orientation="Horizontal" VerticalAlignment="Center"/>
                 </DockPanel>
             </StackPanel>
         </Border>

@@ -1479,6 +1479,32 @@ internal static class Program
             // the bar's own character and the counters at the foot, as on any meter in the game
             window.ShowOverlayIdentity("Jinwoo", "Gladiator", 196_500);
             window.ShowOverlayTickets(Ui.MainWindow.SampleTickets());
+            if (kind == "crowd")
+            {
+                // a field boss with fourteen players on a meter the player made narrower (380), the analyst design's many columns: ten lines, fitted to the width
+                rows.Clear();
+                string[] classes = { "Gladiator", "Ranger", "Sorcerer", "Templar", "Assassin", "Spiritmaster", "Chanter", "Cleric" };
+                for (int i = 0; i < 14; i++)
+                {
+                    long dmg = 2_400_000 - i * 150_000;
+                    string cls = classes[i % classes.Length];
+                    rows.Add(new Ui.PlayerRow(100 + i)
+                    {
+                        Name = "Daeva" + (char)('A' + i) + "lyth", ClassName = cls, Damage = dmg, Dps = dmg / 111.0, Rank = i + 1,
+                        CombatPowerText = Ui.PlayerRow.Compact(190_000 - i * 3_000),
+                        Given = cls is "Chanter" or "Cleric" ? 1_400 : cls == "Gladiator" ? 180 : 0,
+                        HealOthers = cls == "Cleric" ? 300_000 : cls == "Chanter" ? 120_000 : 0,
+                        HealOthersRate = cls == "Cleric" ? 300_000 / 111.0 : cls == "Chanter" ? 120_000 / 111.0 : null,
+                        Hits = new HitStats { Direct = 500, Crit = 210 - i * 5, Kinded = 500, Back = 120 + i, Front = 300 - i * 4, Perfect = 40, Double = 20 },
+                    });
+                }
+
+                window.ApplyMeterLook(Ui.MeterLook.Presets.First(design => design.Id == "analyst").Settings());
+                window.ShowSampleCrowd(380);
+                window.OverlayTotalRateText.Text = Ui.PlayerRow.Compact((long)rows.Sum(r => r.Dps ?? 0));
+                System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
+            }
+
             if (kind is "compact" or "rdps")
             {
                 // the boss line over the lines, as in a boss fight: what is left of it, when it dies at the group's pace, its enrage
