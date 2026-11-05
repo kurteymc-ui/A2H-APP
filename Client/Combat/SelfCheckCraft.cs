@@ -551,7 +551,7 @@ public static class SelfCheckCraft
     {
         IReadOnlyList<SeasonMission> all = SeasonMissions.All;
         SeasonMission? Find(int id) => all.FirstOrDefault(m => m.Id == id);
-        bool loaded = all.Count == 150 && all.Count(m => m.Faction == 'D') == 75 && all.Count(m => m.Faction == 'D' && m.Weekly) == 40
+        bool loaded = all.Count == 130 && all.Count(m => m.Faction == 'D') == 65 && all.Count(m => m.Faction == 'D' && m.Weekly) == 30 && all.All(m => m.Category != "Event")
             && Find(230111300) is { Faction: 'L', Weekly: false } && Find(240211100) is { Faction: 'D', Weekly: true };
         if (!loaded)
         {
@@ -576,7 +576,7 @@ public static class SelfCheckCraft
             && p[240111000] is { Done: 1, Next.Target: 1800 } && Find(240111000)!.Hours
             && SeasonMissions.CountText(Find(240111000)!, 1102, CultureInfo.InvariantCulture) == "18.4" && SeasonMissions.CountText(Find(240111000)!, 1800, CultureInfo.InvariantCulture) == "30";
         bool weekly = p[240211100] is { Stale: true, Count: 0, Done: 0 } && p[244210900] is { Stale: false, Count: 19, Done: 9 }
-            && p.Count == 75 && p.Values.Count(x => x.Count == 0 && x.Done == 0) == 75 - 5;
+            && p.Count == 65 && p.Values.Count(x => x.Count == 0 && x.Done == 0) == 65 - 5;
         bool faction = SeasonMissions.FactionOf(2302, new Dictionary<int, AchievementValue>()) == 'D' && SeasonMissions.FactionOf(1001, counters) == 'L'
             && SeasonMissions.FactionOf(0, counters) == 'D';
         Console.WriteLine($"  -> season missions: the data file ({all.Count}): {loaded}; steps done with the lagging stage byte, a condition step, hours: {steps}; a week over counts 0: {weekly}; faction: {faction}");
