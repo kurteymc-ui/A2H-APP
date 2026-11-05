@@ -20,6 +20,7 @@ public sealed class AccountWindow : Window
     private readonly TextBlock _hint = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 14), FontSize = 12 };
     private readonly TextBlock _verify = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 14), FontSize = 12, Visibility = Visibility.Collapsed };
     private readonly CheckBox _shareLegion = new() { Margin = new Thickness(0, 0, 0, 4), Visibility = Visibility.Collapsed };
+    private readonly CheckBox _shareProfile = new() { Margin = new Thickness(0, 0, 0, 14), Visibility = Visibility.Collapsed };
     private readonly TextBlock _legion = new() { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(22, 0, 0, 14), FontSize = 12, Visibility = Visibility.Collapsed };
     private readonly Button _signIn = new() { Content = "Sign in with Discord", Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 8, 0) };
     private readonly Button _openAgain = new() { Content = "Open the page again", Padding = new Thickness(14, 5, 14, 5), Margin = new Thickness(0, 0, 8, 0), Visibility = Visibility.Collapsed };
@@ -53,6 +54,7 @@ public sealed class AccountWindow : Window
         root.Children.Add(_verify);
         root.Children.Add(_shareLegion);
         root.Children.Add(_legion);
+        root.Children.Add(_shareProfile);
         root.Children.Add(buttons);
         Content = root;
         ThemedChrome.Apply(this);
@@ -84,6 +86,18 @@ public sealed class AccountWindow : Window
             settings.ShareLegionList = _shareLegion.IsChecked == true;
             settings.Save();
         };
+        _shareProfile.Content = new TextBlock { Text = LocalizationManager.Instance["Profile.Share"], TextWrapping = TextWrapping.Wrap };
+        _shareProfile.IsChecked = MeterSettings.Load().ShareProfile;
+        _shareProfile.Click += async (_, _) =>
+        {
+            MeterSettings settings = MeterSettings.Load();
+            settings.ShareProfile = _shareProfile.IsChecked == true;
+            settings.Save();
+            if (!settings.ShareProfile)
+            {
+                await ProfileShare.ForgetAsync(); // switched off: the website forgets what was sent
+            }
+        };
         Draw(null);
         Loaded += async (_, _) =>
         {
@@ -111,6 +125,7 @@ public sealed class AccountWindow : Window
             _verify.Text = VerifyText(CharacterVerify.Last);
             _verify.Visibility = Visibility.Visible;
             _shareLegion.Visibility = Visibility.Visible;
+            _shareProfile.Visibility = Visibility.Visible;
             _legion.Text = LegionText(LegionShare.Last);
             _legion.Visibility = Visibility.Visible;
             return;
@@ -118,6 +133,7 @@ public sealed class AccountWindow : Window
 
         _verify.Visibility = Visibility.Collapsed;
         _shareLegion.Visibility = Visibility.Collapsed;
+        _shareProfile.Visibility = Visibility.Collapsed;
         _legion.Visibility = Visibility.Collapsed;
         _signOut.Visibility = Visibility.Collapsed;
         _myFights.Visibility = Visibility.Collapsed;

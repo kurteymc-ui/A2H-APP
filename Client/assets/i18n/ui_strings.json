@@ -20797,5 +20797,17 @@
     "pt": "{0} + {1} carregada + {2} em itens = {3} de energia, cerca de {4} cubos de {5}",
     "ja": "{0} + チャージ {1} + アイテム {2} = エネルギー {3}（{5} のキューブ約 {4} 個）",
     "ko": "{0} + 충전 {1} + 아이템 {2} = 에너지 {3} ({5}짜리 큐브 약 {4}개)"
+  },
+  "Profile.Share": {
+    "en": "Show my Genus Insight and pets to other players of Atreia App (their Find a player window; the game's own character pages don't have them)",
+    "de": "Meine Genus-Einsicht und Haustiere anderen Spielern von Atreia App zeigen (in ihrem Fenster „Spieler finden“; die Charakterseiten des Spiels haben sie nicht)",
+    "fr": "Montrer mon Genus Insight et mes familiers aux autres joueurs d'Atreia App (dans leur fenêtre « Trouver un joueur » ; les pages de personnage du jeu ne les ont pas)",
+    "es": "Mostrar mi Genus Insight y mis mascotas a otros jugadores de Atreia App (en su ventana «Buscar jugador»; las páginas de personaje del juego no los tienen)",
+    "ru": "Показывать моё Genus Insight и питомцев другим игрокам Atreia App (в их окне «Найти игрока»; на страницах персонажей игры этого нет)",
+    "zh": "向其他 Atreia App 玩家展示我的 Genus Insight 和宠物（在他们的“查找玩家”窗口中；游戏官方角色页面没有这些信息）",
+    "zh-TW": "向其他 Atreia App 玩家展示我的 Genus Insight 與寵物（在他們的「尋找玩家」視窗中；遊戲官方角色頁面沒有這些資訊）",
+    "pt": "Mostrar meu Genus Insight e meus mascotes a outros jogadores do Atreia App (na janela «Encontrar jogador»; as páginas de personagem do jogo não os têm)",
+    "ja": "自分の Genus Insight とペットを Atreia App の他のプレイヤーに表示する（相手の「プレイヤー検索」ウィンドウ。ゲームのキャラクターページにはない情報です）",
+    "ko": "내 Genus Insight와 펫을 다른 Atreia App 플레이어에게 표시 (상대의 '플레이어 찾기' 창; 게임의 캐릭터 페이지에는 없는 정보)"
   }
 }

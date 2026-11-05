@@ -408,6 +408,10 @@ public sealed class MeterSettings
     /// On until switched off (the account window).</summary>
     public bool ShareLegionList { get; set; } = true;
 
+    /// <summary>While signed in, the Genus Insight and the pets of the character played go to atreia.app, so other players' Find a player window shows them
+    /// (Upload/ProfileShare.cs; the game's public pages don't have them). On until switched off (the account window); off, the website forgets them.</summary>
+    public bool ShareProfile { get; set; } = true;
+
     /// <summary>The meter overlay's boss timers line: the boss's next casts as everyone's uploads learnt them, and the time to its rage where the game data
     /// knows it (Upload/BossTimers.cs). On until switched off (the overlay's menu).</summary>
     public bool OverlayBossTimers { get; set; } = true;

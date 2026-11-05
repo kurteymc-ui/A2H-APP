@@ -748,6 +748,9 @@ public partial class SettingsWindow : Window
         _settings.MeterShowTickets = onDisk.MeterShowTickets;
         _settings.MuteSounds = onDisk.MuteSounds;
         _settings.OdylePerRun = onDisk.OdylePerRun; // the Characters page's switch
+        _settings.ShareProfile = onDisk.ShareProfile; // the account window's switches
+        _settings.ShareLegionList = onDisk.ShareLegionList;
+        _settings.SyncRoster = onDisk.SyncRoster; // the Characters page's roster switch
         _settings.IconRefreshedFor = onDisk.IconRefreshedFor;
         // the route's options are set on the map's page, not in this window: the file's values stand
         _settings.PetRouteOn = onDisk.PetRouteOn;

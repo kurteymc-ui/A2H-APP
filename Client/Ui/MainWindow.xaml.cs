@@ -1443,6 +1443,7 @@ public partial class MainWindow : Window
             _storeFlush ??= new System.Threading.Timer(_ => FlushStores(force: false), null, TimeSpan.FromSeconds(15), TimeSpan.FromSeconds(15));
             HookGroupAlerts(); // the group finder's news while the game is in the background
             AionDPS.Upload.RosterSync.Start(); // the roster on the site (signed in only; Settings can switch it off)
+            AionDPS.Upload.ProfileShare.Start(); // Genus Insight and pets for other players' Find a player (signed in only; the account window can switch it off)
             // the character played, verified as the player's on the site once the game named it at a login (signed in only); a short note when it was
             AionDPS.Upload.CharacterVerify.Start(() => _liveSource?.Entities as Aion2.Aion2EntityDirectory);
             // the legion's member list from the login, for the Discord servers that follow the legion (signed in and verified only; the account window can switch it off)

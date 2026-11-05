@@ -524,6 +524,13 @@ internal static class Program
             return;
         }
 
+        if (args.Length > 0 && args[0] == "render-player")
+        {
+            // render-player <out.png>: the player window (Find a player → Open player page), made-up character: overview, gear, Genus and pets, and a player without the app
+            RunRenderPlayerMode(args.Length > 1 ? args[1] : "player.png");
+            return;
+        }
+
         if (args.Length > 0 && args[0] == "render-petlist-shop")
         {
             RunRenderPetListShopMode(args.Length > 1 ? args[1] : "petlist-shop.png");
@@ -1461,7 +1468,7 @@ internal static class Program
             }
             else if (kind == "find")
             {
-                // Find a player: two characters of the name found, the card of the first open
+                // Find a player: two characters of the name found, the first picked
                 window.OverlayBody.Visibility = System.Windows.Visibility.Collapsed;
                 window.OverlayTimeText.Visibility = System.Windows.Visibility.Collapsed;
                 window.OverlayFind.Visibility = System.Windows.Visibility.Visible;
@@ -1473,7 +1480,7 @@ internal static class Program
                     new Upload.FoundPlayer("Arhimodon", "Cleric", 32, "Siel", 1101, "nae", null, null, null, null, "https://atreia.app/armory/?region=nae&server=Siel&name=Arhimodon"),
                 };
                 window.ShowFindResults(found);
-                window.ShowFindCard(found[0]);
+                window.PickFindResult(found[0]); // the one clicked: the others go, "All 2 results" brings them back
             }
             else if (kind == "findservers")
             {
@@ -2021,6 +2028,105 @@ internal static class Program
     }
 
     /// <summary>Draws the season overlay with made-up progress (some missions picked, one finished) and the hover card of one of them beside it.</summary>
+    /// <summary>The player window with a made-up character (no real player): its Overview, Gear (a piece opened), Genus &amp; Pets, and the same character as seen
+    /// when its player doesn't use the app (no Genus &amp; Pets tab).</summary>
+    private static void RunRenderPlayerMode(string path)
+    {
+        var app = new System.Windows.Application();
+        app.Resources.MergedDictionaries.Add(
+            (System.Windows.ResourceDictionary)System.Windows.Application.LoadComponent(new Uri("/Ui/Styles/Shared.xaml", UriKind.Relative)));
+        Ui.ThemeManager.Apply(app, Ui.MeterSettings.Load());
+        Ui.MainWindow.Headless = true;
+        var who = new Upload.FoundPlayer("Arhimodon", "Templar", 45, "Vaizel", 2302, "eu", 182_730, 2968, 21_480, "Thamon", "https://atreia.app/armory/?region=eu&server=Vaizel&name=Arhimodon", 92, 3, 31);
+        static Upload.PlayerLine L(string name, string value, string? grade = null, string? desc = null) => new(name, value, grade, null, desc);
+        var none = Array.Empty<Upload.PlayerLine>();
+        var gear = new List<Upload.PlayerPiece>
+        {
+            new("Main Hand", "Tempered Greatsword", "Unique", 15, 2, 3010, null, false, new[] { L("Attack", "912"), L("Accuracy", "120") },
+                new[] { L("Critical Strike", "+64"), L("Boss damage", "+3.5%") }, new[] { L("Shield Bash", "+2") },
+                new[] { L("Attack", "+12", "Legend"), L("Critical Strike", "+16", "Legend"), L("Accuracy", "+14", "Rare") }, new[] { L("Wrath", "", "Unique", "On hit, a 5% chance of a second strike") }),
+            new("Shield", "Tempered Bulwark", "Unique", 12, 0, 2990, null, false, new[] { L("Defense", "740") }, new[] { L("Block", "+48") }, none, new[] { L("Defense", "+20", "Legend") }, none),
+            new("Helmet", "Warden's Helm", "Legend", 10, 0, 2960, null, false, new[] { L("Defense", "380") }, none, none, none, none),
+            new("Chest", "Warden's Breastplate", "Legend", 10, 1, 2975, null, false, new[] { L("Defense", "520") }, none, none, none, none),
+            new("Gloves", "Warden's Gauntlets", "Epic", 15, 3, 3040, null, false, none, none, none, none, none),
+            new("Necklace", "Pendant of the Pass", "Unique", 8, 0, 2950, null, false, none, none, none, none, none),
+            new("Arcana I", "Arcana of Valor", "Unique", 4, 0, 80, null, true, none, none, none, none, none),
+            new("Arcana II", "Arcana of the Wall", "Legend", 3, 0, 60, null, true, none, none, none, none, none),
+        };
+        var stats = new List<(string, string)>
+        {
+            ("Attack", "2,412"), ("Defense", "3,180"), ("Accuracy", "1,955"), ("Evasion", "1,204"), ("Critical Strike", "1,066"), ("Critical resist", "742"),
+            ("HP", "48,230"), ("MP", "6,400"), ("Boss damage", "8.5%"), ("PvE damage", "6.0%"), ("Block", "1,480"), ("Parry", "960"),
+        };
+        var skills = new List<Upload.PlayerSkill>
+        {
+            new("Shield Bash", 20, "Active", true, null), new("Punishment", 18, "Active", true, null), new("Divine Fury", 16, "Active", true, null), new("Aegis", 15, "Active", true, null),
+            new("Iron Skin", 12, "Passive", false, null), new("Taunt", 10, "Active", false, null),
+        };
+        var parses = new List<Upload.PlayerParse> { new("Thamon", 21_480, 92, 3, 31), new("Kromede", 18_210, 77, 9, 40), new("Debilkarim", 15_400, 51, 22, 45) };
+        var boards = new List<Upload.PlayerBoard> { new("Nezekan", 48, 60), new("Zikel", 36, 60), new("Vaizel", 22, 60), new("Triniel", 9, 60) };
+        int Stat(string token) => Aion2.Protocol.Aion2CpData.StatId(token);
+        var genus = new List<Upload.PlayerGenus>
+        {
+            new(2, 9, new[] { (1, 0, Stat("Critical"), 64L, 4), (1, 1, Stat("Accuracy"), 52L, 3), (1, 2, Stat("AmplifyCriticalDamage"), 180L, 5), (1, 3, Stat("HPMax"), 900L, 2) }),
+            new(3, 7, new[] { (1, 0, Stat("BossNpcAddDamage"), 40L, 3), (1, 1, Stat("Defense"), 120L, 2), (1, 2, Stat("PvEAddDamage"), 36L, 4) }),
+            new(4, 6, new[] { (1, 0, Stat("AmplifyBackAttack"), 120L, 3), (1, 1, Stat("Evasion"), 44L, 1) }),
+            new(5, 4, new[] { (1, 0, Stat("HPRegen"), 30L, 2) }),
+        };
+        var pets = new List<(int, int)>();
+        foreach (string species in Aion2.Protocol.Aion2Pets.Species)
+        {
+            int n = 0;
+            foreach (int id in Aion2.Protocol.Aion2Pets.AllPetIds.Where(id => Aion2.Protocol.Aion2Pets.SpeciesOf(id) == species).OrderBy(id => id).Take(14))
+            {
+                pets.Add((id, n % 5 == 4 ? 1 : n % 3 == 2 ? 2 : 3));
+                n++;
+            }
+        }
+
+        DateTime now = DateTime.UtcNow;
+        var page = new Upload.PlayerPage("Arhimodon", "Templar", 45, "Vaizel", 2302, "eu", "Asmodian", "Wanderers of the Pass", "Daeva of the Pass", 182_730, 2968, gear, stats, skills,
+            214, 380, ("Bolt", 3), ("Wings of the Pass", "Epic"), boards, parses, new Upload.PlayerAppData(genus, pets, now.AddMinutes(-42)), who.Page, now.AddMinutes(-3));
+        Ui.PlayerView View(Upload.PlayerPage shown, string tab)
+        {
+            var view = new Ui.PlayerView(who, () => { }, () => { });
+            view.ShowAll();
+            view.Show(shown);
+            view.SelectTab(tab);
+            view.Margin = new System.Windows.Thickness(0, 0, 18, 18);
+            view.VerticalAlignment = System.Windows.VerticalAlignment.Top;
+            return view;
+        }
+
+        var grid = new System.Windows.Controls.Primitives.UniformGrid { Columns = 2 };
+        grid.Children.Add(View(page, "Overview"));
+        var gearView = View(page, "Gear");
+        grid.Children.Add(gearView);
+        grid.Children.Add(View(page, "Genus & Pets"));
+        grid.Children.Add(View(page with { App = null }, "Overview"));
+        var strip = new System.Windows.Controls.Border { Padding = new System.Windows.Thickness(20, 20, 2, 2), Child = grid,
+            Background = new System.Windows.Media.LinearGradientBrush(System.Windows.Media.Color.FromRgb(0x4a, 0x56, 0x3a), System.Windows.Media.Color.FromRgb(0x22, 0x2c, 0x30), 60) };
+        strip.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        strip.Arrange(new System.Windows.Rect(0, 0, strip.DesiredSize.Width, strip.DesiredSize.Height));
+        strip.UpdateLayout();
+        gearView.OpenFirstPiece(); // a piece opened, as after a click
+        strip.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
+        strip.Arrange(new System.Windows.Rect(0, 0, strip.DesiredSize.Width, strip.DesiredSize.Height));
+        strip.UpdateLayout();
+        int width = (int)Math.Ceiling(strip.DesiredSize.Width), height = (int)Math.Ceiling(strip.DesiredSize.Height);
+        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        bitmap.Render(strip);
+        var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
+        encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
+        using (var file = File.Create(path))
+        {
+            encoder.Save(file);
+        }
+
+        Console.WriteLine($"render-player: wrote {path} ({width}x{height})");
+        Environment.Exit(0);
+    }
+
     private static void RunRenderSeasonMode(string path)
     {
         var app = new System.Windows.Application();

@@ -390,7 +390,7 @@ public partial class MainWindow
         ShowFindResults(players);
         if (players.Count == 1)
         {
-            ShowFindCard(players[0]);
+            PickFindResult(players[0]); // the one character: its card straight away
         }
     }
 
@@ -400,9 +400,12 @@ public partial class MainWindow
         OverlayFindStatus.Visibility = string.IsNullOrEmpty(text) ? Visibility.Collapsed : Visibility.Visible;
     }
 
-    /// <summary>The characters found, one line each: class, name, level, server and region, Combat Power; a click shows its card.</summary>
+    /// <summary>The characters found, one line each: class, name, level, server and region, Combat Power; a click shows its card (and only it).</summary>
     internal void ShowFindResults(IReadOnlyList<FoundPlayer> players)
     {
+        _findPlayers = players;
+        _findShown = null;
+        OverlayFindCard.Visibility = Visibility.Collapsed;
         ShowFindStatus(players.Count > 1 ? $"{players.Count} characters. Pick one:" : null);
         OverlayFindResults.Children.Clear();
         foreach (FoundPlayer player in players.Take(12))
@@ -441,15 +444,98 @@ public partial class MainWindow
             row.MouseLeftButtonUp += (_, ev) =>
             {
                 ev.Handled = true;
-                ShowFindCard(picked);
+                PickFindResult(picked);
             };
             OverlayFindResults.Children.Add(row);
         }
     }
 
     private FoundPlayer? _findShown;
+    private IReadOnlyList<FoundPlayer> _findPlayers = Array.Empty<FoundPlayer>();
+    private PlayerWindow? _playerWindow;
 
-    /// <summary>The card of one character: its class, name, class · server · region, Combat Power, Item Level and best parse, and its full page on the website.
+    /// <summary>
+    /// A character picked from the results (6 November 2026, the owner: "the other ones disappear and just the one I clicked appears"): the list goes, its card
+    /// stays, with a way back to all of them when there were more.
+    /// </summary>
+    internal void PickFindResult(FoundPlayer player)
+    {
+        OverlayFindResults.Children.Clear();
+        ShowFindStatus(null);
+        if (_findPlayers.Count > 1)
+        {
+            var text = new TextBlock { Text = $"‹  All {_findPlayers.Count} results", FontSize = 11.5 };
+            text.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+            var rest = new SolidColorBrush(Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF)); // never see-through: clicks would go to the game
+            var back = new Border { Child = text, Padding = new Thickness(8, 4, 10, 4), CornerRadius = new CornerRadius(6), Background = rest, Cursor = Cursors.Hand,
+                Margin = new Thickness(0, 0, 0, 6), HorizontalAlignment = HorizontalAlignment.Left, ToolTip = "Back to the other characters of the name" };
+            back.MouseEnter += (_, _) =>
+            {
+                back.Background = new SolidColorBrush(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
+                text.SetResourceReference(TextBlock.ForegroundProperty, "Brush.OverlayText");
+            };
+            back.MouseLeave += (_, _) =>
+            {
+                back.Background = rest;
+                text.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+            };
+            back.MouseLeftButtonUp += (_, ev) =>
+            {
+                ev.Handled = true;
+                ShowFindResults(_findPlayers);
+            };
+            OverlayFindResults.Children.Add(back);
+        }
+
+        ShowFindCard(player);
+    }
+
+    /// <summary>
+    /// The character in the player window over the game (6 November 2026, the owner: "a tab in game, not a redirect to the website, so people don't have to
+    /// alt-tab"): one window, beside the meter; picking another character shows that one in it.
+    /// </summary>
+    private void OpenPlayerWindow(FoundPlayer player)
+    {
+        if (Headless)
+        {
+            return;
+        }
+
+        if (_playerWindow is { IsLoaded: true } open)
+        {
+            _ = open.ShowPlayerAsync(player);
+            open.Activate();
+            return;
+        }
+
+        var window = new PlayerWindow(player) { WindowStartupLocation = WindowStartupLocation.Manual };
+        Rect area = SystemParameters.WorkArea;
+        const double width = 562;
+        if (_meterOverlay is { IsVisible: true } overlay)
+        {
+            double right = overlay.Left + overlay.ActualWidth + 10;
+            window.Left = right + width <= area.Right ? right : Math.Max(area.Left, overlay.Left - width - 10);
+            window.Top = Math.Clamp(overlay.Top, area.Top, Math.Max(area.Top, area.Bottom - 420));
+        }
+        else
+        {
+            window.Left = area.Left + (area.Width - width) / 2;
+            window.Top = area.Top + area.Height * 0.12;
+        }
+
+        window.Closed += (_, _) =>
+        {
+            if (ReferenceEquals(_playerWindow, window))
+            {
+                _playerWindow = null;
+            }
+        };
+        _playerWindow = window;
+        window.Show();
+        window.Activate();
+    }
+
+    /// <summary>The card of one character: its class, name, class · server · region, Combat Power, Item Level and best parse, and its player window.
     /// A character the website has no figures of (not a player of the meter) gets them from its official page a moment later.</summary>
     internal void ShowFindCard(FoundPlayer player, bool asked = false)
     {
@@ -492,20 +578,17 @@ public partial class MainWindow
 
         var open = new Border { CornerRadius = new CornerRadius(7), Padding = new Thickness(0, 7, 0, 7), Cursor = Cursors.Hand, BorderThickness = new Thickness(1),
             BorderBrush = new SolidColorBrush(Color.FromArgb(0x33, 0xFF, 0xFF, 0xFF)), Background = new SolidColorBrush(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF)),
-            IsEnabled = player.Page is not null };
+            IsEnabled = player.ServerId > 0 };
         var label = new TextBlock { Text = "Open player page", FontSize = 12.5, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Center };
         label.SetResourceReference(TextBlock.ForegroundProperty, "Brush.OverlayText");
         open.Child = label;
-        open.ToolTip = "Everything about the character in Character Lookup on the website: gear, stats, skills, parses";
+        open.ToolTip = "Everything about the character in a window over the game: gear, stats, skills, parses, and Genus Insight and pets when they play with Atreia App";
         open.MouseEnter += (_, _) => open.Background = new SolidColorBrush(Color.FromArgb(0x2E, 0xFF, 0xFF, 0xFF));
         open.MouseLeave += (_, _) => open.Background = new SolidColorBrush(Color.FromArgb(0x1A, 0xFF, 0xFF, 0xFF));
         open.MouseLeftButtonUp += (_, ev) =>
         {
             ev.Handled = true;
-            if (player.Page is { } page)
-            {
-                OpenInBrowser(page);
-            }
+            OpenPlayerWindow(player);
         };
         stack.Children.Add(open);
 
@@ -518,7 +601,7 @@ public partial class MainWindow
     }
 
     /// <summary>The colours parse percentiles are known by: grey, green, blue, purple, orange, pink at 99, gold at 100.</summary>
-    private static Color ParseColour(int pct) => pct switch
+    internal static Color ParseColour(int pct) => pct switch
     {
         >= 100 => Color.FromRgb(0xE5, 0xCC, 0x80),
         >= 99 => Color.FromRgb(0xE2, 0x68, 0xA8),
