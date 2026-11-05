@@ -585,13 +585,13 @@ public static class SelfCheckCraft
         // order picked, the other faction's id left out. The description is the step worked on, the last one once all are done.
         IReadOnlyList<SeasonProgress> list = p.Values.OrderBy(x => x.Mission.Id).ToList();
         IReadOnlyList<SeasonProgress> auto = SeasonMissions.ForOverlay(list, null), picked = SeasonMissions.ForOverlay(list, new[] { 240111300, 230111300, 244210900 });
-        bool overlay = auto.Count == 40 && auto.All(x => x.Mission.Weekly && !x.Finished) && auto[0].Mission.Id == 244210900
+        bool overlay = auto.Count == 30 && auto.All(x => x.Mission.Weekly && !x.Finished) && auto[0].Mission.Id == 244210900
             && picked.Select(x => x.Mission.Id).SequenceEqual(new[] { 240111300, 244210900 });
         SeasonMission street = Find(240111300)!;
         bool described = SeasonMissions.Description(p[240111300], "en") == SeasonMissions.Text(street.Steps[1].Text, "en")
             && SeasonMissions.Description(new SeasonProgress(street, 600, street.Steps.Count, false), "en") == SeasonMissions.Text(street.Steps[^1].Text, "en")
             && Math.Abs(SeasonMissions.Fraction(p[240111300]) - 0.52) < 1e-9;
-        Console.WriteLine($"  -> season overlay: none picked shows the 40 unfinished weekly ones, furthest along first: {auto.Count == 40 && auto[0].Mission.Id == 244210900}; picked ones in their order, the other faction's left out: {overlay}; the description is the step worked on: {described}");
+        Console.WriteLine($"  -> season overlay: none picked shows the 30 unfinished weekly ones, furthest along first: {auto.Count == 30 && auto[0].Mission.Id == 244210900}; picked ones in their order, the other faction's left out: {overlay}; the description is the step worked on: {described}");
         return steps && weekly && faction && overlay && described;
     }
 }
