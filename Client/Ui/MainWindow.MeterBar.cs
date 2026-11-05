@@ -199,20 +199,12 @@ public partial class MainWindow
     private const string DungeonIcon = "aion2/items/more/Icon_Ticket_Entrance_DailyDungeon_001.png";
     private const string AscensionIcon = "aion2/items/more/Icon_Ticket_Entrance_Awaken_001.png";
 
-    // Ludra's challenge ticket (the game's own picture of it)
-    private const string LudraIcon = "aion2/items/more/Icon_Ticket_Entrance_Raid_001.png";
-
-    /// <summary>Ludra's two counters: its final boss kill this week (the one that counts: once a week) and the attempts at the raid.</summary>
-    private const int LudraKillTicket = 90000002, LudraAttemptTicket = 90000001;
-
     /// <summary>The counters at the foot: Shugo Festival, Dimensional Invasion, Nightmare, the daily dungeon's weekly entries and Ascension Trial (the
-    /// characters page's roster has the same), after the Odyle Energy; then Ludra (6 November 2026, the owner: "add ludra", then "ludra is only once a week
-    /// for us rn" and "remove the other two" - the other Sanctuary raids): its final boss kill left this week, named after its instance (the game's own
-    /// counter name is long: "[Sanctuary] Abyssal Forge Final Boss Kill Count"), the attempts left in its tip.</summary>
-    private static readonly (int Id, string Icon, int Zone)[] FootTickets =
+    /// characters page's roster has the same), after the Odyle Energy. (Ludra's weekly kill stood here for a night, 6 November 2026; the owner: "just keep the
+    /// basic stuff at the bottom of the meter like before".)</summary>
+    private static readonly (int Id, string Icon)[] FootTickets =
     {
-        (1, ShugoIcon, 0), (8, InvasionIcon, 0), (4, NightmareIcon, 0), (101, DungeonIcon, 0), (80000001, AscensionIcon, 0),
-        (LudraKillTicket, LudraIcon, 600082),
+        (1, ShugoIcon), (8, InvasionIcon), (4, NightmareIcon), (101, DungeonIcon), (80000001, AscensionIcon),
     };
 
     private static readonly Dictionary<string, ImageSource?> TicketIcons = new();
@@ -289,7 +281,7 @@ public partial class MainWindow
                 odyle.Bonus > 0 ? "+" + odyle.Bonus.ToString("N0", CultureInfo.CurrentCulture) : null, next, tip, odyle.Full));
         }
 
-        foreach ((int id, string icon, int zone) in FootTickets)
+        foreach ((int id, string icon) in FootTickets)
         {
             if (Aion2Tickets.Find(id) is not { } def || Aion2Tickets.IsLocked(character, id) || !character.Tickets.TryGetValue(id, out TicketValue value))
             {
@@ -299,13 +291,7 @@ public partial class MainWindow
             int count = Aion2Tickets.Expected(def, value.Count, seenAt, now, premium);
             int cap = premium && def.SubscribeMax > def.Max ? def.SubscribeMax : def.Max;
             int lost = Aion2Tickets.LostAtNextRefill(def, count, premium);
-            string label = zone > 0 ? Aion2.Protocol.Aion2Zones.NameOf(zone, language) ?? def.ShortIn(language) : def.ShortIn(language);
-            // Ludra: the kill left this week, then the attempts left
-            string attempts = id == LudraKillTicket && Aion2Tickets.Find(LudraAttemptTicket) is { } tries && character.Tickets.TryGetValue(LudraAttemptTicket, out TicketValue left)
-                ? $"  ·  {Aion2Tickets.Expected(tries, left.Count, seenAt, now, premium)} / {tries.Max} attempts"
-                : "";
-            string tip = $"{label}: {count} / {Math.Max(cap, count)}" + (id == LudraKillTicket ? " kill this week" + attempts : "")
-                + (value.Bonus > 0 ? $"  (+{value.Bonus})" : "")
+            string tip = $"{def.ShortIn(language)}: {count} / {Math.Max(cap, count)}" + (value.Bonus > 0 ? $"  (+{value.Bonus})" : "")
                 + (lost > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[lost == 1 ? "Checklist.WarnLostOne" : "Checklist.WarnLostMany"], lost) : "");
             list.Add(new OverlayTicket(icon, (count != value.Count ? "~" : "") + count.ToString(CultureInfo.CurrentCulture),
                 value.Bonus > 0 ? "+" + value.Bonus.ToString(CultureInfo.CurrentCulture) : null, null, tip, lost > 0));
@@ -382,7 +368,6 @@ public partial class MainWindow
         new OverlayTicket(NightmareIcon, "14", null, null, "Nightmare: 14 / 14", Warn: true),
         new OverlayTicket(DungeonIcon, "6", "+6", null, "Daily Dungeon: 6 / 14"),
         new OverlayTicket(AscensionIcon, "3", null, null, "Ascension Trial: 3 / 3"),
-        new OverlayTicket(LudraIcon, "1", null, null, "Abyssal Forge: Ludra: 1 / 1 kill this week  ·  4 / 4 attempts"),
     };
 
     // ------------------------------------------------------------------ the dummy card

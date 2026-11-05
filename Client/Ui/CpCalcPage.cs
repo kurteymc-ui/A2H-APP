@@ -112,7 +112,10 @@ public sealed class CpCalcPage : Grid
         RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
         RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         var head = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
-        head.Children.Add(new TextBlock { Text = Loc("Main.MenuTools.CpCalc"), FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Text") });
+        // the page's title as the other character pages have it (6 November 2026, the owner: "fix the CP to be a nicer style")
+        var title = new TextBlock { Text = Loc("Main.MenuTools.CpCalc"), FontSize = 26, Foreground = Res("Brush.Text") };
+        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        head.Children.Add(title);
         _note.Foreground = Res("Brush.TextMuted");
         head.Children.Add(_note);
         SetRow(head, 0);
@@ -432,33 +435,51 @@ public sealed class CpCalcPage : Grid
 
     private UIElement Hero(View v, CpModel model)
     {
-        var grid = new Grid { Margin = new Thickness(0, 0, 0, 10) };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(300) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(10) });
+        var grid = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(320) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(12) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-        // left: the number
-        var left = new StackPanel();
-        left.Children.Add(Heading(Loc("CpCalc.Hero.Title")));
+        // left: the number, on the class colour's wash with the class emblem faint behind it (6 November 2026: "fix the CP to be a nicer style")
+        Aion2CharacterInfo? me = _directory()?.LocalCharacter;
+        string cls = me is null ? "" : Aion2SkillNames.ClassFromCode(me.ClassCode) ?? "";
+        Color accent = cls.Length > 0 ? ClassBrushes.ClassColor(cls) : Gold;
+        var host = new Grid { ClipToBounds = true };
+        var wash = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
+        wash.GradientStops.Add(new GradientStop(Color.FromArgb(0x48, accent.R, accent.G, accent.B), 0));
+        wash.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, accent.R, accent.G, accent.B), 0.7));
+        host.Children.Add(new Border { Background = wash });
+        if (cls.Length > 0 && MainWindow.ClassIcon(cls) is { } emblem)
+        {
+            host.Children.Add(new Image { Source = emblem, Width = 170, Height = 170, Opacity = 0.11, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, -34, -40) });
+        }
+
+        var left = new StackPanel { Margin = new Thickness(20, 18, 20, 18) };
+        left.Children.Add(new TextBlock { Text = Loc("CpCalc.Hero.Title").ToUpper(CultureInfo.CurrentCulture), FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = Solid(accent) });
         if (_character is not null)
         {
-            Aion2CharacterInfo? me = _directory()?.LocalCharacter;
-            string cls = me is null ? "" : Aion2SkillNames.ClassFromCode(me.ClassCode) ?? "";
+            var name = new TextBlock { Text = _character, FontSize = 22, Foreground = Res("Brush.Text"), Margin = new Thickness(0, 4, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
+            name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+            left.Children.Add(name);
             int? il = CharacterOf(_directory()).ItemLevel;
-            string who = string.Join("  ·  ", new[] { _character, cls, il is int level ? F("CpCalc.Hero.ItemLevel", level.ToString("N0", CultureInfo.CurrentCulture)) : "" }.Where(x => x.Length > 0));
-            left.Children.Add(new TextBlock { Text = who, FontSize = 12.5, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Text"), Margin = new Thickness(0, -2, 0, 2), TextTrimming = TextTrimming.CharacterEllipsis });
+            string who = string.Join("  ·  ", new[] { cls, il is int level ? F("CpCalc.Hero.ItemLevel", level.ToString("N0", CultureInfo.CurrentCulture)) : "" }.Where(x => x.Length > 0));
+            if (who.Length > 0)
+            {
+                left.Children.Add(new TextBlock { Text = who, FontSize = 12.5, Foreground = Res("Brush.TextMuted"), Margin = new Thickness(0, 1, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis });
+            }
         }
 
         double total = v.Whole.Total;
-        left.Children.Add(new TextBlock { Text = Math.Round(v.GameCp ?? total).ToString("N0", CultureInfo.CurrentCulture), FontSize = 34, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Accent") });
+        var number = new TextBlock { Text = Math.Round(v.GameCp ?? total).ToString("N0", CultureInfo.CurrentCulture), FontSize = 42, FontWeight = FontWeights.SemiBold, Foreground = Solid(Gold), Margin = new Thickness(0, 10, 0, 0) };
+        left.Children.Add(number);
         string when = v.GameAt is DateTime at ? at.ToLocalTime().ToString("g", CultureInfo.CurrentCulture) : "";
-        left.Children.Add(Label(v.GameCp is null ? Loc("CpCalc.Hero.Estimate") : F(v.FromPage ? "CpCalc.Hero.Page" : "CpCalc.Hero.Game", when), 12, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 2, 0, 0)));
+        left.Children.Add(Label(v.GameCp is null ? Loc("CpCalc.Hero.Estimate") : F(v.FromPage ? "CpCalc.Hero.Page" : "CpCalc.Hero.Game", when), 12, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 0, 0, 0)));
         if (v.GameCp is int game)
         {
             string calc = Math.Round(v.Unfitted).ToString("N0", CultureInfo.CurrentCulture);
             double off = (v.Unfitted - game) / game * 100;
             var fitLine = Label(v.Fit is double f ? F("CpCalc.Hero.Fitted", calc, f.ToString("0.00", CultureInfo.CurrentCulture)) : F("CpCalc.Hero.Unfitted", calc, (off >= 0 ? "+" : "−") + Math.Abs(off).ToString("0.#", CultureInfo.CurrentCulture) + " %"),
-                11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 8, 0, 0));
+                11.5, brush: Res("Brush.TextSubtle"), margin: new Thickness(0, 6, 0, 0));
             fitLine.ToolTip = Loc("CpCalc.Hero.FitTip");
             left.Children.Add(fitLine);
         }
@@ -466,26 +487,28 @@ public sealed class CpCalcPage : Grid
         double session = _changes.Sum(c => c.Delta);
         if (_changes.Count > 0)
         {
-            left.Children.Add(Chip(Loc("CpCalc.Session") + "  " + Signed(session), session < 0 ? Color.FromRgb(0xE0, 0x56, 0x6B) : Green, new Thickness(0, 8, 0, 0), Loc("CpCalc.SessionTip")));
+            left.Children.Add(Chip(Loc("CpCalc.Session") + "  " + Signed(session), session < 0 ? Color.FromRgb(0xE0, 0x56, 0x6B) : Green, new Thickness(0, 10, 0, 0), Loc("CpCalc.SessionTip")));
         }
 
-        var leftCard = Card(left);
+        host.Children.Add(left);
+        var leftCard = new Border { Child = host, Background = Res("Brush.Panel"), BorderBrush = Tint(accent, 0x60), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12) };
+        host.SizeChanged += (_, e) => host.Clip = new RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 11, 11);
         SetColumn(leftCard, 0);
         grid.Children.Add(leftCard);
 
-        // right: where it comes from, one bar and the parts under it
+        // right: where it comes from, one bar and the parts under it, two to a line, each with its share
         var right = new StackPanel();
         right.Children.Add(Heading(Loc("CpCalc.Hero.Where")));
         var parts = BarOrder.Select(s => (Source: s, Cp: Math.Max(0, v.Whole.Parts.GetValueOrDefault(s)))).Where(p => p.Cp >= 0.5).ToList();
         double sum = Math.Max(1, parts.Sum(p => p.Cp));
-        var bar = new Grid { Height = 18, Margin = new Thickness(0, 2, 0, 10) };
+        var bar = new Grid { Height = 22, Margin = new Thickness(0, 0, 0, 14) };
         for (int k = 0; k < parts.Count; k++)
         {
             bar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(parts[k].Cp, GridUnitType.Star) });
             var piece = new Border
             {
-                Background = Solid(SourceColors[parts[k].Source]), Margin = new Thickness(k == 0 ? 0 : 1, 0, 0, 0),
-                CornerRadius = new CornerRadius(k == 0 ? 5 : 0, k == parts.Count - 1 ? 5 : 0, k == parts.Count - 1 ? 5 : 0, k == 0 ? 5 : 0),
+                Background = Solid(SourceColors[parts[k].Source]), Margin = new Thickness(k == 0 ? 0 : 2, 0, 0, 0),
+                CornerRadius = new CornerRadius(k == 0 ? 7 : 2, k == parts.Count - 1 ? 7 : 2, k == parts.Count - 1 ? 7 : 2, k == 0 ? 7 : 2),
                 ToolTip = SourceName(parts[k].Source) + ": " + Number(parts[k].Cp) + " CP (" + (parts[k].Cp / sum * 100).ToString("0.#", CultureInfo.CurrentCulture) + " %)",
             };
             SetColumn(piece, k);
@@ -493,15 +516,20 @@ public sealed class CpCalcPage : Grid
         }
 
         right.Children.Add(bar);
-        var legend = new WrapPanel();
+        var legend = new UniformGrid { Columns = 3 };
         foreach (var (source, cp) in parts)
         {
             Tab? tab = TabOf(source);
-            var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 14, 6), Cursor = tab is null ? null : Cursors.Hand };
-            item.Children.Add(new Ellipse { Width = 9, Height = 9, Fill = Solid(SourceColors[source]), Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
-            item.Children.Add(new TextBlock { Text = SourceName(source), FontSize = 12.5, Foreground = Res("Brush.Text"), VerticalAlignment = VerticalAlignment.Center });
-            item.Children.Add(new TextBlock { Text = "  " + Short(cp), FontSize = 12.5, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Text"), VerticalAlignment = VerticalAlignment.Center });
-            item.Children.Add(new TextBlock { Text = "  " + (cp / sum * 100).ToString("0.#", CultureInfo.CurrentCulture) + " %", FontSize = 11.5, Foreground = Res("Brush.TextMuted"), VerticalAlignment = VerticalAlignment.Center });
+            var item = new Grid { Margin = new Thickness(0, 0, 14, 8), Cursor = tab is null ? null : Cursors.Hand, Background = Brushes.Transparent };
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            item.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            Add(item, 0, new Border { Width = 4, Height = 26, CornerRadius = new CornerRadius(2), Background = Solid(SourceColors[source]), Margin = new Thickness(0, 0, 9, 0) });
+            var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            words.Children.Add(new TextBlock { Text = SourceName(source), FontSize = 12, Foreground = Res("Brush.TextMuted"), TextTrimming = TextTrimming.CharacterEllipsis });
+            words.Children.Add(new TextBlock { Text = Short(cp), FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Text") });
+            Add(item, 1, words);
+            Add(item, 2, new TextBlock { Text = (cp / sum * 100).ToString("0.#", CultureInfo.CurrentCulture) + " %", FontSize = 11.5, Foreground = Res("Brush.TextSubtle"), VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(6, 0, 0, 2) });
             if (tab is Tab target)
             {
                 item.MouseLeftButtonUp += (_, _) =>
@@ -515,7 +543,7 @@ public sealed class CpCalcPage : Grid
         }
 
         right.Children.Add(legend);
-        right.Children.Add(Label(Loc("CpCalc.Hero.Note"), 11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 4, 0, 0)));
+        right.Children.Add(Label(Loc("CpCalc.Hero.Note"), 11.5, brush: Res("Brush.TextSubtle"), margin: new Thickness(0, 2, 0, 0)));
         var rightCard = Card(right);
         SetColumn(rightCard, 2);
         grid.Children.Add(rightCard);
@@ -573,11 +601,15 @@ public sealed class CpCalcPage : Grid
         foreach (var group in groups)
         {
             var list = group.OrderByDescending(s => s.Rank).ToList();
-            var head = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, stack.Children.Count > 1 ? 12 : 4, 0, 2) };
-            head.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = Solid(GroupColor(group.Key)), Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
-            head.Children.Add(new TextBlock { Text = Loc("CpCalc.Group." + group.Key).ToUpper(CultureInfo.CurrentCulture), FontSize = 11, FontWeight = FontWeights.SemiBold,
-                Foreground = Res("Brush.Text"), VerticalAlignment = VerticalAlignment.Center });
-            head.Children.Add(new TextBlock { Text = "   " + F("CpCalc.Group.Count", list.Count), FontSize = 11, Foreground = Res("Brush.TextMuted"), VerticalAlignment = VerticalAlignment.Center });
+            // the group as a tag in its colour, how many steps it has beside it
+            Color tone = GroupColor(group.Key);
+            var head = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, stack.Children.Count > 1 ? 16 : 2, 0, 6) };
+            head.Children.Add(new Border
+            {
+                Background = Tint(tone, 0x22), BorderBrush = Tint(tone, 0x70), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 2, 8, 3),
+                Child = new TextBlock { Text = Loc("CpCalc.Group." + group.Key), FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = Solid(tone) },
+            });
+            head.Children.Add(new TextBlock { Text = "  " + F("CpCalc.Group.Count", list.Count), FontSize = 11.5, Foreground = Res("Brush.TextSubtle"), VerticalAlignment = VerticalAlignment.Center });
             stack.Children.Add(head);
             foreach (CpStep s in list.Take(StepsPerGroup))
             {
@@ -617,7 +649,7 @@ public sealed class CpCalcPage : Grid
         }
 
         var card = Card(stack);
-        card.Margin = new Thickness(0, 0, 0, 10);
+        card.Margin = new Thickness(0, 0, 0, 12);
         return card;
     }
 
@@ -633,13 +665,18 @@ public sealed class CpCalcPage : Grid
     /// <summary>One step: what it gives in green, its picture, what to do and what it costs, how sure the gain is.</summary>
     private UIElement StepRow(CpStep s)
     {
-        var row = new Grid { Margin = new Thickness(0, 3, 0, 3) };
+        var row = new Grid { Margin = new Thickness(0) };
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(104) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         string gain = s.Certainty == CpCertainty.Range ? Range(s.Gain, s.GainMax, signed: true) : Signed(s.Gain);
-        Add(row, 0, new TextBlock { Text = gain, FontSize = 13.5, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Heal"), VerticalAlignment = VerticalAlignment.Center });
+        // the gain as a green tag, so the column reads at a glance
+        Add(row, 0, new Border
+        {
+            Background = Tint(Green, 0x1E), CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 3, 8, 4), HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center,
+            Child = new TextBlock { Text = gain, FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Heal") },
+        });
         if (StepIcon(s) is { } icon)
         {
             icon.Margin = new Thickness(0, 0, 9, 0);
@@ -660,7 +697,11 @@ public sealed class CpCalcPage : Grid
         var chip = Chip(chipText, chipColor, new Thickness(10, 0, 0, 0), tip);
         chip.VerticalAlignment = VerticalAlignment.Center;
         Add(row, 3, chip);
-        return row;
+        // each step on its own line with a soft highlight under the mouse
+        var line = new Border { Child = row, Padding = new Thickness(6, 5, 6, 5), Margin = new Thickness(-6, 0, -6, 1), CornerRadius = new CornerRadius(7), Background = Brushes.Transparent };
+        line.MouseEnter += (_, _) => line.Background = Res("Brush.Control");
+        line.MouseLeave += (_, _) => line.Background = Brushes.Transparent;
+        return line;
     }
 
     /// <summary>What a step costs in one line, and its tooltip: Kina and items (on average for a level that can fail), what the character holds of them, the
@@ -816,9 +857,10 @@ public sealed class CpCalcPage : Grid
             Brush idle = Res("Brush.Control"), hover = Res("Brush.ControlHover");
             var pill = new Border
             {
-                Child = content, Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 6, 6), CornerRadius = new CornerRadius(14), Cursor = Cursors.Hand,
-                Background = on ? Tint(color, 0x2A) : idle, BorderBrush = on ? Solid(color) : Res("Brush.Border"), BorderThickness = new Thickness(1),
+                Child = content, Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 4, 0), CornerRadius = new CornerRadius(8), Cursor = Cursors.Hand,
+                Background = on ? Tint(color, 0x26) : Brushes.Transparent, BorderBrush = on ? Tint(color, 0xB0) : Brushes.Transparent, BorderThickness = new Thickness(1),
             };
+            idle = Brushes.Transparent;
             if (!on)
             {
                 pill.MouseEnter += (_, _) => pill.Background = hover;
@@ -833,7 +875,10 @@ public sealed class CpCalcPage : Grid
             strip.Children.Add(pill);
         }
 
-        return strip;
+        // the tabs in one bar, as the Journey page's periods sit in theirs
+        strip.Margin = new Thickness(0);
+        return new Border { Child = strip, Padding = new Thickness(5), Margin = new Thickness(0, 0, 0, 12), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1),
+            Background = Res("Brush.Panel"), BorderBrush = Res("Brush.Border") };
     }
 
     /// <summary>A tab's first line: the part's CP and its share of the whole, and what the part is.</summary>
@@ -2234,11 +2279,17 @@ public sealed class CpCalcPage : Grid
     private static TextBlock Label(string text, double size = 13, FontWeight? weight = null, Brush? brush = null, Thickness? margin = null) =>
         new() { Text = text, FontSize = size, FontWeight = weight ?? FontWeights.Normal, Foreground = brush ?? Res("Brush.Text"), TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center, Margin = margin ?? new Thickness(0) };
 
-    private static TextBlock Heading(string text) =>
-        new() { Text = text.ToUpper(CultureInfo.CurrentCulture), FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.TextMuted"), Margin = new Thickness(0, 0, 0, 8) };
+    /// <summary>A card's title: a short gold stroke and the title (the Journey page's way).</summary>
+    private static FrameworkElement Heading(string text)
+    {
+        var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 12) };
+        line.Children.Add(new Border { Width = 3, Height = 14, CornerRadius = new CornerRadius(2), Background = Solid(Gold), Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center });
+        line.Children.Add(new TextBlock { Text = text, FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Text"), VerticalAlignment = VerticalAlignment.Center });
+        return line;
+    }
 
     private static Border Card(UIElement child) =>
-        new() { Background = Res("Brush.Panel"), BorderBrush = Res("Brush.Border"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(16, 14, 16, 14), Child = child };
+        new() { Background = Res("Brush.Panel"), BorderBrush = Res("Brush.Border"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(18, 16, 18, 16), Child = child };
 
     /// <summary>A line of the lists: the figure on the left (a CP gain or change), the piece's small picture, the text, a small note on the right.</summary>
     private static UIElement Row(string figure, string text, string? note, Brush figureBrush, int? itemId)
