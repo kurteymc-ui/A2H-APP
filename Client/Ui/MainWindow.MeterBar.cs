@@ -199,19 +199,20 @@ public partial class MainWindow
     private const string DungeonIcon = "aion2/items/more/Icon_Ticket_Entrance_DailyDungeon_001.png";
     private const string AscensionIcon = "aion2/items/more/Icon_Ticket_Entrance_Awaken_001.png";
 
-    // the Sanctuary raids' challenge tickets (the game's own pictures of them)
+    // Ludra's challenge ticket (the game's own picture of it)
     private const string LudraIcon = "aion2/items/more/Icon_Ticket_Entrance_Raid_001.png";
-    private const string CorrodedIcon = "aion2/items/more/Icon_Ticket_Entrance_Raid_002.png";
-    private const string MuspelIcon = "aion2/items/more/Icon_Ticket_Entrance_Raid_003.png";
+
+    /// <summary>Ludra's two counters: its final boss kill this week (the one that counts: once a week) and the attempts at the raid.</summary>
+    private const int LudraKillTicket = 90000002, LudraAttemptTicket = 90000001;
 
     /// <summary>The counters at the foot: Shugo Festival, Dimensional Invasion, Nightmare, the daily dungeon's weekly entries and Ascension Trial (the
-    /// characters page's roster has the same), after the Odyle Energy; then the Sanctuary raids' weekly attempts (6 November 2026, the owner: "add ludra
-    /// etc"): Abyssal Forge: Ludra, Corroded Decontamination Facility, Chalice of Muspel, named after their instance (the game's own counter names are long:
-    /// "[Sanctuary] Abyssal Forge Attempt Count"). A raid the character has not opened yet is not shown (its counter is locked or not sent).</summary>
+    /// characters page's roster has the same), after the Odyle Energy; then Ludra (6 November 2026, the owner: "add ludra", then "ludra is only once a week
+    /// for us rn" and "remove the other two" - the other Sanctuary raids): its final boss kill left this week, named after its instance (the game's own
+    /// counter name is long: "[Sanctuary] Abyssal Forge Final Boss Kill Count"), the attempts left in its tip.</summary>
     private static readonly (int Id, string Icon, int Zone)[] FootTickets =
     {
         (1, ShugoIcon, 0), (8, InvasionIcon, 0), (4, NightmareIcon, 0), (101, DungeonIcon, 0), (80000001, AscensionIcon, 0),
-        (90000001, LudraIcon, 600082), (90000003, CorrodedIcon, 620011), (90000005, MuspelIcon, 620021),
+        (LudraKillTicket, LudraIcon, 600082),
     };
 
     private static readonly Dictionary<string, ImageSource?> TicketIcons = new();
@@ -299,7 +300,12 @@ public partial class MainWindow
             int cap = premium && def.SubscribeMax > def.Max ? def.SubscribeMax : def.Max;
             int lost = Aion2Tickets.LostAtNextRefill(def, count, premium);
             string label = zone > 0 ? Aion2.Protocol.Aion2Zones.NameOf(zone, language) ?? def.ShortIn(language) : def.ShortIn(language);
-            string tip = $"{label}: {count} / {Math.Max(cap, count)}" + (value.Bonus > 0 ? $"  (+{value.Bonus})" : "")
+            // Ludra: the kill left this week, then the attempts left
+            string attempts = id == LudraKillTicket && Aion2Tickets.Find(LudraAttemptTicket) is { } tries && character.Tickets.TryGetValue(LudraAttemptTicket, out TicketValue left)
+                ? $"  ·  {Aion2Tickets.Expected(tries, left.Count, seenAt, now, premium)} / {tries.Max} attempts"
+                : "";
+            string tip = $"{label}: {count} / {Math.Max(cap, count)}" + (id == LudraKillTicket ? " kill this week" + attempts : "")
+                + (value.Bonus > 0 ? $"  (+{value.Bonus})" : "")
                 + (lost > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[lost == 1 ? "Checklist.WarnLostOne" : "Checklist.WarnLostMany"], lost) : "");
             list.Add(new OverlayTicket(icon, (count != value.Count ? "~" : "") + count.ToString(CultureInfo.CurrentCulture),
                 value.Bonus > 0 ? "+" + value.Bonus.ToString(CultureInfo.CurrentCulture) : null, null, tip, lost > 0));
@@ -376,9 +382,7 @@ public partial class MainWindow
         new OverlayTicket(NightmareIcon, "14", null, null, "Nightmare: 14 / 14", Warn: true),
         new OverlayTicket(DungeonIcon, "6", "+6", null, "Daily Dungeon: 6 / 14"),
         new OverlayTicket(AscensionIcon, "3", null, null, "Ascension Trial: 3 / 3"),
-        new OverlayTicket(LudraIcon, "4", null, null, "Abyssal Forge: Ludra: 4 / 4"),
-        new OverlayTicket(CorrodedIcon, "2", null, null, "Corroded Decontamination Facility: 2 / 4"),
-        new OverlayTicket(MuspelIcon, "4", null, null, "Chalice of Muspel: 4 / 4"),
+        new OverlayTicket(LudraIcon, "1", null, null, "Abyssal Forge: Ludra: 1 / 1 kill this week  ·  4 / 4 attempts"),
     };
 
     // ------------------------------------------------------------------ the dummy card

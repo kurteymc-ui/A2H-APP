@@ -48,10 +48,10 @@ public static class Aion2Tickets
     /// <summary>The character level a counter starts at (below it nothing is counted or collected).
     /// Shugo Festival: the quest of level 13 ("Erscheinung im Rauch" / "Verspätete Verfolgung"); the Odyle energy: the level 22 story quest
     /// ("Handelsgilde Brisenwind" / "Der Daeva, der im Traum verweilte"), here taken as level 22; the daily dungeon 30; Nightmare, Ascension rite,
-    /// Dimensional Invasion and the Abyss 45.</summary>
+    /// Dimensional Invasion and the Abyss 45; Ludra (Abyssal Forge) 45 (the game sends its counters to a level 20 character too).</summary>
     private static readonly Dictionary<int, int> UnlockLevels = new()
     {
-        [1] = 13, [7] = 13, [OdyleId] = 22, [101] = 30, [4] = 45, [8] = 45, [80000001] = 45, [3] = 45,
+        [1] = 13, [7] = 13, [OdyleId] = 22, [101] = 30, [4] = 45, [8] = 45, [80000001] = 45, [3] = 45, [90000001] = 45, [90000002] = 45,
     };
 
     /// <summary>The level the counter needs; 0 = no known limit.</summary>
