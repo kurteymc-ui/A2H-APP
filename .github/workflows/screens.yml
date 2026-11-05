@@ -59,6 +59,7 @@ jobs:
             @('render-app', 'app-timers-full.png', 'timetable', '2100'),
             @('render-tool', 'timers-overlay.png', 'timetable-overlay'),
             @('render-tool', 'blackcloud-toast.png', 'blackcloud-toast'),
+            @('render-tool', 'cube-beam.png', 'cube-beam'),
             @('render-petmap', 'petmap-route.png', 'altgard', '20000', '30000', 'route'),
             @('render-petmap', 'petmap-route-round.png', 'altgard', '20000', '30000', 'route-round'),
             @('render-petmap', 'petmap-route-whole.png', 'altgard', '20000', '30000', 'route-whole'),

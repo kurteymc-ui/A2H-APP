@@ -55,6 +55,7 @@ public static class SelfCheck
         ok &= SelfCheckNaturalVoice.Run();
         ok &= SelfCheckInstanceTimer.Run();
         ok &= SelfCheckCubesGuards.Run();
+        ok &= SelfCheckCubeBeam.Run();
         ok &= SelfCheckMaps.Run();
         ok &= SelfCheckLoot.Run();
         ok &= SelfCheckBlackCloud.Run();

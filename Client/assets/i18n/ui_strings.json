@@ -14356,6 +14356,16 @@
     "de": "Die Karte erscheint mit dem Würfel darauf, auch wenn sie ausgeschaltet ist, und verschwindet 10 Sekunden nach dem letzten Würfel wieder.",
     "fr": "La carte s’affiche avec le cube, même désactivée, et disparaît 10 secondes après le dernier cube."
   },
+  "Cubes.Beam": {
+    "en": "Show a beam of light over the cube",
+    "de": "Einen Lichtstrahl über dem Würfel zeigen",
+    "fr": "Afficher un faisceau de lumière au-dessus du cube"
+  },
+  "Cubes.BeamTip": {
+    "en": "A gold column of light over the game where the cube in range is, with its distance; an arrow at the edge of the screen while it is behind you. It follows the camera from the view cone on the game's minimap (minimap reading must be on), so it is close, not exact, and it shows through hills and walls.",
+    "de": "Eine goldene Lichtsäule über dem Spiel dort, wo der Würfel in Reichweite ist, mit seiner Entfernung; ein Pfeil am Bildschirmrand, solange er hinter dir ist. Sie folgt der Kamera über den Sichtkegel auf der Minikarte des Spiels (das Lesen der Minikarte muss an sein), ist also ungefähr, nicht genau, und scheint durch Hügel und Wände.",
+    "fr": "Une colonne de lumière dorée au-dessus du jeu, là où se trouve le cube à portée, avec sa distance ; une flèche au bord de l'écran tant qu'il est derrière vous. Elle suit la caméra grâce au cône de vue de la minicarte du jeu (la lecture de la minicarte doit être activée) : elle est approximative, pas exacte, et se voit à travers les collines et les murs."
+  },
   "Cubes.Mark": {
     "en": "Always mark Hidden Cubes on the interactive map",
     "de": "Versteckte Würfel immer auf der interaktiven Karte markieren",

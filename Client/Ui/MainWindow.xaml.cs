@@ -1463,6 +1463,8 @@ public partial class MainWindow : Window
             _seasonOverlay ??= new SeasonOverlayController();
             // the exact own position from the game's minimap (Tools, Cube finder): a note on the meter the first time it gives one
             _minimapReader ??= new MinimapReader(() => _liveSource?.Entities as Aion2.Aion2EntityDirectory, text => ShowUploadStatus(text));
+            // a column of light over the game where the cube in range is, from the camera's direction on the minimap (Tools, Cube finder)
+            _cubeBeam ??= new CubeBeam(() => _liveSource?.Entities as Aion2.Aion2EntityDirectory);
             _craft ??= new CraftOverlayController(() => _liveSource?.Entities as Aion2.Aion2EntityDirectory);
             _menuWatcher ??= new MenuWatcher();
             _streamTimer.Tick += (_, _) => StreamTick();

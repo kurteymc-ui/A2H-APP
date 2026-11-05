@@ -735,6 +735,10 @@ public sealed class MeterSettings
 
     /// <summary>A line on the meter while a Hidden Cube is in range ("Hidden Cube nearby · 42 m"). On by default.</summary>
     public bool CubeOverlayAlert { get; set; } = true;
+
+    /// <summary>A beam of light over the game where the Hidden Cube in range is (an arrow at the screen's edge while it is behind the camera), from the camera's
+    /// direction on the minimap (<see cref="CubeBeam"/>). On by default (5 November 2026, the owner: "a beacon of light above the cubes for easier spotting").</summary>
+    public bool CubeBeam { get; set; } = true;
     /// <summary>The game's minimap is read for an exact own position (MinimapReader: the game window's picture matched against the map, while a Hidden Cube is in
     /// range or the map overlay is on). On by default (the owner, 2 Nov 2026), with a note on the meter the first time it gives a position.</summary>
     public bool MinimapReading { get; set; } = true;

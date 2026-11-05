@@ -39,6 +39,24 @@ internal sealed class MinimapReader : IDisposable
 
     public static int RecentFixes => RecentFixTimes.Count(t => DateTime.UtcNow - t < TimeSpan.FromSeconds(10));
 
+    /// <summary>Which way the camera looked at the last read that saw the minimap's view cone (radians: 0 east, counter-clockwise; the cone's opening), and
+    /// when; null before any. Read only while a Hidden Cube is in range and the cube beam is on (<see cref="CubeBeam"/>).</summary>
+    public static (double Yaw, double Width, DateTime At)? Camera { get; private set; }
+
+    /// <summary>The camera's opening as the cone showed it (the middle of the last readings; radians), null before any.</summary>
+    public static double? CameraFov
+    {
+        get
+        {
+            lock (RecentWidths)
+            {
+                return RecentWidths.Count == 0 ? null : Median(RecentWidths);
+            }
+        }
+    }
+
+    private static readonly Queue<double> RecentWidths = new();
+
     /// <summary>Asks the next read to save the game window's picture and what the reader made of it (Debug folder), for checking.</summary>
     public static bool SaveNext { get; set; }
 
@@ -186,6 +204,9 @@ internal sealed class MinimapReader : IDisposable
         // at most five reads a second, two while the player stands (3 November 2026 review: up to ten, each drawing the whole game window); the
         // search for the minimap's place keeps its own pace above
         bool standing = _lastJob is { } before && now - _lastFixAt < TimeSpan.FromSeconds(2) && Distance(before.X, before.Y, guess.X, guess.Y) < 50;
+        // the cube beam follows the camera, which turns while the player stands: five reads a second while it is up (5 November 2026)
+        bool cone = settings.CubeBeam && cubes.Count > 0;
+        standing &= !cone;
         if (layout is not null && now - _jobAt < TimeSpan.FromMilliseconds(standing ? 500 : 200) && !SaveNext)
         {
             return;
@@ -231,7 +252,7 @@ internal sealed class MinimapReader : IDisposable
 
         // a window size where the search keeps failing: one picture of its top right corner into the Debug folder (once a start for each size)
         bool saveCorner = layout is null && _searchFails.GetValueOrDefault(key) == 10;
-        var job = new Job(game, client, key, raster, readX, readY, layout, save, _misses, reach, recheck, saveLost, hints, saveCorner, arrowCheck);
+        var job = new Job(game, client, key, raster, readX, readY, layout, save, _misses, reach, recheck, saveLost, hints, saveCorner, arrowCheck, cone);
         _ = Task.Run(() =>
         {
             var outcome = new Outcome(null, null, false, 0, null);
@@ -256,7 +277,8 @@ internal sealed class MinimapReader : IDisposable
     }
 
     internal sealed record Job(IntPtr Game, Size Client, string Key, MapRaster Raster, double GuessX, double GuessY, Layout? Layout, bool Save, int Misses,
-        double Reach = 40, bool Recheck = false, bool SaveLost = false, IReadOnlyList<Layout>? Hints = null, bool SaveCorner = false, bool ArrowCheck = false);
+        double Reach = 40, bool Recheck = false, bool SaveLost = false, IReadOnlyList<Layout>? Hints = null, bool SaveCorner = false, bool ArrowCheck = false,
+        bool Cone = false);
 
     /// <summary>Searches for the minimap that found nothing, per window size ("4480x2520"): logged now and then, a picture at the tenth.</summary>
     private readonly Dictionary<string, int> _searchFails = new();
@@ -299,12 +321,25 @@ internal sealed class MinimapReader : IDisposable
 
     /// <summary>What one read gave: a fix (world units), a new place of the minimap, whether it was searched for, how long it took, a saved picture.</summary>
     private sealed record Outcome((double X, double Y)? Fix, Layout? NewLayout, bool Searched, double Ms, string? Saved, DateTime At = default,
-        MinimapFix? Match = null, (double X, double Y)? Arrow = null);
+        MinimapFix? Match = null, (double X, double Y)? Arrow = null, MinimapCone.Reading? Cone = null);
 
     // on the UI thread: a fix that a second one confirms goes to the directory as an exact report
     private void Apply(Job job, Outcome outcome)
     {
         LastMs = outcome.Ms;
+        if (outcome.Cone is { } seen)
+        {
+            Camera = (seen.Yaw, seen.Width, outcome.At);
+            lock (RecentWidths)
+            {
+                RecentWidths.Enqueue(seen.Width);
+                while (RecentWidths.Count > 15)
+                {
+                    RecentWidths.Dequeue();
+                }
+            }
+        }
+
         if (outcome.Saved is not null)
         {
             LastSaved = outcome.Saved;
@@ -810,10 +845,15 @@ internal sealed class MinimapReader : IDisposable
 
         (double X, double Y)? fix = null, arrow = null;
         MinimapFix? match = null;
+        MinimapCone.Reading? coneSeen = null;
         if (layout is not null)
         {
             (fix, match) = Read(whole, job, layout);
             arrow = ArrowOffset(whole, layout);
+            if (job.Cone)
+            {
+                coneSeen = ReadCone(whole, layout);
+            }
         }
 
         string? saved = job.Save ? SavePicture(whole, job, layout, match, fix) : null;
@@ -827,7 +867,35 @@ internal sealed class MinimapReader : IDisposable
             SaveLostPicture(whole, job, layout, match);
         }
 
-        return new Outcome(fix, found, job.Layout is null, watch.Elapsed.TotalMilliseconds, saved, at, match, arrow);
+        return new Outcome(fix, found, job.Layout is null, watch.Elapsed.TotalMilliseconds, saved, at, match, arrow, coneSeen);
+    }
+
+    /// <summary>The minimap's view cone (<see cref="MinimapCone"/>): the rectangle of the minimap out of the window's picture, read around the player's spot.</summary>
+    internal static MinimapCone.Reading? ReadCone(Bitmap whole, Layout layout)
+    {
+        int x0 = Math.Max(0, (int)(layout.Cx - layout.HalfW) - 4), y0 = Math.Max(0, (int)(layout.Cy - layout.HalfH) - 4);
+        int x1 = Math.Min(whole.Width, (int)(layout.Cx + layout.HalfW) + 5), y1 = Math.Min(whole.Height, (int)(layout.Cy + layout.HalfH) + 5);
+        int w = x1 - x0, h = y1 - y0;
+        if (w < 40 || h < 40)
+        {
+            return null;
+        }
+
+        int[] pixels = new int[w * h];
+        BitmapData data = whole.LockBits(new Rectangle(x0, y0, w, h), ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+        try
+        {
+            for (int y = 0; y < h; y++)
+            {
+                Marshal.Copy(data.Scan0 + (y * data.Stride), pixels, y * w, w);
+            }
+        }
+        finally
+        {
+            whole.UnlockBits(data);
+        }
+
+        return MinimapCone.Read(pixels, w, h, layout.Cx - x0, layout.Cy - y0, layout.HalfW, layout.HalfH);
     }
 
     // the game window's client area as Windows draws it for us (PrintWindow, client only, full content); null when it fails or comes back black
