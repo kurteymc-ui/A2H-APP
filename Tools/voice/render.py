@@ -39,5 +39,8 @@ for n, text in enumerate(cfg["phrases"]):
         print(n, text, flush=True)
 
 os.remove(wav)
+# the short pause played between two announcements
+subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "lavfi", "-i", "anullsrc=r=24000:cl=mono", "-t", "0.3", "-ac", "1", "-b:a", "40k",
+                os.path.join(out, "pause.mp3")], check=True)
 json.dump({"voice": cfg["voice"], "clips": index}, open(os.path.join(out, "index.json"), "w", encoding="utf-8"), ensure_ascii=False, sort_keys=True, indent=0)
 print(len(index), "clips")

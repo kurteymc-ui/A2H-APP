@@ -52,6 +52,7 @@ public static class SelfCheck
         ok &= SelfCheckPositionTrack.Run();
         ok &= SelfCheckMinimap.Run();
         ok &= SelfCheckAssistSkills.Run();
+        ok &= SelfCheckNaturalVoice.Run();
         ok &= SelfCheckInstanceTimer.Run();
         ok &= SelfCheckCubesGuards.Run();
         ok &= SelfCheckMaps.Run();
