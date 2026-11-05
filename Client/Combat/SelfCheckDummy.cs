@@ -270,7 +270,14 @@ public static class SelfCheckDummy
         bool dropped = test.Runs.Count == 1 && test.State == DummyState.Idle;
         Feed(new DamageEvent(t0.AddSeconds(120), you, dummy, 10, false));
         bool renumbered = test.Current?.Number == 2;
+        // the meter's reset (5 November 2026): the run going on is dropped, and the next hit starts a new one at once, without the pause
+        int kept = test.Runs.Count;
+        test.Reset();
+        bool reset = test.State == DummyState.Idle && test.Runs.Count == kept - 1 && test.Current is null;
+        Feed(new DamageEvent(t0.AddSeconds(121), you, dummy, 10, false));
+        bool restarted = test.State == DummyState.Running && test.Runs.Count == kept && test.Current?.Number == 2;
         Console.WriteLine($"  -> automatic runs: a hit on a dummy starts one (not others' hits or other targets), none chained at once, a pause starts the next, a run walked away from is dropped: {notOthers && starts && finished && noChain && second && dropped && renumbered}");
-        return notOthers && starts && finished && noChain && second && dropped && renumbered;
+        Console.WriteLine($"  -> the meter's reset drops the run going on and the next hit starts a new one at once: {reset && restarted}");
+        return notOthers && starts && finished && noChain && second && dropped && renumbered && reset && restarted;
     }
 }

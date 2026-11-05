@@ -80,16 +80,17 @@ public sealed class MeterLook
     /// </summary>
     public static readonly MeterLookPreset[] Presets =
     {
-        // the usual look: the class colour as a soft glow, the group's total in big, the A2H colours
+        // the usual look: the class colour as a soft glow, the group's total in big, on see-through glass (5 November 2026, the owner; the buttons of every
+        // design are always there since, so the pill and the reset are never hidden)
         new("standard", Bar: "glow", Size: "normal", Font: "segoe", TextScale: 1.0, Columns: null, Titles: false, SmallUnits: false,
-            Panel: "Themed", HeaderButtons: "always", ShowTotal: true, ShowStatus: true),
+            Panel: "Clear", HeaderButtons: "always", ShowTotal: true, ShowStatus: true),
         // a raid log's damage table: strong class colours filling the lines, a row of column titles, the units small after the digits, a plain grey panel
         // and the hit kinds beside the meter's own numbers; no big total (the table carries the numbers)
         new("raidlog", Bar: "solid", Size: "normal", Font: "segoe", TextScale: 0.95, Columns: new[] { "icon", "cp", "crit", "back", "front", "dps", "share", "total" },
-            Titles: true, SmallUnits: true, Panel: "Graphite", HeaderButtons: "hover", ShowTotal: false, ShowStatus: true),
+            Titles: true, SmallUnits: true, Panel: "Graphite", HeaderButtons: "always", ShowTotal: false, ShowStatus: true),
         // as little as can be: thin lines under the names, the names in their class colour (no icons), the rate and the share, on see-through glass
         new("minimal", Bar: "thread", Size: "compact", Font: "condensed", TextScale: 1.0, Columns: new[] { "classcolor", "dps", "share" }, Titles: false,
-            SmallUnits: false, Panel: "Clear", HeaderButtons: "hover", ShowTotal: false, ShowStatus: false),
+            SmallUnits: false, Panel: "Clear", HeaderButtons: "always", ShowTotal: false, ShowStatus: false),
         // easy to read at a glance: big text on roomy round bars, the ranks, the names in their class colour
         new("bold", Bar: "capsule", Size: "roomy", Font: "bahnschrift", TextScale: 1.15, Columns: new[] { "rank", "icon", "classcolor", "dps", "share" },
             Titles: false, SmallUnits: false, Panel: "Themed", HeaderButtons: "always", ShowTotal: true, ShowStatus: true),
@@ -99,7 +100,7 @@ public sealed class MeterLook
         // old school (the owner's picture of a dense damage table, 4 November 2026): tight lines on near black, muted class colours across the line, the
         // combat power before the name, every figure in a column with its title - damage, DPS, nDPS, rDPS, share, crit, front, back - units in lowercase
         new("oldschool", Bar: "table", Size: "compact", Font: "segoe", TextScale: 0.95, Columns: new[] { "icon", "cp", "total", "dps", "ndps", "rdps", "share", "crit", "front", "back" },
-            Titles: true, SmallUnits: false, Panel: "Black", HeaderButtons: "hover", ShowTotal: false, ShowStatus: true),
+            Titles: true, SmallUnits: false, Panel: "Black", HeaderButtons: "always", ShowTotal: false, ShowStatus: true),
     };
 
     /// <summary>The usual look (the page's reset).</summary>

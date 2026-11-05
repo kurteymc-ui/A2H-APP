@@ -1405,20 +1405,15 @@ internal static class Program
         if (kind is "menu" or "menu-dummy")
         {
             // the meter's own menu ("…" in its header), or its Training dummy submenu, as they open over the game
-            var items = window.OverlaySettingsItems();
+            // "menu-dummy": the pill's menu (what is measured, the training dummy, Grind)
+            var items = kind == "menu" ? window.OverlaySettingsItems() : window.OverlayModeItems();
             var menu = new System.Windows.Controls.ContextMenu();
             if (window.TryFindResource(typeof(System.Windows.Controls.ContextMenu)) is System.Windows.Style menuStyle)
             {
                 menu.Style = menuStyle;
             }
 
-            var dummy = items.OfType<System.Windows.Controls.MenuItem>().First(m => m.HasItems); // the Training dummy submenu (the first with lines of its own)
-            var lines = kind == "menu" ? items.Cast<object>().ToList() : dummy.Items.Cast<object>().ToList();
-            if (kind == "menu-dummy")
-            {
-                dummy.Items.Clear();
-            }
-
+            var lines = items.Cast<object>().ToList();
             foreach (object line in lines)
             {
                 menu.Items.Add(line);

@@ -422,6 +422,16 @@ public partial class MainWindow : Window
                 startupSettings.Save();
             }
 
+            if (!startupSettings.MeterLookDefaulted)
+            {
+                // the meter's panel see-through and its buttons always there (5 November 2026, the owner: the default "around the list"); the rest of
+                // the look the player chose stays
+                startupSettings.OverlayLook = "Clear";
+                startupSettings.MeterHeaderButtons = "always";
+                startupSettings.MeterLookDefaulted = true;
+                startupSettings.Save();
+            }
+
             if (!startupSettings.MeterBarDefaulted)
             {
                 // the meter folds to its bar between boss fights now (the own character, the cube, the counters), so it no longer hides all of itself
@@ -1602,7 +1612,7 @@ public partial class MainWindow : Window
     /// </summary>
     private bool CountingNow()
     {
-        if (_trackOpenWorld || _pvpOnly || _liveSource is not Aion2.Aion2PacketCombatSource source || source.CurrentZoneId <= 0)
+        if (_trackOpenWorld || _gateSettings.MeterGrind || _pvpOnly || _liveSource is not Aion2.Aion2PacketCombatSource source || source.CurrentZoneId <= 0)
         {
             return true;
         }
@@ -6475,6 +6485,7 @@ public partial class MainWindow : Window
     private void ClearDamageData()
     {
         _overlayPinned = false; // a fight picked by hand is gone: the meter folds again until the next boss fight
+        _overlayHadFight = false;
         _aggregator.Clear();
         _groupNames.Clear();
         _avoids.Clear();
@@ -8264,6 +8275,17 @@ public partial class MainWindow : Window
             menu.Items.Add(item);
         }
 
+        // in the game the mouse comes with Alt held: letting Alt go must not close the menu (WPF closes a menu on Alt; 5 November 2026, the owner)
+        static void KeepOnAlt(object sender, KeyEventArgs e)
+        {
+            if ((e.Key == Key.System && e.SystemKey is Key.LeftAlt or Key.RightAlt) || e.Key is Key.LeftAlt or Key.RightAlt)
+            {
+                e.Handled = true;
+            }
+        }
+
+        menu.PreviewKeyDown += KeepOnAlt;
+        menu.PreviewKeyUp += KeepOnAlt;
         // the meter stays up while its menu is open and a while after (it may be between fights); nothing is raised over the menu meanwhile
         menu.Opened += (_, _) => _overlayMenuOpen = true;
         menu.Closed += (_, _) =>
@@ -8302,42 +8324,68 @@ public partial class MainWindow : Window
     private void OnOverlayModeMenuClicked(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
+        OpenOverlayMenu((FrameworkElement)sender, OverlayModeItems());
+    }
+
+    /// <summary>
+    /// The pill's menu: what is measured; the training dummy (the card of the parse, a parse by itself at the first hit on a dummy, starting or ending one);
+    /// Grind (the meter open in every fight, the open world counted too). Picking a measure during a dummy parse shows the lines instead of its card, the
+    /// dummy line brings the card back (5 November 2026, the owner: "swapping to DPS/Dummy takes time", "confusing how the clicks work for dummy/open world").
+    /// </summary>
+    internal IList<Control> OverlayModeItems()
+    {
         bool restricted = PrivacyConsent.Restricted;
+        bool card = _dummyHeader && !_dummyCardHidden;
         void Pick(MeterMode mode)
         {
             _overlayBuffs = false;
+            _dummyCardHidden = _dummyHeader;
             SetMode(mode);
+            UpdateOverlayFold();
         }
 
-        OpenOverlayMenu((FrameworkElement)sender, new Control[]
+        var settings = MeterSettings.Load();
+        DummyState state = _dummy?.Model.State ?? DummyState.Idle;
+        int seconds = Math.Clamp(settings.DummyTestSeconds, 10, 3600);
+        string length = seconds % 60 == 0 ? $"{seconds / 60} min" : $"{seconds} s";
+        var items = new List<Control>
         {
-            OverlayItem("Damage (DPS)", () => Pick(MeterMode.Damage), !_overlayBuffs && _mode == MeterMode.Damage),
-            OverlayItem("rDPS (buffs credited)", () => Pick(MeterMode.Raid), !_overlayBuffs && _mode == MeterMode.Raid, !restricted),
-            OverlayItem("Healing (HPS)", () => Pick(MeterMode.Heal), !_overlayBuffs && _mode == MeterMode.Heal, !restricted),
-            OverlayItem("Tanked (damage taken)", () => Pick(MeterMode.Taken), !_overlayBuffs && _mode == MeterMode.Taken, !restricted),
+            OverlayItem("DPS", () => Pick(MeterMode.Damage), !card && !_overlayBuffs && _mode == MeterMode.Damage),
+            OverlayItem("rDPS (buffs credited)", () => Pick(MeterMode.Raid), !card && !_overlayBuffs && _mode == MeterMode.Raid, !restricted),
+            OverlayItem("Healing", () => Pick(MeterMode.Heal), !card && !_overlayBuffs && _mode == MeterMode.Heal, !restricted),
+            OverlayItem("Tanked (damage taken)", () => Pick(MeterMode.Taken), !card && !_overlayBuffs && _mode == MeterMode.Taken, !restricted),
             OverlayItem("Buffs on you", () =>
             {
                 _overlayBuffs = true;
                 _overlayBuffsAt = DateTime.MinValue;
+                _dummyCardHidden = _dummyHeader;
                 RefreshRows();
-            }, _overlayBuffs, !restricted),
+            }, !card && _overlayBuffs, !restricted),
+            OverlayItem("All in one", () => Pick(MeterMode.All), !card && !_overlayBuffs && _mode == MeterMode.All, !restricted),
             new Separator(),
-            OverlayItem("All in one", () => Pick(MeterMode.All), !_overlayBuffs && _mode == MeterMode.All, !restricted),
-            new Separator(),
-            DummyModeItem(),
-            OverlayItem("Grind: open for every fight, trash and open world too", () => ChangeOverlaySetting(s => s.MeterGrind = !s.MeterGrind), MeterSettings.Load().MeterGrind),
-        });
-    }
+        };
 
-    /// <summary>The mode menu's dummy line: a parse of the length set (the clock starts with the first hit; the meter opens on its card), or ending the one on.</summary>
-    private MenuItem DummyModeItem()
-    {
-        DummyState state = _dummy?.Model.State ?? DummyState.Idle;
-        int seconds = Math.Clamp(MeterSettings.Load().DummyTestSeconds, 10, 3600);
-        string length = seconds % 60 == 0 ? $"{seconds / 60} min" : $"{seconds} s";
-        return state is DummyState.Armed or DummyState.Running
-            ? OverlayItem(state == DummyState.Running ? "Dummy: end the parse now (it is saved)" : "Dummy: take the waiting parse back", () => _dummy?.Model.Stop(DateTime.Now), true)
-            : OverlayItem($"Dummy: a {length} parse, starting with my first hit", () => _dummy?.Start(TimeSpan.FromSeconds(seconds), ""), false, _dummy is not null);
+        if (_dummyHeader)
+        {
+            items.Add(OverlayItem("Dummy: the parse's card", () =>
+            {
+                _dummyCardHidden = false;
+                RefreshRows();
+                UpdateOverlayFold();
+            }, card));
+        }
+
+        items.Add(OverlayItem($"Dummy: a {length} parse by itself when I hit a dummy", () => ChangeOverlaySetting(s => s.DummyAutoStart = !s.DummyAutoStart), settings.DummyAutoStart));
+        items.Add(state is DummyState.Armed or DummyState.Running
+            ? OverlayItem(state == DummyState.Running ? "Dummy: end the parse now (it is saved)" : "Dummy: take the waiting parse back", () => _dummy?.Model.Stop(DateTime.Now))
+            : OverlayItem($"Dummy: start a {length} parse now (the clock starts with my first hit)", () =>
+            {
+                _dummyCardHidden = false;
+                _dummy?.Start(TimeSpan.FromSeconds(seconds), "");
+            }, false, _dummy is not null));
+        items.Add(new Separator());
+        items.Add(OverlayItem("Grind: every fight, trash and the open world too", () => ChangeOverlaySetting(s => s.MeterGrind = !s.MeterGrind), settings.MeterGrind));
+        return items;
     }
 
     private void OnOverlayHistoryClicked(object sender, MouseButtonEventArgs e)
@@ -8424,61 +8472,41 @@ public partial class MainWindow : Window
         OpenOverlayMenu((FrameworkElement)sender, OverlaySettingsItems());
     }
 
-    /// <summary>The lines of the meter's own menu (also drawn by render-overlay … menu).</summary>
-    internal IList<Control> OverlaySettingsItems()
+    /// <summary>
+    /// The lines of the meter's own menu "…" (also drawn by render-overlay … menu): where the rest is, nothing more (5 November 2026, the owner: no huge
+    /// menu, "just redirect"). The meter's switches are on its Meter look page, the training dummy and Grind in the pill's menu.
+    /// </summary>
+    internal IList<Control> OverlaySettingsItems() => new Control[]
     {
-        var settings = MeterSettings.Load();
-        string panel = MeterLook.PanelOf(settings.OverlayLook); // the panel's colours, ticked in the menu
-        MenuItem opacity = OverlaySubmenu($"Opacity  ·  {settings.OverlayOpacity * 100:0} %");
-        foreach (double step in new[] { 0.4, 0.6, 0.8, 0.92, 1.0 })
+        OverlayItem("Fight report", () =>
         {
-            double chosen = step;
-            opacity.Items.Add(OverlayItem($"{step * 100:0} %", () => ChangeOverlaySetting(s => s.OverlayOpacity = chosen), Math.Abs(settings.OverlayOpacity - step) < 0.01));
-        }
-
-        return new Control[]
+            ShowClient();
+            _ = OpenFightReportAsync();
+        }),
+        OverlayItem("History", OpenHistory),
+        OverlayItem("Characters", () =>
         {
-            OverlayItem("Characters: Odyle Energy, Shugo, dailies, weeklies…", () =>
+            ShowClient();
+            OpenChecklist(true);
+        }),
+        OverlayItem("Meter look", () =>
+        {
+            ShowClient();
+            if (_shellBuilt)
             {
-                ShowClient();
-                OpenChecklist(true);
-            }),
-            DummyMenu(settings),
-            new Separator(),
-            OverlayItem("Meter look: designs, bars, fonts, columns…", () =>
-            {
-                ShowClient();
-                if (_shellBuilt)
-                {
-                    ShowShellPage("meterlook");
-                }
-            }),
-            OverlayItem("A2H colours", () => ChangeOverlaySetting(s => s.OverlayLook = "Themed"), panel == "Themed"),
-            OverlayItem("See-through", () => ChangeOverlaySetting(s => s.OverlayLook = "Clear"), panel == "Clear"),
-            OverlayItem("Graphite", () => ChangeOverlaySetting(s => s.OverlayLook = "Graphite"), panel == "Graphite"),
-            OverlayItem("Black", () => ChangeOverlaySetting(s => s.OverlayLook = "Black"), panel == "Black"),
-            opacity,
-            new Separator(),
-            OverlayItem("Only during boss fights (hidden in between)", () => ChangeOverlaySetting(s => s.MeterOverlayAutoHide = !s.MeterOverlayAutoHide), settings.MeterOverlayAutoHide),
-            OverlayItem("Come up by itself when I fight a boss", () => ChangeOverlaySetting(s => s.MeterPopUpForBoss = !s.MeterPopUpForBoss), settings.MeterPopUpForBoss,
-                settings.MeterOverlayAutoHide),
-            OverlayItem("Everyone in dungeons, only me at dummies", () => ChangeOverlaySetting(s => s.AutoScope = !s.AutoScope), settings.AutoScope),
-            OverlayItem("Fold to the bar between boss fights and dummy parses", () => ChangeOverlaySetting(s => s.MeterFoldIdle = !s.MeterFoldIdle), settings.MeterFoldIdle),
-            OverlayItem("Odyle Energy, Shugo and the other counters at the bottom", () => ChangeOverlaySetting(s => s.MeterShowTickets = !s.MeterShowTickets),
-                settings.MeterShowTickets),
-            OverlayItem("Boss timers: the next casts and the enrage", () => ChangeOverlaySetting(s => s.OverlayBossTimers = !s.OverlayBossTimers), settings.OverlayBossTimers),
-            OverlayItem("Click-through (turn off in Settings)", () => ChangeOverlaySetting(s => s.CompactClickThrough = !s.CompactClickThrough), settings.CompactClickThrough),
-            new Separator(),
-            OverlayItem("Copy to chat", CopyRowsToClipboard),
-            OverlayItem("Open the meter window", ShowClient),
-            OverlayItem("Hide the meter (the eye button brings it back)", HideMeterOverlay),
-            OverlayItem("All settings…", () =>
-            {
-                ShowClient();
-                OnSettingsClicked(this, new RoutedEventArgs());
-            }),
-        };
-    }
+                ShowShellPage("meterlook");
+            }
+        }),
+        OverlayItem("Settings", () =>
+        {
+            ShowClient();
+            OnSettingsClicked(this, new RoutedEventArgs());
+        }),
+        new Separator(),
+        OverlayItem("Copy to chat", CopyRowsToClipboard),
+        OverlayItem("Open the meter window", ShowClient),
+        OverlayItem("Hide the meter", HideMeterOverlay),
+    };
 
     private MenuItem OverlaySubmenu(string header)
     {
@@ -8537,6 +8565,10 @@ public partial class MainWindow : Window
 
     private void OnOverlayResetClicked(object sender, MouseButtonEventArgs e)
     {
+        // at a dummy the reset starts over too: the parse going on is dropped and the next hit starts a new one at once (5 November 2026, the owner:
+        // "I cannot reset it, I have to wait for the dummy cooldown")
+        _dummy?.Model.Reset();
+        _dummyCardHidden = false;
         ClearDamageData();
         RefreshRows();
         e.Handled = true;
@@ -8677,7 +8709,7 @@ public partial class MainWindow : Window
         // the header's mode word and the group's total in big
         string unit = _healMode ? "HPS" : _takenMode ? "DTPS" : _mode == MeterMode.Raid && !_pvpOnly ? "rDPS" : "DPS";
         string measured = _overlayBuffs ? "Buffs" : _allMode || _allCompactMode ? "All" : _takenMode ? "Tank" : _healMode ? "Heal" : _mode == MeterMode.Raid ? "rDPS" : "DPS";
-        OverlayModeShort.Text = _dummyHeader ? "Dummy" : _gateSettings.MeterGrind ? measured + " · Grind" : measured;
+        OverlayModeShort.Text = _dummyHeader && !_dummyCardHidden ? "Dummy" : _gateSettings.MeterGrind ? measured + " · Grind" : measured;
         if (!_overlayBuffs)
         {
             double total = _rows.Where(r => !r.IsEnemy).Sum(r => (r.RdpsView ? r.Rdps ?? r.Dps : r.Dps) ?? 0);
@@ -8794,6 +8826,7 @@ public partial class MainWindow : Window
         if (active != _dummyHeader)
         {
             _dummyHeader = active;
+            _dummyCardHidden = false; // a new parse shows its card
             if (active)
             {
                 OverlayTimeText.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Accent");

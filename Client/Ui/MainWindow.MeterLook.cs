@@ -732,7 +732,12 @@ public partial class MainWindow
             Check(loc["Look.ShowStatus"], loc["Look.ShowStatusTip"], now.MeterShowStatus, on => Change(s => s.MeterShowStatus = on)),
             Sub(loc["Look.Buttons"]),
             Choices(new[] { "always", "hover" }, now.MeterHeaderButtons == "hover" ? "hover" : "always", id => ShellText(loc["Look.Buttons." + id], "Brush.Text", 13),
-                id => Change(s => s.MeterHeaderButtons = id), 90)));
+                id => Change(s => s.MeterHeaderButtons = id), 90),
+            // the meter's own switches (they were in its "…" menu until 5 November 2026; the owner: "just redirect")
+            Check("Fold to the bar until a boss fight or a training dummy", null, now.MeterFoldIdle, on => Change(s => s.MeterFoldIdle = on)),
+            Check("Odyle Energy, Shugo and the other counters at the bottom", null, now.MeterShowTickets, on => Change(s => s.MeterShowTickets = on)),
+            Check("Boss timers: the next casts and the enrage", null, now.OverlayBossTimers, on => Change(s => s.OverlayBossTimers = on)),
+            Check("Everyone in dungeons, only me at training dummies", null, now.AutoScope, on => Change(s => s.AutoScope = on))));
 
         var reset = new Button { Content = loc["Look.Reset"], Padding = new Thickness(14, 5, 14, 5), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0) };
         reset.Click += (_, _) =>

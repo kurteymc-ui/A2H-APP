@@ -1291,9 +1291,9 @@
                 <Style x:Key="OverlayIconButton" TargetType="Border">
                     <Setter Property="Background" Value="Transparent"/>
                     <Setter Property="CornerRadius" Value="5"/>
-                    <Setter Property="Width" Value="24"/>
+                    <Setter Property="Width" Value="23"/>
                     <Setter Property="Height" Value="22"/>
-                    <Setter Property="Margin" Value="1,0,0,0"/>
+                    <Setter Property="Margin" Value="0,0,0,0"/>
                     <Setter Property="Cursor" Value="Hand"/>
                     <Style.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
@@ -1316,11 +1316,19 @@
                      meter (unless it is locked). -->
                 <DockPanel x:Name="OverlayHeader" Background="Transparent" Margin="8,5,6,5" MinHeight="30" Cursor="SizeAll" MouseLeftButtonDown="OnCompactOverlayDrag">
                     <Border x:Name="OverlayMenuButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlaySettingsClicked"
-                            ToolTip="More: Characters, the training dummy, the meter's look, open the meter window, hide the meter">
+                            ToolTip="More: fight report, history, characters, meter look, settings, hide the meter">
                         <TextBlock Text="&#xE712;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
                     <Border x:Name="OverlayLockButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayLockClicked" ToolTip="Lock the meter in place">
                         <TextBlock x:Name="OverlayLockGlyph" Text="&#xE785;" Style="{StaticResource OverlayIconGlyph}"/>
+                    </Border>
+                    <Border x:Name="OverlayCharactersButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayCharactersClicked"
+                            ToolTip="Characters: Odyle Energy, dailies and weeklies">
+                        <TextBlock Text="&#xE77B;" Style="{StaticResource OverlayIconGlyph}"/>
+                    </Border>
+                    <Border x:Name="OverlayReportButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayReportClicked"
+                            ToolTip="Fight report of what the meter shows">
+                        <TextBlock Text="&#xE9D2;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
                     <Border x:Name="OverlayHistoryButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayHistoryClicked" ToolTip="Past fights">
                         <TextBlock Text="&#xE81C;" Style="{StaticResource OverlayIconGlyph}"/>
@@ -1358,7 +1366,7 @@
                         </Grid>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock x:Name="OverlayOwnName" Text="A2HMeter" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Brush.OverlayText}"
-                                       MaxWidth="130" TextTrimming="CharacterEllipsis"/>
+                                       MaxWidth="112" TextTrimming="CharacterEllipsis"/>
                             <TextBlock x:Name="OverlayOwnCp" FontSize="10" Foreground="{DynamicResource Brush.TextMuted}" Typography.NumeralAlignment="Tabular"
                                        Visibility="Collapsed" Margin="0,-1,0,0"/>
                         </StackPanel>

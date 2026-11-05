@@ -604,6 +604,9 @@ public sealed class MeterSettings
     /// daily dungeon and Ascension Trial.</summary>
     public bool MeterShowTickets { get; set; } = true;
 
+    /// <summary>The meter's panel went see-through and its buttons always there once for everyone (1.20.16).</summary>
+    public bool MeterLookDefaulted { get; set; }
+
     /// <summary>The folding meter came (1.20.16): "Only during boss fights" goes off once for everyone, the bar stays up and the fight opens under it.</summary>
     public bool MeterBarDefaulted { get; set; }
 
@@ -619,7 +622,7 @@ public sealed class MeterSettings
 
     /// <summary>The meter overlay's panel: "Themed" (the site's dark colours with the gold edge), "Clear" (see-through, nearly no frame) or "Graphite"
     /// (a plain neutral grey with a grey edge, the raid log design's). Set in the meter's menu and on the Meter look page (MeterLook.Panels).</summary>
-    public string OverlayLook { get; set; } = "Themed";
+    public string OverlayLook { get; set; } = "Clear";
 
     /// <summary>Whose rows are shown picks itself: everybody in an instance or arena (the raid), only the own character at a training dummy, the
     /// All / Group / Corps / Me switch's choice elsewhere. A click on the switch holds until the player goes somewhere else.</summary>

@@ -28,6 +28,13 @@ public partial class MainWindow
     /// <summary>A fight picked from the meter's history menu stays open, boss or not, until the meter starts from zero.</summary>
     private bool _overlayPinned;
 
+    /// <summary>A boss fight or a training dummy was on screen since the meter last started from zero: the meter stays open on it (the result is read after
+    /// the fight), and folds again only at a reset or a new map (5 November 2026, the owner: after the dummy "nothing else shows").</summary>
+    private bool _overlayHadFight;
+
+    /// <summary>A measure picked from the mode menu while a dummy parse is on: the lines show instead of the dummy's card, until the next parse.</summary>
+    private bool _dummyCardHidden;
+
     private bool _meterShowTotal = true;
     private bool _meterShowStatus = true;
     private DateTime _overlayIdentityAt = DateTime.MinValue;
@@ -46,8 +53,15 @@ public partial class MainWindow
         }
 
         MeterSettings s = _gateSettings;
-        bool dummy = _dummyHeader;
-        bool open = !s.MeterFoldIdle || dummy || s.MeterGrind || _overlayBuffs || _historyMode || _pvpOnly || _overlayBossShown || _overlayPinned;
+        bool dummy = _dummyHeader && !_dummyCardHidden;
+        bool atDummy = DateTime.Now - _lastDummyHit < TimeSpan.FromSeconds(20); // hitting a dummy opens the meter at once, a parse or not
+        if (_overlayBossShown || _dummyHeader || atDummy)
+        {
+            _overlayHadFight = true;
+        }
+
+        bool open = !s.MeterFoldIdle || _dummyHeader || atDummy || _overlayHadFight || s.MeterGrind || _overlayBuffs || _historyMode || _pvpOnly
+            || _overlayBossShown || _overlayPinned;
         Show(OverlayBody, open);
         Show(OverlayDummyCard, dummy);
         Show(CompactOverlayRowsArea, !dummy);
@@ -237,7 +251,9 @@ public partial class MainWindow
         }
 
         _overlayTicketsAt = DateTime.UtcNow;
-        ShowOverlayTickets(_gateSettings.MeterShowTickets ? TicketsOf(Aion2Tickets.CurrentName, DateTime.Now) : Array.Empty<OverlayTicket>());
+        // the character the game logged in last; when the meter came after the login, the one it plays now (the counters are kept from earlier)
+        string? who = Aion2Tickets.CurrentName ?? (_liveSource?.Entities as Aion2EntityDirectory)?.LocalCharacter?.Name;
+        ShowOverlayTickets(_gateSettings.MeterShowTickets ? TicketsOf(who, DateTime.Now) : Array.Empty<OverlayTicket>());
     }
 
     /// <summary>The counters of one character for the foot (empty when it is not known).</summary>
@@ -456,6 +472,22 @@ public partial class MainWindow
         {
             ToggleOverlay();
         }
+    }
+
+    /// <summary>The bar's report button: the fight report of what the meter shows, in the meter window.</summary>
+    private void OnOverlayReportClicked(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        ShowClient();
+        _ = OpenFightReportAsync();
+    }
+
+    /// <summary>The bar's characters button: Odyle Energy, the dailies and weeklies of every character.</summary>
+    private void OnOverlayCharactersClicked(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        ShowClient();
+        OpenChecklist(true);
     }
 
     private void OnOverlayDummyHistoryClicked(object sender, MouseButtonEventArgs e)

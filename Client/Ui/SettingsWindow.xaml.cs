@@ -737,8 +737,13 @@ public partial class SettingsWindow : Window
         _settings.TrackOpenWorld = onDisk.TrackOpenWorld; // the Open world button on the meter page
         _settings.MenuHideDefaulted = onDisk.MenuHideDefaulted;
         _settings.NaturalVoiceDefaulted = onDisk.NaturalVoiceDefaulted;
-        _settings.MeterBarDefaulted = onDisk.MeterBarDefaulted; // the meter's fold, Grind and counters are switched in its own menus
-        _settings.MeterFoldIdle = onDisk.MeterFoldIdle;
+        _settings.MeterBarDefaulted = onDisk.MeterBarDefaulted;
+        _settings.MeterLookDefaulted = onDisk.MeterLookDefaulted;
+        _settings.OverlayLook = onDisk.OverlayLook; // the meter's panel and buttons are set on its look page
+        _settings.MeterHeaderButtons = onDisk.MeterHeaderButtons;
+        _settings.MeterFoldIdle = onDisk.MeterFoldIdle; // the meter's fold, Grind and counters: its look page and the pill's menu
+        _settings.AutoScope = onDisk.AutoScope;
+        _settings.OverlayBossTimers = onDisk.OverlayBossTimers;
         _settings.MeterGrind = onDisk.MeterGrind;
         _settings.MeterShowTickets = onDisk.MeterShowTickets;
         _settings.IconRefreshedFor = onDisk.IconRefreshedFor;

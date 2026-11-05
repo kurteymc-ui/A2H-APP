@@ -65,8 +65,8 @@ public sealed class DummyTest
     /// <summary>The hits of the last second still belong to a run for a moment after its time is up: they arrive with the next poll.</summary>
     public static readonly TimeSpan Grace = TimeSpan.FromSeconds(2.5);
 
-    /// <summary>How long "Finished" stays on the overlay.</summary>
-    public static readonly TimeSpan FinishedShown = TimeSpan.FromSeconds(20);
+    /// <summary>How long "Finished" stays on the overlay (20 s until 5 November 2026: the owner had to wait for it, "the dummy cooldown").</summary>
+    public static readonly TimeSpan FinishedShown = TimeSpan.FromSeconds(8);
 
     /// <summary>Automatic runs: after a run the player has to stop hitting the dummies this long before the next hit starts a new one, so the hits
     /// that go on right after the time is up do not start the next run at once.</summary>
@@ -154,6 +154,33 @@ public sealed class DummyTest
         _current = null;
         State = DummyState.Armed;
         Changed?.Invoke();
+    }
+
+    /// <summary>
+    /// The meter's reset at a dummy (5 November 2026, the owner: "I cannot reset it, I have to wait for the dummy cooldown to be finished"): a run waiting or
+    /// running is dropped (a restart, not a parse to keep), a finished one is kept and leaves the screen, and the next hit on a dummy starts a new run at once,
+    /// without the pause automatic runs otherwise wait for.
+    /// </summary>
+    public void Reset()
+    {
+        if (State == DummyState.Running && _current is { Closed: false } run)
+        {
+            _runs.Remove(run);
+            _nextNumber = Math.Max(1, run.Number);
+            _current = null;
+        }
+        else if (State == DummyState.Finished && _current is { Closed: false } done)
+        {
+            Close(done); // over already: kept, its skills read now instead of after the grace
+        }
+
+        IsAuto = false;
+        _lastDummyHit = DateTime.MinValue;
+        if (State != DummyState.Idle)
+        {
+            State = DummyState.Idle;
+            Changed?.Invoke();
+        }
     }
 
     /// <summary>Takes back an armed test that never started.</summary>
