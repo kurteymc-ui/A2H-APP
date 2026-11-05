@@ -725,6 +725,9 @@ public partial class SettingsWindow : Window
         _settings.AssistCooldownsTogether = onDisk.AssistCooldownsTogether;
         _settings.AssistCooldownScale = onDisk.AssistCooldownScale;
         _settings.AssistBarWidth = onDisk.AssistBarWidth;
+        _settings.AssistCooldownOpacity = onDisk.AssistCooldownOpacity;
+        _settings.AssistReadyOpacity = onDisk.AssistReadyOpacity;
+        _settings.AssistBackOpacity = onDisk.AssistBackOpacity;
         _settings.AssistVoiceSkills = onDisk.AssistVoiceSkills;
         _settings.AssistVoiceVolume = onDisk.AssistVoiceVolume;
         _settings.AssistPresets = onDisk.AssistPresets;

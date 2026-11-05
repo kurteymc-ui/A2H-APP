@@ -110,6 +110,10 @@ public sealed class AssistController : IDisposable
     // tick, and whether they may show at all, are being placed, or show when ready too
     private readonly List<(int Id, CooldownSkillWindow Window)> _framed = new();
     private bool _mayShow, _placingNow, _showReadyNow, _everyFrame;
+    private double _opacityNow = 1, _readyOpacityNow = 1;
+
+    /// <summary>How see-through a cooldown is drawn: the Skill Assist's opacity, times the ready skills' own while it is ready.</summary>
+    private double FadeOf(bool running) => _opacityNow * (running ? 1 : _readyOpacityNow);
     private TimeSpan _lastFrame;
 
     /// <summary>The look, size and bar width the windows were last laid out with: a change rearranges them (the arrangement kept, scaled).</summary>
@@ -146,6 +150,9 @@ public sealed class AssistController : IDisposable
             BarWidth = s.AssistBarWidth,
             Together = s.AssistCooldownsTogether,
             ShowReady = s.AssistShowReady,
+            Opacity = s.AssistCooldownOpacity,
+            ReadyOpacity = s.AssistReadyOpacity,
+            BackOpacity = s.AssistBackOpacity,
             Places = s.AssistCooldownPlaces.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
             TilePlaces = s.AssistCooldownTilePlaces.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
             Hidden = s.AssistOverlayHidden.ToList(),
@@ -169,6 +176,9 @@ public sealed class AssistController : IDisposable
         s.AssistBarWidth = Math.Clamp(p.BarWidth, 90, 400);
         s.AssistCooldownsTogether = p.Together;
         s.AssistShowReady = p.ShowReady;
+        s.AssistCooldownOpacity = Math.Clamp(p.Opacity, 0.1, 1);
+        s.AssistReadyOpacity = Math.Clamp(p.ReadyOpacity, 0.1, 1);
+        s.AssistBackOpacity = Math.Clamp(p.BackOpacity, 0, 1);
         s.AssistCooldownPlaces = p.Places.Where(kv => kv.Value is { Length: 2 }).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
         s.AssistCooldownTilePlaces = p.TilePlaces.Where(kv => kv.Value is { Length: 2 }).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
         s.AssistOverlayHidden = p.Hidden.ToList();
@@ -366,6 +376,7 @@ public sealed class AssistController : IDisposable
         double scale = Math.Clamp(_settings.AssistCooldownScale, 0.5, 3);
         double width = Math.Clamp(_settings.AssistBarWidth, 90, 400);
         CooldownSkillWindow.Together = _settings.AssistCooldownsTogether;
+        (_opacityNow, _readyOpacityNow) = (Math.Clamp(_settings.AssistCooldownOpacity, 0.1, 1), Math.Clamp(_settings.AssistReadyOpacity, 0.1, 1));
         Arrange(style, scale, width, listed);
         _framed.Clear();
         bool running = false;
@@ -381,8 +392,10 @@ public sealed class AssistController : IDisposable
             window.Use(style, width);
             window.UseScale(scale);
             window.ApplyLockedIfChanged(!placing);
+            window.Backdrop(Math.Clamp(_settings.AssistBackOpacity, 0, 1));
             CooldownView view = Aion2Cooldowns.View(id, now);
             window.Show(view);
+            window.Fade(FadeOf(view.Running));
             window.ShowOverlay(placing || view.Running || _settings.AssistShowReady);
             _framed.Add((id, window));
             running |= view.Running;
@@ -450,6 +463,7 @@ public sealed class AssistController : IDisposable
             if (show)
             {
                 window.Show(view);
+                window.Fade(FadeOf(view.Running));
             }
 
             window.ShowOverlay(show);

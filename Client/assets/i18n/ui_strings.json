@@ -20641,5 +20641,77 @@
     "pt": "Quando o jogo informa sua posição exata enquanto o medidor lê seu minimapa, as duas posições vão para aion2helper.com: o mapa, as duas posições (ao metro), sua velocidade, o quanto o minimapa combinou e o dia. Elas mostram onde a imagem de cada mapa realmente fica, e a próxima versão traz os mapas corrigidos. Sem nome, servidor, legião, conta ou endereço IP. Ligado por padrão enquanto o app está em beta.",
     "ja": "ミニマップを読み取っている間にゲームが正確な位置を報告すると、両方の位置が aion2helper.com に送られます：マップ、2つの位置（1メートル単位）、移動速度、ミニマップの一致度、日付。各マップの画像が実際にどこにあるかが分かり、次のバージョンで補正済みのマップが配布されます。名前、サーバー、レギオン、アカウント、IPアドレスは含みません。ベータ版の間は既定でオンです。",
     "ko": "미니맵을 읽는 동안 게임이 정확한 위치를 알려 주면 두 위치가 aion2helper.com으로 전송됩니다: 지도, 두 위치(미터 단위), 이동 속도, 미니맵 일치 정도, 날짜. 각 지도 그림의 실제 위치를 알 수 있어 다음 버전에서 보정된 지도를 제공합니다. 이름, 서버, 군단, 계정, IP 주소는 없습니다. 베타 기간에는 기본으로 켜져 있습니다."
+  },
+  "Assist.Opacity": {
+    "en": "Opacity",
+    "de": "Deckkraft",
+    "fr": "Opacité",
+    "es": "Opacidad",
+    "ru": "Непрозрачн.",
+    "zh": "不透明度",
+    "zh-TW": "不透明度",
+    "pt": "Opacidade",
+    "ja": "不透明度",
+    "ko": "불투명도"
+  },
+  "Assist.OpacityTip": {
+    "en": "How see-through the cooldowns are on the screen: lower to see the game through them.",
+    "de": "Wie durchsichtig die Abklingzeiten auf dem Bildschirm sind: niedriger, um das Spiel durch sie zu sehen.",
+    "fr": "La transparence des recharges à l'écran : plus bas pour voir le jeu à travers.",
+    "es": "Qué tan transparentes son los enfriamientos en la pantalla: más bajo para ver el juego a través.",
+    "ru": "Насколько прозрачны откаты на экране: ниже, чтобы видеть игру сквозь них.",
+    "zh": "冷却在屏幕上的透明程度：调低可透过它们看到游戏。",
+    "zh-TW": "冷卻在螢幕上的透明程度：調低可透過它們看到遊戲。",
+    "pt": "O quanto as recargas são transparentes na tela: mais baixo para ver o jogo através delas.",
+    "ja": "画面上のクールタイムの透明度：下げるとゲームが透けて見えます。",
+    "ko": "화면의 쿨타임이 얼마나 투명한지: 낮추면 게임이 비쳐 보입니다."
+  },
+  "Assist.ReadyOpacity": {
+    "en": "Ready skills",
+    "de": "Bereit",
+    "fr": "Prêtes",
+    "es": "Listas",
+    "ru": "Готовые",
+    "zh": "就绪技能",
+    "zh-TW": "就緒技能",
+    "pt": "Prontas",
+    "ja": "使用可能",
+    "ko": "준비된 스킬"
+  },
+  "Assist.ReadyOpacityTip": {
+    "en": "How visible a skill stays once it is ready: lower, and the ones cooling down stand out.",
+    "de": "Wie sichtbar eine Fertigkeit bleibt, sobald sie bereit ist: niedriger, und die abklingenden fallen auf.",
+    "fr": "La visibilité d'une compétence une fois prête : plus bas, et celles en recharge ressortent.",
+    "es": "Qué tan visible queda una habilidad cuando está lista: más bajo, y las que se enfrían destacan.",
+    "ru": "Насколько заметен навык, когда он готов: ниже — и навыки на откате выделяются.",
+    "zh": "技能就绪后的可见程度：调低后，冷却中的技能更醒目。",
+    "zh-TW": "技能就緒後的可見程度：調低後，冷卻中的技能更醒目。",
+    "pt": "O quanto uma habilidade fica visível quando pronta: mais baixo, e as em recarga se destacam.",
+    "ja": "使用可能になったスキルの見え方：下げるとクールタイム中のスキルが目立ちます。",
+    "ko": "준비된 스킬이 얼마나 보이는지: 낮추면 쿨타임 중인 스킬이 눈에 띕니다."
+  },
+  "Assist.BackOpacity": {
+    "en": "Background",
+    "de": "Hintergrund",
+    "fr": "Fond",
+    "es": "Fondo",
+    "ru": "Фон",
+    "zh": "背景",
+    "zh-TW": "背景",
+    "pt": "Fundo",
+    "ja": "背景",
+    "ko": "배경"
+  },
+  "Assist.BackOpacityTip": {
+    "en": "The bars' dark background only: the pictures, names and times stay sharp.",
+    "de": "Nur der dunkle Hintergrund der Balken: Bilder, Namen und Zeiten bleiben scharf.",
+    "fr": "Seulement le fond sombre des barres : images, noms et temps restent nets.",
+    "es": "Solo el fondo oscuro de las barras: imágenes, nombres y tiempos siguen nítidos.",
+    "ru": "Только тёмный фон полос: картинки, названия и время остаются чёткими.",
+    "zh": "仅条的深色背景：图标、名称和时间保持清晰。",
+    "zh-TW": "僅條的深色背景：圖示、名稱和時間保持清晰。",
+    "pt": "Só o fundo escuro das barras: imagens, nomes e tempos continuam nítidos.",
+    "ja": "バーの暗い背景だけ：アイコン・名前・時間はくっきりしたままです。",
+    "ko": "막대의 어두운 배경만: 아이콘, 이름, 시간은 선명하게 유지됩니다."
   }
 }

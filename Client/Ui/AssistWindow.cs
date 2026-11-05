@@ -34,6 +34,8 @@ public sealed class AssistWindow : Window
     private Button? _placeButton;
     private FrameworkElement? _barWidthRow;
     private Slider? _barWidthSlider;
+    private Slider? _opacitySlider, _readyOpacitySlider, _backSlider;
+    private FrameworkElement? _backRow;
     private CheckBox? _readyBox;
     private readonly UniformGrid _presets = new() { Columns = 3, Margin = new Thickness(0, 12, 0, 2) };
 
@@ -217,6 +219,19 @@ public sealed class AssistWindow : Window
             _barWidthRow.Visibility = s.AssistCooldownStyle == CooldownArt.Tiles ? Visibility.Collapsed : Visibility.Visible;
         }
 
+        if (_backRow is not null)
+        {
+            _backRow.Visibility = s.AssistCooldownStyle == CooldownArt.Tiles ? Visibility.Collapsed : Visibility.Visible;
+        }
+
+        foreach ((Slider? slider, double value) in new[] { (_opacitySlider, s.AssistCooldownOpacity), (_readyOpacitySlider, s.AssistReadyOpacity), (_backSlider, s.AssistBackOpacity) })
+        {
+            if (slider is not null && Math.Abs(slider.Value - value) > 0.004)
+            {
+                slider.Value = Math.Clamp(value, slider.Minimum, slider.Maximum); // a preset loaded
+            }
+        }
+
         if (_togetherBox is not null)
         {
             _togetherBox.IsChecked = s.AssistCooldownsTogether;
@@ -310,6 +325,20 @@ public sealed class AssistWindow : Window
         _barWidthRow = SliderRow(loc["Assist.BarWidth"], 110, 320, settings.AssistBarWidth, v => $"{v:0}", v => Change(s => s.AssistBarWidth = Math.Round(v)), out _barWidthSlider);
         _barWidthRow.Visibility = settings.AssistCooldownStyle == CooldownArt.Tiles ? Visibility.Collapsed : Visibility.Visible; // only the bars have a width
         screen.Children.Add(_barWidthRow);
+
+        // how see-through: all of it, a ready skill, the bars' background
+        screen.Children.Add(Divider());
+        FrameworkElement opacity = SliderRow(loc["Assist.Opacity"], 0.15, 1, settings.AssistCooldownOpacity, v => $"{v * 100:0} %", v => Change(s => s.AssistCooldownOpacity = Math.Round(v, 2)), out _opacitySlider);
+        opacity.ToolTip = loc["Assist.OpacityTip"];
+        opacity.Margin = new Thickness(0, 4, 0, 0);
+        screen.Children.Add(opacity);
+        FrameworkElement readyOpacity = SliderRow(loc["Assist.ReadyOpacity"], 0.15, 1, settings.AssistReadyOpacity, v => $"{v * 100:0} %", v => Change(s => s.AssistReadyOpacity = Math.Round(v, 2)), out _readyOpacitySlider);
+        readyOpacity.ToolTip = loc["Assist.ReadyOpacityTip"];
+        screen.Children.Add(readyOpacity);
+        _backRow = SliderRow(loc["Assist.BackOpacity"], 0, 1, settings.AssistBackOpacity, v => $"{v * 100:0} %", v => Change(s => s.AssistBackOpacity = Math.Round(v, 2)), out _backSlider);
+        _backRow.ToolTip = loc["Assist.BackOpacityTip"];
+        _backRow.Visibility = settings.AssistCooldownStyle == CooldownArt.Tiles ? Visibility.Collapsed : Visibility.Visible; // only the bars have a background
+        screen.Children.Add(_backRow);
         screen.Children.Add(Divider());
         _togetherBox = Switch(loc["Assist.TogetherShort"], settings.AssistCooldownsTogether, on => Change(s => s.AssistCooldownsTogether = on));
         _togetherBox.ToolTip = loc["Assist.MoveTogetherTip"];
@@ -470,6 +499,11 @@ public sealed class AssistWindow : Window
                 if (_barWidthRow is not null)
                 {
                     _barWidthRow.Visibility = chosen == CooldownArt.Tiles ? Visibility.Collapsed : Visibility.Visible;
+                }
+
+                if (_backRow is not null)
+                {
+                    _backRow.Visibility = chosen == CooldownArt.Tiles ? Visibility.Collapsed : Visibility.Visible;
                 }
             };
             _lookButtons.Add(button);

@@ -15,6 +15,9 @@ namespace AionDPS.Ui;
 public interface ICooldownLook
 {
     void Show(CooldownView view);
+
+    /// <summary>How much of the dark background shows (0 to 1; the bars' only: the pictures and the times stay as they are).</summary>
+    void Backdrop(double opacity);
 }
 
 /// <summary>The colours, the time text and the pictures the cooldowns share: light on dark, green when ready, amber in the last ten seconds.</summary>
@@ -147,6 +150,7 @@ public static class CooldownArt
 /// </summary>
 public sealed class CooldownBar : Border, ICooldownLook
 {
+    private readonly Border _back;
     private readonly Border _fill;
     private readonly RectangleGeometry _fillClip = new(new Rect(0, 0, 0, CooldownArt.BarHeight), 3, 3);
     private readonly TextBlock _time;
@@ -161,9 +165,12 @@ public sealed class CooldownBar : Border, ICooldownLook
         Width = width;
         Height = CooldownArt.BarHeight;
         CornerRadius = new CornerRadius(3);
-        Background = CooldownArt.CoolBack;
         ClipToBounds = true;
         var grid = new Grid();
+        // the dark (or green, when ready) background on its own, so it can be made see-through without the picture and the time
+        _back = new Border { CornerRadius = new CornerRadius(3), Background = CooldownArt.CoolBack };
+        Grid.SetColumnSpan(_back, 3);
+        grid.Children.Add(_back);
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -192,7 +199,7 @@ public sealed class CooldownBar : Border, ICooldownLook
         if (_running != view.Running)
         {
             _running = view.Running;
-            Background = view.Running ? CooldownArt.CoolBack : CooldownArt.ReadyBack;
+            _back.Background = view.Running ? CooldownArt.CoolBack : CooldownArt.ReadyBack;
             if (!view.Running)
             {
                 FillTo(0);
@@ -214,6 +221,16 @@ public sealed class CooldownBar : Border, ICooldownLook
             _shown = text;
             _time.Text = text;
             _time.Foreground = view.Seconds < 10 ? CooldownArt.Soon : CooldownArt.Text;
+        }
+    }
+
+    public void Backdrop(double opacity)
+    {
+        opacity = Math.Clamp(opacity, 0, 1);
+        if (Math.Abs(_back.Opacity - opacity) > 0.004)
+        {
+            _back.Opacity = opacity;
+            _fill.Opacity = opacity; // the part gone by is a lighter shade of the same background
         }
     }
 
@@ -261,6 +278,11 @@ public sealed class CooldownTile : Grid, ICooldownLook
             VerticalAlignment = VerticalAlignment.Center, Effect = CooldownArt.Outline, Visibility = Visibility.Collapsed,
         };
         Children.Add(_time);
+    }
+
+    /// <summary>A square has no background of its own: its picture is all there is.</summary>
+    public void Backdrop(double opacity)
+    {
     }
 
     public void Show(CooldownView view)
@@ -411,6 +433,19 @@ public sealed class CooldownSkillWindow : MovableOverlay
 
         _look?.Show(view);
     }
+
+    /// <summary>How see-through the whole cooldown is (0 to 1): the Skill Assist's opacity, lower for a ready skill when the player wants it so.</summary>
+    public void Fade(double opacity)
+    {
+        opacity = Math.Clamp(opacity, 0.05, 1);
+        if (Math.Abs(_host.Opacity - opacity) > 0.004)
+        {
+            _host.Opacity = opacity;
+        }
+    }
+
+    /// <summary>How much of a bar's dark background shows (see <see cref="ICooldownLook.Backdrop"/>).</summary>
+    public void Backdrop(double opacity) => _look?.Backdrop(opacity);
 
     /// <summary>Puts the window somewhere (not saved).</summary>
     public void MoveTo(double left, double top)

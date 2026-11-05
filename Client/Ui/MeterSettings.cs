@@ -258,6 +258,15 @@ public sealed class MeterSettings
     /// <summary>The width of a cooldown bar (at size 1).</summary>
     public double AssistBarWidth { get; set; } = 170;
 
+    /// <summary>How see-through the cooldowns on the screen are (0.1 to 1, 1 = solid), every skill alike.</summary>
+    public double AssistCooldownOpacity { get; set; } = 1.0;
+
+    /// <summary>How visible a skill stays while it is ready (0.1 to 1, times <see cref="AssistCooldownOpacity"/>): lower, the ones cooling down stand out.</summary>
+    public double AssistReadyOpacity { get; set; } = 1.0;
+
+    /// <summary>How much of the bars' dark background shows (0 to 1): the pictures and the times stay sharp.</summary>
+    public double AssistBackOpacity { get; set; } = 1.0;
+
     /// <summary>The skills whose return is said out loud (the voice of the voice settings): "Taunt ready".</summary>
     public List<int> AssistVoiceSkills { get; set; } = new();
 
@@ -1323,6 +1332,9 @@ public sealed class CooldownPreset
     public double BarWidth { get; set; } = 170;
     public bool Together { get; set; }
     public bool ShowReady { get; set; } = true;
+    public double Opacity { get; set; } = 1.0;
+    public double ReadyOpacity { get; set; } = 1.0;
+    public double BackOpacity { get; set; } = 1.0;
     public Dictionary<int, double[]> Places { get; set; } = new();
     public Dictionary<int, double[]> TilePlaces { get; set; } = new();
     public List<int> Hidden { get; set; } = new();
