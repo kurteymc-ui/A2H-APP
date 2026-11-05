@@ -4,10 +4,10 @@ using System.Text.Json;
 
 namespace AionDPS.Upload;
 
-/// <summary>One character the meter's "Find a player" found: what the website knows of it (Combat Power, Item Level, the best parse of a public fight) and
-/// the address of its page in Character Lookup.</summary>
+/// <summary>One character the meter's "Find a player" found: what the website knows of it (Combat Power, Item Level, the best parse of a public fight with its
+/// percentile in the class on that boss: players of the meter only) and the address of its page in Character Lookup.</summary>
 public sealed record FoundPlayer(string Name, string? ClassName, int? Level, string Server, int ServerId, string Region, int? CombatPower, int? ItemLevel,
-    double? BestDps, string? BestBoss, string? Page);
+    double? BestDps, string? BestBoss, string? Page, int? BestPercent = null, int? BestRank = null, int? BestOf = null);
 
 /// <summary>The answer of a search: the characters, or why there are none.</summary>
 public sealed record FindAnswer(IReadOnlyList<FoundPlayer> Players, string? Error);
@@ -58,6 +58,37 @@ public static class FindPlayerClient
         }
     }
 
+    /// <summary>
+    /// The Combat Power and Item Level of any character from its official page, through the website's lookup for the app (<c>/meter/api/character-page</c>, the
+    /// lookup's limits): for a character the website has no figures of yet - most players who never used the meter (5 November 2026, the owner: "the lookup
+    /// should work for people not using the meter also"). Nulls when the page can't be read.
+    /// </summary>
+    public static async Task<(int? CombatPower, int? ItemLevel)> FiguresAsync(FoundPlayer player)
+    {
+        if (player.Region is not ("eu" or "nae" or "naw" or "la" or "as") || player.ServerId <= 0)
+        {
+            return (null, null);
+        }
+
+        string url = $"{Brand.Api}/api/character-page?region={player.Region}&server={player.ServerId.ToString(CultureInfo.InvariantCulture)}&name={Uri.EscapeDataString(player.Name)}";
+        try
+        {
+            using HttpResponseMessage response = await Http.GetAsync(url).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                return (null, null);
+            }
+
+            using JsonDocument doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync().ConfigureAwait(false));
+            JsonElement c = doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("character", out JsonElement ch) ? ch : default;
+            return c.ValueKind == JsonValueKind.Object ? (Int(c, "combatPower") is > 0 and int cp ? cp : null, Int(c, "itemLevel") is > 0 and int il ? il : null) : (null, null);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or InvalidOperationException)
+        {
+            return (null, null);
+        }
+    }
+
     /// <summary>The characters of an answer (also read by the self-check).</summary>
     public static IReadOnlyList<FoundPlayer> Read(JsonElement root)
     {
@@ -76,9 +107,11 @@ public static class FindPlayerClient
 
             JsonElement best = x.TryGetProperty("best", out JsonElement b) && b.ValueKind == JsonValueKind.Object ? b : default;
             string? page = Str(x, "page");
+            bool has = best.ValueKind == JsonValueKind.Object;
             list.Add(new FoundPlayer(name, Str(x, "className"), Int(x, "level"), Str(x, "server") ?? "", serverId, Str(x, "region") ?? "",
-                Int(x, "cp"), Int(x, "il"), best.ValueKind == JsonValueKind.Object ? Dbl(best, "dps") : null, best.ValueKind == JsonValueKind.Object ? Str(best, "boss") : null,
-                page is not null && page.StartsWith(Brand.Site + "/", StringComparison.Ordinal) ? page : null));
+                Int(x, "cp"), Int(x, "il"), has ? Dbl(best, "dps") : null, has ? Str(best, "boss") : null,
+                page is not null && page.StartsWith(Brand.Site + "/", StringComparison.Ordinal) ? page : null,
+                has ? Int(best, "pct") : null, has ? Int(best, "rank") : null, has ? Int(best, "of") : null));
         }
 
         return list;

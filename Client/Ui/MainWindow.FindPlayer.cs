@@ -325,9 +325,20 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>The card of one character: its class, name, class · server · region, Combat Power, Item Level and best parse, and its full page on the website.</summary>
-    internal void ShowFindCard(FoundPlayer player)
+    private FoundPlayer? _findShown;
+
+    /// <summary>The card of one character: its class, name, class · server · region, Combat Power, Item Level and best parse, and its full page on the website.
+    /// A character the website has no figures of (not a player of the meter) gets them from its official page a moment later.</summary>
+    internal void ShowFindCard(FoundPlayer player, bool asked = false)
     {
+        _findShown = player;
+        bool reading = false;
+        if (!asked && !Headless && (player.CombatPower is null || player.ItemLevel is null))
+        {
+            reading = true; // "…" until the official page answered
+            _ = FillFigures(player);
+        }
+
         var stack = new StackPanel();
         var head = new Grid { Margin = new Thickness(0, 0, 0, 10) };
         head.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -348,10 +359,13 @@ public partial class MainWindow
         stack.Children.Add(head);
 
         var tiles = new UniformGrid { Columns = 3, Margin = new Thickness(0, 0, 0, 10) };
-        tiles.Children.Add(Tile("Combat power", player.CombatPower is int cp ? FindPlayerClient.Number(cp) : "–", Color.FromRgb(0xE8, 0xC3, 0x5A), null));
-        tiles.Children.Add(Tile("Item level", player.ItemLevel is int il ? FindPlayerClient.Number(il) : "–", null, null));
-        tiles.Children.Add(Tile("Best parse", player.BestDps is double dps ? PlayerRow.Compact((long)Math.Round(dps)) + " DPS" : "–", null,
-            player.BestBoss is { } boss ? $"{boss}, a public fight uploaded with the meter" : "No public fight of this character uploaded with the meter yet"));
+        string waiting = reading ? "…" : "–";
+        tiles.Children.Add(Tile("Combat power", player.CombatPower is int cp ? FindPlayerClient.Number(cp) : waiting, Color.FromRgb(0xE8, 0xC3, 0x5A), null));
+        tiles.Children.Add(Tile("Item level", player.ItemLevel is int il ? FindPlayerClient.Number(il) : waiting, null, null));
+        tiles.Children.Add(Tile("Best parse", player.BestPercent is int pct ? pct.ToString(CultureInfo.CurrentCulture) + "%" : "–", player.BestPercent is int p ? ParseColour(p) : null,
+            player.BestPercent is not null
+                ? $"{player.BestBoss}: {(player.BestDps is double dps ? PlayerRow.Compact((long)Math.Round(dps)) + " DPS, " : "")}rank {player.BestRank} of {player.BestOf} {player.ClassName ?? "players"} - the best public parse uploaded with the meter"
+                : "No parse: this character's fights were never uploaded with the meter (or are not public)"));
         stack.Children.Add(tiles);
 
         var open = new Border { CornerRadius = new CornerRadius(7), Padding = new Thickness(0, 7, 0, 7), Cursor = Cursors.Hand, BorderThickness = new Thickness(1),
@@ -379,6 +393,30 @@ public partial class MainWindow
             BorderBrush = new SolidColorBrush(Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)), Background = new SolidColorBrush(Color.FromArgb(0x10, 0xFF, 0xFF, 0xFF)),
         };
         OverlayFindCard.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>The colours parse percentiles are known by: grey, green, blue, purple, orange, pink at 99, gold at 100.</summary>
+    private static Color ParseColour(int pct) => pct switch
+    {
+        >= 100 => Color.FromRgb(0xE5, 0xCC, 0x80),
+        >= 99 => Color.FromRgb(0xE2, 0x68, 0xA8),
+        >= 95 => Color.FromRgb(0xFF, 0x80, 0x00),
+        >= 75 => Color.FromRgb(0xA3, 0x35, 0xEE),
+        >= 50 => Color.FromRgb(0x00, 0x70, 0xFF),
+        >= 25 => Color.FromRgb(0x1E, 0xFF, 0x00),
+        _ => Color.FromRgb(0x9D, 0x9D, 0x9D),
+    };
+
+    /// <summary>Reads the Combat Power and Item Level the website has none of from the character's official page, then shows the card again with them.</summary>
+    private async Task FillFigures(FoundPlayer player)
+    {
+        (int? cp, int? il) = await FindPlayerClient.FiguresAsync(player);
+        if (!ReferenceEquals(_findShown, player) || OverlayFind.Visibility != Visibility.Visible)
+        {
+            return; // another character was picked, or the search closed
+        }
+
+        ShowFindCard(player with { CombatPower = player.CombatPower ?? cp, ItemLevel = player.ItemLevel ?? il }, asked: true);
     }
 
     private Border Tile(string title, string value, Color? colour, string? tip)
