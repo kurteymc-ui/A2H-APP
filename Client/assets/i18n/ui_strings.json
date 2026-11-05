@@ -14571,6 +14571,66 @@
     "de": "Kampf hochladen",
     "fr": "Envoyer un combat"
   },
+  "Setup.Map.Title": {
+    "en": "Your map",
+    "de": "Deine Karte",
+    "fr": "Votre carte"
+  },
+  "Setup.Map.Lede": {
+    "en": "The interactive map over the game: what it shows and how it looks. Finished your pets? Leave them off and show only what you still farm.",
+    "de": "Die interaktive Karte über dem Spiel: was sie zeigt und wie sie aussieht. Alle Pets fertig? Lass sie weg und zeig nur, was du noch farmst.",
+    "fr": "La carte interactive par-dessus le jeu : ce qu'elle montre et son apparence. Vos familiers sont finis ? Masquez-les et ne montrez que ce que vous farmez encore."
+  },
+  "Setup.Map.Show": {
+    "en": "Show the map over the game",
+    "de": "Die Karte über dem Spiel zeigen",
+    "fr": "Afficher la carte par-dessus le jeu"
+  },
+  "Setup.Map.Pets": {
+    "en": "Pets",
+    "de": "Pets",
+    "fr": "Familiers"
+  },
+  "Setup.Map.PetsAll": {
+    "en": "Pets I still need",
+    "de": "Pets, die mir noch fehlen",
+    "fr": "Familiers qu'il me manque"
+  },
+  "Setup.Map.PetsNone": {
+    "en": "No pets (I'm done)",
+    "de": "Keine Pets (ich bin fertig)",
+    "fr": "Aucun familier (j'ai fini)"
+  },
+  "Setup.Map.PetsPicked": {
+    "en": "The {0} pets I picked",
+    "de": "Die {0} Pets, die ich gewählt habe",
+    "fr": "Les {0} familiers choisis"
+  },
+  "Setup.Map.Look": {
+    "en": "How it looks",
+    "de": "Wie sie aussieht",
+    "fr": "Apparence"
+  },
+  "Setup.Map.List": {
+    "en": "The list beside the map",
+    "de": "Die Liste neben der Karte",
+    "fr": "La liste à côté de la carte"
+  },
+  "Setup.Map.Note": {
+    "en": "Hidden Cubes show only once one has spawned near you. Pick single pets and plants later on the Map page.",
+    "de": "Versteckte Würfel erscheinen erst, wenn einer in deiner Nähe gespawnt ist. Einzelne Pets und Pflanzen wählst du später auf der Kartenseite.",
+    "fr": "Les Cubes cachés n'apparaissent qu'une fois apparus près de vous. Choisissez des familiers et des plantes précis plus tard sur la page Carte."
+  },
+  "Setup.Map.Off": {
+    "en": "switched off",
+    "de": "ausgeschaltet",
+    "fr": "désactivée"
+  },
+  "Setup.Map.SampleLevel": {
+    "en": "Level {0}",
+    "de": "Stufe {0}",
+    "fr": "Niveau {0}"
+  },
   "Cubes.Beam": {
     "en": "Show a beam of light over the cube",
     "de": "Einen Lichtstrahl über dem Würfel zeigen",

@@ -63,6 +63,7 @@ jobs:
             @('render-tool', 'setup-design.png', 'setup-design'),
             @('render-tool', 'setup-columns.png', 'setup-columns'),
             @('render-tool', 'setup-overlays.png', 'setup-overlays'),
+            @('render-tool', 'setup-map.png', 'setup-map'),
             @('render-tool', 'setup-colours.png', 'setup-colours-midnight'),
             @('render-petmap', 'petmap-route.png', 'altgard', '20000', '30000', 'route'),
             @('render-petmap', 'petmap-route-round.png', 'altgard', '20000', '30000', 'route-round'),

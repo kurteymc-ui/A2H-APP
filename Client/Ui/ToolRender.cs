@@ -82,10 +82,19 @@ public static class ToolRender
             case "setup-overlays":
             case "setup-colours":
             case "setup-colours-midnight":
+            case "setup-map":
             {
                 // the look setup after the terms: one of its steps (the colours also with a colour set picked)
-                int step = what switch { "setup-design" => 0, "setup-columns" => 1, "setup-overlays" => 2, _ => 3 };
-                shown = hostWindow.LookSetupPicture(step, what == "setup-colours-midnight" ? "midnight" : null);
+                int step = what switch { "setup-design" => 0, "setup-columns" => 1, "setup-overlays" => 2, "setup-map" => 3, _ => 4 };
+                // the map's step with the map on, the ores and the Hidden Cubes picked
+                Action<MeterSettings>? sample = what == "setup-map"
+                    ? s =>
+                    {
+                        s.ShowPetMap = true;
+                        s.PetMapGatherItems = Aion2.Protocol.Aion2Gather.Items().Where(i => i.Kind is "Ore" or "Cube").Select(i => i.Key).Distinct().ToList();
+                    }
+                    : null;
+                shown = hostWindow.LookSetupPicture(step, what == "setup-colours-midnight" ? "midnight" : null, sample);
                 width = 0;
                 height = 0;
                 break;

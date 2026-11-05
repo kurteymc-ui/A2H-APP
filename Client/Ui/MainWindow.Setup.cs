@@ -41,9 +41,14 @@ public partial class MainWindow
     }
 
     /// <summary>One step of the setup as a picture (the pictures of the build: render-tool setup-design, -columns, -overlays, -colours).</summary>
-    internal FrameworkElement LookSetupPicture(int step, string? palette = null)
+    internal FrameworkElement LookSetupPicture(int step, string? palette = null, Action<MeterSettings>? sample = null)
     {
         var setup = new LookSetup(this, restricted: false);
+        if (sample is not null)
+        {
+            setup.Sample(sample);
+        }
+
         setup.Root.Width = LookSetup.Width;
         setup.Root.Height = LookSetup.Height;
         if (palette is not null)
@@ -72,6 +77,8 @@ public partial class MainWindow
         private readonly Button _back;
         private readonly Button _next;
         private readonly List<PlayerRow> _samples = SampleMeterRows();
+        private readonly string[] _steps;
+        private readonly List<Window> _offscreen = new();
         private int _step;
         private string _palette;
         private bool _done;
@@ -81,12 +88,17 @@ public partial class MainWindow
 
         public Action? Close { get; set; }
 
+        /// <summary>Settings for the pictures only (never saved).</summary>
+        public void Sample(Action<MeterSettings> change) => change(_draft);
+
         private static LocalizationManager Loc => LocalizationManager.Instance;
 
         public LookSetup(MainWindow main, bool restricted)
         {
             _main = main;
             _restricted = restricted;
+            // the map step only where the map is there (declined terms: no map)
+            _steps = restricted ? new[] { "Design", "Columns", "Overlays", "Colours" } : new[] { "Design", "Columns", "Overlays", "Map", "Colours" };
             // the colour set the app wears now: the built-in one, one of the sets below (saved by an earlier setup), or one of the player's own (none marked)
             _palette = _draft.Theme == ThemeManager.DefaultTheme ? "atreia"
                 : Palettes.FirstOrDefault(p => p.File is { } f && _draft.Theme == ThemeFile.SelectionFor(f.Name!))?.Id ?? "";
@@ -137,7 +149,7 @@ public partial class MainWindow
             _next = new Button { Content = Loc["Setup.Next"], Padding = new Thickness(18, 5, 18, 5), MinWidth = 130, IsDefault = true };
             _next.Click += (_, _) =>
             {
-                if (_step < 3)
+                if (_step < _steps.Length - 1)
                 {
                     Show(_step + 1);
                 }
@@ -160,19 +172,19 @@ public partial class MainWindow
 
         public void Show(int step)
         {
-            _step = Math.Clamp(step, 0, 3);
-            string[] keys = { "Design", "Columns", "Overlays", "Colours" };
-            string key = keys[_step];
-            _stepText.Text = string.Format(CultureInfo.CurrentCulture, Loc["Setup.Step"], _step + 1, 4).ToUpper(CultureInfo.CurrentCulture);
+            _step = Math.Clamp(step, 0, _steps.Length - 1);
+            string key = _steps[_step];
+            _stepText.Text = string.Format(CultureInfo.CurrentCulture, Loc["Setup.Step"], _step + 1, _steps.Length).ToUpper(CultureInfo.CurrentCulture);
             _title.Text = Loc["Setup." + key + ".Title"];
             _lede.Text = Loc["Setup." + key + ".Lede"];
             _back.Visibility = _step == 0 ? Visibility.Hidden : Visibility.Visible;
-            _next.Content = _step == 3 ? Loc["Setup.Finish"] : Loc["Setup.Next"];
-            _options.Content = _step switch
+            _next.Content = _step == _steps.Length - 1 ? Loc["Setup.Finish"] : Loc["Setup.Next"];
+            _options.Content = key switch
             {
-                0 => DesignOptions(),
-                1 => ColumnOptions(),
-                2 => OverlayOptions(),
+                "Design" => DesignOptions(),
+                "Columns" => ColumnOptions(),
+                "Overlays" => OverlayOptions(),
+                "Map" => MapOptions(),
                 _ => ColourOptions(),
             };
             Redraw();
@@ -187,12 +199,25 @@ public partial class MainWindow
 
         private void Redraw()
         {
-            _preview.Content = _step switch
+            CloseOffscreen();
+            _preview.Content = _steps[_step] switch
             {
-                0 or 1 => MeterPreview(),
-                2 => OverlayPreview(),
+                "Design" or "Columns" => MeterPreview(),
+                "Overlays" => OverlayPreview(),
+                "Map" => MapPreview(),
                 _ => ColourPreview(),
             };
+        }
+
+        /// <summary>The never-shown map and list windows the previews took their content from.</summary>
+        private void CloseOffscreen()
+        {
+            foreach (Window window in _offscreen)
+            {
+                window.Close();
+            }
+
+            _offscreen.Clear();
         }
 
         /// <summary>Saves what was chosen over the settings as they are now (only the parts changed here), and puts it on everything.</summary>
@@ -225,6 +250,7 @@ public partial class MainWindow
             s.LookSetupDone = true;
             s.Save();
             _done = true;
+            CloseOffscreen();
             _main.ApplySettingsEverywhere(s);
             _main.ApplyMeterLook(s);
         }
@@ -238,6 +264,7 @@ public partial class MainWindow
             }
 
             _done = true;
+            CloseOffscreen();
             MeterSettings s = MeterSettings.Load();
             s.LookSetupDone = true;
             s.Save();
@@ -405,6 +432,275 @@ public partial class MainWindow
 
             stack.Children.Add(Note(Loc["Setup.OverlaysNote"]));
             return stack;
+        }
+
+        // ---- step 4: the map
+
+        private static readonly string[] GatherKinds = { "Cube", "Od", "Ore", "Gemstone", "Herb", "Cotton", "Wood", "Food", "Fragment" };
+
+        private static readonly Dictionary<string, int> GenusSpecies = new() { ["Cogni"] = 2, ["Fera"] = 3, ["Natura"] = 4, ["Varian"] = 5 };
+
+        private UIElement MapOptions()
+        {
+            var stack = new StackPanel();
+            stack.Children.Add(Check(Loc["Setup.Map.Show"], _draft.ShowPetMap, on => Change(s => s.ShowPetMap = on)));
+
+            // pets: the ones still needed (from the collection), none (a finished collection), or the ones picked by hand (kept when there are some)
+            stack.Children.Add(Heading(Loc["Setup.Map.Pets"]));
+            string mode = _draft.PetMapAuto ? "all" : _draft.PetMapPets.Count > 0 ? "picked" : "none";
+            var modes = new List<string> { "all", "none" };
+            if (_draft.PetMapPets.Count > 0)
+            {
+                modes.Insert(1, "picked");
+            }
+
+            stack.Children.Add(Choices(modes, mode, id => id switch
+            {
+                "all" => Loc["Setup.Map.PetsAll"],
+                "picked" => string.Format(CultureInfo.CurrentCulture, Loc["Setup.Map.PetsPicked"], _draft.PetMapPets.Count),
+                _ => Loc["Setup.Map.PetsNone"],
+            }, id => Change(s =>
+            {
+                s.PetMapAutoPets = id == "all";
+                if (id == "none")
+                {
+                    s.PetMapPets = new List<int>();
+                }
+            })));
+            if (mode != "none")
+            {
+                var genera = new WrapPanel();
+                string lang = Loc.Language;
+                foreach (string genus in Aion2.PetRoute.Genera)
+                {
+                    bool on = _draft.PetRouteGenera is not { Count: > 0 } picked || picked.Contains(genus);
+                    string name = GenusSpecies.TryGetValue(genus, out int species) ? Aion2.Protocol.Aion2Artwork.SpeciesName(species, lang) : genus;
+                    string which = genus;
+                    CheckBox box = Check(name, on, now => Change(s =>
+                    {
+                        var list = (s.PetRouteGenera is { Count: > 0 } had ? had : Aion2.PetRoute.Genera.ToList()).Where(g => g != which).ToList();
+                        if (now)
+                        {
+                            list.Add(which);
+                        }
+
+                        // all four, or none left (which would show every pet anyway): no pick
+                        s.PetRouteGenera = list.Count is 0 or 4 ? null : list;
+                    }));
+                    box.MinWidth = 120;
+                    genera.Children.Add(box);
+                }
+
+                stack.Children.Add(genera);
+                stack.Children.Add(Check(Loc["PetRoute.On"], _draft.PetRouteOn, on => Change(s => s.PetRouteOn = on)));
+            }
+
+            // the collectibles, a kind at a time (with the Hidden Cubes the game announces), and the guards
+            stack.Children.Add(Heading(Loc["Settings.PetMap.Gather"]));
+            var kinds = new WrapPanel();
+            foreach (string kind in GatherKinds)
+            {
+                var keys = Aion2.Protocol.Aion2Gather.Items().Where(i => i.Kind == kind).Select(i => i.Key).Distinct().ToList();
+                if (keys.Count == 0)
+                {
+                    continue;
+                }
+
+                bool on = keys.All(_draft.PetMapGatherItems.Contains);
+                CheckBox box = Check(Loc["Settings.PetMap.Gather." + kind], on, now => Change(s =>
+                {
+                    s.PetMapGatherItems = s.PetMapGatherItems.Where(k => !keys.Contains(k)).ToList();
+                    if (now)
+                    {
+                        s.PetMapGatherItems.AddRange(keys);
+                    }
+                }));
+                box.MinWidth = 120;
+                kinds.Children.Add(box);
+            }
+
+            stack.Children.Add(kinds);
+            CheckBox guards = Check(Loc["Settings.Gather.Guards"], _draft.ShowGuards, on => Change(s => s.ShowGuards = on));
+            guards.ToolTip = Loc["Settings.Gather.Guards.Tip"];
+            stack.Children.Add(guards);
+
+            // its look
+            stack.Children.Add(Heading(Loc["Setup.Map.Look"]));
+            var look = new WrapPanel();
+            CheckBox Wide(CheckBox box)
+            {
+                box.MinWidth = 180;
+                return box;
+            }
+
+            look.Children.Add(Wide(Check(Loc["PetRoute.Round"], _draft.PetMapRound, on => Change(s => s.PetMapRound = on))));
+            look.Children.Add(Wide(Check(Loc["PetMap.Compass"], _draft.PetMapCompass, on => Change(s => s.PetMapCompass = on))));
+            CheckBox marks = Wide(Check(Loc["PetRoute.MarksOnly"], _draft.PetMapMarkersOnly, on => Change(s => s.PetMapMarkersOnly = on)));
+            marks.ToolTip = Loc["PetRoute.MarksOnlyTip"];
+            look.Children.Add(marks);
+            look.Children.Add(Wide(Check(Loc["Setup.Map.List"], _draft.PetMapShowList, on => Change(s => s.PetMapShowList = on))));
+            stack.Children.Add(look);
+            stack.Children.Add(LabelledSlider(Loc["Settings.PetMap.Radius"], 50, 500, 10, Math.Clamp(_draft.PetMapRadius, 50, 500), v => string.Format(CultureInfo.CurrentCulture, Loc["Settings.PetMap.RadiusValue"], (int)v),
+                v => Change(s => s.PetMapRadius = (int)v)));
+            stack.Children.Add(LabelledSlider(Loc["Settings.PetMap.Opacity"], 10, 100, 5, Math.Round(Math.Clamp(_draft.PetMapOpacity, 0.1, 1.0) * 100), v => $"{v:0} %",
+                v => Change(s => s.PetMapOpacity = v / 100.0)));
+            stack.Children.Add(Note(Loc["Setup.Map.Note"]));
+            return stack;
+        }
+
+        /// <summary>A labelled slider; the change goes in while it moves.</summary>
+        private static UIElement LabelledSlider(string label, double min, double max, double step, double value, Func<double, string> text, Action<double> set)
+        {
+            var panel = new StackPanel { Margin = new Thickness(0, 4, 0, 4) };
+            panel.Children.Add(ShellText(label, "Brush.Text", 13));
+            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 4, 0, 4) };
+            var slider = new System.Windows.Controls.Slider { Minimum = min, Maximum = max, Value = value, Width = 220, IsSnapToTickEnabled = true, TickFrequency = step, VerticalAlignment = VerticalAlignment.Center };
+            TextBlock shown = ShellText(text(value), "Brush.TextMuted", 12.5);
+            shown.Margin = new Thickness(10, 0, 0, 0);
+            slider.ValueChanged += (_, _) =>
+            {
+                shown.Text = text(slider.Value);
+                set(slider.Value);
+            };
+            row.Children.Add(slider);
+            row.Children.Add(shown);
+            panel.Children.Add(row);
+            return panel;
+        }
+
+        private UIElement MapPreview()
+        {
+            var stack = new StackPanel { Width = 760 };
+            stack.Children.Add(Caption(Loc["Setup.InGame"]));
+            stack.Children.Add(Screen(560, meterOnly: false, only: "petmap"));
+            stack.Children.Add(Caption(Loc["Setup.CloseUp"] + (_draft.ShowPetMap ? "" : " · " + Loc["Setup.Map.Off"]), top: 14));
+            var row = new StackPanel { Orientation = Orientation.Horizontal };
+            (FrameworkElement map, FrameworkElement? list) = MapAndList();
+            row.Children.Add(map);
+            if (list is not null)
+            {
+                list.Margin = new Thickness(12, 0, 0, 0);
+                list.VerticalAlignment = VerticalAlignment.Top;
+                row.Children.Add(list);
+            }
+
+            stack.Children.Add(new Border { Padding = new Thickness(14), CornerRadius = new CornerRadius(8), Background = SceneBrush(), HorizontalAlignment = HorizontalAlignment.Left, Child = row,
+                Opacity = _draft.ShowPetMap ? 1 : 0.55 });
+            return stack;
+        }
+
+        /// <summary>The pets the preview shows: none, the ones picked, or the ones the collection still needs (the collection as the meter saved it at the last login;
+        /// every pet before any), of the genera picked.</summary>
+        private HashSet<int> PreviewPets()
+        {
+            IEnumerable<int> pets;
+            if (_draft.PetMapAuto)
+            {
+                var max = Aion2.Aion2CharacterStore.Load(Aion2.Aion2CharacterStore.DefaultPath)?.Pets.Where(p => p.Level >= Aion2.Protocol.Aion2Pets.TopLevel).Select(p => p.Id).ToHashSet()
+                    ?? new HashSet<int>();
+                pets = Aion2.Protocol.Aion2Pets.AllPetIds.Where(id => !max.Contains(id));
+            }
+            else
+            {
+                pets = _draft.PetMapPets;
+            }
+
+            List<string>? genera = _draft.PetRouteGenera is { Count: > 0 and < 4 } picked ? picked : null;
+            return pets.Where(id => genera is null || Aion2.PetRoute.GenusOf(id) is { } g && genera.Contains(g)).ToHashSet();
+        }
+
+        /// <summary>
+        /// The interactive map as the draft has it, drawn by the map overlay itself (a never-shown copy, as the app's Map page uses): Altgard around a place with
+        /// pets, the collectibles picked, a Hidden Cube in range when they are picked, two guards when they are on, the route; and the list beside it.
+        /// </summary>
+        private (FrameworkElement Map, FrameworkElement? List) MapAndList()
+        {
+            if (Aion2.Protocol.Aion2Maps.All.FirstOrDefault(m => m.Key == "altgard") is not { } map)
+            {
+                return (new Border(), null);
+            }
+
+            double x = 20000, y = 30000;
+            var window = new PetMapWindow();
+            _offscreen.Add(window);
+            if (window.Content is UIElement root)
+            {
+                // never shown: laid out once so the map knows how much of itself is visible
+                root.Measure(new Size(PetMapWindow.ViewSize, PetMapWindow.ViewSize));
+                root.Arrange(new Rect(0, 0, PetMapWindow.ViewSize, PetMapWindow.ViewSize));
+                root.UpdateLayout();
+            }
+
+            window.Round = _draft.PetMapRound;
+            window.ShowCompass = _draft.PetMapCompass;
+            HashSet<int> chosen = PreviewPets();
+            Aion2.PetRoutePlan? plan = null;
+            if (_draft.PetRouteOn && chosen.Count > 0)
+            {
+                IReadOnlySet<string> genera = (_draft.PetRouteGenera is { Count: > 0 } g ? g : Aion2.PetRoute.Genera.ToList()).ToHashSet();
+                plan = Aion2.PetRoute.Plan("altgard", "Asmodian", genera, chosen.Contains, (x / 100, y / 100, ""));
+                if (plan is { Stops.Count: > 0 })
+                {
+                    x = (plan.Stops[0].X * 100) - 7000;
+                    y = (plan.Stops[0].Z * 100) + 5500;
+                    window.SetRoute(plan.Stops.Take(6).Select(st => (st.X * 100, st.Z * 100, st.Radius, st.Step)).ToList(), null, plan.Stops[0].Zone);
+                    window.ArrowPets = plan.Stops[0].Pets.ToHashSet();
+                }
+            }
+
+            var points = chosen.Count == 0 ? new List<(int PetId, float X, float Y)>() : Aion2.Protocol.Aion2Maps.PointsOf(map, chosen).ToList();
+            var near = points.Where(p => Math.Abs(p.X - x) < _draft.PetMapRadius * 100 && Math.Abs(p.Y - y) < _draft.PetMapRadius * 100).ToList();
+            var pets = near.Select(p => p.PetId).Distinct().OrderBy(id => id).ToList();
+            var colors = pets.Select((id, i) => (id, i)).ToDictionary(t => t.id, t => PetMapPalette.Of(t.i));
+            var live = near.Where((_, i) => i % 7 == 0).ToList();
+            bool cubes = _draft.PetMapGatherItems.Contains("Hidden Cube");
+            if (cubes)
+            {
+                live.Add((PetMapWindow.CubeMark, (float)x + 2600, (float)y - 1500));
+                colors[PetMapWindow.CubeMark] = PetMapPalette.OfGather("Cube");
+            }
+
+            var gatherKeys = _draft.PetMapGatherItems.Where(k => k != "Hidden Cube").ToHashSet();
+            var gather = gatherKeys.Count == 0 ? null : Aion2.Protocol.Aion2Gather.PointsOf(map, gatherKeys);
+            var guards = _draft.ShowGuards ? new List<(float X, float Y)> { ((float)x + 1500, (float)y + 700), ((float)x - 1200, (float)y - 400) } : null;
+            double opacity = _draft.PetMapMarkersOnly ? 0 : Math.Clamp(_draft.PetMapOpacity, 0, 1);
+            window.Render(map, x, y, Math.Clamp(_draft.PetMapRadius, 50, 500), opacity, points, live, colors, gather, guards: guards);
+            var mapContent = (FrameworkElement)window.Content;
+            window.Content = null;
+            if (!_draft.PetMapShowList)
+            {
+                return (mapContent, null);
+            }
+
+            var list = new PetListWindow();
+            _offscreen.Add(list);
+            string lang = Loc.Language;
+            var rows = pets.Take(6).Select((id, i) => (colors.GetValueOrDefault(id, Colors.White), Aion2.Protocol.Aion2Pets.PetName(id, lang) ?? "?",
+                string.Format(CultureInfo.CurrentCulture, Loc["Setup.Map.SampleLevel"], 1 + (i % 2)), $"{40 + (i * 23)} m", false)).ToList();
+            foreach (string key in gatherKeys.Take(2))
+            {
+                if (Aion2.Protocol.Aion2Gather.Items().FirstOrDefault(i => i.Key == key) is { } item)
+                {
+                    rows.Add((PetMapPalette.OfGather(item.Kind), item.NameIn(lang), "", "75 m", true));
+                }
+            }
+
+            if (cubes)
+            {
+                rows.Insert(0, (PetMapPalette.OfGather("Cube"), Loc["Settings.PetMap.Gather.Cube"], "", "~34 m", true));
+            }
+
+            list.Render(rows);
+            if (plan is { Stops.Count: > 0 } shown && _draft.PetRouteInList)
+            {
+                var first = shown.Stops[0];
+                list.RenderHead(string.Format(CultureInfo.CurrentCulture, Loc["PetRoute.Stop"], 1, shown.Stops.Count, first.Zone) + " · 90 m",
+                    string.Join(", ", first.Pets.Take(4).Select(id => Aion2.Protocol.Aion2Pets.PetName(id, lang))));
+            }
+
+            var listContent = (FrameworkElement)list.Content;
+            list.Content = null;
+            return (mapContent, listContent);
         }
 
         // ---- step 4: the colours
@@ -593,7 +889,7 @@ public partial class MainWindow
         /// real skill icons, its chat; over it every overlay switched on in the draft at its usual place - the meter as it will look, the others as panels of the
         /// overlay's colour with their name - and the cube beam when it is on.
         /// </summary>
-        private FrameworkElement Screen(double width, bool meterOnly)
+        private FrameworkElement Screen(double width, bool meterOnly, string? only = null)
         {
             var canvas = new Canvas { Width = 1920, Height = 1080, ClipToBounds = true };
             DrawScene(canvas);
@@ -610,8 +906,23 @@ public partial class MainWindow
             {
                 bool on = def.Get(_draft);
                 string key = def.Page ?? "hotkeys";
-                if (!on || (meterOnly && key != "meter"))
+                if (!on || (meterOnly && key != "meter") || (only is not null && key != only))
                 {
+                    continue;
+                }
+
+                if (key == "petmap")
+                {
+                    // the map as it will look (its own drawing), at its place
+                    (FrameworkElement map, FrameworkElement? list) = MapAndList();
+                    map.LayoutTransform = new ScaleTransform(0.75, 0.75);
+                    Place(canvas, map, 30, 290);
+                    if (list is not null)
+                    {
+                        list.LayoutTransform = new ScaleTransform(0.75, 0.75);
+                        Place(canvas, list, 30 + (PetMapWindow.ViewSize * 0.75) + 10, 290);
+                    }
+
                     continue;
                 }
 
@@ -646,8 +957,8 @@ public partial class MainWindow
             ["timetable"] = (1230, 40, 340, 180, "lines"),
             ["boss"] = (1230, 236, 340, 120, "lines"),
             ["petmap"] = (30, 290, 320, 320, "map"),
-            ["petmap.pets"] = (30, 626, 320, 64, "pill"),
-            ["loot"] = (30, 706, 320, 150, "lines"),
+            ["petmap.pets"] = (30, 640, 320, 64, "pill"),
+            ["loot"] = (30, 716, 320, 150, "lines"),
             ["petmap.gather"] = (1230, 372, 340, 130, "lines"),
             ["checklist"] = (30, 40, 320, 234, "lines"),
             ["craft"] = (1490, 720, 400, 130, "lines"),
