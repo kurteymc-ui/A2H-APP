@@ -283,7 +283,7 @@ public partial class MainWindow
                 VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0),
             };
             var text = new TextBlock { FontSize = 11, VerticalAlignment = VerticalAlignment.Center };
-            text.SetValue(Typography.NumeralAlignmentProperty, FontNumeralAlignment.Tabular);
+            text.SetValue(System.Windows.Documents.Typography.NumeralAlignmentProperty, FontNumeralAlignment.Tabular);
             var value = new System.Windows.Documents.Run(ticket.Value) { FontWeight = FontWeights.SemiBold };
             if (ticket.Warn)
             {
@@ -371,7 +371,7 @@ public partial class MainWindow
                 var label = new TextBlock { FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center };
                 label.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
                 var figure = new TextBlock { FontSize = 11.5, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-                figure.SetValue(Typography.NumeralAlignmentProperty, FontNumeralAlignment.Tabular);
+                figure.SetValue(System.Windows.Documents.Typography.NumeralAlignmentProperty, FontNumeralAlignment.Tabular);
                 figure.SetResourceReference(TextBlock.ForegroundProperty, "Brush.OverlayText");
                 DockPanel.SetDock(label, Dock.Left);
                 DockPanel.SetDock(figure, Dock.Right);
