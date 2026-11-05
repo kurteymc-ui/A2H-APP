@@ -3376,7 +3376,7 @@ internal static class Program
         else
         {
             window.Render(map, x, y, settings.PetMapRadius, opacity, points.ToList(), live, colors,
-                Aion2.Protocol.Aion2Gather.PointsOf(map, Aion2.Protocol.Aion2Gather.Items().Where(i => i.Count > 0).Select(i => i.Key).ToHashSet()),
+                Aion2.Protocol.Aion2Gather.PointsOf(map, Aion2.Protocol.Aion2Gather.Items().Where(i => i.Count > 0 && i.Kind != "Cube").Select(i => i.Key).ToHashSet()),
                 guards: guards ? new List<(float X, float Y)> { ((float)x + 1500, (float)y + 700), ((float)x - 1200, (float)y - 400), ((float)x - 30000, (float)y + 5000), ((float)x + 9000, (float)y - 21000) } : null);
         }
         var list = new Ui.PetListWindow();

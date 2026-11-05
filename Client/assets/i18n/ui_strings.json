@@ -14362,9 +14362,9 @@
     "fr": "Toujours marquer les cubes cachés sur la carte interactive"
   },
   "Cubes.MarkTip": {
-    "en": "A glowing gold cube for each cube in range, and small cubes where cubes can be, whenever the map is open.",
-    "de": "Ein leuchtender goldener Würfel für jeden Würfel in Reichweite und kleine Würfel an den Orten, an denen Würfel sein können, wann immer die Karte offen ist.",
-    "fr": "Un cube doré lumineux pour chaque cube à portée, et de petits cubes là où des cubes peuvent se trouver, dès que la carte est ouverte."
+    "en": "A glowing gold cube for each cube the game announces in range (never the places a cube could be), whenever the map is open.",
+    "de": "Ein leuchtender goldener Würfel für jeden Würfel, den das Spiel in Reichweite meldet (nie die Orte, an denen einer sein könnte), wann immer die Karte offen ist.",
+    "fr": "Un cube doré lumineux pour chaque cube que le jeu signale à portée (jamais les endroits où un cube pourrait être), dès que la carte est ouverte."
   },
   "Cubes.OpenMap": {
     "en": "Open the interactive map →",

@@ -1158,62 +1158,23 @@ public sealed class PetMapController : IDisposable
     /// map files do not hold (Od, the Hidden Cubes). A place no longer disappears just because the player comes near it and the game has announced nothing yet
     /// (the owner: "Cubes when taken should disappear, instead of disappearing when I go to them").
     /// </summary>
-    /// <summary>How near (world units, 100 a metre) a place must be to count as seen empty: the game announces a cube from some 95 to 105 m; the place's height
-    /// is not known, so with room for a cube above or below.</summary>
-    private const float EmptyCubeReach = 7_500;
-
-    /// <summary>How long a place seen empty stays off the map.</summary>
-    private static readonly TimeSpan EmptyCubeFor = TimeSpan.FromMinutes(20);
-
-    private readonly Dictionary<(float X, float Y), DateTime> _emptyCubePlaces = new();
-    private string _emptyCubesMap = "";
-
     private void ShowLiveGather(ISet<string> keys, bool known, float px, float py)
     {
         var live = known && _current is not null ? (_directory()?.LiveEnv().Where(e => keys.Contains(e.Key)).ToList()) : null;
-        var takenCubes = _directory()?.TakenEnv(TimeSpan.FromMinutes(30)) ?? Array.Empty<(string Key, float X, float Y)>();
         var taken = _directory()?.TakenEnv(TimeSpan.FromMinutes(10)) ?? Array.Empty<(string Key, float X, float Y)>();
         var items = Aion2Gather.Items().Where(i => keys.Contains(i.Key)).ToDictionary(i => i.Key);
         var shown = new List<(Aion2GatherItem Item, float X, float Y)>();
-        // a cube in range: that one is drawn, not every place a cube can appear at
-        bool cubeHere = live?.Any(e => e.Kind == "Cube") == true;
-        // A place a cube can appear at, near the player while the game announces no cube, is empty: the game tells of a cube from some 95 to 105 m. It goes from
-        // the map and stays gone for a while; a cube that comes there later is drawn anyway, as the game announces it (5 November 2026, the owner: "random cubes
-        // appear on the map that haven't spawned ... only the actual cube spawned, not the other random ones nearby with nothing there"; his recordings since
-        // 3 November: all 14 cubes the game announced were real, the "random" ones were these places).
-        DateTime now = DateTime.UtcNow;
-        string mapKey = _current?.Key ?? "";
-        if (_emptyCubesMap != mapKey)
-        {
-            _emptyCubesMap = mapKey;
-            _emptyCubePlaces.Clear();
-        }
-
-        if (known && !cubeHere && _current is not null)
-        {
-            foreach (var point in _gatherStatic)
-            {
-                if (point.Item.Kind == "Cube" && (point.X - px) * (double)(point.X - px) + (point.Y - py) * (double)(point.Y - py) <= EmptyCubeReach * (double)EmptyCubeReach)
-                {
-                    _emptyCubePlaces[(point.X, point.Y)] = now;
-                }
-            }
-        }
-
+        // Hidden Cubes: only a cube the game announces (the live ones below), never the places a cube can appear at (5 November 2026, the owner: "just never
+        // show empty spots, only the actual spot the cube is at that has spawned"; his recordings since 3 November: all 14 cubes the game announced were real,
+        // the "random" cubes on the map were those places)
         foreach (var point in _gatherStatic)
         {
-            if (cubeHere && point.Item.Kind == "Cube")
+            if (point.Item.Kind == "Cube")
             {
                 continue;
             }
 
-            if (point.Item.Kind == "Cube" && _emptyCubePlaces.TryGetValue((point.X, point.Y), out DateTime seenEmpty) && now - seenEmpty < EmptyCubeFor)
-            {
-                continue;
-            }
-
-            var gone = point.Item.Kind == "Cube" ? takenCubes : taken;
-            if (gone.Any(t => t.Key == point.Item.Key && Math.Abs(t.X - point.X) < 600 && Math.Abs(t.Y - point.Y) < 600))
+            if (taken.Any(t => t.Key == point.Item.Key && Math.Abs(t.X - point.X) < 600 && Math.Abs(t.Y - point.Y) < 600))
             {
                 continue;
             }
