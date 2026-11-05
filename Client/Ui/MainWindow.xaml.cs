@@ -2153,6 +2153,7 @@ public partial class MainWindow : Window
         _network?.Dispose();
         _dummy?.Dispose();
         FlushStores(force: true);
+        AionDPS.Upload.MapShare.Flush(); // the map accuracy checks still waiting (a few seconds at most)
         _timetableReminder?.Dispose();
         _petFarmController?.Dispose();
         _petFarm?.Close();

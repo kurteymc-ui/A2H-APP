@@ -93,7 +93,16 @@ public static class SelfCheckMinimap
         bool screen = ScreenCheck(rng, false) & ScreenCheck(rng, true) & ScaledCheck(rng);
         bool smooth = SmoothCheck(rng);
         bool calibrated2 = CalibrationCheck(rng);
-        return real && accurate && refused && zoomFound && screen && smooth && calibrated2;
+
+        // the map accuracy upload (Upload/MapShare.cs): the map, its numbers, the day and each check's places to a metre - nothing that names anybody
+        string json = AionDPS.Upload.MapShare.Build("altgard", "2|0.01|4000|4000", new[] { new[] { 57500.0, -140500, 58300, -139900, 4.2, 0.08, 0.6 } },
+            "0123456789abcdef0123456789abcdef", new DateTime(2026, 11, 5, 9, 30, 0, DateTimeKind.Utc));
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        bool shared = root.GetProperty("kind").GetString() == "map-points" && root.GetProperty("day").GetString() == "2026-11-05" && root.GetProperty("map").GetString() == "altgard"
+            && root.GetProperty("points")[0].GetArrayLength() == 7 && root.EnumerateObject().Select(prop => prop.Name).Order().SequenceEqual(new[] { "anonymousId", "clientVersion", "day", "formatVersion", "kind", "map", "points", "stamp" });
+        Console.WriteLine($"  -> the map accuracy upload holds the map, its numbers, the day and the places, nothing that names anybody: {shared}");
+        return real && accurate && refused && zoomFound && screen && smooth && calibrated2 && shared;
     }
 
     /// <summary>

@@ -13,7 +13,7 @@ namespace AionDPS.Ui;
 public static class PrivacyConsent
 {
     /// <summary>Raise with every change of the privacy texts (website page and the client's texts): the accepted version in the settings is then too old and the player is asked again.</summary>
-    public const int Version = 2;
+    public const int Version = 3; // 3: the map accuracy data (5 November 2026)
 
     public const int NotAsked = 0, Accepted = 1, Declined = 2;
 
@@ -53,6 +53,7 @@ public static class PrivacyConsent
             s.UploadOtherPlayersProfiles = false;
             s.ShareLoginWithLegion = false;
             s.ShareCpMeasurements = false;
+            s.ShareMapData = false;
         }
 
         s.Save();

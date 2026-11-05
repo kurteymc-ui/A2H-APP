@@ -661,6 +661,7 @@
                                 <CheckBox x:Name="UploadReplayBox" Content="{local:Loc Settings.UploadReplay}"
                                           ToolTip="Sends where your character, the boss and the other monsters were during the fight, for the replay on the fight's page on aion2helper.com. Other players' positions only with the switch above. Off by default."/>
                                 <CheckBox x:Name="ShareCpBox" Content="{local:Loc Settings.ShareCp}" ToolTip="{local:Loc Settings.ShareCp.Hint}"/>
+                                <CheckBox x:Name="ShareMapBox" Content="{local:Loc Settings.ShareMap}" ToolTip="{local:Loc Settings.ShareMap.Hint}"/>
                             </StackPanel>
                         </Border>
 <Border Style="{StaticResource SettingsCard}">

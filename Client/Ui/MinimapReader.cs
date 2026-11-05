@@ -581,6 +581,12 @@ internal sealed class MinimapReader : IDisposable
             // than learnt so far. With the player's arrow in the minimap's middle the middle is right: reports that agree on the offset teach it (a steady
             // offset is no teleport); without the arrow there the middle is moved (MoveMiddleIfOff).
             bool arrowInMiddle = _lastArrow is { } arrow && Math.Abs(arrow.X) <= 6 && Math.Abs(arrow.Y) <= 6;
+            if (arrowInMiddle && raw <= 100)
+            {
+                // the middle is right and the map's tiles are off here by this much: just what the maps' refit needs (Upload/MapShare.cs)
+                Upload.MapShare.Note(map.Key, stamp, rx, ry, exact.X, exact.Y, speed, dt, _lastMatch?.Score ?? 0, ShareOn(settings));
+            }
+
             string steadyNote = arrowInMiddle && metres <= MinimapCalibration.MaxSteady / 100 ? NoteSteady(map.Key, stamp, rx, ry, exact.X, exact.Y, speed, exact.At) : "";
             Log(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss.fff} {map.Key}: a report {metres:0} m from the reading at {rx:0} {ry:0} ({(exact.X - cx) / 100:+0.0;-0.0} {(exact.Y - cy) / 100:+0.0;-0.0} m; ") +
                 (steadyNote.Length > 0 ? steadyNote : arrowInMiddle ? "the arrow in the middle: the same offset again teaches the map" : "left out: a teleport or a lost reading") + ")");
@@ -607,6 +613,7 @@ internal sealed class MinimapReader : IDisposable
 
         Accuracy = (Median(list), list.Count, map.Title);
         bool learnt = _cal.Add(map.Key, stamp, rx, ry, exact.X, exact.Y, speed, exact.At, steady: raw > 25);
+        Upload.MapShare.Note(map.Key, stamp, rx, ry, exact.X, exact.Y, speed, dt, _lastMatch?.Score ?? 0, ShareOn(settings));
         var line = _cal.Line(map.Key);
         (double px, double py) = Aion2Maps.ToNative(map, rx, ry);
         var inv = System.Globalization.CultureInfo.InvariantCulture;
@@ -617,6 +624,9 @@ internal sealed class MinimapReader : IDisposable
             _lastArrow is { } a ? string.Format(inv, ", arrow {0:+0.0;-0.0} {1:+0.0;-0.0} px", a.X, a.Y) : "",
             line.X.A, line.X.B, line.Y.A, line.Y.B, _cal.Count(map.Key), learnt ? "" : " (not learnt: too fast)"));
     }
+
+    /// <summary>The map accuracy data goes (Upload/MapShare.cs): switched on and the privacy terms accepted.</summary>
+    private static bool ShareOn(MeterSettings settings) => settings.ShareMapData && PrivacyConsent.IsAccepted(settings);
 
     // minimap-log.txt beside the settings: the checks against the game's reports (kept under 256 KB)
     private static void Log(string text)

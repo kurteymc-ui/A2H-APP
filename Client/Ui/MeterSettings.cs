@@ -126,6 +126,11 @@ public sealed class MeterSettings
     /// refit of the Combat Power model. Off until the player switches it on (Settings, Upload, or the CP calculator); needs the privacy terms accepted.</summary>
     public bool ShareCpMeasurements { get; set; }
 
+    /// <summary>Whether the minimap reader's checks against the game's own reports go to the website without a name (Upload/MapShare.cs), to refit where
+    /// each world map's picture lies: on by default while the app is in beta (the owner, 5 November 2026; the privacy terms name it and nothing goes before
+    /// they are accepted), switched off in Settings, Upload.</summary>
+    public bool ShareMapData { get; set; } = true;
+
     /// <summary>The last time the character was seen: in that legion on that server. Decides whether the settings show the switch above; written by the main window, never by the user.</summary>
     public bool LoginShareEligible { get; set; }
 
@@ -1228,6 +1233,7 @@ public sealed class MeterSettings
         to.UploadOtherPlayersProfiles = from.UploadOtherPlayersProfiles;
         to.ShareLoginWithLegion = from.ShareLoginWithLegion;
         to.ShareCpMeasurements = from.ShareCpMeasurements;
+        to.ShareMapData = from.ShareMapData;
         to.LoginShareEligible = from.LoginShareEligible;
         to.CheckForUpdates = from.CheckForUpdates;
         to.Aion2CharacterName = from.Aion2CharacterName;

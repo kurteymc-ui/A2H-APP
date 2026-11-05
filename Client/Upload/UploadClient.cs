@@ -451,6 +451,47 @@ public static class UploadClient
         }
     }
 
+    /// <summary>The map accuracy checks of one map (Upload/MapShare.cs): anonymous, no sign-in; Retry when the site could not take them now.</summary>
+    public static async Task<(UploadResult Result, bool Retry)> SendMapPointsAsync(string json)
+    {
+        if (!Ui.PrivacyConsent.CanUpload)
+        {
+            return (UploadResult.Failed("The privacy policy is not accepted: nothing is uploaded."), false);
+        }
+
+        if (IsBlocked)
+        {
+            await RecheckIfDueAsync();
+        }
+
+        if (IsBlocked)
+        {
+            return (BlockedResult(), false);
+        }
+
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{ApiBaseUrl}/api/uploads/map-points") { Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json") };
+            using HttpResponseMessage response = await Http.SendAsync(request);
+            if (response.IsSuccessStatusCode)
+            {
+                return (UploadResult.Ok, false);
+            }
+
+            int status = (int)response.StatusCode;
+            if (status == 426)
+            {
+                return (await FailureOf(response, null), false);
+            }
+
+            return (UploadResult.Failed($"{status} {response.ReasonPhrase}"), status is 429 or >= 500);
+        }
+        catch (Exception ex)
+        {
+            return (UploadResult.Failed(ex.Message), true);
+        }
+    }
+
     private static async Task<UploadResult> PostJsonAsync(string path, string json)
     {
         if (!Ui.PrivacyConsent.CanUpload)
