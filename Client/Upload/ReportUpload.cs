@@ -2,7 +2,7 @@ using AionDPS.Combat;
 
 namespace AionDPS.Upload;
 
-// The fight report as it goes to the website with a boss fight (aion2helper.com/meter/logs/...), so the page shows the same tabs as the client's
+// The fight report as it goes to the website with a boss fight (atreia.app/meter/logs/...), so the page shows the same tabs as the client's
 // report window. Compact: times in tenths of a second, rates in tenths of a percent, players by their place in Players, the charts cut to at most
 // MaxPoints values; shares, DPS and averages the page works out from the totals and the fight's length.
 

@@ -1,6 +1,6 @@
 # A2HMeter
 
-A damage and healing meter for **AION 2**, made for [aion2helper.com](https://aion2helper.com) and its Discord.
+A damage and healing meter for **AION 2**, made for [atreia.app](https://atreia.app) and its Discord.
 
 <p>
   <img src="docs/screenshots/window.png" alt="The meter" width="360">
@@ -23,7 +23,7 @@ A damage and healing meter for **AION 2**, made for [aion2helper.com](https://ai
 - Damage, healing, damage taken, shields, defense, buffs, support and a rotation timeline for every player
 - Per skill: hits, crits, back and front attacks, perfect, double and multi hits
 - A summary to copy into chat, and the History of every boss fight, Nightmare run and training-dummy parse on this PC with your bests
-- Upload a boss fight to aion2helper.com, public or private, and share it in Discord (only when you choose to)
+- Upload a boss fight to atreia.app, public or private, and share it in Discord (only when you choose to)
 
 **CP calculator**
 - Your whole Combat Power by source: gear line by line, Stigmas, skills, Daevanion, Genus Insight, pets, titles, wings, Arcana

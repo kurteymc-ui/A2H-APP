@@ -1,4 +1,4 @@
-// Builds Client/assets/aion2/pets/spawns-extra.json: the spawn points of aion2helper.com's Pet Soul Map Atlas (content/public/guides/petmap/data.js)
+// Builds Client/assets/aion2/pets/spawns-extra.json: the spawn points of atreia.app's Pet Soul Map Atlas (content/public/guides/petmap/data.js)
 // that the meter's own spawn table (spawns.json) does not have. The atlas has every point of the meter's table
 // (all but 48 of 5,269 on Verteron, 74 of 5,069 on Altgard, none of 990 in Lower Reshanta, within 15 m) and about 15 % more - monsters like the
 // Ellun River Kailin or the Search Party Tayga, whose spawns are not in it - so with these the map shows a dot at every spot the route leads to.
@@ -44,4 +44,4 @@ for (const [site, m] of Object.entries(PET3D.maps)) {
   result[key] = extra;
   console.log(key, 'points added', added);
 }
-fs.writeFileSync(out, JSON.stringify({about: 'Spawn points of the Pet Soul Map Atlas (aion2helper.com) that the meter's spawn table lacks; world units, flat x,y pairs per pet id.', maps: result}));
+fs.writeFileSync(out, JSON.stringify({about: 'Spawn points of the Pet Soul Map Atlas (atreia.app) that the meter's spawn table lacks; world units, flat x,y pairs per pet id.', maps: result}));

@@ -97,7 +97,7 @@
                 <TextBlock Style="{StaticResource Heading}" Text="{local:Loc Wizard.PolicyHeading}"/>
                 <ContentControl x:Name="PolicyHost" Focusable="False"/>
                 <TextBlock Margin="0,4,0,0">
-                    <Hyperlink NavigateUri="https://aion2helper.com/terms" RequestNavigate="OnPolicyLinkNavigate"><Run Text="{local:Loc Privacy.Link}"/></Hyperlink>
+                    <Hyperlink NavigateUri="https://atreia.app/terms" RequestNavigate="OnPolicyLinkNavigate"><Run Text="{local:Loc Privacy.Link}"/></Hyperlink>
                 </TextBlock>
                 <RadioButton x:Name="PolicyAccept" GroupName="Policy" Margin="0,14,0,0" Foreground="{DynamicResource Brush.Text}" Checked="OnPolicyChanged">
                     <TextBlock TextWrapping="Wrap" Text="{local:Loc Wizard.PolicyAccept}"/>

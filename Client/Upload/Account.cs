@@ -10,7 +10,7 @@ namespace AionDPS.Upload;
 /// <summary>
 /// The meter's sign-in to AION 2 Helper (the player's Discord on the site). Every fight on the site has an owner who decides who may see it,
 /// so the meter uploads only when signed in. Signing in: the meter asks the site for a short code (link/start), opens
-/// aion2helper.com/meter/link?code=... in the browser, where the player, signed in with Discord, approves it; the meter asks every few
+/// atreia.app/meter/link?code=... in the browser, where the player, signed in with Discord, approves it; the meter asks every few
 /// seconds (link/poll) and gets a token of its own once approved. The token is kept in the data folder, encrypted for this Windows user
 /// (DPAPI), and sent as "Authorization: Bearer" with every upload. The site's Discord page lists every signed-in PC and can sign one out.
 /// </summary>

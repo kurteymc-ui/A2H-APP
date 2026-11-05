@@ -17,7 +17,7 @@ public sealed record LegionUpload(int V, string Legion, LegionMemberUpload Chara
 public sealed record LegionShareResult(string Legion, int Members, string Kind, int Known = 0, int Lookup = 0);
 
 /// <summary>
-/// The legion's member list for the Discord servers that follow the legion (aion2helper.com, /guild legion): at a login the game sends the own legion's
+/// The legion's member list for the Discord servers that follow the legion (atreia.app, /guild legion): at a login the game sends the own legion's
 /// list (frame 0x058a: every member's name, server, class, level, Item Level and Combat Power, <see cref="Aion2LegionList"/>). While the meter is signed in
 /// (<see cref="Account"/>), <see cref="Ui.MeterSettings.ShareLegionList"/> is on and the character played was verified as the player's
 /// (<see cref="CharacterVerify"/>), the list goes to the site (POST /meter/api/legion), which puts every member on those servers' rosters with the game's

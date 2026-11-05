@@ -1469,8 +1469,8 @@ internal static class Program
                 window.OverlayFindHint.Visibility = System.Windows.Visibility.Collapsed;
                 var found = new[]
                 {
-                    new Upload.FoundPlayer("Arhimodon", "Templar", 45, "Vaizel", 2302, "eu", 182_730, 2968, 21_480, "Thamon", "https://aion2helper.com/armory/?region=eu&server=Vaizel&name=Arhimodon", 92, 3, 31),
-                    new Upload.FoundPlayer("Arhimodon", "Cleric", 32, "Siel", 1101, "nae", null, null, null, null, "https://aion2helper.com/armory/?region=nae&server=Siel&name=Arhimodon"),
+                    new Upload.FoundPlayer("Arhimodon", "Templar", 45, "Vaizel", 2302, "eu", 182_730, 2968, 21_480, "Thamon", "https://atreia.app/armory/?region=eu&server=Vaizel&name=Arhimodon", 92, 3, 31),
+                    new Upload.FoundPlayer("Arhimodon", "Cleric", 32, "Siel", 1101, "nae", null, null, null, null, "https://atreia.app/armory/?region=nae&server=Siel&name=Arhimodon"),
                 };
                 window.ShowFindResults(found);
                 window.ShowFindCard(found[0]);

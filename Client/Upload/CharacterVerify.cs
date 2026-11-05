@@ -21,7 +21,7 @@ public sealed record VerifyUpload(int V, string? Region, VerifyCharacterUpload C
 public sealed record VerifyResult(string Name, string Server, string Kind);
 
 /// <summary>
-/// Verifies the character the player plays as theirs on aion2helper.com, with no title to show: while the meter is signed in (<see cref="Account"/>),
+/// Verifies the character the player plays as theirs on atreia.app, with no title to show: while the meter is signed in (<see cref="Account"/>),
 /// once the game has sent its own record of the character logged in with (not one restored from an earlier session) and the login's character list of
 /// that account was seen (a meter started in the middle of a session sees it at the next login), the meter sends both (POST /meter/api/verify). The site
 /// checks them against its records and NCSOFT's character search; the character then counts as proven theirs on the site and in the Discord servers

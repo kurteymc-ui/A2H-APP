@@ -77,7 +77,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The faces of aion2helper.com (see Fonts/OFL.txt), compiled in: A2H Sans for all text, Cinzel for titles (ThemeManager.SetFonts). -->
+    <!-- The faces of atreia.app (see Fonts/OFL.txt), compiled in: A2H Sans for all text, Cinzel for titles (ThemeManager.SetFonts). -->
     <Resource Include="Fonts\*.ttf" />
     <None Include="Fonts\OFL.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

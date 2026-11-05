@@ -4,7 +4,7 @@ using AionDPS.Aion2;
 namespace AionDPS.Combat;
 
 /// <summary>
-/// The pet route (Aion2/PetRoute.cs) against the website's own: aion2helper.com's Pet Soul Map Atlas planned these routes with its buildRoute
+/// The pet route (Aion2/PetRoute.cs) against the website's own: atreia.app's Pet Soul Map Atlas planned these routes with its buildRoute
 /// (run as it is, on the data the meter's route.json was made from); the meter must plan the same stops, in the same order, with the same pets
 /// and teleports, and start where the site starts.
 /// </summary>

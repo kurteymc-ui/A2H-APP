@@ -47,7 +47,7 @@ public sealed class FightReportWindow : Window
     private readonly Func<Task<(string? Url, string Message)>>? _resend;
     private readonly string _uploadLabel;
 
-    private static string? SiteUrl(string? url) => url is { Length: > 0 } && url.StartsWith(Brand.Site + "/", StringComparison.Ordinal) ? url : null;
+    private static string? SiteUrl(string? url) => Brand.IsSiteUrl(url) ? url : null;
 
     /// <param name="shareUrl">The fight's page on the website when it was uploaded: "Open on the website" and "Copy link".</param>
     /// <param name="upload">Uploads the fight (from the History) when it is not online yet: an "Upload" button, which gives the two above once it went up.</param>
@@ -192,7 +192,7 @@ public sealed class FightReportWindow : Window
         {
             // not online yet: uploads it from here; once up, the page's two buttons take the upload button's place
             var send = new Button { Content = _uploadLabel, Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 0), Cursor = Cursors.Hand,
-                ToolTip = "Puts this fight on aion2helper.com, with a page you can share" };
+                ToolTip = "Puts this fight on atreia.app, with a page you can share" };
             send.FontWeight = FontWeights.SemiBold;
             send.SetResourceReference(Control.ForegroundProperty, "Brush.Accent");
             send.Click += async (_, _) =>

@@ -14,7 +14,7 @@ public sealed record CpOfficialPiece(int ItemId, int Level, IReadOnlyList<(strin
 public sealed record CpOfficialRead(IReadOnlyList<CpOfficialPiece> Pieces, int? Cp, int? ItemLevel, DateTime? At);
 
 /// <summary>
-/// The character's official page through the website's character lookup for the app (aion2helper.com/meter/api/character-page, the lookup's gear only):
+/// The character's official page through the website's character lookup for the app (atreia.app/meter/api/character-page, the lookup's gear only):
 /// the worn pieces' manastones (the game sends a stone's stat and colour but not its value, the page names the value, "Attack +8"), the Combat Power
 /// and the Item Level the page shows. The site's own lookup address (/api/lookup) is for its pages and refuses a program, so the calculator showed every
 /// stone as a range until 4 November 2026 (v1.20.5). Read

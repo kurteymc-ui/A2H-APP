@@ -22,7 +22,7 @@ public sealed record PetRouteStop(int Step, double X, double Z, double Radius, s
 public sealed record PetRoutePlan(string MapKey, double OriginX, double OriginZ, string OriginLabel, bool FromPlayer, IReadOnlyList<PetRouteStop> Stops);
 
 /// <summary>
-/// The pet farming route of aion2helper.com's Pet Soul Map Atlas (guides/pets-route-map.html, buildRoute), the same steps in C#: each pet is on
+/// The pet farming route of atreia.app's Pet Soul Map Atlas (guides/pets-route-map.html, buildRoute), the same steps in C#: each pet is on
 /// the route once, at one of its dense spawn spots (at least 60 % of the spawns of its densest one); stops go where the most pets have a dense spot
 /// within 260 m; the mainland's stops are ordered for the shortest way with teleports counted like 200 m of walking (every first stop tried,
 /// then improved by turning parts round), the windstream islands come after the mainland. The data (assets/aion2/pets/route.json) is made from the

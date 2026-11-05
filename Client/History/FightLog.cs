@@ -185,7 +185,7 @@ public static class FightLog
     private static bool Near(DateTime a, DateTime b) => Math.Abs((a - b).TotalSeconds) <= 30;
 
     /// <summary>
-    /// The website's page of an uploaded boss fight (aion2helper.com/meter/...), kept with its History entry so the report can open it or copy the link.
+    /// The website's page of an uploaded boss fight (atreia.app/meter/...), kept with its History entry so the report can open it or copy the link.
     /// The entry is found by the boss and its start; one not saved yet (the stay is still going on) gets it when it is.
     /// </summary>
     public static void RememberUrl(int? bossNpcId, DateTime started, string url)

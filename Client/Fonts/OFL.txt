@@ -1,4 +1,4 @@
-Fonts bundled with A2HMeter (the same faces as aion2helper.com):
+Fonts bundled with A2HMeter (the same faces as atreia.app):
 
 Cinzel: Copyright 2020 The Cinzel Project Authors (https://github.com/NDISCOVER/Cinzel). Cinzel-Regular.ttf is the font as published.
 A2H Sans: A2HSans-Regular/SemiBold/Bold.ttf are fixed-weight instances (400, 600, 700) of Source Sans 3 (© 2023 Adobe

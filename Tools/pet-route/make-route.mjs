@@ -1,4 +1,4 @@
-// Builds Client/assets/aion2/pets/route.json from aion2helper.com's Pet Soul Map Atlas (content/public/guides/petmap/data.js and the
+// Builds Client/assets/aion2/pets/route.json from atreia.app's Pet Soul Map Atlas (content/public/guides/petmap/data.js and the
 // pets list of guides/pets-route-map.html): the dense spawn spots of every pet per map (the route's stops are planned from them), the
 // teleports, the start camps and the windstream islands, so the meter's route (Client/Aion2/PetRoute.cs) is the website's route.
 // Usage: node make-route.mjs <path to data.js> <path to pets-route-map.html> <path to the meter's pets.json> <out route.json>

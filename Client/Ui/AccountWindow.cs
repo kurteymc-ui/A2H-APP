@@ -8,7 +8,7 @@ using AionDPS.Upload;
 namespace AionDPS.Ui;
 
 /// <summary>
-/// App menu → AION 2 Helper: signs the meter in to the player's Discord on aion2helper.com (see <see cref="Account"/>), shows who it is
+/// App menu → AION 2 Helper: signs the meter in to the player's Discord on atreia.app (see <see cref="Account"/>), shows who it is
 /// signed in as, and signs it out. While a sign-in waits, the code is shown here and on the page the browser opened, and the window asks
 /// the site every few seconds whether it was approved; closing the window stops asking. Signed in, it also says how the meter's check of the character
 /// played went (<see cref="CharacterVerify"/>: "Quake (Nemon) verified"), or how that check works before the first one.
@@ -133,7 +133,7 @@ public sealed class AccountWindow : Window
         }
 
         _status.Text = "Not signed in.";
-        _hint.Text = message ?? "Sign in with your Discord to upload fights to aion2helper.com. Every fight you upload is yours: you decide who can see it, and you can delete it.";
+        _hint.Text = message ?? "Sign in with your Discord to upload fights to atreia.app. Every fight you upload is yours: you decide who can see it, and you can delete it.";
         _code.Visibility = Visibility.Collapsed;
         _signIn.Visibility = Visibility.Visible;
         _signIn.IsEnabled = true;
@@ -241,7 +241,7 @@ public sealed class AccountWindow : Window
 
     private static void Open(string? url)
     {
-        if (url is null || !url.StartsWith(Brand.Site + "/", StringComparison.Ordinal))
+        if (!Brand.IsSiteUrl(url))
         {
             return;
         }
@@ -252,7 +252,7 @@ public sealed class AccountWindow : Window
         }
         catch (Exception)
         {
-            // no browser set up: the code is shown here, and the page is aion2helper.com/meter/link
+            // no browser set up: the code is shown here, and the page is atreia.app/meter/link
         }
     }
 }

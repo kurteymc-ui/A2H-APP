@@ -113,7 +113,7 @@ public static class SelfCheckCp
         string address = CpCharacterPage.PageUrl("eu", 2302, "YIELD", true);
         bool pageRead = read is { Cp: 175556, ItemLevel: 2832 } && read.At == new DateTime(2026, 11, 4, 10, 0, 0, DateTimeKind.Utc) && read.Pieces is [{ ItemId: 110830105, Level: 20 } onPage]
             && onPage.Stones.SequenceEqual(new[] { ("Critical", 10), ("AmplifyWeaponDamage", 100), ("MPMax", 30) })
-            && address == "https://aion2helper.com/meter/api/character-page?region=eu&server=2302&name=YIELD&fresh=1"
+            && address == "https://atreia.app/meter/api/character-page?region=eu&server=2302&name=YIELD&fresh=1"
             && CpCharacterPage.PageUrl("eu", 2302, "YIELD", false).EndsWith("&name=YIELD", StringComparison.Ordinal);
         Console.WriteLine($"  -> the page from the app's own lookup ({address}): {read?.Pieces.FirstOrDefault()?.Stones.Count} stones by the game's ids: {pageRead}");
 

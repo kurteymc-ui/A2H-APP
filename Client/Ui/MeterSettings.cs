@@ -399,12 +399,12 @@ public sealed class MeterSettings
     /// <see cref="DummyTestSeconds"/> by itself; it is saved with the other runs when the time is up.</summary>
     public bool DummyAutoStart { get; set; } = true;
 
-    /// <summary>While signed in (AION 2 Helper account), the characters' Odyle Energy and daily and weekly counters go to aion2helper.com/meter/roster too, for
+    /// <summary>While signed in (AION 2 Helper account), the characters' Odyle Energy and daily and weekly counters go to atreia.app/meter/roster too, for
     /// the player's own Discord account only (to check them on the phone). On until switched off (the checklist's roster page).</summary>
     public bool SyncRoster { get; set; } = true;
 
     /// <summary>While signed in, the own legion's member list from the login (names, classes, levels, Item Level and Combat Power, as the game's legion
-    /// window shows them) goes to aion2helper.com, so Discord servers that follow the legion have every member on their roster (Upload/LegionShare.cs).
+    /// window shows them) goes to atreia.app, so Discord servers that follow the legion have every member on their roster (Upload/LegionShare.cs).
     /// On until switched off (the account window).</summary>
     public bool ShareLegionList { get; set; } = true;
 

@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace AionDPS.Upload;
 
 /// <summary>
-/// Sends an encounter to AION 2 Helper (aion2helper.com/meter), signed in as the player (<see cref="Account"/>): without a sign-in
+/// Sends an encounter to AION 2 Helper (atreia.app/meter), signed in as the player (<see cref="Account"/>): without a sign-in
 /// nothing is sent. One static HttpClient for the
 /// process's lifetime, per the usual .NET guidance (a fresh client per call exhausts sockets under
 /// load) - not a concern here at this call volume, but free to get right.
@@ -209,7 +209,7 @@ public static class UploadClient
         }
     }
 
-    /// <summary>The page of the fight uploaded last (aion2helper.com/meter/logs/...), for "open it".</summary>
+    /// <summary>The page of the fight uploaded last (atreia.app/meter/logs/...), for "open it".</summary>
     public static string? LastFightUrl { get; private set; }
 
     /// <summary>Asks the community server right at start-up whether this version may upload, so a client that is too old learns it at once
@@ -284,7 +284,7 @@ public static class UploadClient
             using JsonDocument doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
             JsonElement root = doc.RootElement;
             int? id = root.TryGetProperty("encounterId", out JsonElement i) && i.ValueKind == JsonValueKind.Number && i.TryGetInt32(out int n) ? n : null;
-            string? url = root.TryGetProperty("url", out JsonElement u) && u.ValueKind == JsonValueKind.String && (u.GetString() ?? "").StartsWith(Brand.Site + "/", StringComparison.Ordinal) ? u.GetString() : null;
+            string? url = root.TryGetProperty("url", out JsonElement u) && u.ValueKind == JsonValueKind.String && Brand.IsSiteUrl(u.GetString()) ? u.GetString() : null;
             return (id, url);
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)

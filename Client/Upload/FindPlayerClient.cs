@@ -110,7 +110,7 @@ public static class FindPlayerClient
             bool has = best.ValueKind == JsonValueKind.Object;
             list.Add(new FoundPlayer(name, Str(x, "className"), Int(x, "level"), Str(x, "server") ?? "", serverId, Str(x, "region") ?? "",
                 Int(x, "cp"), Int(x, "il"), has ? Dbl(best, "dps") : null, has ? Str(best, "boss") : null,
-                page is not null && page.StartsWith(Brand.Site + "/", StringComparison.Ordinal) ? page : null,
+                Brand.IsSiteUrl(page) ? page : null,
                 has ? Int(best, "pct") : null, has ? Int(best, "rank") : null, has ? Int(best, "of") : null));
         }
 

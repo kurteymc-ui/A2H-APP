@@ -2864,16 +2864,16 @@
     "ko": "CP 계산기가 측정한 전투력 변화를 이름 없이 공유 (모두의 계산기가 더 정확해집니다)"
   },
   "Settings.ShareCp.Hint": {
-    "en": "When only your gear changed between two logins, the meter knows exactly what the change did to your Combat Power. With this on, each such change goes to aion2helper.com for the weekly refit of the Combat Power model: your class, region, the day, your Item Level (to 10) and Combat Power (to 1,000), how they changed and how much each stat moved. No name, server, legion, account or IP address. Off by default.",
-    "de": "Wenn sich zwischen zwei Anmeldungen nur deine Ausrüstung geändert hat, weiß der Meter genau, was die Änderung an deiner Kampfkraft bewirkt hat. Damit an geht jede solche Änderung an aion2helper.com für die wöchentliche Neuberechnung des Kampfkraft-Modells: deine Klasse, Region, der Tag, dein Gegenstandslevel (auf 10) und deine Kampfkraft (auf 1.000), wie sie sich geändert haben und wie stark sich jeder Wert bewegt hat. Kein Name, Server, Legion, Konto und keine IP-Adresse. Standardmäßig aus.",
-    "fr": "Quand seul ton équipement a changé entre deux connexions, le compteur sait exactement ce que le changement a fait à ta puissance de combat. Activé, chaque changement de ce type part vers aion2helper.com pour le recalcul hebdomadaire du modèle : ta classe, ta région, le jour, ton niveau d'objet (à 10 près) et ta puissance de combat (à 1 000 près), leur évolution et la variation de chaque stat. Aucun nom, serveur, légion, compte ni adresse IP. Désactivé par défaut.",
-    "es": "Cuando entre dos inicios de sesión solo cambió tu equipo, el medidor sabe exactamente qué hizo el cambio a tu poder de combate. Activado, cada cambio así va a aion2helper.com para el reajuste semanal del modelo: tu clase, región, el día, tu nivel de objeto (a 10) y poder de combate (a 1.000), cómo cambiaron y cuánto se movió cada estadística. Sin nombre, servidor, legión, cuenta ni dirección IP. Desactivado por defecto.",
-    "ru": "Если между двумя входами в игру изменилось только снаряжение, метр точно знает, как это изменило боевую мощь. Когда включено, каждое такое изменение отправляется на aion2helper.com для еженедельного пересчёта модели: класс, регион, день, уровень предметов (до 10) и боевая мощь (до 1000), их изменение и изменение каждой характеристики. Без имени, сервера, легиона, аккаунта и IP-адреса. По умолчанию выключено.",
-    "zh": "两次登录之间只有装备变化时，计量器能准确知道这次变化对战斗力的影响。开启后，每次这样的变化都会发送到 aion2helper.com，用于每周重新拟合战斗力模型：职业、地区、日期、装备等级（取整到10）和战斗力（取整到1,000）、它们的变化以及每项属性的变化量。不含名字、服务器、军团、账号或IP地址。默认关闭。",
-    "zh-TW": "兩次登入之間只有裝備變化時，計量器能準確知道這次變化對戰鬥力的影響。開啟後，每次這樣的變化都會傳送到 aion2helper.com，用於每週重新擬合戰鬥力模型：職業、地區、日期、裝備等級（取整到10）和戰鬥力（取整到1,000）、它們的變化以及每項屬性的變化量。不含名字、伺服器、軍團、帳號或IP位址。預設關閉。",
-    "pt": "Quando entre dois logins só o seu equipamento mudou, o medidor sabe exatamente o que a mudança fez ao seu poder de combate. Ligado, cada mudança assim vai para aion2helper.com para o reajuste semanal do modelo: sua classe, região, o dia, seu nível de item (arredondado a 10) e poder de combate (a 1.000), como mudaram e quanto cada atributo se moveu. Sem nome, servidor, legião, conta ou endereço IP. Desligado por padrão.",
-    "ja": "2回のログインの間に装備だけが変わったとき、メーターはその変化が戦闘力にどう影響したかを正確に把握できます。オンにすると、そのような変化ごとに aion2helper.com へ送られ、戦闘力モデルの週次再計算に使われます：クラス、地域、日付、アイテムレベル（10単位）と戦闘力（1,000単位）、その変化量、各ステータスの変化量。名前、サーバー、レギオン、アカウント、IPアドレスは含みません。初期設定はオフです。",
-    "ko": "두 번의 접속 사이에 장비만 바뀌었다면, 미터는 그 변화가 전투력에 어떤 영향을 줬는지 정확히 압니다. 켜면 그런 변화마다 aion2helper.com 으로 보내져 전투력 모델의 주간 재계산에 쓰입니다: 클래스, 지역, 날짜, 아이템 레벨(10 단위)과 전투력(1,000 단위), 그 변화량, 각 능력치의 변화량. 이름, 서버, 레기온, 계정, IP 주소는 보내지 않습니다. 기본값은 꺼짐입니다."
+    "en": "When only your gear changed between two logins, the meter knows exactly what the change did to your Combat Power. With this on, each such change goes to atreia.app for the weekly refit of the Combat Power model: your class, region, the day, your Item Level (to 10) and Combat Power (to 1,000), how they changed and how much each stat moved. No name, server, legion, account or IP address. Off by default.",
+    "de": "Wenn sich zwischen zwei Anmeldungen nur deine Ausrüstung geändert hat, weiß der Meter genau, was die Änderung an deiner Kampfkraft bewirkt hat. Damit an geht jede solche Änderung an atreia.app für die wöchentliche Neuberechnung des Kampfkraft-Modells: deine Klasse, Region, der Tag, dein Gegenstandslevel (auf 10) und deine Kampfkraft (auf 1.000), wie sie sich geändert haben und wie stark sich jeder Wert bewegt hat. Kein Name, Server, Legion, Konto und keine IP-Adresse. Standardmäßig aus.",
+    "fr": "Quand seul ton équipement a changé entre deux connexions, le compteur sait exactement ce que le changement a fait à ta puissance de combat. Activé, chaque changement de ce type part vers atreia.app pour le recalcul hebdomadaire du modèle : ta classe, ta région, le jour, ton niveau d'objet (à 10 près) et ta puissance de combat (à 1 000 près), leur évolution et la variation de chaque stat. Aucun nom, serveur, légion, compte ni adresse IP. Désactivé par défaut.",
+    "es": "Cuando entre dos inicios de sesión solo cambió tu equipo, el medidor sabe exactamente qué hizo el cambio a tu poder de combate. Activado, cada cambio así va a atreia.app para el reajuste semanal del modelo: tu clase, región, el día, tu nivel de objeto (a 10) y poder de combate (a 1.000), cómo cambiaron y cuánto se movió cada estadística. Sin nombre, servidor, legión, cuenta ni dirección IP. Desactivado por defecto.",
+    "ru": "Если между двумя входами в игру изменилось только снаряжение, метр точно знает, как это изменило боевую мощь. Когда включено, каждое такое изменение отправляется на atreia.app для еженедельного пересчёта модели: класс, регион, день, уровень предметов (до 10) и боевая мощь (до 1000), их изменение и изменение каждой характеристики. Без имени, сервера, легиона, аккаунта и IP-адреса. По умолчанию выключено.",
+    "zh": "两次登录之间只有装备变化时，计量器能准确知道这次变化对战斗力的影响。开启后，每次这样的变化都会发送到 atreia.app，用于每周重新拟合战斗力模型：职业、地区、日期、装备等级（取整到10）和战斗力（取整到1,000）、它们的变化以及每项属性的变化量。不含名字、服务器、军团、账号或IP地址。默认关闭。",
+    "zh-TW": "兩次登入之間只有裝備變化時，計量器能準確知道這次變化對戰鬥力的影響。開啟後，每次這樣的變化都會傳送到 atreia.app，用於每週重新擬合戰鬥力模型：職業、地區、日期、裝備等級（取整到10）和戰鬥力（取整到1,000）、它們的變化以及每項屬性的變化量。不含名字、伺服器、軍團、帳號或IP位址。預設關閉。",
+    "pt": "Quando entre dois logins só o seu equipamento mudou, o medidor sabe exatamente o que a mudança fez ao seu poder de combate. Ligado, cada mudança assim vai para atreia.app para o reajuste semanal do modelo: sua classe, região, o dia, seu nível de item (arredondado a 10) e poder de combate (a 1.000), como mudaram e quanto cada atributo se moveu. Sem nome, servidor, legião, conta ou endereço IP. Desligado por padrão.",
+    "ja": "2回のログインの間に装備だけが変わったとき、メーターはその変化が戦闘力にどう影響したかを正確に把握できます。オンにすると、そのような変化ごとに atreia.app へ送られ、戦闘力モデルの週次再計算に使われます：クラス、地域、日付、アイテムレベル（10単位）と戦闘力（1,000単位）、その変化量、各ステータスの変化量。名前、サーバー、レギオン、アカウント、IPアドレスは含みません。初期設定はオフです。",
+    "ko": "두 번의 접속 사이에 장비만 바뀌었다면, 미터는 그 변화가 전투력에 어떤 영향을 줬는지 정확히 압니다. 켜면 그런 변화마다 atreia.app 으로 보내져 전투력 모델의 주간 재계산에 쓰입니다: 클래스, 지역, 날짜, 아이템 레벨(10 단위)과 전투력(1,000 단위), 그 변화량, 각 능력치의 변화량. 이름, 서버, 레기온, 계정, IP 주소는 보내지 않습니다. 기본값은 꺼짐입니다."
   },
   "Settings.UploadOtherProfiles": {
     "en": "Also upload data of other players I see (name, class, level, gear, legion, position in fights) and the members of my own legion",
@@ -2960,16 +2960,16 @@
     "ko": "보스 처치 몇 초 후 보스 전투를 자동으로 업로드 (대미지, 치유 및 참가한 플레이어의 이름)"
   },
   "Wizard.OptProfile": {
-    "en": "Upload my own character profile automatically after login (name, class, level, gear, skills, legion, server), so I can be found on aion2helper.com",
-    "de": "Mein eigenes Charakterprofil nach dem Login automatisch hochladen (Name, Klasse, Level, Ausrüstung, Skills, Legion, Server), damit man mich auf aion2helper.com findet",
-    "fr": "Envoyer automatiquement mon propre profil après la connexion (nom, classe, niveau, équipement, compétences, légion, serveur) pour qu'on me trouve sur aion2helper.com",
-    "es": "Subir automáticamente mi propio perfil tras iniciar sesión (nombre, clase, nivel, equipo, habilidades, legión, servidor) para que me encuentren en aion2helper.com",
-    "ru": "Автоматически загружать профиль моего персонажа после входа (имя, класс, уровень, снаряжение, умения, легион, сервер), чтобы меня можно было найти на aion2helper.com",
-    "zh": "登录后自动上传我自己的角色资料（名称、职业、等级、装备、技能、军团、服务器），以便在 aion2helper.com 被找到",
-    "zh-TW": "登入後自動上傳我自己的角色檔案（名稱、職業、等級、裝備、技能、軍團、伺服器），讓我能在 aion2helper.com 上被找到",
-    "pt": "Enviar o perfil do meu próprio personagem automaticamente após o login (nome, classe, nível, equipamento, habilidades, legião, servidor), para que eu possa ser encontrado em aion2helper.com",
-    "ja": "ログイン後に自分のキャラクタープロフィール（名前、クラス、レベル、装備、スキル、レギオン、サーバー）を自動的にアップロードし、aion2helper.com で見つけてもらえるようにする",
-    "ko": "로그인 후 내 캐릭터 프로필을 자동으로 업로드 (이름, 직업, 레벨, 장비, 스킬, 레기온, 서버) - aion2helper.com에서 나를 찾을 수 있도록"
+    "en": "Upload my own character profile automatically after login (name, class, level, gear, skills, legion, server), so I can be found on atreia.app",
+    "de": "Mein eigenes Charakterprofil nach dem Login automatisch hochladen (Name, Klasse, Level, Ausrüstung, Skills, Legion, Server), damit man mich auf atreia.app findet",
+    "fr": "Envoyer automatiquement mon propre profil après la connexion (nom, classe, niveau, équipement, compétences, légion, serveur) pour qu'on me trouve sur atreia.app",
+    "es": "Subir automáticamente mi propio perfil tras iniciar sesión (nombre, clase, nivel, equipo, habilidades, legión, servidor) para que me encuentren en atreia.app",
+    "ru": "Автоматически загружать профиль моего персонажа после входа (имя, класс, уровень, снаряжение, умения, легион, сервер), чтобы меня можно было найти на atreia.app",
+    "zh": "登录后自动上传我自己的角色资料（名称、职业、等级、装备、技能、军团、服务器），以便在 atreia.app 被找到",
+    "zh-TW": "登入後自動上傳我自己的角色檔案（名稱、職業、等級、裝備、技能、軍團、伺服器），讓我能在 atreia.app 上被找到",
+    "pt": "Enviar o perfil do meu próprio personagem automaticamente após o login (nome, classe, nível, equipamento, habilidades, legião, servidor), para que eu possa ser encontrado em atreia.app",
+    "ja": "ログイン後に自分のキャラクタープロフィール（名前、クラス、レベル、装備、スキル、レギオン、サーバー）を自動的にアップロードし、atreia.app で見つけてもらえるようにする",
+    "ko": "로그인 후 내 캐릭터 프로필을 자동으로 업로드 (이름, 직업, 레벨, 장비, 스킬, 레기온, 서버) - atreia.app에서 나를 찾을 수 있도록"
   },
   "Wizard.OptOthers": {
     "en": "Also upload data of other players I see (name, class, level, gear, legion, position in fights) and the members of my own legion",
@@ -4254,16 +4254,16 @@
     "ko": "오래된 클라이언트 버전({0})을 사용 중입니다. {1}(으)로 업데이트해 주세요. 업데이트할 때까지 업로드할 수 없습니다.\n\n업데이트를 내려받는 중입니다. 미터를 다시 시작하여 완료하세요."
   },
   "Upload.ClientOutdatedBodyManual": {
-    "en": "You have an old client version ({0}). Please update to {1} (it updates by itself after a restart, or download it from aion2helper.com). No uploads are possible until you do.",
-    "de": "Du hast eine alte Client-Version ({0}). Bitte aktualisiere auf {1} (Menü: Nach Updates suchen, oder lade sie von aion2helper.com). Solange sind keine Uploads möglich.",
-    "fr": "Vous utilisez une ancienne version du client ({0}). Veuillez passer à la version {1} (menu : Rechercher des mises à jour, ou téléchargez-la sur aion2helper.com). Aucun envoi n'est possible tant que ce n'est pas fait.",
-    "es": "Tienes una versión antigua del cliente ({0}). Actualiza a la {1} (menú: Buscar actualizaciones, o descárgala en aion2helper.com). Hasta entonces no se pueden enviar datos.",
-    "ru": "У вас устаревшая версия клиента ({0}). Обновитесь до {1} (меню: Проверить обновления, либо скачайте её на aion2helper.com). Пока этого не сделано, отправка данных невозможна.",
-    "zh": "您使用的是旧版客户端（{0}）。请更新到 {1}（菜单：检查更新，或从 aion2helper.com 下载）。更新之前无法上传。",
-    "zh-TW": "您使用的是舊版用戶端（{0}）。請更新到 {1}（選單：檢查更新，或從 aion2helper.com 下載）。更新之前無法上傳。",
-    "pt": "Você está com uma versão antiga do cliente ({0}). Atualize para a {1} (menu: Procurar atualizações, ou baixe em aion2helper.com). Enquanto isso, não é possível enviar dados.",
-    "ja": "古いクライアントバージョン（{0}）をお使いです。{1} に更新してください（メニュー：更新を確認、または aion2helper.com からダウンロード）。更新するまでアップロードはできません。",
-    "ko": "오래된 클라이언트 버전({0})을 사용 중입니다. {1}(으)로 업데이트해 주세요(메뉴: 업데이트 확인, 또는 aion2helper.com에서 다운로드). 업데이트할 때까지 업로드할 수 없습니다."
+    "en": "You have an old client version ({0}). Please update to {1} (it updates by itself after a restart, or download it from atreia.app). No uploads are possible until you do.",
+    "de": "Du hast eine alte Client-Version ({0}). Bitte aktualisiere auf {1} (Menü: Nach Updates suchen, oder lade sie von atreia.app). Solange sind keine Uploads möglich.",
+    "fr": "Vous utilisez une ancienne version du client ({0}). Veuillez passer à la version {1} (menu : Rechercher des mises à jour, ou téléchargez-la sur atreia.app). Aucun envoi n'est possible tant que ce n'est pas fait.",
+    "es": "Tienes una versión antigua del cliente ({0}). Actualiza a la {1} (menú: Buscar actualizaciones, o descárgala en atreia.app). Hasta entonces no se pueden enviar datos.",
+    "ru": "У вас устаревшая версия клиента ({0}). Обновитесь до {1} (меню: Проверить обновления, либо скачайте её на atreia.app). Пока этого не сделано, отправка данных невозможна.",
+    "zh": "您使用的是旧版客户端（{0}）。请更新到 {1}（菜单：检查更新，或从 atreia.app 下载）。更新之前无法上传。",
+    "zh-TW": "您使用的是舊版用戶端（{0}）。請更新到 {1}（選單：檢查更新，或從 atreia.app 下載）。更新之前無法上傳。",
+    "pt": "Você está com uma versão antiga do cliente ({0}). Atualize para a {1} (menu: Procurar atualizações, ou baixe em atreia.app). Enquanto isso, não é possível enviar dados.",
+    "ja": "古いクライアントバージョン（{0}）をお使いです。{1} に更新してください（メニュー：更新を確認、または atreia.app からダウンロード）。更新するまでアップロードはできません。",
+    "ko": "오래된 클라이언트 버전({0})을 사용 중입니다. {1}(으)로 업데이트해 주세요(메뉴: 업데이트 확인, 또는 atreia.app에서 다운로드). 업데이트할 때까지 업로드할 수 없습니다."
   },
   "Overlay.UpdateDownloading": {
     "en": "Update {0} is downloading",
@@ -4614,16 +4614,16 @@
     "ko": "상점: 펫"
   },
   "Main.Announcements.Tooltip": {
-    "en": "AION 2 announcements (opens aion2helper.com)",
-    "de": "AION 2 Ankündigungen (öffnet aion2helper.com)",
-    "fr": "Annonces AION 2 (ouvre aion2helper.com)",
-    "es": "Anuncios de AION 2 (abre aion2helper.com)",
-    "ru": "Объявления AION 2 (откроет aion2helper.com)",
-    "zh": "AION 2 公告（打开 aion2helper.com）",
-    "zh-TW": "AION 2 公告（開啟 aion2helper.com）",
-    "pt": "Anúncios de AION 2 (abre aion2helper.com)",
-    "ja": "AION 2 お知らせ（aion2helper.com を開きます）",
-    "ko": "AION 2 공지사항 (aion2helper.com 열기)"
+    "en": "AION 2 announcements (opens atreia.app)",
+    "de": "AION 2 Ankündigungen (öffnet atreia.app)",
+    "fr": "Annonces AION 2 (ouvre atreia.app)",
+    "es": "Anuncios de AION 2 (abre atreia.app)",
+    "ru": "Объявления AION 2 (откроет atreia.app)",
+    "zh": "AION 2 公告（打开 atreia.app）",
+    "zh-TW": "AION 2 公告（開啟 atreia.app）",
+    "pt": "Anúncios de AION 2 (abre atreia.app)",
+    "ja": "AION 2 お知らせ（atreia.app を開きます）",
+    "ko": "AION 2 공지사항 (atreia.app 열기)"
   },
   "Main.Announcements.New": {
     "en": "New",
@@ -4638,16 +4638,16 @@
     "ko": "새 글"
   },
   "Main.TwitchDrops.Tooltip": {
-    "en": "Twitch Drops are running (opens aion2helper.com)",
-    "de": "Twitch Drops laufen gerade (öffnet aion2helper.com)",
-    "fr": "Twitch Drops en cours (ouvre aion2helper.com)",
-    "es": "Twitch Drops en curso (abre aion2helper.com)",
-    "ru": "Идут Twitch Drops (откроет aion2helper.com)",
-    "zh": "Twitch 掉落进行中（打开 aion2helper.com）",
-    "zh-TW": "Twitch 掉落進行中（開啟 aion2helper.com）",
-    "pt": "Twitch Drops em andamento (abre aion2helper.com)",
-    "ja": "Twitchドロップ開催中（aion2helper.com を開きます）",
-    "ko": "트위치 드롭 진행 중 (aion2helper.com 열기)"
+    "en": "Twitch Drops are running (opens atreia.app)",
+    "de": "Twitch Drops laufen gerade (öffnet atreia.app)",
+    "fr": "Twitch Drops en cours (ouvre atreia.app)",
+    "es": "Twitch Drops en curso (abre atreia.app)",
+    "ru": "Идут Twitch Drops (откроет atreia.app)",
+    "zh": "Twitch 掉落进行中（打开 atreia.app）",
+    "zh-TW": "Twitch 掉落進行中（開啟 atreia.app）",
+    "pt": "Twitch Drops em andamento (abre atreia.app)",
+    "ja": "Twitchドロップ開催中（atreia.app を開きます）",
+    "ko": "트위치 드롭 진행 중 (atreia.app 열기)"
   },
   "Main.TwitchDrops.New": {
     "en": "New",
@@ -10149,16 +10149,16 @@
     "ko": "Legion: login data"
   },
   "Settings.LoginShare.Hint": {
-    "en": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to aion2helper.com. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
-    "de": "Wird nur Mitgliedern der Legion Akatsuki auf Kaisinel angezeigt. Wenn aktiv, wird bei jedem Login alles, was der Spielserver beim Einloggen deines Charakters sendet (der komplette Login-Datenverkehr; kein Chat, nichts, was dein PC sendet, kein Passwort), einmal auf aion2helper.com hochgeladen. Es wird nur kurz gespeichert, um herauszufinden, welche Charaktere zu einem Spieler gehören, und danach gelöscht. Standardmäßig aus.",
-    "fr": "Visible uniquement pour les membres de la légion Akatsuki sur Kaisinel. Si cette option est activée, tout ce que le serveur de jeu envoie pendant la connexion de votre personnage (le trafic de connexion complet, sans chat, sans rien de ce qu'envoie le PC, sans mot de passe) est envoyé une fois par connexion à aion2helper.com. Ces données ne sont conservées que peu de temps, pour déterminer ce qui relie les personnages d'un même joueur, puis supprimées. Désactivé par défaut.",
-    "es": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to aion2helper.com. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
-    "ru": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to aion2helper.com. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
-    "zh": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to aion2helper.com. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
-    "zh-TW": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to aion2helper.com. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
-    "pt": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to aion2helper.com. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
-    "ja": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to aion2helper.com. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
-    "ko": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to aion2helper.com. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default."
+    "en": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to atreia.app. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
+    "de": "Wird nur Mitgliedern der Legion Akatsuki auf Kaisinel angezeigt. Wenn aktiv, wird bei jedem Login alles, was der Spielserver beim Einloggen deines Charakters sendet (der komplette Login-Datenverkehr; kein Chat, nichts, was dein PC sendet, kein Passwort), einmal auf atreia.app hochgeladen. Es wird nur kurz gespeichert, um herauszufinden, welche Charaktere zu einem Spieler gehören, und danach gelöscht. Standardmäßig aus.",
+    "fr": "Visible uniquement pour les membres de la légion Akatsuki sur Kaisinel. Si cette option est activée, tout ce que le serveur de jeu envoie pendant la connexion de votre personnage (le trafic de connexion complet, sans chat, sans rien de ce qu'envoie le PC, sans mot de passe) est envoyé une fois par connexion à atreia.app. Ces données ne sont conservées que peu de temps, pour déterminer ce qui relie les personnages d'un même joueur, puis supprimées. Désactivé par défaut.",
+    "es": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to atreia.app. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
+    "ru": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to atreia.app. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
+    "zh": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to atreia.app. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
+    "zh-TW": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to atreia.app. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
+    "pt": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to atreia.app. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
+    "ja": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to atreia.app. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default.",
+    "ko": "Only shown to members of the legion Akatsuki on Kaisinel. With this on, everything the game server sends while your character logs in (the full login traffic, no chat, nothing the PC sends, no password) is uploaded once per login to atreia.app. It is stored for a short time only, to find out what ties the characters of one player together, and then deleted. Off by default."
   },
   "Settings.LoginShare": {
     "en": "Upload my complete login for the legion analysis",
@@ -11409,9 +11409,9 @@
     "ru": "Боевая мощь"
   },
   "Character.OtherNeedUpload": {
-    "en": "The server fetches this character's data from aion2helper.com: switch on the automatic profile upload (settings) so the character is known there.",
-    "de": "Die Daten dieses Charakters holt der Server von aion2helper.com: Schalte dafür den automatischen Profil-Upload ein (Einstellungen), dann ist der Charakter dort bekannt.",
-    "fr": "Le serveur récupère les données de ce personnage sur aion2helper.com : activez l'envoi automatique du profil (réglages) pour que le personnage y soit connu."
+    "en": "The server fetches this character's data from atreia.app: switch on the automatic profile upload (settings) so the character is known there.",
+    "de": "Die Daten dieses Charakters holt der Server von atreia.app: Schalte dafür den automatischen Profil-Upload ein (Einstellungen), dann ist der Charakter dort bekannt.",
+    "fr": "Le serveur récupère les données de ce personnage sur atreia.app : activez l'envoi automatique du profil (réglages) pour que le personnage y soit connu."
   },
   "Character.OtherNotFound": {
     "en": "The server does not know this character yet. With the profile upload on it fetches it shortly after your next login; look again later.",
@@ -11419,14 +11419,14 @@
     "fr": "Le serveur ne connaît pas encore ce personnage. Avec l'envoi du profil activé, il le récupère peu après votre prochaine connexion ; réessayez plus tard."
   },
   "Character.OtherOffline": {
-    "en": "aion2helper.com cannot be reached right now.",
-    "de": "aion2helper.com ist gerade nicht erreichbar.",
-    "fr": "aion2helper.com est actuellement inaccessible."
+    "en": "atreia.app cannot be reached right now.",
+    "de": "atreia.app ist gerade nicht erreichbar.",
+    "fr": "atreia.app est actuellement inaccessible."
   },
   "Character.OtherLoading": {
-    "en": "Fetching the data from aion2helper.com ...",
-    "de": "Hole die Daten von aion2helper.com ...",
-    "fr": "Récupération des données depuis aion2helper.com ..."
+    "en": "Fetching the data from atreia.app ...",
+    "de": "Hole die Daten von atreia.app ...",
+    "fr": "Récupération des données depuis atreia.app ..."
   },
   "Character.OtherUpdated": {
     "en": " (as of {0})",
@@ -11434,14 +11434,14 @@
     "fr": " (état du {0})"
   },
   "Character.OtherFooter": {
-    "en": "Basics from your character list (as of your last login), the rest from aion2helper.com{0}. Log in with this character for current data.",
-    "de": "Grunddaten aus der Charakterliste (Stand deines letzten Logins), der Rest vom Server aion2helper.com{0}. Für aktuelle Daten mit diesem Charakter einloggen.",
-    "fr": "Informations de base issues de votre liste de personnages (état de votre dernière connexion), le reste depuis aion2helper.com{0}. Connectez-vous avec ce personnage pour des données actuelles."
+    "en": "Basics from your character list (as of your last login), the rest from atreia.app{0}. Log in with this character for current data.",
+    "de": "Grunddaten aus der Charakterliste (Stand deines letzten Logins), der Rest vom Server atreia.app{0}. Für aktuelle Daten mit diesem Charakter einloggen.",
+    "fr": "Informations de base issues de votre liste de personnages (état de votre dernière connexion), le reste depuis atreia.app{0}. Connectez-vous avec ce personnage pour des données actuelles."
   },
   "Character.OpenWebsite": {
-    "en": "Open on aion2helper.com (Daevanion boards, item details, fights)",
-    "de": "Auf aion2helper.com öffnen (Daevanion-Bretter, Item-Details, Kämpfe)",
-    "fr": "Ouvrir sur aion2helper.com (tableaux Daevanion, détails des objets, combats)"
+    "en": "Open on atreia.app (Daevanion boards, item details, fights)",
+    "de": "Auf atreia.app öffnen (Daevanion-Bretter, Item-Details, Kämpfe)",
+    "fr": "Ouvrir sur atreia.app (tableaux Daevanion, détails des objets, combats)"
   },
   "Settings.Speech.Volume": {
     "en": "Volume per announcement",
@@ -13070,19 +13070,19 @@
     "zh-TW": "用戶端讀取和上傳的內容"
   },
   "Privacy.Text": {
-    "en": "The meter reads the game's network traffic on your PC, passively; it never sends anything to the game. No game data leaves your PC until you sign in to AION 2 Helper with Discord (AION 2 Helper account, at the bottom of the column on the left) and upload a boss fight (by pressing Upload, or with automatic boss uploads switched on in Settings > Upload), or switch on the sharing below; the map accuracy data (on by default while the app is in beta, see below) and the look-ups at the end of this list aside.\n\n• A boss-fight upload sends the fight as the meter shows it: the boss, when the fight started and ended, your server, and for every player in it their name, class and server, their damage, healing and damage taken by skill, the buffs they had and who gave them, deaths, and the effects the players put on the boss. With \"also upload data of other players\" the other players' legions go along too; your own always does.\n• AION 2 Helper keeps the fight under your Discord account. You choose who can see it: only you, anyone with its link (the default), or everyone. On the fight's page you can change that or delete the fight at any time. Removing your Discord connection on the site deletes all your fights.\n• Character profiles without a fight, replay paths (positions) and the other kinds of upload of the original meter are not sent to AION 2 Helper.\n• If you switch on sharing the Combat Power changes the CP calculator measures (Settings > Upload, off by default), each change it measures at a login is sent without your name, server, legion or account: your class, region, the day, your Item Level and Combat Power (rounded) and how they and your stats changed, with a random number of this installation. AION 2 Helper keeps no IP address with it and uses the changes to refit its Combat Power model.\n• Map accuracy data (on by default while the app is in beta; switch it off in Settings > Upload): when the game reports your exact position while the meter is reading your minimap, both positions go to AION 2 Helper without your name, server, legion or account: the map, the two positions (rounded to a metre), your speed, how well the minimap matched, the day, and a random number of this installation. AION 2 Helper keeps no IP address with it and uses it only to correct where each map's picture lies, so the map, its arrow and the Hidden Cubes are right for everyone.\n• The CP calculator reads your character's public page through aion2helper.com once per login (it asks with the character's name and server, which that page shows to anyone), for your manastones' values. It also loads the site's current Combat Power model (nothing is sent).\n• The meter asks GitHub for updates (the request itself, nothing else).\n\nThe full privacy policy is on aion2helper.com/terms."
+    "en": "The meter reads the game's network traffic on your PC, passively; it never sends anything to the game. No game data leaves your PC until you sign in to AION 2 Helper with Discord (AION 2 Helper account, at the bottom of the column on the left) and upload a boss fight (by pressing Upload, or with automatic boss uploads switched on in Settings > Upload), or switch on the sharing below; the map accuracy data (on by default while the app is in beta, see below) and the look-ups at the end of this list aside.\n\n• A boss-fight upload sends the fight as the meter shows it: the boss, when the fight started and ended, your server, and for every player in it their name, class and server, their damage, healing and damage taken by skill, the buffs they had and who gave them, deaths, and the effects the players put on the boss. With \"also upload data of other players\" the other players' legions go along too; your own always does.\n• AION 2 Helper keeps the fight under your Discord account. You choose who can see it: only you, anyone with its link (the default), or everyone. On the fight's page you can change that or delete the fight at any time. Removing your Discord connection on the site deletes all your fights.\n• Character profiles without a fight, replay paths (positions) and the other kinds of upload of the original meter are not sent to AION 2 Helper.\n• If you switch on sharing the Combat Power changes the CP calculator measures (Settings > Upload, off by default), each change it measures at a login is sent without your name, server, legion or account: your class, region, the day, your Item Level and Combat Power (rounded) and how they and your stats changed, with a random number of this installation. AION 2 Helper keeps no IP address with it and uses the changes to refit its Combat Power model.\n• Map accuracy data (on by default while the app is in beta; switch it off in Settings > Upload): when the game reports your exact position while the meter is reading your minimap, both positions go to AION 2 Helper without your name, server, legion or account: the map, the two positions (rounded to a metre), your speed, how well the minimap matched, the day, and a random number of this installation. AION 2 Helper keeps no IP address with it and uses it only to correct where each map's picture lies, so the map, its arrow and the Hidden Cubes are right for everyone.\n• The CP calculator reads your character's public page through atreia.app once per login (it asks with the character's name and server, which that page shows to anyone), for your manastones' values. It also loads the site's current Combat Power model (nothing is sent).\n• The meter asks GitHub for updates (the request itself, nothing else).\n\nThe full privacy policy is on atreia.app/terms."
   },
   "Privacy.Link": {
-    "en": "Read the full privacy policy on aion2helper.com",
-    "de": "Die vollständige Datenschutzerklärung auf aion2helper.com lesen",
-    "fr": "Lire la politique de confidentialité complète sur aion2helper.com",
-    "es": "Leer la política de privacidad completa en aion2helper.com",
-    "ru": "Прочитать полную политику конфиденциальности на aion2helper.com",
-    "pt": "Ler a política de privacidade completa em aion2helper.com",
-    "ja": "aion2helper.com でプライバシーポリシー全文を読む",
-    "ko": "aion2helper.com에서 개인정보 처리방침 전문 읽기",
-    "zh": "在 aion2helper.com 阅读完整隐私政策",
-    "zh-TW": "在 aion2helper.com 閱讀完整隱私權政策"
+    "en": "Read the full privacy policy on atreia.app",
+    "de": "Die vollständige Datenschutzerklärung auf atreia.app lesen",
+    "fr": "Lire la politique de confidentialité complète sur atreia.app",
+    "es": "Leer la política de privacidad completa en atreia.app",
+    "ru": "Прочитать полную политику конфиденциальности на atreia.app",
+    "pt": "Ler a política de privacidade completa em atreia.app",
+    "ja": "atreia.app でプライバシーポリシー全文を読む",
+    "ko": "atreia.app에서 개인정보 처리방침 전문 읽기",
+    "zh": "在 atreia.app 阅读完整隐私政策",
+    "zh-TW": "在 atreia.app 閱讀完整隱私權政策"
   },
   "Privacy.Accept": {
     "en": "I agree",
@@ -13764,12 +13764,12 @@
     "de": "Jeder Charakter, wie der Meter ihn zuletzt gesehen hat (beim Login und beim Spielen), mit dem, was seitdem zurückkam: die Odenergie +15 alle 3 Stunden bis zur Obergrenze (auch offline), die Zähler bei den täglichen und wöchentlichen Resets. \"~\" markiert so berechnete Zahlen; ein Login mit dem Charakter zeigt die des Spiels. Hat der Meter eine Aufladung des Charakters gesehen, liegen seine Ticks auf der richtigen Minute. Eine Zeile anklicken für alles zu diesem Charakter."
   },
   "Checklist.RosterSync": {
-    "en": "Also show it on aion2helper.com for my Discord account (to check it on the phone)",
-    "de": "Auch auf aion2helper.com für mein Discord-Konto zeigen (zum Nachsehen am Handy)"
+    "en": "Also show it on atreia.app for my Discord account (to check it on the phone)",
+    "de": "Auch auf atreia.app für mein Discord-Konto zeigen (zum Nachsehen am Handy)"
   },
   "Checklist.RosterSyncSignIn": {
-    "en": "Also show it on aion2helper.com (needs the AION 2 Helper sign-in: AION 2 Helper account, at the bottom of the left column)",
-    "de": "Auch auf aion2helper.com zeigen (braucht die AION 2 Helper-Anmeldung: App-Menü → AION 2 Helper-Konto)"
+    "en": "Also show it on atreia.app (needs the AION 2 Helper sign-in: AION 2 Helper account, at the bottom of the left column)",
+    "de": "Auch auf atreia.app zeigen (braucht die AION 2 Helper-Anmeldung: App-Menü → AION 2 Helper-Konto)"
   },
   "Checklist.RosterOpenSite": {
     "en": "Open it on the site →",
@@ -13864,8 +13864,8 @@
     "de": "Zuletzt: {0} DPS ({1}), {2}"
   },
   "Shell.SignedIn": {
-    "en": "Signed in as {0}: fights you upload and your characters are on aion2helper.com.",
-    "de": "Angemeldet als {0}: hochgeladene Kämpfe und deine Charaktere sind auf aion2helper.com."
+    "en": "Signed in as {0}: fights you upload and your characters are on atreia.app.",
+    "de": "Angemeldet als {0}: hochgeladene Kämpfe und deine Charaktere sind auf atreia.app."
   },
   "Shell.SignedOut": {
     "en": "Not signed in. Sign in with Discord to upload fights and see your characters on your phone.",
@@ -15106,9 +15106,9 @@
     "fr": "Itinéraire des familiers"
   },
   "PetRoute.Lede": {
-    "en": "The farming route of the Pet Soul Map Atlas on aion2helper.com, planned the same way here: each pet at one of its densest spots, stops where several pets are close together, teleports where they save time. The map overlay leads you to the next stop and moves on by itself when your collection says its pets are done.",
-    "de": "Die Farm-Route des Pet Soul Map Atlas auf aion2helper.com, hier genauso geplant: jedes Haustier an einer seiner dichtesten Stellen, Stopps wo mehrere Haustiere nah beieinander sind, Teleports wo sie Zeit sparen. Die Karte führt dich zum nächsten Stopp und geht von selbst weiter, wenn deine Sammlung sagt, dass seine Haustiere fertig sind.",
-    "fr": "L’itinéraire de farm du Pet Soul Map Atlas sur aion2helper.com, planifié de la même façon ici : chaque familier à l’un de ses endroits les plus denses, des arrêts là où plusieurs familiers sont proches, des téléportations quand elles font gagner du temps. La carte te guide vers l’arrêt suivant et passe au prochain toute seule quand ta collection dit que ses familiers sont faits."
+    "en": "The farming route of the Pet Soul Map Atlas on atreia.app, planned the same way here: each pet at one of its densest spots, stops where several pets are close together, teleports where they save time. The map overlay leads you to the next stop and moves on by itself when your collection says its pets are done.",
+    "de": "Die Farm-Route des Pet Soul Map Atlas auf atreia.app, hier genauso geplant: jedes Haustier an einer seiner dichtesten Stellen, Stopps wo mehrere Haustiere nah beieinander sind, Teleports wo sie Zeit sparen. Die Karte führt dich zum nächsten Stopp und geht von selbst weiter, wenn deine Sammlung sagt, dass seine Haustiere fertig sind.",
+    "fr": "L’itinéraire de farm du Pet Soul Map Atlas sur atreia.app, planifié de la même façon ici : chaque familier à l’un de ses endroits les plus denses, des arrêts là où plusieurs familiers sont proches, des téléportations quand elles font gagner du temps. La carte te guide vers l’arrêt suivant et passe au prochain toute seule quand ta collection dit que ses familiers sont faits."
   },
   "PetRoute.On": {
     "en": "Guide me along the route on the map",
@@ -15507,9 +15507,9 @@
     "fr": "Zoomez la carte avec la molette au-dessus ou ses boutons + et −, de près jusqu'à la carte entière."
   },
   "Verify.StatusLine": {
-    "en": "{0} ({1}) verified: it counts as yours on aion2helper.com and in Discord.",
-    "de": "{0} ({1}) verifiziert: Er zählt auf aion2helper.com und in Discord als deiner.",
-    "fr": "{0} ({1}) vérifié : il compte comme le vôtre sur aion2helper.com et dans Discord."
+    "en": "{0} ({1}) verified: it counts as yours on atreia.app and in Discord.",
+    "de": "{0} ({1}) verifiziert: Er zählt auf atreia.app und in Discord als deiner.",
+    "fr": "{0} ({1}) vérifié : il compte comme le vôtre sur atreia.app et dans Discord."
   },
   "Legion.Share": {
     "en": "Send my legion's member list (names, classes, Item Level, Combat Power), so Discord servers that follow the legion have every member on their roster",
@@ -15562,9 +15562,9 @@
     "fr": "{0} ({1}) n'est pas encore vérifié. Le compteur réessaiera plus tard."
   },
   "Verify.Hint": {
-    "en": "When you log in to the game while the meter is signed in, it verifies the character you play as yours on aion2helper.com (it counts for your legion's roles in Discord).",
-    "de": "Wenn du dich ins Spiel einloggst, während der Meter angemeldet ist, verifiziert er den Charakter, den du spielst, auf aion2helper.com als deinen (er zählt für die Rollen deiner Legion in Discord).",
-    "fr": "Lorsque vous vous connectez au jeu pendant que le compteur est connecté, il vérifie le personnage que vous jouez comme le vôtre sur aion2helper.com (cela compte pour les rôles de votre légion sur Discord)."
+    "en": "When you log in to the game while the meter is signed in, it verifies the character you play as yours on atreia.app (it counts for your legion's roles in Discord).",
+    "de": "Wenn du dich ins Spiel einloggst, während der Meter angemeldet ist, verifiziert er den Charakter, den du spielst, auf atreia.app als deinen (er zählt für die Rollen deiner Legion in Discord).",
+    "fr": "Lorsque vous vous connectez au jeu pendant que le compteur est connecté, il vérifie le personnage que vous jouez comme le vôtre sur atreia.app (cela compte pour les rôles de votre légion sur Discord)."
   },
   "Timers.Title": {
     "en": "Timers",
@@ -20631,16 +20631,16 @@
     "ko": "내 이름 없이 지도 정확도 데이터 공유 (모두의 지도와 큐브 찾기가 정확해집니다)"
   },
   "Settings.ShareMap.Hint": {
-    "en": "When the game reports your exact position while the meter reads your minimap, both positions go to aion2helper.com: the map, the two positions (to a metre), your speed, how well the minimap matched and the day. They show where each map's picture really lies, and the next version ships the corrected maps. No name, server, legion, account or IP address. On by default while the app is in beta.",
-    "de": "Wenn das Spiel deine genaue Position meldet, während der Meter deine Minikarte liest, gehen beide Positionen an aion2helper.com: die Karte, die zwei Positionen (auf einen Meter), dein Tempo, wie gut die Minikarte passte, und der Tag. Sie zeigen, wo das Bild jeder Karte wirklich liegt, und die nächste Version bringt die korrigierten Karten. Kein Name, Server, Legion, Konto oder IP-Adresse. In der Beta standardmäßig an.",
-    "fr": "Quand le jeu indique ta position exacte pendant que le meter lit ta mini-carte, les deux positions vont à aion2helper.com : la carte, les deux positions (au mètre près), ta vitesse, la qualité de lecture de la mini-carte et le jour. Elles montrent où se trouve vraiment l'image de chaque carte, et la version suivante livre les cartes corrigées. Ni nom, ni serveur, ni légion, ni compte, ni adresse IP. Activé par défaut pendant la bêta.",
-    "es": "Cuando el juego informa tu posición exacta mientras el medidor lee tu minimapa, ambas posiciones van a aion2helper.com: el mapa, las dos posiciones (al metro), tu velocidad, qué tan bien coincidió el minimapa y el día. Muestran dónde está realmente la imagen de cada mapa, y la siguiente versión trae los mapas corregidos. Sin nombre, servidor, legión, cuenta ni dirección IP. Activado por defecto durante la beta.",
-    "ru": "Когда игра сообщает твою точную позицию, пока метр читает мини-карту, обе позиции уходят на aion2helper.com: карта, две позиции (с точностью до метра), скорость, насколько хорошо совпала мини-карта, и день. По ним видно, где на самом деле лежит изображение каждой карты, и следующая версия получит исправленные карты. Без имени, сервера, легиона, аккаунта и IP-адреса. Включено по умолчанию, пока приложение в бете.",
-    "zh": "当游戏报告你的精确位置且计量器正在读取你的小地图时，两个位置会发送到 aion2helper.com：地图、两个位置（精确到米）、你的速度、小地图匹配程度和日期。它们显示每张地图图片的真实位置，下一版本会带来修正后的地图。不含名字、服务器、军团、账号或 IP 地址。测试版期间默认开启。",
-    "zh-TW": "當遊戲回報你的精確位置且計量器正在讀取你的小地圖時，兩個位置會傳送到 aion2helper.com：地圖、兩個位置（精確到公尺）、你的速度、小地圖比對程度和日期。它們顯示每張地圖圖片的真實位置，下一版本會帶來修正後的地圖。不含名字、伺服器、軍團、帳號或 IP 位址。測試版期間預設開啟。",
-    "pt": "Quando o jogo informa sua posição exata enquanto o medidor lê seu minimapa, as duas posições vão para aion2helper.com: o mapa, as duas posições (ao metro), sua velocidade, o quanto o minimapa combinou e o dia. Elas mostram onde a imagem de cada mapa realmente fica, e a próxima versão traz os mapas corrigidos. Sem nome, servidor, legião, conta ou endereço IP. Ligado por padrão enquanto o app está em beta.",
-    "ja": "ミニマップを読み取っている間にゲームが正確な位置を報告すると、両方の位置が aion2helper.com に送られます：マップ、2つの位置（1メートル単位）、移動速度、ミニマップの一致度、日付。各マップの画像が実際にどこにあるかが分かり、次のバージョンで補正済みのマップが配布されます。名前、サーバー、レギオン、アカウント、IPアドレスは含みません。ベータ版の間は既定でオンです。",
-    "ko": "미니맵을 읽는 동안 게임이 정확한 위치를 알려 주면 두 위치가 aion2helper.com으로 전송됩니다: 지도, 두 위치(미터 단위), 이동 속도, 미니맵 일치 정도, 날짜. 각 지도 그림의 실제 위치를 알 수 있어 다음 버전에서 보정된 지도를 제공합니다. 이름, 서버, 군단, 계정, IP 주소는 없습니다. 베타 기간에는 기본으로 켜져 있습니다."
+    "en": "When the game reports your exact position while the meter reads your minimap, both positions go to atreia.app: the map, the two positions (to a metre), your speed, how well the minimap matched and the day. They show where each map's picture really lies, and the next version ships the corrected maps. No name, server, legion, account or IP address. On by default while the app is in beta.",
+    "de": "Wenn das Spiel deine genaue Position meldet, während der Meter deine Minikarte liest, gehen beide Positionen an atreia.app: die Karte, die zwei Positionen (auf einen Meter), dein Tempo, wie gut die Minikarte passte, und der Tag. Sie zeigen, wo das Bild jeder Karte wirklich liegt, und die nächste Version bringt die korrigierten Karten. Kein Name, Server, Legion, Konto oder IP-Adresse. In der Beta standardmäßig an.",
+    "fr": "Quand le jeu indique ta position exacte pendant que le meter lit ta mini-carte, les deux positions vont à atreia.app : la carte, les deux positions (au mètre près), ta vitesse, la qualité de lecture de la mini-carte et le jour. Elles montrent où se trouve vraiment l'image de chaque carte, et la version suivante livre les cartes corrigées. Ni nom, ni serveur, ni légion, ni compte, ni adresse IP. Activé par défaut pendant la bêta.",
+    "es": "Cuando el juego informa tu posición exacta mientras el medidor lee tu minimapa, ambas posiciones van a atreia.app: el mapa, las dos posiciones (al metro), tu velocidad, qué tan bien coincidió el minimapa y el día. Muestran dónde está realmente la imagen de cada mapa, y la siguiente versión trae los mapas corregidos. Sin nombre, servidor, legión, cuenta ni dirección IP. Activado por defecto durante la beta.",
+    "ru": "Когда игра сообщает твою точную позицию, пока метр читает мини-карту, обе позиции уходят на atreia.app: карта, две позиции (с точностью до метра), скорость, насколько хорошо совпала мини-карта, и день. По ним видно, где на самом деле лежит изображение каждой карты, и следующая версия получит исправленные карты. Без имени, сервера, легиона, аккаунта и IP-адреса. Включено по умолчанию, пока приложение в бете.",
+    "zh": "当游戏报告你的精确位置且计量器正在读取你的小地图时，两个位置会发送到 atreia.app：地图、两个位置（精确到米）、你的速度、小地图匹配程度和日期。它们显示每张地图图片的真实位置，下一版本会带来修正后的地图。不含名字、服务器、军团、账号或 IP 地址。测试版期间默认开启。",
+    "zh-TW": "當遊戲回報你的精確位置且計量器正在讀取你的小地圖時，兩個位置會傳送到 atreia.app：地圖、兩個位置（精確到公尺）、你的速度、小地圖比對程度和日期。它們顯示每張地圖圖片的真實位置，下一版本會帶來修正後的地圖。不含名字、伺服器、軍團、帳號或 IP 位址。測試版期間預設開啟。",
+    "pt": "Quando o jogo informa sua posição exata enquanto o medidor lê seu minimapa, as duas posições vão para atreia.app: o mapa, as duas posições (ao metro), sua velocidade, o quanto o minimapa combinou e o dia. Elas mostram onde a imagem de cada mapa realmente fica, e a próxima versão traz os mapas corrigidos. Sem nome, servidor, legião, conta ou endereço IP. Ligado por padrão enquanto o app está em beta.",
+    "ja": "ミニマップを読み取っている間にゲームが正確な位置を報告すると、両方の位置が atreia.app に送られます：マップ、2つの位置（1メートル単位）、移動速度、ミニマップの一致度、日付。各マップの画像が実際にどこにあるかが分かり、次のバージョンで補正済みのマップが配布されます。名前、サーバー、レギオン、アカウント、IPアドレスは含みません。ベータ版の間は既定でオンです。",
+    "ko": "미니맵을 읽는 동안 게임이 정확한 위치를 알려 주면 두 위치가 atreia.app으로 전송됩니다: 지도, 두 위치(미터 단위), 이동 속도, 미니맵 일치 정도, 날짜. 각 지도 그림의 실제 위치를 알 수 있어 다음 버전에서 보정된 지도를 제공합니다. 이름, 서버, 군단, 계정, IP 주소는 없습니다. 베타 기간에는 기본으로 켜져 있습니다."
   },
   "Assist.Opacity": {
     "en": "Opacity",
