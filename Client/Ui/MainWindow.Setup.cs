@@ -318,7 +318,7 @@ public partial class MainWindow
             // the panel behind the lines and how solid it is (all the overlays share the opacity)
             stack.Children.Add(Heading(Loc["Look.Panel"]));
             stack.Children.Add(Choices(MeterLook.Panels, MeterLook.PanelOf(_draft.OverlayLook), id => Loc["Look.Panel." + id], id => Change(s => s.OverlayLook = id)));
-            stack.Children.Add(LabelledSlider(Loc["Setup.Opacity"], 20, 100, 5, Math.Round(Math.Clamp(_draft.OverlayOpacity, 0.2, 1.0) * 100), v => $"{v:0} %",
+            stack.Children.Add(LabelledSlider(Loc["Setup.MeterOpacity"], 20, 100, 5, Math.Round(Math.Clamp(_draft.OverlayOpacity, 0.2, 1.0) * 100), v => $"{v:0} %",
                 v => Change(s => s.OverlayOpacity = v / 100.0)));
 
             // the bars, the lines, the text
@@ -463,11 +463,16 @@ public partial class MainWindow
         private IEnumerable<OverlayDef> Overlays() => _main.OverlayDefs()
             .Where(d => !_restricted || d.Page is null || d.Page == "meter" || PrivacyConsent.RestrictedTools.Contains(d.Page));
 
+        private string? _picked;
+
         private UIElement OverlayOptions()
         {
             var stack = new StackPanel();
+            stack.Children.Add(Note(Loc["Setup.OverlaysHow"]));
             foreach (OverlayDef def in Overlays())
             {
+                string key = def.Page ?? "hotkeys";
+                bool on = def.Get(_draft);
                 var text = new StackPanel();
                 text.Children.Add(ShellText(def.Name, "Brush.Text", 13, bold: true));
                 TextBlock what = Wrapped(def.What, "Brush.TextMuted", 11.5);
@@ -475,9 +480,26 @@ public partial class MainWindow
                 what.MaxWidth = 360; // a check box gives its content all the room it asks for: the text wraps only below this
                 text.Children.Add(what);
                 OverlayDef d = def;
-                CheckBox box = Check(text, def.Get(_draft), on => Change(s => d.Set(s, on)));
-                box.Margin = new Thickness(0, 0, 0, 10);
+                CheckBox box = Check(text, on, now => Change(s => d.Set(s, now)));
+                box.Margin = new Thickness(0, 0, 0, on && Spots.ContainsKey(key) ? 2 : 10);
                 stack.Children.Add(box);
+                if (!on || !Spots.TryGetValue(key, out Spot? spot))
+                {
+                    continue;
+                }
+
+                bool picked = _picked == key;
+                TextBlock link = ShellLink(Loc[picked ? "Setup.CustomizeDone" : "Setup.Customize"], () =>
+                {
+                    _picked = picked ? null : key;
+                    Show(_step);
+                });
+                link.Margin = new Thickness(30, 0, 0, picked ? 4 : 10);
+                stack.Children.Add(link);
+                if (picked)
+                {
+                    stack.Children.Add(Customizer(key, spot));
+                }
             }
 
             if (!_restricted)
@@ -496,6 +518,71 @@ public partial class MainWindow
             stack.Children.Add(Note(Loc["Setup.OverlaysNote"]));
             return stack;
         }
+
+        /// <summary>One overlay's own transparency and size, and its place back to where it starts.</summary>
+        private UIElement Customizer(string key, Spot spot)
+        {
+            var panel = new StackPanel { Margin = new Thickness(30, 0, 0, 12) };
+            panel.Children.Add(LabelledSlider(Loc["Setup.OwnOpacity"], 10, 100, 5, Math.Round(Math.Clamp(OpacityOf(_draft, key, spot), 0.1, 1.0) * 100), v => $"{v:0} %",
+                v => Change(s => SetOpacity(s, key, spot, v / 100.0))));
+            panel.Children.Add(LabelledSlider(Loc["Setup.OwnSize"], 50, 200, 5, Math.Round(Math.Clamp(ScaleOf(_draft, spot), 0.5, 2.0) * 100), v => $"{v:0} %",
+                v => Change(s => SetScale(s, spot, v / 100.0))));
+            TextBlock back = ShellLink(Loc["Setup.OwnPlace"], () => Change(s => SetPlace(s, spot, null, null)));
+            back.Margin = new Thickness(0, 2, 0, 0);
+            panel.Children.Add(back);
+            return panel;
+        }
+
+        // ---- each overlay's own settings, by the names its window keeps them under (OverlayPlaces: <prefix>Left, Top, Scale)
+
+        private static System.Reflection.PropertyInfo? Property(string name) => typeof(MeterSettings).GetProperty(name);
+
+        private static double OpacityOf(MeterSettings s, string key, Spot spot) => key switch
+        {
+            "meter" => s.OverlayOpacity,
+            "timetable" => s.TimetableOpacity ?? s.OverlayOpacity,
+            "petmap" => s.PetMapOpacity,
+            _ => spot.Title is { } title && s.OverlayOpacities.TryGetValue(title, out double v) ? v : key == "petmap.pets" ? s.OverlayOpacity : 0.6,
+        };
+
+        private static void SetOpacity(MeterSettings s, string key, Spot spot, double value)
+        {
+            switch (key)
+            {
+                case "meter":
+                    s.OverlayOpacity = value;
+                    break;
+                case "timetable":
+                    s.TimetableOpacity = value;
+                    break;
+                case "petmap":
+                    s.PetMapOpacity = value;
+                    break;
+                default:
+                    if (spot.Title is { } title)
+                    {
+                        s.OverlayOpacities[title] = value;
+                    }
+
+                    break;
+            }
+        }
+
+        private static double ScaleOf(MeterSettings s, Spot spot) => Property(spot.ScaleName)?.GetValue(s) is double v && v > 0 ? v : 1.0;
+
+        private static void SetScale(MeterSettings s, Spot spot, double value) => Property(spot.ScaleName)?.SetValue(s, value);
+
+        private static (double? Left, double? Top) PlaceOf(MeterSettings s, Spot spot) =>
+            (Property(spot.Prefix + "Left")?.GetValue(s) as double?, Property(spot.Prefix + "Top")?.GetValue(s) as double?);
+
+        private static void SetPlace(MeterSettings s, Spot spot, double? left, double? top)
+        {
+            Property(spot.Prefix + "Left")?.SetValue(s, left);
+            Property(spot.Prefix + "Top")?.SetValue(s, top);
+        }
+
+        /// <summary>The screen the overlays stand on (device-independent pixels; the picture stands for it at 1920 x 1080).</summary>
+        private static (double W, double H) ScreenSize() => MainWindow.Headless ? (1920, 1080) : (SystemParameters.PrimaryScreenWidth, SystemParameters.PrimaryScreenHeight);
 
         // ---- step 4: the map
 
@@ -850,21 +937,6 @@ public partial class MainWindow
             }
 
             stack.Children.Add(cards);
-            stack.Children.Add(Heading(Loc["Setup.Opacity"]));
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 8) };
-            var slider = new Slider { Minimum = 20, Maximum = 100, Value = Math.Round(Math.Clamp(_draft.OverlayOpacity, 0.2, 1.0) * 100), Width = 220, IsSnapToTickEnabled = true,
-                TickFrequency = 5, VerticalAlignment = VerticalAlignment.Center };
-            TextBlock value = ShellText($"{slider.Value:0} %", "Brush.TextMuted", 12.5);
-            value.Margin = new Thickness(10, 0, 0, 0);
-            slider.ValueChanged += (_, _) =>
-            {
-                value.Text = $"{slider.Value:0} %";
-                double opacity = slider.Value / 100.0;
-                Change(s => s.OverlayOpacity = opacity);
-            };
-            row.Children.Add(slider);
-            row.Children.Add(value);
-            stack.Children.Add(row);
             stack.Children.Add(Note(Loc["Setup.ColoursNote"]));
             return stack;
         }
@@ -987,40 +1059,55 @@ public partial class MainWindow
                 Place(canvas, beam, 1010, 0);
             }
 
+            bool edit = _steps[_step] == "Overlays";
+            (double screenW, double screenH) = ScreenSize();
             foreach (OverlayDef def in Overlays())
             {
                 bool on = def.Get(_draft);
                 string key = def.Page ?? "hotkeys";
-                if (!on || (meterOnly && key != "meter") || (only is not null && key != only))
+                if (!on || (meterOnly && key != "meter") || (only is not null && key != only) || !Spots.TryGetValue(key, out Spot? spot))
                 {
                     continue;
                 }
 
+                FrameworkElement element;
                 if (key == "petmap")
                 {
-                    // the map as it will look (its own drawing), at its place
+                    // the map as it will look (its own drawing), with its list beside it
                     (FrameworkElement map, FrameworkElement? list) = MapAndList();
-                    map.LayoutTransform = new ScaleTransform(0.75, 0.75);
-                    Place(canvas, map, 30, 290);
+                    var both = new StackPanel { Orientation = Orientation.Horizontal };
+                    both.Children.Add(map);
                     if (list is not null)
                     {
-                        list.LayoutTransform = new ScaleTransform(0.75, 0.75);
-                        Place(canvas, list, 30 + (PetMapWindow.ViewSize * 0.75) + 10, 290);
+                        list.Margin = new Thickness(10, 0, 0, 0);
+                        list.VerticalAlignment = VerticalAlignment.Top;
+                        both.Children.Add(list);
                     }
 
-                    continue;
+                    element = both;
+                }
+                else
+                {
+                    element = key == "meter" ? Meter() : Ghost(def.Name, spot.Kind, spot.W, spot.H, OpacityOf(_draft, key, spot));
                 }
 
-                if (key == "meter")
+                // its size on the picture: the overlay's own scale on the player's screen, as the picture shows that screen
+                double k = 1920 / screenW * ScaleOf(_draft, spot);
+                element.LayoutTransform = new ScaleTransform(k, k);
+                (double? left, double? top) = PlaceOf(_draft, spot);
+                double x = left is double l ? l / screenW * 1920 : spot.X, y = top is double t ? t / screenH * 1080 : spot.Y;
+                FrameworkElement placed = element;
+                if (edit && _picked == key)
                 {
-                    FrameworkElement meter = Meter();
-                    Place(canvas, meter, 1490, 300);
-                    continue;
+                    var ring = new Border { Child = element, BorderThickness = new Thickness(3), CornerRadius = new CornerRadius(12) };
+                    ring.SetResourceReference(Border.BorderBrushProperty, "Brush.Accent");
+                    placed = ring;
                 }
 
-                if (Spots.TryGetValue(key, out var spot))
+                Place(canvas, placed, Math.Clamp(x, -200, 1900), Math.Clamp(y, -100, 1060));
+                if (edit)
                 {
-                    Place(canvas, Ghost(def.Name, spot.Kind, spot.W, spot.H), spot.X, spot.Y);
+                    Draggable(canvas, placed, key, spot, screenW, screenH);
                 }
             }
 
@@ -1033,23 +1120,78 @@ public partial class MainWindow
             return frame;
         }
 
-        /// <summary>Where each overlay sits on the 1920 x 1080 picture and what its panel shows (by the page its settings are on).</summary>
-        private static readonly Dictionary<string, (double X, double Y, double W, double H, string Kind)> Spots = new()
+        /// <summary>An overlay on the picture: the names its window keeps its place and scale under (OverlayPlaces), its window title (its own opacity's key),
+        /// where it starts on the 1920 x 1080 picture, the size of its panel there and what the panel shows.</summary>
+        private sealed record Spot(string Prefix, string? Title, string ScaleName, double X, double Y, double W, double H, string Kind);
+
+        /// <summary>Every overlay by the page its settings are on.</summary>
+        private static readonly Dictionary<string, Spot> Spots = new()
         {
-            ["combat"] = (760, 60, 400, 140, "boss"),
-            ["assist." + AssistWindow.CooldownsTab] = (690, 836, 540, 96, "icons"),
-            ["assist." + AssistWindow.BuffsTab] = (720, 774, 480, 54, "small"),
-            ["timetable"] = (1230, 40, 340, 180, "lines"),
-            ["boss"] = (1230, 236, 340, 120, "lines"),
-            ["petmap"] = (30, 290, 320, 320, "map"),
-            ["petmap.pets"] = (30, 640, 320, 64, "pill"),
-            ["loot"] = (30, 716, 320, 150, "lines"),
-            ["petmap.gather"] = (1230, 372, 340, 130, "lines"),
-            ["checklist"] = (30, 40, 320, 234, "lines"),
-            ["craft"] = (1490, 720, 400, 130, "lines"),
-            ["network"] = (1640, 990, 250, 52, "pill"),
-            ["hotkeys"] = (1230, 518, 340, 150, "lines"),
+            ["meter"] = new("MeterOverlay", null, "OverlayScale", 1490, 300, 0, 0, "meter"),
+            ["combat"] = new("CombatCastOverlay", OverlayPlaces.BossCast, "CombatCastOverlayScale", 760, 60, 400, 120, "boss"),
+            ["assist." + AssistWindow.CooldownsTab] = new("AssistOverlay", OverlayPlaces.Assist, "AssistOverlayScale", 690, 836, 540, 70, "icons"),
+            ["assist." + AssistWindow.BuffsTab] = new("EffectsOverlay", OverlayPlaces.Effects, "EffectsOverlayScale", 720, 774, 480, 46, "small"),
+            ["timetable"] = new("Timetable", OverlayPlaces.Timetable, "TimetableScale", 1230, 40, 340, 180, "lines"),
+            ["boss"] = new("BossOverlay", OverlayPlaces.WorldBoss, "BossOverlayScale", 1230, 236, 340, 120, "lines"),
+            ["petmap"] = new("PetMap", OverlayPlaces.PetMap, "PetMapScale", 30, 290, 440, 440, "map"),
+            ["petmap.pets"] = new("PetFarm", OverlayPlaces.PetInfo, "PetFarmScale", 30, 640, 320, 64, "pill"),
+            ["loot"] = new("LootOverlay", OverlayPlaces.Loot, "LootOverlayScale", 30, 716, 320, 150, "lines"),
+            ["petmap.gather"] = new("GatherOverlay", OverlayPlaces.Gather, "GatherOverlayScale", 1230, 372, 340, 130, "lines"),
+            ["checklist"] = new("SeasonOverlay", OverlayPlaces.Season, "SeasonOverlayScale", 30, 40, 320, 234, "lines"),
+            ["craft"] = new("CraftOverlay", OverlayPlaces.Craft, "CraftOverlayScale", 1490, 720, 400, 130, "lines"),
+            ["network"] = new("NetworkOverlay", OverlayPlaces.Network, "NetworkOverlayScale", 1640, 990, 250, 52, "pill"),
+            ["hotkeys"] = new("HotkeyOverlay", OverlayPlaces.Hotkeys, "HotkeyOverlayScale", 1230, 518, 340, 150, "lines"),
         };
+
+        /// <summary>An overlay on the picture follows the mouse while held, and keeps where it is let go (its place on the player's screen); a click picks it.</summary>
+        private void Draggable(Canvas canvas, FrameworkElement element, string key, Spot spot, double screenW, double screenH)
+        {
+            element.Cursor = System.Windows.Input.Cursors.SizeAll;
+            element.ToolTip = Loc["Setup.DragTip"];
+            Point? grab = null;
+            double startX = 0, startY = 0;
+            bool moved = false;
+            element.MouseLeftButtonDown += (_, e) =>
+            {
+                grab = e.GetPosition(canvas);
+                startX = Canvas.GetLeft(element);
+                startY = Canvas.GetTop(element);
+                moved = false;
+                element.CaptureMouse();
+                e.Handled = true;
+            };
+            element.MouseMove += (_, e) =>
+            {
+                if (grab is Point from && element.IsMouseCaptured)
+                {
+                    Point now = e.GetPosition(canvas);
+                    moved |= Math.Abs(now.X - from.X) + Math.Abs(now.Y - from.Y) > 4;
+                    Canvas.SetLeft(element, Math.Clamp(startX + now.X - from.X, -100, 1880));
+                    Canvas.SetTop(element, Math.Clamp(startY + now.Y - from.Y, -50, 1050));
+                }
+            };
+            element.MouseLeftButtonUp += (_, e) =>
+            {
+                if (grab is null)
+                {
+                    return;
+                }
+
+                grab = null;
+                element.ReleaseMouseCapture();
+                e.Handled = true;
+                _picked = key;
+                if (moved)
+                {
+                    double left = Canvas.GetLeft(element) / 1920 * screenW, top = Canvas.GetTop(element) / 1080 * screenH;
+                    Action<MeterSettings> place = s => SetPlace(s, spot, left, top);
+                    place(_draft);
+                    _changes.Add(place);
+                }
+
+                Show(_step); // the list opens the overlay's own settings
+            };
+        }
 
         private static void Place(Canvas canvas, UIElement element, double x, double y)
         {
@@ -1059,9 +1201,9 @@ public partial class MainWindow
         }
 
         /// <summary>An overlay other than the meter: a panel of the overlay's colour, its name, and a hint of what it shows.</summary>
-        private FrameworkElement Ghost(string name, string kind, double w, double h)
+        private FrameworkElement Ghost(string name, string kind, double w, double h, double opacity)
         {
-            var (back, edge) = PanelBrushes("Themed", _draft.OverlayOpacity);
+            var (back, edge) = PanelBrushes("Themed", opacity);
             var stack = new StackPanel { Margin = new Thickness(14, 10, 14, 10) };
             TextBlock title = ShellText(name, "Brush.OverlayText", 17, bold: true);
             title.TextTrimming = TextTrimming.CharacterEllipsis;

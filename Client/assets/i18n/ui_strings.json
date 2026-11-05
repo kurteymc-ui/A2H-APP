@@ -14482,9 +14482,9 @@
     "fr": "Couleurs"
   },
   "Setup.Colours.Lede": {
-    "en": "The app's colours, and how solid the overlays are over the game.",
-    "de": "Die Farben der App und wie deckend die Overlays über dem Spiel sind.",
-    "fr": "Les couleurs de l'application, et l'opacité des overlays par-dessus le jeu."
+    "en": "The app's colours.",
+    "de": "Die Farben der App.",
+    "fr": "Les couleurs de l'application."
   },
   "Setup.Palettes": {
     "en": "Colour sets",
@@ -21134,5 +21134,45 @@
     "en": "At the pace its health fell over the last 15 seconds (everybody's damage). Green: it dies before its enrage; red: the enrage comes first.",
     "de": "Bei dem Tempo, mit dem sein Leben in den letzten 15 Sekunden fiel (der Schaden aller). Grün: er stirbt vor seiner Raserei; rot: die Raserei kommt zuerst.",
     "fr": "Au rythme où sa vie a baissé ces 15 dernières secondes (les dégâts de tous). Vert : il meurt avant sa rage ; rouge : la rage vient d'abord."
+  },
+  "Setup.OverlaysHow": {
+    "en": "Switch on what you want. Drag each one on the picture to where you want it in the game; Customize sets its own transparency and size.",
+    "de": "Schalte ein, was du willst. Zieh jedes auf dem Bild dorthin, wo du es im Spiel haben willst; Anpassen stellt seine eigene Transparenz und Größe ein.",
+    "fr": "Activez ce que vous voulez. Faites glisser chacun sur l'image là où vous le voulez dans le jeu ; Personnaliser règle sa propre transparence et sa taille."
+  },
+  "Setup.Customize": {
+    "en": "Customize",
+    "de": "Anpassen",
+    "fr": "Personnaliser"
+  },
+  "Setup.CustomizeDone": {
+    "en": "Done",
+    "de": "Fertig",
+    "fr": "Terminé"
+  },
+  "Setup.OwnOpacity": {
+    "en": "How solid it is",
+    "de": "Wie deckend es ist",
+    "fr": "Opacité"
+  },
+  "Setup.OwnSize": {
+    "en": "Size",
+    "de": "Größe",
+    "fr": "Taille"
+  },
+  "Setup.OwnPlace": {
+    "en": "Back to its usual place",
+    "de": "Zurück an seinen üblichen Platz",
+    "fr": "Revenir à sa place habituelle"
+  },
+  "Setup.DragTip": {
+    "en": "Drag it to where you want it in the game",
+    "de": "Zieh es dorthin, wo du es im Spiel haben willst",
+    "fr": "Faites-le glisser là où vous le voulez dans le jeu"
+  },
+  "Setup.MeterOpacity": {
+    "en": "How solid the meter is",
+    "de": "Wie deckend das Meter ist",
+    "fr": "Opacité du compteur"
   }
 }
