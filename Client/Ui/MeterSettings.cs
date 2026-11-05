@@ -259,6 +259,12 @@ public sealed class MeterSettings
     /// <summary>The volume of the cooldowns' voice, 0 to 100.</summary>
     public int AssistVoiceVolume { get; set; } = 80;
 
+    /// <summary>The cooldowns' three saved layouts (Skill Assist, Presets), by slot 1 to 3: how they sit on the screen, to switch between.</summary>
+    public Dictionary<int, CooldownPreset> AssistPresets { get; set; } = new();
+
+    /// <summary>The preset last saved or loaded (0: none), marked in the Skill Assist window.</summary>
+    public int AssistPresetActive { get; set; }
+
     /// <summary>The effects on the player as an overlay of their own (the assist overlay shows the cooldowns). Null (never switched): as the assist overlay.
     /// It shares the assist overlay's lock and the list of what is hidden.</summary>
     public bool? ShowEffectsOverlay { get; set; }
@@ -1297,4 +1303,21 @@ public sealed class PopOutPlace
 
     /// <summary>The window is to come back at the next start.</summary>
     public bool Open { get; set; }
+}
+
+/// <summary>
+/// One saved layout of the cooldowns on the screen (Skill Assist, Presets; 5 November 2026): each skill's place for the bars and for the squares, the
+/// look, the size, the bars' width, moving together, the ready skills shown, and which skills are left off the screen.
+/// </summary>
+public sealed class CooldownPreset
+{
+    public DateTime SavedAt { get; set; }
+    public string Style { get; set; } = "Bars";
+    public double Scale { get; set; } = 1.0;
+    public double BarWidth { get; set; } = 170;
+    public bool Together { get; set; }
+    public bool ShowReady { get; set; } = true;
+    public Dictionary<int, double[]> Places { get; set; } = new();
+    public Dictionary<int, double[]> TilePlaces { get; set; } = new();
+    public List<int> Hidden { get; set; } = new();
 }

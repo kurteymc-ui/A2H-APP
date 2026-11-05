@@ -134,6 +134,53 @@ public sealed class AssistController : IDisposable
         PlacesVersion++;
     }
 
+    /// <summary>The cooldowns as they sit on the screen now, kept in a preset slot (1 to 3).</summary>
+    public static void SavePreset(int slot)
+    {
+        var s = MeterSettings.Load();
+        s.AssistPresets[slot] = new CooldownPreset
+        {
+            SavedAt = DateTime.Now,
+            Style = s.AssistCooldownStyle == CooldownArt.Tiles ? CooldownArt.Tiles : CooldownArt.Bars,
+            Scale = s.AssistCooldownScale,
+            BarWidth = s.AssistBarWidth,
+            Together = s.AssistCooldownsTogether,
+            ShowReady = s.AssistShowReady,
+            Places = s.AssistCooldownPlaces.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
+            TilePlaces = s.AssistCooldownTilePlaces.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
+            Hidden = s.AssistOverlayHidden.ToList(),
+        };
+        s.AssistPresetActive = slot;
+        s.Save();
+    }
+
+    /// <summary>A preset back on the screen: every cooldown goes to its place in it, with its look and size (the windows are made again there).
+    /// False when the slot is empty.</summary>
+    public static bool LoadPreset(int slot)
+    {
+        var s = MeterSettings.Load();
+        if (!s.AssistPresets.TryGetValue(slot, out CooldownPreset? p) || p is null)
+        {
+            return false;
+        }
+
+        s.AssistCooldownStyle = p.Style == CooldownArt.Tiles ? CooldownArt.Tiles : CooldownArt.Bars;
+        s.AssistCooldownScale = Math.Clamp(p.Scale, 0.5, 3);
+        s.AssistBarWidth = Math.Clamp(p.BarWidth, 90, 400);
+        s.AssistCooldownsTogether = p.Together;
+        s.AssistShowReady = p.ShowReady;
+        s.AssistCooldownPlaces = p.Places.Where(kv => kv.Value is { Length: 2 }).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
+        s.AssistCooldownTilePlaces = p.TilePlaces.Where(kv => kv.Value is { Length: 2 }).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
+        s.AssistOverlayHidden = p.Hidden.ToList();
+        s.AssistPresetActive = slot;
+        DropDocks(s);
+        s.Save();
+        PlacesVersion++; // the windows are made again at the preset's places, with its size (not rescaled from the old one)
+        AskReload();
+        EditBarChanged?.Invoke();
+        return true;
+    }
+
     /// <summary>The cooldowns of 1.20.13 hung on each other through the overlays' docking; they are placed on their own now, so those ties go.</summary>
     private static bool DropDocks(MeterSettings s)
     {

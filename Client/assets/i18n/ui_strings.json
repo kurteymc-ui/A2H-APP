@@ -20533,5 +20533,89 @@
     "pt": "natural",
     "ja": "ナチュラル",
     "ko": "자연스러운"
+  },
+  "Assist.Sec.Presets": {
+    "en": "Presets",
+    "de": "Vorlagen",
+    "fr": "Préréglages",
+    "es": "Ajustes guardados",
+    "ru": "Пресеты",
+    "zh": "预设",
+    "zh-TW": "預設",
+    "pt": "Predefinições",
+    "ja": "プリセット",
+    "ko": "프리셋"
+  },
+  "Assist.Sec.PresetsSub": {
+    "en": "Save how your cooldowns sit on the screen (places, look, size, which skills) and switch between three layouts.",
+    "de": "Speichere, wie deine Abklingzeiten auf dem Bildschirm liegen (Plätze, Aussehen, Größe, welche Fertigkeiten), und wechsle zwischen drei Anordnungen.",
+    "fr": "Enregistre la disposition de tes recharges à l'écran (places, aspect, taille, compétences) et passe d'une disposition à l'autre parmi trois.",
+    "es": "Guarda cómo están tus enfriamientos en la pantalla (posiciones, aspecto, tamaño, qué habilidades) y cambia entre tres diseños.",
+    "ru": "Сохрани, как откаты расположены на экране (места, вид, размер, какие навыки), и переключайся между тремя раскладками.",
+    "zh": "保存冷却在屏幕上的摆放（位置、样式、大小、显示哪些技能），在三套布局之间切换。",
+    "zh-TW": "儲存冷卻在螢幕上的擺放（位置、樣式、大小、顯示哪些技能），在三套佈局之間切換。",
+    "pt": "Salve como suas recargas ficam na tela (posições, visual, tamanho, quais habilidades) e alterne entre três layouts.",
+    "ja": "クールタイムの画面配置（位置・表示・サイズ・表示するスキル）を保存し、3つのレイアウトを切り替えられます。",
+    "ko": "쿨타임의 화면 배치(위치, 모양, 크기, 표시할 스킬)를 저장하고 세 가지 레이아웃을 전환합니다."
+  },
+  "Assist.PresetN": {
+    "en": "Preset {0}",
+    "de": "Vorlage {0}",
+    "fr": "Préréglage {0}",
+    "es": "Ajuste {0}",
+    "ru": "Пресет {0}",
+    "zh": "预设 {0}",
+    "zh-TW": "預設 {0}",
+    "pt": "Predefinição {0}",
+    "ja": "プリセット {0}",
+    "ko": "프리셋 {0}"
+  },
+  "Assist.PresetEmpty": {
+    "en": "Empty",
+    "de": "Leer",
+    "fr": "Vide",
+    "es": "Vacío",
+    "ru": "Пусто",
+    "zh": "空",
+    "zh-TW": "空",
+    "pt": "Vazio",
+    "ja": "空き",
+    "ko": "비어 있음"
+  },
+  "Assist.PresetLoad": {
+    "en": "Load",
+    "de": "Laden",
+    "fr": "Charger",
+    "es": "Cargar",
+    "ru": "Загрузить",
+    "zh": "载入",
+    "zh-TW": "載入",
+    "pt": "Carregar",
+    "ja": "読み込む",
+    "ko": "불러오기"
+  },
+  "Assist.PresetSave": {
+    "en": "Save",
+    "de": "Speichern",
+    "fr": "Enregistrer",
+    "es": "Guardar",
+    "ru": "Сохранить",
+    "zh": "保存",
+    "zh-TW": "儲存",
+    "pt": "Salvar",
+    "ja": "保存",
+    "ko": "저장"
+  },
+  "Assist.PresetReplace": {
+    "en": "Replace?",
+    "de": "Ersetzen?",
+    "fr": "Remplacer ?",
+    "es": "¿Reemplazar?",
+    "ru": "Заменить?",
+    "zh": "覆盖？",
+    "zh-TW": "覆蓋？",
+    "pt": "Substituir?",
+    "ja": "上書き？",
+    "ko": "덮어쓸까요?"
   }
 }
