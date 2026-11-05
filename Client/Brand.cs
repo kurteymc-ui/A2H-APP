@@ -25,5 +25,5 @@ public static class Brand
     public const string DataFolder = "A2HMeter";
 
     /// <summary>Where updates come from: full releases of this repository only (never test versions).</summary>
-    public const string RepositoryUrl = "https://github.com/kurteymc-ui/A2H-APP";
+    public const string RepositoryUrl = "https://github.com/kurteymc-ui/Atreia-App";
 }

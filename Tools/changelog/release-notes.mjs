@@ -12,7 +12,7 @@
 import { readFileSync } from "node:fs";
 
 const MAX_ITEMS = 12;
-const CHANGELOG_URL = `https://github.com/${process.env.GITHUB_REPOSITORY || "kurteymc-ui/A2H-APP"}/commits/main`;
+const CHANGELOG_URL = `https://github.com/${process.env.GITHUB_REPOSITORY || "kurteymc-ui/Atreia-App"}/commits/main`;
 
 const arg = (name) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : undefined; };
 const version = arg("version");
