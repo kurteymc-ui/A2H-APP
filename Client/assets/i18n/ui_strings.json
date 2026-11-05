@@ -1829,11 +1829,11 @@
     "ko": "수집물"
   },
   "Settings.PetMap.Gather.Od": {
-    "en": "Od",
+    "en": "Odyle",
     "de": "Od",
     "fr": "Od",
     "es": "Od",
-    "ru": "Од",
+    "ru": "Эфир",
     "zh": "奥德",
     "zh-TW": "歐德",
     "pt": "Od",
@@ -13070,7 +13070,7 @@
     "zh-TW": "用戶端讀取和上傳的內容"
   },
   "Privacy.Text": {
-    "en": "The meter reads the game's network traffic on your PC, passively; it never sends anything to the game. Apart from the map accuracy data (on by default while the app is in beta, see below) and the look-ups at the end of this list, no game data leaves your PC until you sign in to Atreia with Discord (Atreia account, at the bottom of the column on the left). Signed in, your character's Genus Insight and pets go (see below), and a boss fight goes when you upload it (by pressing Upload, or with automatic boss uploads switched on in Settings > Upload); the other sharing below goes only when you switch it on.\n\n• A boss-fight upload sends the fight as the meter shows it: the boss, when the fight started and ended, your server, and for every player in it their name, class and server, their damage, healing and damage taken by skill, the buffs they had and who gave them, deaths, and the effects the players put on the boss. With \"also upload data of other players\" the other players' legions go along too; your own always does.\n• Atreia keeps the fight under your Discord account. You choose who can see it: only you, anyone with its link (the default), or everyone. On the fight's page you can change that or delete the fight at any time. Removing your Discord connection on the site deletes all your fights.\n• Your Genus Insight and pets (while signed in; switch it off in the Atreia account window): after a login the meter sends your character's name and server with its Genus Insight (each genus's level and rolled lines) and its pet collection (each pet and its level), so other players who look your character up in Atreia App see them. Switching it off deletes what was sent.\n• Replay paths (positions) and the other kinds of upload of the original meter are not sent to Atreia.\n• If you switch on sharing the Combat Power changes the CP calculator measures (Settings > Upload, off by default), each change it measures at a login is sent without your name, server, legion or account: your class, region, the day, your Item Level and Combat Power (rounded) and how they and your stats changed, with a random number of this installation. Atreia keeps no IP address with it and uses the changes to refit its Combat Power model.\n• Map accuracy data (on by default while the app is in beta; switch it off in Settings > Upload): when the game reports your exact position while the meter is reading your minimap, both positions go to Atreia without your name, server, legion or account: the map, the two positions (rounded to a metre), your speed, how well the minimap matched, the day, and a random number of this installation. Atreia keeps no IP address with it and uses it only to correct where each map's picture lies, so the map, its arrow and the Hidden Cubes are right for everyone.\n• The CP calculator reads your character's public page through atreia.app once per login (it asks with the character's name and server, which that page shows to anyone), for your manastones' values. It also loads the site's current Combat Power model (nothing is sent).\n• Pictures of the game window: to read your minimap (your exact position for the map and the Hidden Cube finder, and which way the camera looks for the cube beam) and to see when a game menu is open (the overlays then step aside), the meter takes pictures of the game's own window, up to five times a second while it needs them. They are read on your PC and not kept. When the minimap can't be read, a few small pictures of it are saved in the Debug folder beside the settings on your PC (only the newest), so the problem can be checked. No picture is ever uploaded.\n• The meter asks GitHub for updates (the request itself, nothing else).\n\nThe full privacy policy is on atreia.app/terms."
+    "en": "The meter reads the game's network traffic on your PC, passively; it never sends anything to the game. Apart from the map accuracy data (on by default while the app is in beta, see below) and the look-ups at the end of this list, no game data leaves your PC until you sign in to Atreia with Discord (Atreia account, at the bottom of the column on the left). Signed in, your character's Genus Insight and pets go (see below), and a boss fight goes when you upload it (by pressing Upload, or with automatic boss uploads switched on in Settings > Upload); the other sharing below goes only when you switch it on.\n\n• A boss-fight upload sends the fight as the meter shows it: the boss, when the fight started and ended, your server, and for every player in it their name, class and server, their damage, healing and damage taken by skill, the buffs they had and who gave them, deaths, and the effects the players put on the boss. With \"also upload data of other players\" the other players' legions go along too; your own always does.\n• Atreia keeps the fight under your Discord account. You choose who can see it: only you, anyone with its link (the default), or everyone. On the fight's page you can change that or delete the fight at any time. Removing your Discord connection on the site deletes all your fights.\n• Your Genus Insight and pets (while signed in; switch it off in the Atreia account window): after a login the meter sends your character's name and server with its Genus Insight (each genus's level and rolled lines) and its pet collection (each pet and its level), so other players who look your character up in Atreia App see them. Switching it off deletes what was sent.\n• Replay paths (positions) and the other kinds of upload of the original meter are not sent to Atreia.\n• If you switch on sharing the Combat Power changes the CP calculator measures (Settings > Upload, off by default), each change it measures at a login is sent without your name, server, legion or account: your class, region, the day, your Item Level and Combat Power (rounded) and how they and your stats changed, with a random number of this installation. Atreia keeps no IP address with it and uses the changes to refit its Combat Power model.\n• Map accuracy data (on by default while the app is in beta; switch it off in Settings > Upload): when the game reports your exact position while the meter is reading your minimap, both positions go to Atreia without your name, server, legion or account: the map, the two positions (rounded to a metre), your speed, how well the minimap matched, the day, and a random number of this installation. Atreia keeps no IP address with it and uses it only to correct where each map's picture lies, so the map, its arrow and the Hidden Cubes are right for everyone.\n• The CP calculator reads your character's public page through atreia.app once per login (it asks with the character's name and server, which that page shows to anyone), for your manastones' values. It also loads the site's current Combat Power model (nothing is sent).\n• Pictures of the game window: to read your minimap (your exact position for the map and the Hidden Cube finder, and which way the camera looks for the cube beam), to see when a game menu is open (the overlays then step aside), and to show the first-start setup over your own game, the meter takes pictures of the game's own window, up to five times a second while it needs them. They are read on your PC and not kept. When the minimap can't be read, a few small pictures of it are saved in the Debug folder beside the settings on your PC (only the newest), so the problem can be checked. No picture is ever uploaded.\n• The meter asks GitHub for updates (the request itself, nothing else).\n\nThe full privacy policy is on atreia.app/terms."
   },
   "Privacy.Link": {
     "en": "Read the full privacy policy on atreia.app",
@@ -15717,9 +15717,9 @@
     "fr": "Fond"
   },
   "Look.Panel.Themed": {
-    "en": "A2H colours",
-    "de": "A2H-Farben",
-    "fr": "Couleurs A2H"
+    "en": "Atreia colours",
+    "de": "Atreia-Farben",
+    "fr": "Couleurs Atreia"
   },
   "Look.Panel.Clear": {
     "en": "See-through",
@@ -21094,5 +21094,25 @@
     "pt": "Mostrar meu Genus Insight e meus mascotes a outros jogadores do Atreia App (na janela «Encontrar jogador»; as páginas de personagem do jogo não os têm)",
     "ja": "自分の Genus Insight とペットを Atreia App の他のプレイヤーに表示する（相手の「プレイヤー検索」ウィンドウ。ゲームのキャラクターページにはない情報です）",
     "ko": "내 Genus Insight와 펫을 다른 Atreia App 플레이어에게 표시 (상대의 '플레이어 찾기' 창; 게임의 캐릭터 페이지에는 없는 정보)"
+  },
+  "Setup.Game.Yours": {
+    "en": "Over a picture of your game, taken just now. It stays on your PC and goes when this window closes.",
+    "de": "Über einem Bild deines Spiels, gerade eben aufgenommen. Es bleibt auf deinem PC und verschwindet, wenn sich dieses Fenster schließt.",
+    "fr": "Sur une image de votre jeu, prise à l'instant. Elle reste sur votre PC et disparaît quand cette fenêtre se ferme."
+  },
+  "Setup.Game.Sample": {
+    "en": "Over a sample picture of the game. Start the game to see it over yours.",
+    "de": "Über einem Beispielbild des Spiels. Starte das Spiel, um es über deinem zu sehen.",
+    "fr": "Sur une image d'exemple du jeu. Lancez le jeu pour le voir sur le vôtre."
+  },
+  "Setup.Game.Take": {
+    "en": "Use my game",
+    "de": "Mein Spiel verwenden",
+    "fr": "Utiliser mon jeu"
+  },
+  "Setup.Game.Again": {
+    "en": "Take it again",
+    "de": "Neu aufnehmen",
+    "fr": "Reprendre"
   }
 }

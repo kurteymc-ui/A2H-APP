@@ -74,6 +74,57 @@ public static class GameWindow
         return found;
     }
 
+    [DllImport("user32.dll")]
+    private static extern bool GetWindowRect(IntPtr window, out Rect rect);
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct Rect
+    {
+        public int Left, Top, Right, Bottom;
+    }
+
+    /// <summary>The game's main window (its biggest visible one), whether or not it is in front; zero when the game is not running.</summary>
+    public static IntPtr Find()
+    {
+        var pids = new HashSet<uint>();
+        foreach (Process p in Process.GetProcessesByName(Capture.GameConnections.ProcessName))
+        {
+            pids.Add((uint)p.Id);
+            p.Dispose();
+        }
+
+        if (pids.Count == 0)
+        {
+            return IntPtr.Zero;
+        }
+
+        IntPtr best = IntPtr.Zero;
+        long bestArea = 0;
+        try
+        {
+            EnumWindows((window, _) =>
+            {
+                if (IsWindowVisible(window) && GetWindowThreadProcessId(window, out uint pid) != 0 && pids.Contains(pid) && GetWindowRect(window, out Rect r))
+                {
+                    long area = (long)(r.Right - r.Left) * (r.Bottom - r.Top);
+                    if (area > bestArea)
+                    {
+                        bestArea = area;
+                        best = window;
+                    }
+                }
+
+                return true;
+            }, IntPtr.Zero);
+        }
+        catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
+        {
+            return IntPtr.Zero;
+        }
+
+        return best;
+    }
+
     /// <summary>"AION2 | Name" → "Name"; anything else (no bar, an empty or implausible name) → null.</summary>
     public static string? NameFromTitle(string title)
     {

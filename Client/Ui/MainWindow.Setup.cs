@@ -78,6 +78,8 @@ public partial class MainWindow
         private readonly Button _next;
         private readonly List<PlayerRow> _samples = SampleMeterRows();
         private readonly string[] _steps;
+        private BitmapSource? _game;
+        private bool _gameLive;
         private readonly List<Window> _offscreen = new();
         private int _step;
         private string _palette;
@@ -165,7 +167,35 @@ public partial class MainWindow
             foot.Child = bar;
             Grid.SetRow(foot, 2);
             Root.Children.Add(foot);
+            // the player's own game behind the previews (taken now, kept only while the setup is open); without the game, the picture that comes with the app
+            TakeGame();
             Show(0);
+        }
+
+        private void TakeGame()
+        {
+            BitmapSource? live = MainWindow.Headless ? null : GameShot.Take();
+            _gameLive = live is not null;
+            _game = live ?? _game ?? GameShot.Bundled();
+        }
+
+        /// <summary>Under each preview: whose game it is drawn over, and a way to take the player's own once the game runs.</summary>
+        private UIElement GameNote()
+        {
+            var row = new WrapPanel { Margin = new Thickness(0, 8, 0, 0) };
+            TextBlock text = ShellText(Loc[_gameLive ? "Setup.Game.Yours" : "Setup.Game.Sample"], "Brush.TextSubtle", 11.5);
+            text.Margin = new Thickness(0, 0, 12, 0);
+            row.Children.Add(text);
+            if (!MainWindow.Headless)
+            {
+                row.Children.Add(ShellLink(Loc[_gameLive ? "Setup.Game.Again" : "Setup.Game.Take"], () =>
+                {
+                    TakeGame();
+                    Redraw();
+                }));
+            }
+
+            return row;
         }
 
         // ------------------------------------------------------------------ the steps
@@ -275,6 +305,7 @@ public partial class MainWindow
         private UIElement DesignOptions()
         {
             var stack = new StackPanel();
+            MeterLook look = MeterLook.From(_draft);
             stack.Children.Add(Heading(Loc["Look.Presets"]));
             var cards = new WrapPanel();
             foreach (MeterLookPreset preset in MeterLook.Presets)
@@ -283,24 +314,56 @@ public partial class MainWindow
             }
 
             stack.Children.Add(cards);
+
+            // the panel behind the lines and how solid it is (all the overlays share the opacity)
+            stack.Children.Add(Heading(Loc["Look.Panel"]));
+            stack.Children.Add(Choices(MeterLook.Panels, MeterLook.PanelOf(_draft.OverlayLook), id => Loc["Look.Panel." + id], id => Change(s => s.OverlayLook = id)));
+            stack.Children.Add(LabelledSlider(Loc["Setup.Opacity"], 20, 100, 5, Math.Round(Math.Clamp(_draft.OverlayOpacity, 0.2, 1.0) * 100), v => $"{v:0} %",
+                v => Change(s => s.OverlayOpacity = v / 100.0)));
+
+            // the bars, the lines, the text
+            stack.Children.Add(Heading(Loc["Look.Bars"]));
+            stack.Children.Add(Choices(MeterLook.Bars, look.Bar, id => Loc["Look.Bar." + id], id => Change(s => s.MeterBarStyle = id)));
             stack.Children.Add(Heading(Loc["Setup.Size"]));
-            stack.Children.Add(Choices(MeterLook.Sizes, MeterLook.From(_draft).Size, id => Loc["Look.Size." + id], id => Change(s => s.MeterRowSize = id)));
-            stack.Children.Add(Heading(Loc["Look.TextSize"]));
-            var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 8) };
-            var slider = new Slider { Minimum = 85, Maximum = 130, Value = Math.Round(Math.Clamp(_draft.MeterTextScale, 0.85, 1.3) * 100), Width = 220, IsSnapToTickEnabled = true,
-                TickFrequency = 5, VerticalAlignment = VerticalAlignment.Center };
-            TextBlock value = ShellText($"{slider.Value:0} %", "Brush.TextMuted", 12.5);
-            value.Margin = new Thickness(10, 0, 0, 0);
-            slider.ValueChanged += (_, _) =>
+            stack.Children.Add(Choices(MeterLook.Sizes, look.Size, id => Loc["Look.Size." + id], id => Change(s => s.MeterRowSize = id)));
+            stack.Children.Add(Heading(Loc["Look.Text"]));
+            stack.Children.Add(Choices(MeterLook.Fonts.Select(f => f.Id).ToList(), look.Font, id => MeterLook.Fonts.First(f => f.Id == id).Name, id => Change(s => s.MeterFont = id),
+                id => new FontFamily(MeterLook.Fonts.First(f => f.Id == id).Families)));
+            stack.Children.Add(LabelledSlider(Loc["Look.TextSize"], 85, 130, 5, Math.Round(Math.Clamp(_draft.MeterTextScale, 0.85, 1.3) * 100), v => $"{v:0} %",
+                v => Change(s => s.MeterTextScale = v / 100.0)));
+
+            // the parts around and in the lines
+            stack.Children.Add(Heading(Loc["Look.Around"]));
+            var parts = new WrapPanel();
+            CheckBox Part(string label, bool on, Action<MeterSettings, bool> set, string? tip = null)
             {
-                value.Text = $"{slider.Value:0} %";
-                double scale = slider.Value / 100.0;
-                Change(s => s.MeterTextScale = scale);
-            };
-            row.Children.Add(slider);
-            row.Children.Add(value);
-            stack.Children.Add(row);
-            stack.Children.Add(Check(Loc["Setup.Total"], _draft.MeterShowTotal, on => Change(s => s.MeterShowTotal = on)));
+                CheckBox box = Check(label, on, now => Change(s => set(s, now)));
+                box.MinWidth = 190;
+                box.ToolTip = tip;
+                parts.Children.Add(box);
+                return box;
+            }
+
+            Part(Loc["Look.ShowTotal"], _draft.MeterShowTotal, (s, v) => s.MeterShowTotal = v);
+            Part(Loc["Look.ShowStatus"], _draft.MeterShowStatus, (s, v) => s.MeterShowStatus = v, Loc["Look.ShowStatusTip"]);
+            Part(Loc["Look.Titles"], _draft.MeterColumnTitles, (s, v) => s.MeterColumnTitles = v);
+            Part(Loc["Look.ClassColor"], look.Shown.Contains("classcolor"), (s, v) =>
+            {
+                var columns = (s.MeterColumns ?? MeterLook.DefaultColumns.ToList()).Where(c => c != "classcolor").ToList();
+                if (v)
+                {
+                    columns.Add("classcolor");
+                }
+
+                s.MeterColumns = columns;
+            });
+            Part(Loc["Look.SmallUnits"], _draft.MeterSmallUnits, (s, v) => s.MeterSmallUnits = v, Loc["Look.SmallUnitsTip"]);
+            Part(Loc["Look.BestLast"], _draft.MeterBestLast, (s, v) => s.MeterBestLast = v);
+            Part(Loc["Look.GrowUp"], _draft.MeterGrowUp, (s, v) => s.MeterGrowUp = v, Loc["Look.GrowUpTip"]);
+            stack.Children.Add(parts);
+            stack.Children.Add(Heading(Loc["Look.Buttons"]));
+            stack.Children.Add(Choices(new[] { "always", "hover" }, _draft.MeterHeaderButtons == "hover" ? "hover" : "always", id => Loc["Look.Buttons." + id],
+                id => Change(s => s.MeterHeaderButtons = id)));
             stack.Children.Add(Note(Loc["Setup.Later"]));
             return stack;
         }
@@ -573,6 +636,7 @@ public partial class MainWindow
             var stack = new StackPanel { Width = 760 };
             stack.Children.Add(Caption(Loc["Setup.InGame"]));
             stack.Children.Add(Screen(560, meterOnly: false, only: "petmap"));
+            stack.Children.Add(GameNote());
             stack.Children.Add(Caption(Loc["Setup.CloseUp"] + (_draft.ShowPetMap ? "" : " · " + Loc["Setup.Map.Off"]), top: 14));
             var row = new StackPanel { Orientation = Orientation.Horizontal };
             (FrameworkElement map, FrameworkElement? list) = MapAndList();
@@ -812,6 +876,7 @@ public partial class MainWindow
             var stack = new StackPanel { Width = 760 };
             stack.Children.Add(Caption(Loc["Setup.InGame"]));
             stack.Children.Add(Screen(560, meterOnly: true));
+            stack.Children.Add(GameNote());
             stack.Children.Add(Caption(Loc["Setup.CloseUp"], top: 14));
             var close = new Border { Padding = new Thickness(18), CornerRadius = new CornerRadius(8), Background = SceneBrush(), HorizontalAlignment = HorizontalAlignment.Left, Child = Meter() };
             stack.Children.Add(close);
@@ -823,6 +888,7 @@ public partial class MainWindow
             var stack = new StackPanel { Width = 760 };
             stack.Children.Add(Caption(Loc["Setup.InGame"]));
             stack.Children.Add(Screen(760, meterOnly: false));
+            stack.Children.Add(GameNote());
             TextBlock note = Wrapped(Loc["Setup.PreviewNote"], "Brush.TextSubtle", 11.5);
             note.Margin = new Thickness(0, 10, 0, 0);
             stack.Children.Add(note);
@@ -836,6 +902,7 @@ public partial class MainWindow
             stack.Children.Add(AppMock());
             stack.Children.Add(Caption(Loc["Setup.InGame"], top: 14));
             stack.Children.Add(Screen(520, meterOnly: false));
+            stack.Children.Add(GameNote());
             return stack;
         }
 
@@ -882,6 +949,14 @@ public partial class MainWindow
 
             lines.Margin = new Thickness(0, 0, 0, 4);
             panel.Children.Add(lines);
+            if (_draft.MeterShowStatus)
+            {
+                var status = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(12, 0, 4, 6) };
+                status.Children.Add(new Border { Width = 6, Height = 6, CornerRadius = new CornerRadius(1), Background = new SolidColorBrush(Color.FromRgb(0x4C, 0xC8, 0x78)),
+                    Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center });
+                status.Children.Add(ShellText(Loc["Look.SampleStatus"], "Brush.TextMuted", 10.5));
+                panel.Children.Add(status);
+            }
             var (back, edge) = PanelBrushes(MeterLook.PanelOf(_draft.OverlayLook), _draft.OverlayOpacity);
             return new Border { Child = panel, Width = look.PanelWidth, Background = back, BorderBrush = edge, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), ClipToBounds = true };
         }
@@ -894,7 +969,15 @@ public partial class MainWindow
         private FrameworkElement Screen(double width, bool meterOnly, string? only = null)
         {
             var canvas = new Canvas { Width = 1920, Height = 1080, ClipToBounds = true };
-            DrawScene(canvas);
+            if (_game is not null)
+            {
+                // the game itself (its own interface in it)
+                canvas.Children.Add(new Image { Source = _game, Width = 1920, Height = 1080, Stretch = Stretch.UniformToFill });
+            }
+            else
+            {
+                DrawScene(canvas);
+            }
             if (!meterOnly && _draft.CubeBeam && !_restricted)
             {
                 Grid beam = CubeBeam.Beam(out TextBlock metres);
@@ -1213,7 +1296,10 @@ public partial class MainWindow
             return (new SolidColorBrush(back), new SolidColorBrush(line));
         }
 
-        private static Brush SceneBrush() => new LinearGradientBrush(new GradientStopCollection
+        /// <summary>The ground behind a close-up: the game's picture when there is one, else a sky over land.</summary>
+        private Brush SceneBrush() => _game is not null
+            ? new ImageBrush(_game) { Stretch = Stretch.UniformToFill, AlignmentY = AlignmentY.Center }
+            : new LinearGradientBrush(new GradientStopCollection
         {
             new(Color.FromRgb(0x6E, 0x88, 0xA6), 0), new(Color.FromRgb(0xA8, 0xB4, 0xA8), 0.45), new(Color.FromRgb(0x6A, 0x70, 0x48), 0.5), new(Color.FromRgb(0x3E, 0x46, 0x2C), 1),
         }, new Point(0, 0), new Point(0, 1));
@@ -1303,13 +1389,19 @@ public partial class MainWindow
             return box;
         }
 
-        private UIElement Choices(IReadOnlyList<string> ids, string current, Func<string, string> label, Action<string> pick)
+        private UIElement Choices(IReadOnlyList<string> ids, string current, Func<string, string> label, Action<string> pick, Func<string, FontFamily>? font = null)
         {
             var wrap = new WrapPanel { Margin = new Thickness(0, 2, 0, 6) };
             foreach (string id in ids)
             {
                 bool on = id == current;
-                var tile = new Border { Child = ShellText(label(id), "Brush.Text", 13), CornerRadius = new CornerRadius(6), Margin = new Thickness(0, 0, 8, 8), MinWidth = 96,
+                TextBlock text = ShellText(label(id), "Brush.Text", 13);
+                if (font is not null)
+                {
+                    text.FontFamily = font(id);
+                }
+
+                var tile = new Border { Child = text, CornerRadius = new CornerRadius(6), Margin = new Thickness(0, 0, 8, 8), MinWidth = 96,
                     Padding = on ? new Thickness(9, 6, 9, 6) : new Thickness(10, 7, 10, 7), BorderThickness = new Thickness(on ? 2 : 1), Cursor = System.Windows.Input.Cursors.Hand };
                 tile.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
                 tile.SetResourceReference(Border.BorderBrushProperty, on ? "Brush.Accent" : "Brush.Border");
