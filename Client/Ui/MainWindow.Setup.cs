@@ -382,6 +382,7 @@ public partial class MainWindow
                 text.Children.Add(ShellText(def.Name, "Brush.Text", 13, bold: true));
                 TextBlock what = Wrapped(def.What, "Brush.TextMuted", 11.5);
                 what.Margin = new Thickness(0, 1, 0, 0);
+                what.MaxWidth = 360; // a check box gives its content all the room it asks for: the text wraps only below this
                 text.Children.Add(what);
                 OverlayDef d = def;
                 CheckBox box = Check(text, def.Get(_draft), on => Change(s => d.Set(s, on)));
@@ -395,6 +396,7 @@ public partial class MainWindow
                 text.Children.Add(ShellText(Loc["Cubes.Beam"], "Brush.Text", 13, bold: true));
                 TextBlock what = Wrapped(Loc["Setup.BeamWhat"], "Brush.TextMuted", 11.5);
                 what.Margin = new Thickness(0, 1, 0, 0);
+                what.MaxWidth = 360;
                 text.Children.Add(what);
                 CheckBox box = Check(text, _draft.CubeBeam, on => Change(s => s.CubeBeam = on));
                 box.Margin = new Thickness(0, 0, 0, 10);
@@ -706,9 +708,9 @@ public partial class MainWindow
                     break;
                 case "map":
                     var map = new Grid { Height = h - 60, Margin = new Thickness(0, 8, 0, 0), ClipToBounds = true };
-                    if (Asset("maps", "altgard", "2_3.jpg") is { } tile)
+                    if (Asset("maps", "altgard", "2_2.jpg") is { } tile)
                     {
-                        map.Children.Add(new Image { Source = tile, Stretch = Stretch.UniformToFill, Opacity = 0.9 });
+                        map.Children.Add(new Image { Source = tile, Stretch = Stretch.UniformToFill, Opacity = 0.9, Width = 700, Height = 700, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
                     }
 
                     var dots = new Canvas();
@@ -765,9 +767,10 @@ public partial class MainWindow
 
             // the game's own interface: the minimap (a piece of a real map, the player's arrow and the view cone), the skill bar, health and mana, the chat
             var minimap = new Grid { Width = 250, Height = 170, ClipToBounds = true };
-            if (Asset("maps", "altgard", "1_2.jpg") is { } tile)
+            if (Asset("maps", "altgard", "3_2.jpg") is { } tile)
             {
-                minimap.Children.Add(new Image { Source = tile, Stretch = Stretch.UniformToFill });
+                // a part of a map tile, close up as the minimap shows it
+                minimap.Children.Add(new Image { Source = tile, Stretch = Stretch.UniformToFill, Width = 640, Height = 640, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
             }
             else
             {
