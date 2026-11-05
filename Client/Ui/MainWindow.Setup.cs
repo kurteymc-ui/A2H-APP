@@ -468,7 +468,6 @@ public partial class MainWindow
         private UIElement OverlayOptions()
         {
             var stack = new StackPanel();
-            stack.Children.Add(Note(Loc["Setup.OverlaysHow"]));
             foreach (OverlayDef def in Overlays())
             {
                 string key = def.Page ?? "hotkeys";
