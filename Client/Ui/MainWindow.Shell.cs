@@ -248,7 +248,7 @@ public partial class MainWindow
     }
 
     /// <summary>The entry of the column the page shown belongs to: its hub, or the page itself.</summary>
-    private string ShellLit => HubOf(_shellPage) ?? _shellPage;
+    private string ShellLit => _shellPage == "news" ? "home" : HubOf(_shellPage) ?? _shellPage; // a news item read is one of Home's
 
     /// <summary>The chosen section lit (a gold edge and a raised background), the others quiet.</summary>
     private void MarkShell()
@@ -330,6 +330,7 @@ public partial class MainWindow
         UIElement content = id switch
         {
             "home" => BuildHomePage(),
+            "news" => BuildNewsPage(),
             "overlays" => BuildOverlaysPage(),
             "meterlook" => BuildMeterLookPage(),
             "history" => HostWindow(new HistoryWindow()),

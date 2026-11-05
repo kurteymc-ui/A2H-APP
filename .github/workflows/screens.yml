@@ -51,6 +51,8 @@ jobs:
             @('render-overlay', 'look-oldschool.png', 'look-oldschool'),
             @('render-checklist', 'roster.png', 'roster'),
             @('render-app', 'app-home.png', 'home'),
+            @('render-app', 'app-home-full.png', 'home', '1300'),
+            @('render-app', 'app-news.png', 'news', '1250'),
             @('render-app', 'app-overlays.png', 'overlays'),
             @('render-app', 'app-characters.png', 'characters'),
             @('render-app', 'app-history.png', 'history'),

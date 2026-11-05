@@ -12,8 +12,9 @@ using AionDPS.Upload;
 namespace AionDPS.Ui;
 
 /// <summary>
-/// Home: what needs doing first (the game not read yet, an update waiting), a greeting with the character and the resets, then the four things a
-/// player looks at every day: the characters' Odyle Energy, the last fight, the next events and the pet collection. Everything else has its page.
+/// Home: what needs doing first (the game not read yet, an update waiting), a greeting with the character, the resets and a tip (MainWindow.HomeHelp.cs),
+/// the news (MainWindow.News.cs), what is worth setting up first, then the four things a player looks at every day: the characters' Odyle Energy, the
+/// last fight, the next events and the pet collection. Everything else has its page.
 /// </summary>
 public partial class MainWindow
 {
@@ -30,6 +31,19 @@ public partial class MainWindow
         }
 
         page.Children.Add(HomeGreeting(now));
+
+        // the news (our posts and the game's official ones) and what is worth setting up first
+        if (Headless || !PrivacyConsent.Restricted)
+        {
+            page.Children.Add(NewsBanner(HomeNews()));
+        }
+
+        if (HomeSetupCard() is { } setup)
+        {
+            page.Children.Add(setup);
+        }
+
+        StartHomeSlides();
 
         var columns = new Grid();
         columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star), MinWidth = 380 });
@@ -82,8 +96,20 @@ public partial class MainWindow
 
         // the pet collection
         right.Children.Add(HomeCard(loc["Home.Pets"], PetCollection(), "petmap.pets", 0));
-        return new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page };
+
+        // rebuilt every 30 seconds: it stays where it was scrolled to
+        double kept = _homeViewer is { } old && AppPageHost.Children.Contains(old) ? old.VerticalOffset : 0;
+        var viewer = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page };
+        if (kept > 0)
+        {
+            viewer.Loaded += (_, _) => viewer.ScrollToVerticalOffset(kept);
+        }
+
+        _homeViewer = viewer;
+        return viewer;
     }
+
+    private ScrollViewer? _homeViewer;
 
     /// <summary>The notices at the top: only what the player has to do something about.</summary>
     private IEnumerable<UIElement> HomeNotices()
@@ -182,13 +208,18 @@ public partial class MainWindow
 
         state.Children.Add(ShellText(string.Join("  ·  ", parts.Where(p => p.Length > 0)), "Brush.TextMuted", 12.5));
         who.Children.Add(state);
-        if (!Account.SignedIn && !Headless)
+        // signing in, and the first-start setup again
+        var links = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
+        if (!Account.SignedIn && !Headless && !PrivacyConsent.Restricted)
         {
-            TextBlock sign = ShellLink(loc["Shell.SignIn"], () => OnAccountClicked(this, new RoutedEventArgs()));
-            sign.Margin = new Thickness(0, 8, 0, 0);
-            sign.HorizontalAlignment = HorizontalAlignment.Left;
-            who.Children.Add(sign);
+            links.Children.Add(ShellLink(loc["Shell.SignIn"], () => OnAccountClicked(this, new RoutedEventArgs())));
+            links.Children.Add(ShellText("  ·  ", "Brush.TextSubtle", 12.5));
         }
+
+        TextBlock again = ShellLink(loc["Home.SetupAgain"], ShowLookSetup);
+        again.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+        links.Children.Add(again);
+        who.Children.Add(links);
 
         grid.Children.Add(who);
 
@@ -207,7 +238,20 @@ public partial class MainWindow
 
         Grid.SetColumn(resets, 1);
         grid.Children.Add(resets);
-        var card = new Border { Child = grid, Padding = new Thickness(20, 16, 16, 16), Margin = new Thickness(0, 0, 12, 12), CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1) };
+
+        // a tip at the bottom, one after the other
+        var inside = new StackPanel();
+        inside.Children.Add(grid);
+        if (HomeTipRow() is { } tips)
+        {
+            var line = new Border { Height = 1, Margin = new Thickness(0, 12, 4, 0) };
+            line.SetResourceReference(Border.BackgroundProperty, "Brush.Border");
+            inside.Children.Add(line);
+            ((FrameworkElement)tips).Margin = new Thickness(0, 10, 0, 0);
+            inside.Children.Add(tips);
+        }
+
+        var card = new Border { Child = inside, Padding = new Thickness(20, 16, 16, 16), Margin = new Thickness(0, 0, 12, 12), CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1) };
         card.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
         card.Background = new LinearGradientBrush(Color.FromArgb(0x30, 0xDC, 0xB8, 0x77), Color.FromArgb(0x00, 0xDC, 0xB8, 0x77), 0);
         var host = new Grid();

@@ -1180,6 +1180,7 @@ internal static class Program
                 }
             }
 
+            Announcements.NewsClient.UseForPictures(Ui.MainWindow.SampleNews());
             var window = new Ui.MainWindow { Title = Brand.AppName };
             window.BuildShell();
             window.ShowShellPage(page);

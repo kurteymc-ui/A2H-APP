@@ -21169,5 +21169,290 @@
     "en": "How solid the meter is",
     "de": "Wie deckend das Meter ist",
     "fr": "Opacité du compteur"
+  },
+  "News.Welcome.Title": {
+    "en": "Welcome to Atreia App",
+    "de": "Willkommen bei Atreia App",
+    "fr": "Bienvenue dans Atreia App"
+  },
+  "News.Welcome.Text": {
+    "en": "The game's news and what is new in the app show here once the app is online.",
+    "de": "Die Neuigkeiten des Spiels und was neu in der App ist, erscheinen hier, sobald die App online ist.",
+    "fr": "Les actualités du jeu et les nouveautés de l'app s'affichent ici dès que l'app est en ligne."
+  },
+  "News.Welcome.Body": {
+    "en": "This is where the game's latest patch notes, events and maintenance show, together with what is new in Atreia App. They come from atreia.app whenever the app is online.",
+    "de": "Hier erscheinen die neuesten Patchnotes, Events und Wartungen des Spiels, zusammen mit dem, was neu in Atreia App ist. Sie kommen von atreia.app, sobald die App online ist.",
+    "fr": "Ici s'affichent les dernières notes de patch, événements et maintenances du jeu, avec les nouveautés d'Atreia App. Elles viennent d'atreia.app dès que l'app est en ligne."
+  },
+  "News.Read": {
+    "en": "Read more",
+    "de": "Weiterlesen",
+    "fr": "Lire la suite"
+  },
+  "News.Tag.App": {
+    "en": "Atreia App",
+    "de": "Atreia App",
+    "fr": "Atreia App"
+  },
+  "News.Tag.Patch": {
+    "en": "Patch notes",
+    "de": "Patchnotes",
+    "fr": "Notes de patch"
+  },
+  "News.Tag.Event": {
+    "en": "Event",
+    "de": "Event",
+    "fr": "Événement"
+  },
+  "News.Tag.Maintenance": {
+    "en": "Maintenance",
+    "de": "Wartung",
+    "fr": "Maintenance"
+  },
+  "News.Tag.Notice": {
+    "en": "Announcement",
+    "de": "Ankündigung",
+    "fr": "Annonce"
+  },
+  "News.MaintenanceAt": {
+    "en": "Starts {0} (your time)",
+    "de": "Beginnt {0} (deine Zeit)",
+    "fr": "Commence {0} (votre heure)"
+  },
+  "News.MaintenanceWas": {
+    "en": "Done. It started {0} (your time)",
+    "de": "Vorbei. Sie begann {0} (deine Zeit)",
+    "fr": "Terminée. Elle a commencé {0} (votre heure)"
+  },
+  "News.MaintenanceLength": {
+    "en": "about {0}",
+    "de": "etwa {0}",
+    "fr": "environ {0}"
+  },
+  "News.FromGame": {
+    "en": "the game's official news",
+    "de": "offizielle News des Spiels",
+    "fr": "actualité officielle du jeu"
+  },
+  "News.InShort": {
+    "en": "In short",
+    "de": "Kurz gesagt",
+    "fr": "En bref"
+  },
+  "News.Loading": {
+    "en": "Loading…",
+    "de": "Wird geladen …",
+    "fr": "Chargement…"
+  },
+  "News.Unreadable": {
+    "en": "This one can't be read right now. Try again in a moment.",
+    "de": "Das lässt sich gerade nicht laden. Versuch es gleich noch einmal.",
+    "fr": "Impossible de le charger pour l'instant. Réessayez dans un moment."
+  },
+  "News.UnreadableLink": {
+    "en": "This one can't be read in the app right now. It is on the official site, with the button below.",
+    "de": "Das lässt sich gerade nicht in der App laden. Es steht auf der offiziellen Seite, mit dem Knopf unten.",
+    "fr": "Impossible de l'afficher dans l'app pour l'instant. Il est sur le site officiel, avec le bouton ci-dessous."
+  },
+  "News.OfficialSite": {
+    "en": "Read it on the official site",
+    "de": "Auf der offiziellen Seite lesen",
+    "fr": "Lire sur le site officiel"
+  },
+  "News.Website": {
+    "en": "Open on the website",
+    "de": "Auf der Website öffnen",
+    "fr": "Ouvrir sur le site"
+  },
+  "News.More": {
+    "en": "More news",
+    "de": "Weitere Neuigkeiten",
+    "fr": "Autres actualités"
+  },
+  "Home.TipTitle": {
+    "en": "Did you know?",
+    "de": "Schon gewusst?",
+    "fr": "Le saviez-vous ?"
+  },
+  "Home.ShowMe": {
+    "en": "Show me",
+    "de": "Zeig mir",
+    "fr": "Montrer"
+  },
+  "Home.TipsHide": {
+    "en": "Hide the tips",
+    "de": "Tipps ausblenden",
+    "fr": "Masquer les astuces"
+  },
+  "Home.Tip.Move": {
+    "en": "{0} unlocks the meter and every overlay so you can drag them right over the game; press it again to lock them.",
+    "de": "{0} entsperrt das Meter und alle Overlays, damit du sie direkt über dem Spiel verschieben kannst; nochmal drücken sperrt sie wieder.",
+    "fr": "{0} déverrouille le meter et tous les overlays pour les déplacer directement sur le jeu ; appuyez à nouveau pour les verrouiller."
+  },
+  "Home.Tip.History": {
+    "en": "Every fight is kept in History: open one for its full report, player by player.",
+    "de": "Jeder Kampf bleibt im Verlauf: öffne einen für den ganzen Bericht, Spieler für Spieler.",
+    "fr": "Chaque combat est gardé dans l'historique : ouvrez-en un pour son rapport complet, joueur par joueur."
+  },
+  "Home.Tip.Copy": {
+    "en": "{0} copies the fight's damage ranking, ready to paste in the game's chat.",
+    "de": "{0} kopiert die Schadensrangliste des Kampfes, fertig zum Einfügen in den Chat des Spiels.",
+    "fr": "{0} copie le classement des dégâts du combat, prêt à coller dans le chat du jeu."
+  },
+  "Home.Tip.Cubes": {
+    "en": "The Cube finder beeps faster the closer you get to a Hidden Cube, and draws a gold beam over it.",
+    "de": "Der Würfelfinder piept schneller, je näher du einem Versteckten Würfel kommst, und zeichnet einen goldenen Strahl darüber.",
+    "fr": "Le détecteur de cubes bipe plus vite à mesure que vous approchez d'un Cube caché, et trace un faisceau doré au-dessus."
+  },
+  "Home.Tip.Find": {
+    "en": "Look anyone up with Find a player in the meter's … menu: their gear, stats and skills.",
+    "de": "Schlag jeden nach mit „Find a player“ im …-Menü des Meters: Ausrüstung, Werte und Fertigkeiten.",
+    "fr": "Consultez n'importe qui avec « Find a player » dans le menu … du meter : équipement, stats et compétences."
+  },
+  "Home.Tip.Timers": {
+    "en": "Timers lists the world bosses and events coming up, and can remind you before they start.",
+    "de": "Timer zeigt die kommenden Weltbosse und Events und kann dich vor dem Start erinnern.",
+    "fr": "Les minuteurs listent les boss mondiaux et événements à venir, et peuvent vous prévenir avant qu'ils commencent."
+  },
+  "Home.Tip.Hide": {
+    "en": "{0} hides the meter and brings it back, for a clean screen.",
+    "de": "{0} blendet das Meter aus und wieder ein, für einen freien Bildschirm.",
+    "fr": "{0} masque le meter et le fait revenir, pour un écran dégagé."
+  },
+  "Home.Tip.Odyle": {
+    "en": "Characters shows every character's Odyle Energy and when it is full again.",
+    "de": "Charaktere zeigt die Odyle-Energie jedes Charakters und wann sie wieder voll ist.",
+    "fr": "Personnages montre l'énergie d'Odyle de chaque personnage et quand elle sera de nouveau pleine."
+  },
+  "Home.Tip.Dummy": {
+    "en": "Dummy test times your rotation on a training dummy, so your tries are easy to compare.",
+    "de": "Der Dummy-Test misst deine Rotation an einer Trainingspuppe, damit sich deine Versuche leicht vergleichen lassen.",
+    "fr": "Le test sur mannequin chronomètre votre rotation sur un mannequin d'entraînement, pour comparer facilement vos essais."
+  },
+  "Home.Tip.CpCalc": {
+    "en": "The CP calculator shows what every part of your character is worth in Combat Power, and what raises it most.",
+    "de": "Der KP-Rechner zeigt, was jeder Teil deines Charakters an Kampfkraft wert ist und was sie am meisten steigert.",
+    "fr": "Le calculateur de PC montre ce que vaut chaque partie de votre personnage en Puissance de combat, et ce qui l'augmente le plus."
+  },
+  "Home.Tip.PetMap": {
+    "en": "{0} shows or hides the pet map over the game.",
+    "de": "{0} zeigt oder versteckt die Haustierkarte über dem Spiel.",
+    "fr": "{0} affiche ou masque la carte des familiers sur le jeu."
+  },
+  "Home.Tip.Season": {
+    "en": "Star the season missions you are doing on the Characters page to keep them on screen while you play.",
+    "de": "Markiere die Saisonmissionen, die du machst, auf der Charakterseite mit einem Stern, damit sie beim Spielen sichtbar bleiben.",
+    "fr": "Mettez une étoile aux missions de saison que vous faites sur la page Personnages pour les garder à l'écran en jouant."
+  },
+  "Home.Tip.Loot": {
+    "en": "Loot lists what dropped and what it is worth.",
+    "de": "Beute zeigt, was gedroppt ist und was es wert ist.",
+    "fr": "Butin liste ce qui est tombé et ce que ça vaut."
+  },
+  "Home.Tip.Hotkeys": {
+    "en": "{0} shows the meter's hotkeys over the game as a small reminder.",
+    "de": "{0} zeigt die Tastenkürzel des Meters als kleine Erinnerung über dem Spiel.",
+    "fr": "{0} affiche les raccourcis du meter sur le jeu, en petit pense-bête."
+  },
+  "Home.Tip.Stream": {
+    "en": "Streaming (OBS) puts the meter and other overlays on your stream as browser sources.",
+    "de": "Streaming (OBS) bringt das Meter und andere Overlays als Browserquellen in deinen Stream.",
+    "fr": "Streaming (OBS) met le meter et d'autres overlays sur votre stream comme sources navigateur."
+  },
+  "Home.Tip.Theme": {
+    "en": "Design changes the app's colours, or makes a theme of your own.",
+    "de": "Design ändert die Farben der App oder erstellt ein eigenes Theme.",
+    "fr": "Design change les couleurs de l'app, ou crée votre propre thème."
+  },
+  "Home.SetupTitle": {
+    "en": "Get set up",
+    "de": "Einrichten",
+    "fr": "À configurer"
+  },
+  "Home.SetupCount": {
+    "en": "{0} of {1} done",
+    "de": "{0} von {1} erledigt",
+    "fr": "{0} sur {1} fait"
+  },
+  "Home.SetupHide": {
+    "en": "Hide",
+    "de": "Ausblenden",
+    "fr": "Masquer"
+  },
+  "Home.SetupGo": {
+    "en": "Set up",
+    "de": "Einrichten",
+    "fr": "Configurer"
+  },
+  "Home.SetupDismiss": {
+    "en": "Not for me",
+    "de": "Nichts für mich",
+    "fr": "Pas pour moi"
+  },
+  "Home.SetupAgain": {
+    "en": "Run the setup again",
+    "de": "Einrichtung erneut starten",
+    "fr": "Relancer la configuration"
+  },
+  "Home.Setup.Cooldowns": {
+    "en": "Your cooldowns",
+    "de": "Deine Abklingzeiten",
+    "fr": "Vos temps de recharge"
+  },
+  "Home.Setup.CooldownsWhat": {
+    "en": "Pick the skills to watch and place them over the game.",
+    "de": "Wähle die Fertigkeiten, die du im Blick haben willst, und platziere sie über dem Spiel.",
+    "fr": "Choisissez les compétences à suivre et placez-les sur le jeu."
+  },
+  "Home.Setup.Buffs": {
+    "en": "Buffs and debuffs",
+    "de": "Buffs und Debuffs",
+    "fr": "Buffs et débuffs"
+  },
+  "Home.Setup.BuffsWhat": {
+    "en": "The effects on you, with the time left, over the game.",
+    "de": "Die Effekte auf dir, mit der Restzeit, über dem Spiel.",
+    "fr": "Les effets sur vous, avec le temps restant, sur le jeu."
+  },
+  "Home.Setup.Bosses": {
+    "en": "World boss alerts",
+    "de": "Weltboss-Alarme",
+    "fr": "Alertes de boss mondiaux"
+  },
+  "Home.Setup.BossesWhat": {
+    "en": "Choose the world bosses to follow: the time until they are back, with a sound.",
+    "de": "Wähle die Weltbosse, denen du folgen willst: die Zeit, bis sie wieder da sind, mit einem Ton.",
+    "fr": "Choisissez les boss mondiaux à suivre : le temps avant leur retour, avec un son."
+  },
+  "Home.Setup.Map": {
+    "en": "Pet and gathering map",
+    "de": "Haustier- und Sammelkarte",
+    "fr": "Carte des familiers et de la récolte"
+  },
+  "Home.Setup.MapWhat": {
+    "en": "The pets you still need, gathering spots and where you are, over the game.",
+    "de": "Die Haustiere, die dir noch fehlen, Sammelorte und wo du bist, über dem Spiel.",
+    "fr": "Les familiers qu'il vous manque, les points de récolte et votre position, sur le jeu."
+  },
+  "Home.Setup.Season": {
+    "en": "Season missions",
+    "de": "Saisonmissionen",
+    "fr": "Missions de saison"
+  },
+  "Home.Setup.SeasonWhat": {
+    "en": "Star the missions you are doing and keep them on screen while you play.",
+    "de": "Markiere die Missionen, die du machst, und behalte sie beim Spielen im Blick.",
+    "fr": "Marquez les missions que vous faites et gardez-les à l'écran en jouant."
+  },
+  "Home.Setup.Account": {
+    "en": "Sign in with Discord",
+    "de": "Mit Discord anmelden",
+    "fr": "Se connecter avec Discord"
+  },
+  "Home.Setup.AccountWhat": {
+    "en": "Your uploaded fights go to your account, and you choose who sees each one.",
+    "de": "Deine hochgeladenen Kämpfe gehen auf dein Konto, und du bestimmst, wer jeden sieht.",
+    "fr": "Vos combats envoyés vont sur votre compte, et vous choisissez qui voit chacun."
   }
 }

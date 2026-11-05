@@ -26,6 +26,17 @@ public partial class MainWindow
             return;
         }
 
+        ShowLookSetup();
+    }
+
+    /// <summary>The setup (also again from Home, and from a news post's button).</summary>
+    private void ShowLookSetup()
+    {
+        if (Headless)
+        {
+            return;
+        }
+
         var setup = new LookSetup(this, PrivacyConsent.Restricted);
         var window = new Window
         {
@@ -38,6 +49,10 @@ public partial class MainWindow
         window.Closed += (_, _) => setup.MarkDone();
         ThemedChrome.Apply(window);
         window.ShowDialog();
+        if (_shellPage is "home" or "news")
+        {
+            ShowShellPage(_shellPage); // what the setup switched on (the card's steps)
+        }
     }
 
     /// <summary>One step of the setup as a picture (the pictures of the build: render-tool setup-design, -columns, -overlays, -colours).</summary>

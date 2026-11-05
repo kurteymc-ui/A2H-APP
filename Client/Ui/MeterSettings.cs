@@ -743,6 +743,15 @@ public sealed class MeterSettings
     /// <summary>The look setup after the terms ("Make it yours": the meter's design and columns, the overlays, the colours, with previews) was done or skipped;
     /// it is shown once, also to installs from before it (MainWindow.Setup.cs).</summary>
     public bool LookSetupDone { get; set; }
+
+    /// <summary>Home's tips (the line at the bottom of the greeting, MainWindow.HomeHelp.cs) were put away with their cross.</summary>
+    public bool HomeTipsHidden { get; set; }
+
+    /// <summary>Home's "Get set up" card was put away (Hide).</summary>
+    public bool HomeSetupHidden { get; set; }
+
+    /// <summary>The steps of Home's "Get set up" card the player put away one by one ("not for me": cooldowns, buffs, bosses, map, season, account).</summary>
+    public List<string> HomeSetupDismissed { get; set; } = new();
     /// <summary>The game's minimap is read for an exact own position (MinimapReader: the game window's picture matched against the map, while a Hidden Cube is in
     /// range or the map overlay is on). On by default (the owner, 2 Nov 2026), with a note on the meter the first time it gives a position.</summary>
     public bool MinimapReading { get; set; } = true;
