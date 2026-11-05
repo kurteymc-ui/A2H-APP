@@ -244,10 +244,7 @@ public partial class MainWindow
         hide.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextSubtle");
         DockPanel.SetDock(hide, Dock.Right);
         head.Children.Add(hide);
-        head.Children.Add(ShellText(loc["Home.SetupTitle"].ToUpperInvariant(), "Brush.TextMuted", 11, bold: true));
-        TextBlock count = ShellText(string.Format(CultureInfo.CurrentCulture, loc["Home.SetupCount"], steps.Count(x => x.Done), steps.Count), "Brush.TextSubtle", 11.5);
-        count.Margin = new Thickness(10, 0, 0, 0);
-        head.Children.Add(count);
+        head.Children.Add(ShellText(loc["Home.SetupTitle"].ToUpperInvariant(), "Brush.TextMuted", 11, bold: true)); // no "1 of 6 done": only what is left shows
         stack.Children.Add(head);
 
         var tiles = new UniformGrid { Columns = Math.Min(3, open.Count) };

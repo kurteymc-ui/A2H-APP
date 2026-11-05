@@ -93,30 +93,31 @@ public partial class MainWindow
         return items.Count > 0 ? items : new[] { WelcomeNews() };
     }
 
-    /// <summary>Made-up news for the pictures of the app (render-app): a post of ours with its article, and official items of each kind.</summary>
+    /// <summary>Made-up news for the pictures of the app (render-app): the week's patch notes with a write-up of ours, and official items of each kind.</summary>
     internal static IReadOnlyList<NewsItem> SampleNews()
     {
         DateTime now = DateTime.UtcNow;
         NewsBlock B(string kind, string text) => new(kind, text, Array.Empty<string>());
         return new[]
         {
-            new NewsItem("make-it-yours", "atreia", "Atreia App", "Make it yours",
-                "A setup at the first start shows every change over your own game, each overlay gets its own place and transparency, and the meter tells you when the boss dies.",
-                now.AddHours(-2), null, null, "setup", "Run the setup", Array.Empty<string>(),
+            new NewsItem("6b0000000000000000000004", "game", "Patch notes", "A new raid, and a PvP zone where gear does not count",
+                "A sample of the week's write-up: the patch notes again, shorter and easier to read, with the official notes one button away.",
+                now.AddHours(-20), null, Brand.Site + "/", null, null, Array.Empty<string>(),
                 new[]
                 {
-                    B("h", "Set it up before you play"),
-                    B("p", "The first time the app opens, a short setup walks you through the meter's design, its columns, the overlays, the map and the colours. Every step shows how it will look over a picture of your own game."),
-                    B("h", "Every overlay on its own"),
-                    B("li", "Drag each overlay to its place on the picture of your game."),
-                    B("li", "Give each one its own transparency and size with Customize."),
-                    new NewsBlock("row", "", new[] { "Overlay", "Transparency", "Size" }),
-                    new NewsBlock("row", "", new[] { "Cooldowns", "80%", "110%" }),
-                    new NewsBlock("row", "", new[] { "Timers", "60%", "100%" }),
-                    B("p", "You can run the setup again any time from Home."),
-                }, null, null, false),
+                    B("h", "At a glance"),
+                    B("li", "A new raid in Normal and Hard, one hour a run."),
+                    B("li", "A PvP zone where everyone has the same stats."),
+                    B("h", "The raid"),
+                    B("p", "Two difficulties with the same kinds of rewards; Hard drops them more often."),
+                    new NewsBlock("row", "", new[] { "Difficulty", "Item Level", "Time" }),
+                    new NewsBlock("row", "", new[] { "Normal", "2,800", "1 hour" }),
+                    new NewsBlock("row", "", new[] { "Hard", "3,000", "1 hour" }),
+                    B("h", "Events"),
+                    B("li", "A check-in event: seven rewards over fourteen days."),
+                }, null, null, false, "Patch Notes | Sample"),
             new NewsItem("6b0000000000000000000001", "game", "Patch notes", "Sample Update Notes", "Hard mode for two expedition dungeons. Expedition bosses hit softer.",
-                now.AddDays(-1), null, null, null, null, new[] { "Hard mode for two expedition dungeons", "Expedition bosses hit softer", "A new daily dungeon" }, null, null, null, false),
+                now.AddDays(-8), null, null, null, null, new[] { "Hard mode for two expedition dungeons", "Expedition bosses hit softer", "A new daily dungeon" }, null, null, null, false),
             new NewsItem("6b0000000000000000000002", "game", "Event", "Sample Login Event", "Log in every day for 28 days for a reward each day.",
                 now.AddDays(-2), null, null, null, null, Array.Empty<string>(), null, null, null, false),
             new NewsItem("6b0000000000000000000003", "game", "Maintenance", "Sample Maintenance", "",
@@ -400,13 +401,19 @@ public partial class MainWindow
             CornerRadius = new CornerRadius(3), Padding = new Thickness(7, 2, 7, 2), Background = new SolidColorBrush(NewsTagColour(item.Tag)), VerticalAlignment = VerticalAlignment.Center,
             Child = new TextBlock { Text = NewsTag(item.Tag), FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x10, 0x12, 0x18)) },
         });
-        TextBlock when = ShellText(NewsDate(item.Posted) + (item.Official ? "  ·  " + loc["News.FromGame"] : ""), "Brush.TextMuted", 12);
+        TextBlock when = ShellText(NewsDate(item.Posted) + (item.WrittenUp ? "  ·  " + loc["News.OurSummary"] : item.Official ? "  ·  " + loc["News.FromGame"] : ""), "Brush.TextMuted", 12);
         when.Margin = new Thickness(10, 0, 0, 0);
         meta.Children.Add(when);
         page.Children.Add(meta);
         TextBlock title = Wrapped(item.Title, "Brush.Text", 26);
         title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
         page.Children.Add(title);
+        if (item.WrittenUp && item.OfficialTitle is { Length: > 0 } official && official != item.Title)
+        {
+            TextBlock from = ShellText(official, "Brush.TextSubtle", 12);
+            from.Margin = new Thickness(0, 4, 0, 0);
+            page.Children.Add(from);
+        }
         if (NewsSummary(item) is { Length: > 0 } lede)
         {
             TextBlock line = Wrapped(lede, "Brush.TextMuted", 14.5);
@@ -454,7 +461,7 @@ public partial class MainWindow
 
         if (item.Url is { } url)
         {
-            var open = new Button { Content = loc[item.Official ? "News.OfficialSite" : "News.Website"] + "  ↗", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 10, 0) };
+            var open = new Button { Content = loc[item.WrittenUp && item.Tag == "Patch notes" ? "News.OfficialNotes" : item.Official ? "News.OfficialSite" : "News.Website"] + "  ↗", Padding = new Thickness(16, 6, 16, 6), Margin = new Thickness(0, 0, 10, 0) };
             open.Click += (_, _) => OpenUrl(url);
             actions.Children.Add(open);
         }

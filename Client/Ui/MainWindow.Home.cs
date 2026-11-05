@@ -32,29 +32,6 @@ public partial class MainWindow
 
         page.Children.Add(HomeGreeting(now));
 
-        // the news (our posts and the game's official ones) and what is worth setting up first
-        if (Headless || !PrivacyConsent.Restricted)
-        {
-            page.Children.Add(NewsBanner(HomeNews()));
-        }
-
-        if (HomeSetupCard() is { } setup)
-        {
-            page.Children.Add(setup);
-        }
-
-        StartHomeSlides();
-
-        var columns = new Grid();
-        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star), MinWidth = 380 });
-        columns.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star), MinWidth = 280 });
-        var left = new StackPanel();
-        var right = new StackPanel();
-        Grid.SetColumn(right, 1);
-        columns.Children.Add(left);
-        columns.Children.Add(right);
-        page.Children.Add(columns);
-
         // the characters' Odyle Energy: who is full, who is next
         string? online = Aion2Tickets.CurrentName;
         var odyle = Aion2Tickets.Snapshot().Where(c => c.Tickets.Count > 0)
@@ -71,9 +48,23 @@ public partial class MainWindow
             energy.Children.Add(OdyleRow(character, state!, utcNow));
         }
 
-        left.Children.Add(HomeCard(loc["Shell.Odyle"], energy, "characters", 0));
+        // first what is due (5 November 2026, the owner: the Odyle Energy and the next events at the top, under the greeting, then the news), the two as high
+        page.Children.Add(HomeRow(HomeCard(loc["Shell.Odyle"], energy, "characters", 0), HomeCard(loc["Home.NextEvents"], NextEvents(now), "timetable", 0), stretch: true));
 
-        // the last fight, big, and the ones before it
+        // the news (the game's official patch notes and notices, with our write-ups) and what is worth setting up first
+        if (Headless || !PrivacyConsent.Restricted)
+        {
+            page.Children.Add(NewsBanner(HomeNews()));
+        }
+
+        if (HomeSetupCard() is { } setup)
+        {
+            page.Children.Add(setup);
+        }
+
+        StartHomeSlides();
+
+        // the last fight, big, and the ones before it; the pet collection
         IReadOnlyList<FightLogEntry> entries = FightLog.Entries();
         var fights = new StackPanel();
         if (entries.Count == 0)
@@ -89,13 +80,7 @@ public partial class MainWindow
             }
         }
 
-        left.Children.Add(HomeCard(loc["Home.LastFight"], fights, "history", 0));
-
-        // the next events
-        right.Children.Add(HomeCard(loc["Home.NextEvents"], NextEvents(now), "timetable", 0));
-
-        // the pet collection
-        right.Children.Add(HomeCard(loc["Home.Pets"], PetCollection(), "petmap.pets", 0));
+        page.Children.Add(HomeRow(HomeCard(loc["Home.LastFight"], fights, "history", 0), HomeCard(loc["Home.Pets"], PetCollection(), "petmap.pets", 0), stretch: false));
 
         // rebuilt every 30 seconds: it stays where it was scrolled to
         double kept = _homeViewer is { } old && AppPageHost.Children.Contains(old) ? old.VerticalOffset : 0;
@@ -110,6 +95,23 @@ public partial class MainWindow
     }
 
     private ScrollViewer? _homeViewer;
+
+    /// <summary>Two cards side by side, three fifths and two fifths; <paramref name="stretch"/>: both as high as the higher one.</summary>
+    private static UIElement HomeRow(Border left, Border right, bool stretch)
+    {
+        var row = new Grid();
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star), MinWidth = 380 });
+        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star), MinWidth = 280 });
+        if (stretch)
+        {
+            left.VerticalAlignment = right.VerticalAlignment = VerticalAlignment.Stretch;
+        }
+
+        Grid.SetColumn(right, 1);
+        row.Children.Add(left);
+        row.Children.Add(right);
+        return row;
+    }
 
     /// <summary>The notices at the top: only what the player has to do something about.</summary>
     private IEnumerable<UIElement> HomeNotices()

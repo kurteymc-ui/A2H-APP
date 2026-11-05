@@ -21370,11 +21370,6 @@
     "de": "Einrichten",
     "fr": "À configurer"
   },
-  "Home.SetupCount": {
-    "en": "{0} of {1} done",
-    "de": "{0} von {1} erledigt",
-    "fr": "{0} sur {1} fait"
-  },
   "Home.SetupHide": {
     "en": "Hide",
     "de": "Ausblenden",
@@ -21454,5 +21449,15 @@
     "en": "Your uploaded fights go to your account, and you choose who sees each one.",
     "de": "Deine hochgeladenen Kämpfe gehen auf dein Konto, und du bestimmst, wer jeden sieht.",
     "fr": "Vos combats envoyés vont sur votre compte, et vous choisissez qui voit chacun."
+  },
+  "News.OurSummary": {
+    "en": "our summary of the official notes",
+    "de": "unsere Zusammenfassung der offiziellen Notes",
+    "fr": "notre résumé des notes officielles"
+  },
+  "News.OfficialNotes": {
+    "en": "Read the official patch notes",
+    "de": "Offizielle Patchnotes lesen",
+    "fr": "Lire les notes de patch officielles"
   }
 }

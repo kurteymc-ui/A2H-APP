@@ -12,16 +12,20 @@ public sealed record NewsBlock(string Kind, string Text, IReadOnlyList<string> C
 /// <summary>One item of the Home page's news: our own post about the app (<see cref="Official"/> false) or an official notice or patch note of the game.</summary>
 public sealed record NewsItem(
     string Id, string Source, string Tag, string Title, string Summary, DateTime Posted, string? Image, string? Url, string? Page, string? PageLabel,
-    IReadOnlyList<string> Points, IReadOnlyList<NewsBlock>? Blocks, DateTime? Start, int? Minutes, bool Done)
+    IReadOnlyList<string> Points, IReadOnlyList<NewsBlock>? Blocks, DateTime? Start, int? Minutes, bool Done, string? OfficialTitle = null)
 {
+    /// <summary>An official item with our write-up (<see cref="Blocks"/>): the patch notes again, shorter and easier to read.</summary>
+    public bool WrittenUp => Official && Blocks is { Count: > 0 };
+
     /// <summary>An official notice or patch note of the game (read in full from the website when opened), not a post of ours.</summary>
     public bool Official => Source == "game";
 }
 
 /// <summary>
-/// The news on the Home page (5 November 2026, the owner: "an event page, like a 1200x400 banner, with recent news that people can click to read"): the
-/// website's list (<see cref="ListUrl"/>, src/appnews.js there) has our posts about the app and the game's newest official notices and patch notes, each
-/// with a 1200x400 picture of the website. The list is asked for when Home shows and is older than 20 minutes, and kept in the data folder, so Home has
+/// The news on the Home page (5 November 2026, the owner: "an event page, like a 1200x400 banner, with recent news that people can click to read", and
+/// then: "the latest news posted by NCSOFT in that spot, and read more opens it in a nicer form written by us, every week"): the website's list
+/// (<see cref="ListUrl"/>, src/appnews.js there) has the game's newest official patch notes and notices, each with a 1200x400 picture of the website,
+/// the week's patch notes with our write-up. The list is asked for when Home shows and is older than 20 minutes, and kept in the data folder, so Home has
 /// its news at the next start before the website answers (and offline). An official notice is read in full only when it is opened (<see cref="ArticleAsync"/>).
 /// Nothing is sent: plain GETs without any identifier of the player. Never throws; a failure keeps what there is.
 /// </summary>
@@ -282,8 +286,8 @@ public static class NewsClient
                 items.Add(new NewsItem(
                     id, source, Text(x, "tag", 30) ?? (source == "game" ? "Announcement" : "Atreia App"), title, Text(x, "summary", 400) ?? "", posted,
                     PictureUrl(Text(x, "image")), LinkUrl(Text(x, "url")), page, page is null ? null : Text(x, "pageLabel", 40), points,
-                    source == "atreia" && x.TryGetProperty("blocks", out JsonElement b) ? ParseBlocks(b) : null,
-                    start, minutes, x.TryGetProperty("done", out JsonElement d) && d.ValueKind == JsonValueKind.True));
+                    x.TryGetProperty("blocks", out JsonElement b) && ParseBlocks(b) is { Count: > 0 } blocks ? blocks : null,
+                    start, minutes, x.TryGetProperty("done", out JsonElement d) && d.ValueKind == JsonValueKind.True, Text(x, "official", 200)));
                 if (items.Count >= 12)
                 {
                     break;
