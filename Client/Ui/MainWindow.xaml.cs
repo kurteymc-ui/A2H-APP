@@ -422,6 +422,20 @@ public partial class MainWindow : Window
                 startupSettings.Save();
             }
 
+            if (!startupSettings.NaturalVoiceDefaulted && NaturalVoice.Voices().Count > 0)
+            {
+                // the skills' and the bosses' announcements in English take the recorded voice once (the Windows voices sound like machines); other
+                // languages keep theirs, and whoever picks a Windows voice again keeps it
+                if (CastSpeech.WordsLanguage(startupSettings) == "en")
+                {
+                    startupSettings.SpeechVoiceId = NaturalVoice.Heart;
+                    startupSettings.SpeechLanguage = NaturalVoice.Language;
+                }
+
+                startupSettings.NaturalVoiceDefaulted = true;
+                startupSettings.Save();
+            }
+
             if (startupSettings.CheckForUpdates)
             {
                 // Queued on the dispatcher, not started right here: this runs in the constructor, before app.Run, where no UI synchronization context

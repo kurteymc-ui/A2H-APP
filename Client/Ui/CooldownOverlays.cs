@@ -739,7 +739,7 @@ public sealed class CooldownVoice
         List<int> back = Due(skills, settings.AssistVoiceSkills.ToHashSet(), now, inGame);
         if (back.Count > 0)
         {
-            Say(back.Select(Aion2SkillNames.DisplayOf).ToList(), settings);
+            Say(back.Select(id => NameOf(id, settings)).ToList(), settings);
         }
     }
 
@@ -768,11 +768,20 @@ public sealed class CooldownVoice
         return back;
     }
 
-    /// <summary>Says that these skills are back (also the window's test button).</summary>
+    /// <summary>A skill's name as the voice says it: in English for the recorded voice, else in the program's language.</summary>
+    public static string NameOf(int skillId, MeterSettings settings) =>
+        CastSpeech.Natural(settings) ? Aion2SkillNames.EnglishOf(skillId) : Aion2SkillNames.DisplayOf(skillId);
+
+    /// <summary>The name the test button says ("Skill"), in the voice's language for the recorded voice.</summary>
+    public static string SampleName(MeterSettings settings) =>
+        CastSpeech.Natural(settings) ? LocalizationManager.Instance.In("Assist.VoiceSample", "en") : LocalizationManager.Instance["Assist.VoiceSample"];
+
+    /// <summary>Says that these skills are back (also the window's test button): "Taunt ready", each a phrase of the recorded voice.</summary>
     public void Say(IReadOnlyList<string> skills, MeterSettings settings)
     {
         string words = CastSpeech.WordsLanguage(settings);
-        string sentence = string.Join(". ", skills.Select(name => string.Format(CultureInfo.CurrentCulture, LocalizationManager.Instance.In("Assist.VoiceReady", words), name)));
-        _speech.Speak(sentence, settings.SpeechVoiceId, Math.Clamp(settings.AssistVoiceVolume, 0, 100) / 100.0, AudioOutput.DeviceId);
+        var each = skills.Select(name => string.Format(CultureInfo.CurrentCulture, LocalizationManager.Instance.In("Assist.VoiceReady", words), name))
+            .Select(line => new Spoken(line, new[] { line })).ToList();
+        _speech.Speak(Spoken.Join(each), settings.SpeechVoiceId, Math.Clamp(settings.AssistVoiceVolume, 0, 100) / 100.0, AudioOutput.DeviceId);
     }
 }

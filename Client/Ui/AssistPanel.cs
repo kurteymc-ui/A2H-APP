@@ -185,7 +185,7 @@ public sealed class AssistPanel : StackPanel
         if (skills)
         {
             var card = new StackPanel();
-            card.Children.Add(Heading(loc["Assist.Cooldowns"]));
+            card.Children.Add(Part == AssistPart.Cooldowns ? ColumnHeads() : Heading(loc["Assist.Cooldowns"])); // the window's Cooldowns tab: the columns under its own heading
             _noSkills = Label(loc["Assist.NoCooldowns"], "Brush.TextMuted", 12);
             _noSkills.TextWrapping = TextWrapping.Wrap;
             card.Children.Add(_noSkills);
@@ -252,7 +252,7 @@ public sealed class AssistPanel : StackPanel
             ListRow row = _skillRows[id];
             row.Tile.Show(view);
             string length = Aion2Cooldowns.Length(id) is double l and > Aion2Cooldowns.NoCooldownSeconds ? LengthText(l) : "";
-            row.SetStatus(view.Running ? LeftText(view.Seconds) : loc["Assist.Ready"], view.Running);
+            row.SetStatus(view.Running ? LeftText(view.Seconds) : loc["Assist.Ready"], view.Running, ready: !view.Running);
             row.SetDetail(length);
         }
 
@@ -726,8 +726,51 @@ public sealed class AssistPanel : StackPanel
     }
 
     /// <summary>A row of the window's lists: the box (ticked: in the overlay), the picture, the name (the id in its tooltip) and what is left.</summary>
-    private sealed class ListRow : Grid
+    /// <summary>The widths of a skill row's columns, shared with the header over them: the box, the picture, (the name), the length, the time left, the speaker.</summary>
+    private const double BoxColumn = 30, PictureColumn = 40, LengthColumn = 80, LeftColumn = 64, VoiceColumn = 38;
+
+    /// <summary>The header over the skills' list: the box (an eye), the skill, its cooldown, the time left, the speaker; in the rows' columns.</summary>
+    private static Grid ColumnHeads()
     {
+        LocalizationManager loc = LocalizationManager.Instance;
+        var grid = new Grid { Margin = new Thickness(ListRow.Inset, 2, ListRow.Inset, 10) };
+        foreach (double width in new[] { BoxColumn, PictureColumn, double.NaN, LengthColumn, LeftColumn, VoiceColumn })
+        {
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = double.IsNaN(width) ? new GridLength(1, GridUnitType.Star) : new GridLength(width) });
+        }
+
+        TextBlock Head(string text, int column, TextAlignment align, bool glyph = false, string? tip = null)
+        {
+            var block = new TextBlock { Text = text, FontSize = glyph ? 12 : 11.5, TextAlignment = align, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = tip, VerticalAlignment = VerticalAlignment.Bottom };
+            if (glyph)
+            {
+                block.FontFamily = new FontFamily("Segoe MDL2 Assets");
+            }
+
+            block.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextSubtle");
+            Grid.SetColumn(block, column);
+            grid.Children.Add(block);
+            return block;
+        }
+
+        Head("\uE7B3", 0, TextAlignment.Left, glyph: true, tip: loc["Assist.ShowInList"]).Margin = new Thickness(2, 0, 0, 1);
+        Grid.SetColumnSpan(Head(loc["Assist.Col.Skill"], 1, TextAlignment.Left), 2);
+        Head(loc["Assist.Col.Cooldown"], 3, TextAlignment.Right).ToolTip = loc["Assist.LengthTip"];
+        Head(loc["Assist.Col.Left"], 4, TextAlignment.Right);
+        Head("\uE767", 5, TextAlignment.Right, glyph: true, tip: loc["Assist.VoiceTip"]).Margin = new Thickness(0, 0, 8, 1);
+        var line = new Border { Height = 1, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(-ListRow.Inset, 0, -ListRow.Inset, -5) };
+        line.SetResourceReference(Border.BackgroundProperty, "Brush.Border");
+        Grid.SetColumnSpan(line, 6);
+        grid.Children.Add(line);
+        return grid;
+    }
+
+    /// <summary>A row of the window's lists: the box, the picture, the name, the length (skills), the time left, the speaker (skills); lit under the mouse.</summary>
+    private sealed class ListRow : Border
+    {
+        /// <summary>The room inside a row, left and right (the header keeps the same).</summary>
+        public const double Inset = 6;
+
         public CheckBox Box { get; }
         public SkillTile Tile { get; }
 
@@ -737,47 +780,60 @@ public sealed class AssistPanel : StackPanel
         private readonly FrameworkElement _body;
         private readonly TextBlock _status;
         private readonly TextBlock _detail;
-        private bool? _strong;
+        private string? _statusBrush;
 
         public ListRow(int id, SkillTile tile, FrameworkElement picture, string name, string tip, string? voiceTip = null)
         {
             Tile = tile;
-            Margin = new Thickness(0, 3, 0, 3);
-            ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            Box = new CheckBox { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0), ToolTip = tip };
-            Children.Add(Box);
+            // a skill's row has the header's fixed columns; an effect's sizes to what it holds
+            bool columns = voiceTip is not null;
+            var grid = new Grid();
+            Child = grid;
+            CornerRadius = new CornerRadius(6);
+            Padding = new Thickness(Inset, 3, Inset, 3);
+            Margin = new Thickness(0, 1, 0, 1);
+            Background = Brushes.Transparent;
+            MouseEnter += (_, _) => SetResourceReference(BackgroundProperty, "Brush.ControlHover");
+            MouseLeave += (_, _) => Background = Brushes.Transparent;
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = columns ? new GridLength(BoxColumn) : GridLength.Auto });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            Box = new CheckBox { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, columns ? 0 : 10, 0), ToolTip = tip };
+            grid.Children.Add(Box);
 
             var body = new Grid();
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = columns ? new GridLength(PictureColumn) : GridLength.Auto });
             body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = columns ? new GridLength(LengthColumn) : GridLength.Auto });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = columns ? new GridLength(LeftColumn) : GridLength.Auto });
+            body.ColumnDefinitions.Add(new ColumnDefinition { Width = columns ? new GridLength(VoiceColumn) : GridLength.Auto });
             picture.Margin = new Thickness(0, 0, 10, 0);
             picture.VerticalAlignment = VerticalAlignment.Center;
+            picture.HorizontalAlignment = HorizontalAlignment.Left;
             body.Children.Add(picture);
             var label = new TextBlock { Text = name, FontSize = 13, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = "#" + id };
             label.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
             Grid.SetColumn(label, 1);
             body.Children.Add(label);
             // the cooldown's length on this character, as learned (muted), then the time left
-            _detail = new TextBlock { FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), ToolTip = LocalizationManager.Instance["Assist.LengthTip"] };
+            _detail = new TextBlock
+            {
+                FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), TextAlignment = TextAlignment.Right,
+                ToolTip = LocalizationManager.Instance["Assist.LengthTip"],
+            };
             _detail.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextSubtle");
             Grid.SetColumn(_detail, 2);
             body.Children.Add(_detail);
-            _status = new TextBlock { FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), MinWidth = 52, TextAlignment = TextAlignment.Right };
+            _status = new TextBlock { FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0), MinWidth = columns ? 0 : 52, TextAlignment = TextAlignment.Right };
             Grid.SetColumn(_status, 3);
             body.Children.Add(_status);
             if (voiceTip is not null)
             {
-                // a speaker: the skill is said out loud when it is back
                 // a speaker: the skill is said out loud when it is back (on: the speaker in the accent colour; off: a muted one)
                 var glyph = new TextBlock { FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 15, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
                 var voice = new System.Windows.Controls.Primitives.ToggleButton
                 {
                     Content = glyph, Template = PlainToggle(), Background = Brushes.Transparent, ToolTip = voiceTip, Width = 30, Height = 26,
-                    Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, Cursor = System.Windows.Input.Cursors.Hand,
+                    HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, Cursor = System.Windows.Input.Cursors.Hand,
                 };
                 void Look()
                 {
@@ -793,8 +849,9 @@ public sealed class AssistPanel : StackPanel
                 Grid.SetColumn(voice, 4);
                 body.Children.Add(voice);
             }
+
             Grid.SetColumn(body, 1);
-            Children.Add(body);
+            grid.Children.Add(body);
             _body = body;
         }
 
@@ -823,19 +880,20 @@ public sealed class AssistPanel : StackPanel
             }
         }
 
-        /// <param name="strong">A running time (the text colour, semi-bold); else muted ("Ready", why a skill is not listed).</param>
-        public void SetStatus(string text, bool strong)
+        /// <param name="strong">A running time (the text colour, semi-bold); else muted (why a skill is not listed) - or green for "Ready" (<paramref name="ready"/>).</param>
+        public void SetStatus(string text, bool strong, bool ready = false)
         {
             if (_status.Text != text)
             {
                 _status.Text = text;
             }
 
-            if (_strong != strong)
+            string brush = strong ? "Brush.Text" : ready ? "Brush.Heal" : "Brush.TextMuted";
+            if (_statusBrush != brush)
             {
-                _strong = strong;
+                _statusBrush = brush;
                 _status.FontWeight = strong ? FontWeights.SemiBold : FontWeights.Normal;
-                _status.SetResourceReference(TextBlock.ForegroundProperty, strong ? "Brush.Text" : "Brush.TextMuted");
+                _status.SetResourceReference(TextBlock.ForegroundProperty, brush);
             }
         }
     }

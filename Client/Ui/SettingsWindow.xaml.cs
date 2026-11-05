@@ -728,6 +728,7 @@ public partial class SettingsWindow : Window
         _settings.AssistVoiceVolume = onDisk.AssistVoiceVolume;
         _settings.TrackOpenWorld = onDisk.TrackOpenWorld; // the Open world button on the meter page
         _settings.MenuHideDefaulted = onDisk.MenuHideDefaulted;
+        _settings.NaturalVoiceDefaulted = onDisk.NaturalVoiceDefaulted;
         _settings.IconRefreshedFor = onDisk.IconRefreshedFor;
         // the route's options are set on the map's page, not in this window: the file's values stand
         _settings.PetRouteOn = onDisk.PetRouteOn;
@@ -1751,17 +1752,20 @@ public partial class SettingsWindow : Window
         var loc = LocalizationManager.Instance;
         MeterSettings s = SpeechPreviewSettings();
         string words = CastSpeech.WordsLanguage(s);
+        // the recorded voice says the skills' names in English, as it would in a fight
+        string Skill(string key) => CastSpeech.Natural(s) ? loc.In(key, "en") : loc[key];
         var samples = new[]
         {
-            (loc["Settings.Speech.SampleYou"], loc["Speech.SampleIce"], true, false, false),
-            (loc["Settings.Speech.SampleArea"], loc["Speech.SampleIce"], false, true, false),
-            (loc["Settings.Speech.SampleLethal"], loc["Speech.SampleDeath"], false, true, true),
+            (loc["Settings.Speech.SampleYou"], Skill("Speech.SampleIce"), true, false, false),
+            (loc["Settings.Speech.SampleArea"], Skill("Speech.SampleIce"), false, true, false),
+            (loc["Settings.Speech.SampleLethal"], Skill("Speech.SampleDeath"), false, true, true),
         };
         SpeechExamples.Children.Clear();
         for (int i = 0; i < samples.Length; i++)
         {
             var (what, skill, atYou, all, lethal) = samples[i];
-            string? say = CastSpeech.Sentence(s, skill, atYou, all, lethal, words);
+            Spoken? said = CastSpeech.Said(s, skill, atYou, all, lethal, words);
+            string? say = said?.Text;
             var row = new Grid { Margin = new Thickness(0, 6, 0, 6) };
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.1, GridUnitType.Star) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.4, GridUnitType.Star) });
@@ -1775,7 +1779,7 @@ public partial class SettingsWindow : Window
             }
 
             var play = new Button { Content = "▶", Padding = new Thickness(12, 3, 12, 3), IsEnabled = say is not null && SpeechVoiceCombo.SelectedItem is not null, VerticalAlignment = VerticalAlignment.Center };
-            string spoken = say ?? "";
+            Spoken spoken = said ?? new Spoken("", Array.Empty<string>());
             double volume = CastSpeech.Volume(s, atYou, all, lethal);
             play.Click += (_, _) => _speech.Speak(spoken, Chosen(SpeechVoiceCombo, ""), volume, Chosen(AudioDeviceCombo, ""));
             Grid.SetColumn(text, 1);

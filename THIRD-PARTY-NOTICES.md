@@ -92,6 +92,12 @@ SOFTWARE.
 
 Cinzel and Source Sans 3 (the app's A2H Sans), under the SIL Open Font License 1.1: see `Client/Fonts/OFL.txt`.
 
+## Natural voice
+
+The recorded voice of the skill and boss announcements (`Client/assets/voice/`) was spoken by Kokoro-82M
+(hexgrad/Kokoro-82M, Apache License 2.0), run through kokoro-onnx (MIT); `Tools/voice` makes it again. Only the
+finished clips are shipped, not the model.
+
 ## Libraries
 
 The app is built with these libraries from NuGet, each under its own license: Velopack, SharpPcap, PacketDotNet and

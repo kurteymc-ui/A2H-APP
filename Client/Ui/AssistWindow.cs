@@ -1,5 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
+using System.Windows.Markup;
+using System.Windows.Media;
 using System.Windows.Threading;
 using AionDPS.Aion2;
 
@@ -10,6 +13,9 @@ namespace AionDPS.Ui;
 /// local player's cooldowns or the effects on him. Cooldowns (4 November 2026): every skill on the skill bar, ticked to be shown on the screen - each where
 /// the player puts it, alone or all of them together (<see cref="CooldownSkillWindow"/>) - and to be said out loud when it is back; the look (bars or
 /// squares), the size, the bars' width and the voice's volume. The tab chosen last opens again. Built in code, in the look of the other windows.
+/// <para>5 November 2026, the Cooldowns tab redrawn ("kinda mid"): two cards with short labels - On screen (the switch in its corner, a Place button, the
+/// look as two segments, the sliders, the two smaller switches) and Say when ready (the voice, the volume, a test) - then the skills under a header with
+/// their columns; the whole tab scrolls as one page.</para>
 /// </summary>
 public sealed class AssistWindow : Window
 {
@@ -20,11 +26,13 @@ public sealed class AssistWindow : Window
     private readonly StackPanel _tabStrip = new() { Orientation = Orientation.Horizontal };
     private readonly DockPanel _cooldownsPage = new();
     private readonly DockPanel _buffsPage = new();
-    private readonly List<CheckBox> _lockBoxes = new();
+    private readonly List<ToggleButton> _lockBoxes = new();
     private readonly List<RadioButton> _lookButtons = new();
     private readonly CooldownVoice _voiceTest = new();
     private CheckBox? _togetherBox;
     private Slider? _sizeSlider;
+    private Button? _placeButton;
+    private FrameworkElement? _barWidthRow;
 
     /// <summary>The tabs' names in the settings (<see cref="MeterSettings.AssistTab"/>) and for the tools window's size per tab.</summary>
     public const string CooldownsTab = "cooldowns", BuffsTab = "buffs";
@@ -40,8 +48,8 @@ public sealed class AssistWindow : Window
         _directory = directory;
         LocalizationManager loc = LocalizationManager.Instance;
         Title = loc["Assist.Title"];
-        Width = 560;
-        Height = 640;
+        Width = 580;
+        Height = 780;
         MinWidth = 420;
         MinHeight = 300;
         WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -76,29 +84,8 @@ public sealed class AssistWindow : Window
             }
         });
 
-        // Cooldowns: on the screen or not, placing them, the look, then the skills
-        var cooldownSwitches = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
-        cooldownSwitches.Children.Add(Switch(loc["Assist.ShowCooldownsOverlay"], settings.ShowAssistOverlay, on => Change(s => s.ShowAssistOverlay = on)));
-        cooldownSwitches.Children.Add(LockSwitch(settings, loc["Assist.Place"]));
-        _togetherBox = Switch(loc["Assist.MoveTogetherSwitch"], settings.AssistCooldownsTogether, on => Change(s => s.AssistCooldownsTogether = on));
-        _togetherBox.ToolTip = loc["Assist.MoveTogetherTip"];
-        cooldownSwitches.Children.Add(_togetherBox);
-        cooldownSwitches.Children.Add(Switch(loc["Assist.ShowReady"], settings.AssistShowReady, on => Change(s => s.AssistShowReady = on)));
-        cooldownSwitches.Children.Add(LookRow(settings));
-        DockPanel size = SliderRow(loc["Assist.Size"], 0.6, 2.0, settings.AssistCooldownScale, v => $"{v * 100:0} %", v => Change(s => s.AssistCooldownScale = Math.Round(v, 2)));
-        _sizeSlider = size.Children.OfType<Slider>().FirstOrDefault();
-        cooldownSwitches.Children.Add(size);
-        cooldownSwitches.Children.Add(SliderRow(loc["Assist.BarWidth"], 110, 320, settings.AssistBarWidth, v => $"{v:0}", v => Change(s => s.AssistBarWidth = Math.Round(v))));
-        var volume = SliderRow(loc["Assist.VoiceVolume"], 0, 100, settings.AssistVoiceVolume, v => $"{v:0} %", v => Change(s => s.AssistVoiceVolume = (int)Math.Round(v)));
-        var test = new Button { Content = loc["Assist.VoiceTest"], Padding = new Thickness(10, 1, 10, 1), Margin = new Thickness(8, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        test.Click += (_, _) => _voiceTest.Say(new[] { loc["Assist.VoiceSample"] }, MeterSettings.Load());
-        DockPanel.SetDock(test, Dock.Right);
-        volume.Children.Insert(0, test);
-        cooldownSwitches.Children.Add(volume);
-        var reset = new Button { Content = loc["Assist.ResetPlaces"], HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 8, 0, 0), Padding = new Thickness(12, 3, 12, 3) };
-        reset.Click += (_, _) => AssistController.ResetCooldownPlaces();
-        cooldownSwitches.Children.Add(reset);
-        Fill(_cooldownsPage, cooldownSwitches, loc["Assist.PickHint"], _panel);
+        // Cooldowns: a card for the screen, one for the voice, then the skills
+        BuildCooldowns(settings);
 
         // Buffs: its overlay, the order, then the effects on the player
         var buffSwitches = new StackPanel { Margin = new Thickness(0, 0, 0, 8) };
@@ -216,9 +203,15 @@ public sealed class AssistWindow : Window
     private void FromEditBar()
     {
         MeterSettings s = MeterSettings.Load();
-        foreach (CheckBox box in _lockBoxes)
+        foreach (ToggleButton box in _lockBoxes)
         {
             box.IsChecked = !s.AssistOverlayLocked;
+        }
+
+        ShowPlacing(!s.AssistOverlayLocked);
+        if (_barWidthRow is not null)
+        {
+            _barWidthRow.Visibility = s.AssistCooldownStyle == CooldownArt.Tiles ? Visibility.Collapsed : Visibility.Visible;
         }
 
         if (_togetherBox is not null)
@@ -247,44 +240,275 @@ public sealed class AssistWindow : Window
         CheckBox box = Switch(text, !settings.AssistOverlayLocked, on =>
         {
             Change(s => s.AssistOverlayLocked = !on);
-            foreach (CheckBox other in _lockBoxes)
+            foreach (ToggleButton other in _lockBoxes)
             {
                 other.IsChecked = on;
             }
+
+            ShowPlacing(on);
         });
         _lockBoxes.Add(box);
         return box;
     }
 
-    /// <summary>The look of the cooldowns and the effects: bars or tiles (two buttons, the chosen one marked).</summary>
-    private UIElement LookRow(MeterSettings settings)
+    /// <summary>The Cooldowns tab: the card for the screen, the card for the voice, the skills; one page that scrolls.</summary>
+    private void BuildCooldowns(MeterSettings settings)
     {
         LocalizationManager loc = LocalizationManager.Instance;
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 8, 0, 0) };
-        var label = new TextBlock { Text = loc["Assist.Look"], VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0), MinWidth = 90 };
-        label.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
-        row.Children.Add(label);
-        var buttons = new List<RadioButton>();
-        foreach ((string look, string name) in new[] { (CooldownArt.Bars, loc["Assist.LookBars"]), (CooldownArt.Tiles, loc["Assist.LookTiles"]) })
+        var page = new StackPanel { Margin = new Thickness(0, 0, 4, 0) };
+
+        // on the screen: shown or not (the switch in the card's corner), placing them, the look, the size, then the two smaller switches
+        var screen = new StackPanel();
+        CheckBox show = Switch("", settings.ShowAssistOverlay, on => Change(s => s.ShowAssistOverlay = on));
+        show.HorizontalAlignment = HorizontalAlignment.Right;
+        show.ToolTip = loc["Assist.ShowCooldownsOverlay"];
+        screen.Children.Add(CardHead(loc["Assist.Sec.Screen"], loc["Assist.Sec.ScreenSub"], show));
+        var actions = new WrapPanel { Margin = new Thickness(0, 12, 0, 6) };
+        _placeButton = new Button { Template = OutlineTemplate(), Padding = new Thickness(14, 6, 14, 6), Cursor = System.Windows.Input.Cursors.Hand, ToolTip = loc["Assist.Place"] };
+        _placeButton.Click += (_, _) =>
         {
-            var button = new RadioButton { Content = name, GroupName = "assistLook", IsChecked = (settings.AssistCooldownStyle == CooldownArt.Tiles) == (look == CooldownArt.Tiles),
-                Margin = new Thickness(0, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center, Tag = look };
-            button.SetResourceReference(ForegroundProperty, "Brush.Text");
-            string chosen = look;
-            button.Checked += (_, _) => Change(s => s.AssistCooldownStyle = chosen);
-            buttons.Add(button);
-            _lookButtons.Add(button);
-            row.Children.Add(button);
+            bool placing = MeterSettings.Load().AssistOverlayLocked; // locked now: placing from here on
+            Change(s => s.AssistOverlayLocked = !placing);
+            foreach (ToggleButton other in _lockBoxes)
+            {
+                other.IsChecked = placing;
+            }
+
+            ShowPlacing(placing);
+        };
+        ShowPlacing(!settings.AssistOverlayLocked);
+        actions.Children.Add(_placeButton);
+        var reset = new Button { Content = Glyphed("\uE72C", loc["Assist.ResetShort"]), ToolTip = loc["Assist.ResetPlaces"], Padding = new Thickness(12, 5, 12, 5), Margin = new Thickness(8, 0, 0, 0) };
+        reset.Click += (_, _) => AssistController.ResetCooldownPlaces();
+        actions.Children.Add(reset);
+        screen.Children.Add(actions);
+        screen.Children.Add(Field(loc["Assist.Look"], LookSegments(settings)));
+        DockPanel size = SliderRow(loc["Assist.Size"], 0.6, 2.0, settings.AssistCooldownScale, v => $"{v * 100:0} %", v => Change(s => s.AssistCooldownScale = Math.Round(v, 2)));
+        _sizeSlider = size.Children.OfType<Slider>().FirstOrDefault();
+        screen.Children.Add(size);
+        _barWidthRow = SliderRow(loc["Assist.BarWidth"], 110, 320, settings.AssistBarWidth, v => $"{v:0}", v => Change(s => s.AssistBarWidth = Math.Round(v)));
+        _barWidthRow.Visibility = settings.AssistCooldownStyle == CooldownArt.Tiles ? Visibility.Collapsed : Visibility.Visible; // only the bars have a width
+        screen.Children.Add(_barWidthRow);
+        screen.Children.Add(Divider());
+        _togetherBox = Switch(loc["Assist.TogetherShort"], settings.AssistCooldownsTogether, on => Change(s => s.AssistCooldownsTogether = on));
+        _togetherBox.ToolTip = loc["Assist.MoveTogetherTip"];
+        screen.Children.Add(_togetherBox);
+        CheckBox ready = Switch(loc["Assist.ReadyShort"], settings.AssistShowReady, on => Change(s => s.AssistShowReady = on));
+        ready.ToolTip = loc["Assist.ShowReady"];
+        screen.Children.Add(ready);
+        page.Children.Add(Card(screen));
+
+        // the voice that says a skill when it is back: which voice (also the boss warnings'), how loud, a test
+        var voice = new StackPanel();
+        voice.Children.Add(CardHead(loc["Assist.Sec.Voice"], loc["Assist.Sec.VoiceSub"], null));
+        FrameworkElement picker = Field(loc["Assist.VoicePick"], VoicePicker(settings));
+        picker.Margin = new Thickness(0, 12, 0, 0);
+        voice.Children.Add(picker);
+        DockPanel volume = SliderRow(loc["Assist.Volume"], 0, 100, settings.AssistVoiceVolume, v => $"{v:0} %", v => Change(s => s.AssistVoiceVolume = (int)Math.Round(v)));
+        var test = new Button { Content = Glyphed("\uE768", loc["Assist.VoiceTest"]), Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+        test.Click += (_, _) =>
+        {
+            MeterSettings now = MeterSettings.Load();
+            _voiceTest.Say(new[] { CooldownVoice.SampleName(now) }, now);
+        };
+        DockPanel.SetDock(test, Dock.Right);
+        volume.Children.Insert(0, test);
+        voice.Children.Add(volume);
+        page.Children.Add(Card(voice));
+
+        // the skills: a heading with "Show all", a line on what the boxes do, the list with its columns
+        var head = new DockPanel { Margin = new Thickness(2, 8, 0, 2) };
+        var showAll = new Button { Content = loc["Assist.ShowAll"], Padding = new Thickness(10, 3, 10, 3), VerticalAlignment = VerticalAlignment.Center };
+        showAll.Click += (_, _) =>
+        {
+            _panel.Hidden.Clear();
+            Change(s => s.AssistOverlayHidden.Clear());
+            _panel.Refresh(_directory());
+        };
+        DockPanel.SetDock(showAll, Dock.Right);
+        head.Children.Add(showAll);
+        var title = new TextBlock { Text = loc["Assist.Sec.Skills"], FontSize = 15, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+        title.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
+        head.Children.Add(title);
+        page.Children.Add(head);
+        var hint = new TextBlock { Text = loc["Assist.SkillsHint"], TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(2, 0, 0, 8) };
+        hint.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+        page.Children.Add(hint);
+        page.Children.Add(_panel);
+        _cooldownsPage.Children.Add(new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto, Content = page });
+    }
+
+    /// <summary>The Place button: outlined in the accent colour, filled while placing ("Done placing").</summary>
+    private void ShowPlacing(bool placing)
+    {
+        if (_placeButton is null)
+        {
+            return;
         }
 
+        LocalizationManager loc = LocalizationManager.Instance;
+        _placeButton.Content = placing ? Glyphed("\uE73E", loc["Assist.PlaceDone"]) : Glyphed("\uE7C2", loc["Assist.PlaceButton"]);
+        _placeButton.SetResourceReference(BorderBrushProperty, "Brush.Accent");
+        _placeButton.SetResourceReference(BackgroundProperty, placing ? "Brush.Accent" : "Brush.Control");
+        _placeButton.SetResourceReference(ForegroundProperty, placing ? "Brush.Window" : "Brush.Accent");
+        _placeButton.FontWeight = FontWeights.SemiBold;
+    }
+
+    /// <summary>A card of the tab: the panel's colour, a thin edge, round corners.</summary>
+    private static Border Card(UIElement child)
+    {
+        var card = new Border { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(10), Padding = new Thickness(16, 14, 16, 12), Margin = new Thickness(0, 0, 0, 10), Child = child };
+        card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+        card.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        return card;
+    }
+
+    /// <summary>A card's title and the line under it, with a control in the corner (the card's switch).</summary>
+    private static DockPanel CardHead(string title, string sub, FrameworkElement? corner)
+    {
+        var head = new DockPanel();
+        if (corner is not null)
+        {
+            corner.VerticalAlignment = VerticalAlignment.Top;
+            corner.Margin = new Thickness(12, 0, 0, 0);
+            DockPanel.SetDock(corner, Dock.Right);
+            head.Children.Add(corner);
+        }
+
+        var words = new StackPanel();
+        var big = new TextBlock { Text = title, FontSize = 15, FontWeight = FontWeights.SemiBold };
+        big.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
+        var small = new TextBlock { Text = sub, FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) };
+        small.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+        words.Children.Add(big);
+        words.Children.Add(small);
+        head.Children.Add(words);
+        return head;
+    }
+
+    /// <summary>A row with its label in the column of the sliders' labels.</summary>
+    private static DockPanel Field(string text, FrameworkElement control)
+    {
+        var row = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
+        var label = new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0), Width = LabelWidth };
+        label.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
+        DockPanel.SetDock(label, Dock.Left);
+        control.VerticalAlignment = VerticalAlignment.Center;
+        row.Children.Add(label);
+        row.Children.Add(control);
         return row;
     }
+
+    private static Border Divider()
+    {
+        var line = new Border { Height = 1, Margin = new Thickness(0, 12, 0, 6) };
+        line.SetResourceReference(Border.BackgroundProperty, "Brush.Border");
+        return line;
+    }
+
+    /// <summary>A Segoe MDL2 glyph before a word, for the buttons.</summary>
+    private static StackPanel Glyphed(string glyph, string text)
+    {
+        var row = new StackPanel { Orientation = Orientation.Horizontal };
+        row.Children.Add(new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 12, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 1, 7, 0) });
+        row.Children.Add(new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center });
+        return row;
+    }
+
+    /// <summary>The look of the cooldowns and the effects: bars or squares, as two segments of one control (the chosen one raised).</summary>
+    private FrameworkElement LookSegments(MeterSettings settings)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        var strip = new StackPanel { Orientation = Orientation.Horizontal };
+        var frame = new Border { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), Padding = new Thickness(2), Child = strip, HorizontalAlignment = HorizontalAlignment.Left };
+        frame.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+        frame.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        ControlTemplate template = SegmentTemplate();
+        foreach ((string look, string name, string glyph) in new[] { (CooldownArt.Bars, loc["Assist.LookBars"], "\uE8FD"), (CooldownArt.Tiles, loc["Assist.LookTiles"], "\uF0E2") })
+        {
+            var button = new RadioButton
+            {
+                Content = Glyphed(glyph, name), GroupName = "assistLook", Template = template, Tag = look, Cursor = System.Windows.Input.Cursors.Hand,
+                IsChecked = (settings.AssistCooldownStyle == CooldownArt.Tiles) == (look == CooldownArt.Tiles),
+            };
+            string chosen = look;
+            button.Checked += (_, _) =>
+            {
+                Change(s => s.AssistCooldownStyle = chosen);
+                if (_barWidthRow is not null)
+                {
+                    _barWidthRow.Visibility = chosen == CooldownArt.Tiles ? Visibility.Collapsed : Visibility.Visible;
+                }
+            };
+            _lookButtons.Add(button);
+            strip.Children.Add(button);
+        }
+
+        return frame;
+    }
+
+    /// <summary>The voices (the recorded natural one first), each with its language; choosing one sets the voice of the boss warnings too.</summary>
+    private static ComboBox VoicePicker(MeterSettings settings)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        var combo = new ComboBox { MinWidth = 220, HorizontalAlignment = HorizontalAlignment.Left, ToolTip = loc["Assist.VoicePickTip"] };
+        IReadOnlyList<SpeechVoice> voices = CastSpeech.Voices();
+        // the natural voice first, then the voice's own language, then the others
+        string words = CastSpeech.WordsLanguage(settings);
+        var ordered = voices.OrderBy(v => NaturalVoice.Is(v.Id) ? 0 : CastSpeech.TableLanguage(v.Language) == words ? 1 : 2).ToList();
+        foreach (SpeechVoice v in ordered)
+        {
+            combo.Items.Add(new ComboBoxItem { Content = v.Name + " · " + CastSpeech.LanguageName(v.Language), Tag = v });
+        }
+
+        // the saved voice; none saved: the first of its language, as the voice speaks
+        SpeechVoice? chosen = ordered.FirstOrDefault(v => v.Id == settings.SpeechVoiceId)
+            ?? ordered.FirstOrDefault(v => !NaturalVoice.Is(v.Id) && CastSpeech.TableLanguage(v.Language) == words);
+        combo.SelectedIndex = chosen is null ? -1 : ordered.IndexOf(chosen);
+        combo.SelectionChanged += (_, _) =>
+        {
+            if (combo.SelectedItem is ComboBoxItem { Tag: SpeechVoice v })
+            {
+                Change(s =>
+                {
+                    s.SpeechVoiceId = v.Id;
+                    s.SpeechLanguage = v.Language;
+                });
+            }
+        };
+        return combo;
+    }
+
+    /// <summary>A segment of the look's control: flat, raised with an accent edge when chosen.</summary>
+    private static ControlTemplate SegmentTemplate() => (ControlTemplate)XamlReader.Parse(
+        "<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='RadioButton'>" +
+        "<Border x:Name='Bd' Background='Transparent' BorderBrush='Transparent' BorderThickness='1' CornerRadius='6' Padding='14,4' Margin='0'>" +
+        "<ContentPresenter x:Name='Text' HorizontalAlignment='Center' VerticalAlignment='Center' TextElement.Foreground='{DynamicResource Brush.TextMuted}'/></Border>" +
+        "<ControlTemplate.Triggers>" +
+        "<Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Bd' Property='Background' Value='{DynamicResource Brush.ControlHover}'/></Trigger>" +
+        "<Trigger Property='IsChecked' Value='True'><Setter TargetName='Bd' Property='Background' Value='{DynamicResource Brush.ControlRaised}'/>" +
+        "<Setter TargetName='Bd' Property='BorderBrush' Value='{DynamicResource Brush.Accent}'/>" +
+        "<Setter TargetName='Text' Property='TextElement.Foreground' Value='{DynamicResource Brush.Text}'/></Trigger>" +
+        "</ControlTemplate.Triggers></ControlTemplate>");
+
+    /// <summary>A button drawn by its own colours (the Place button): a round edge, its background, its foreground.</summary>
+    private static ControlTemplate OutlineTemplate() => (ControlTemplate)XamlReader.Parse(
+        "<ControlTemplate xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='Button'>" +
+        "<Border x:Name='Bd' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='1' CornerRadius='6' Padding='{TemplateBinding Padding}'>" +
+        "<ContentPresenter HorizontalAlignment='Center' VerticalAlignment='Center'/></Border>" +
+        "<ControlTemplate.Triggers>" +
+        "<Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Bd' Property='Opacity' Value='0.85'/></Trigger>" +
+        "<Trigger Property='IsPressed' Value='True'><Setter TargetName='Bd' Property='Opacity' Value='0.7'/></Trigger>" +
+        "</ControlTemplate.Triggers></ControlTemplate>");
+
+    /// <summary>The width of the labels before the sliders and the fields.</summary>
+    private const double LabelWidth = 92;
 
     /// <summary>A labelled slider; the value is written a moment after the last move.</summary>
     private static DockPanel SliderRow(string text, double min, double max, double value, Func<double, string> shown, Action<double> changed)
     {
         var row = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
-        var label = new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0), MinWidth = 90 };
+        var label = new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 12, 0), Width = LabelWidth, TextTrimming = TextTrimming.CharacterEllipsis };
         label.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
         DockPanel.SetDock(label, Dock.Left);
         var amount = new TextBlock { Text = shown(Math.Clamp(value, min, max)), VerticalAlignment = VerticalAlignment.Center, MinWidth = 48, TextAlignment = TextAlignment.Right };

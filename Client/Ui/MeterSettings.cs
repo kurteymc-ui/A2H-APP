@@ -504,6 +504,10 @@ public sealed class MeterSettings
     public string SpeechLanguage { get; set; } = "";
     public string SpeechVoiceId { get; set; } = "";
 
+    /// <summary>The recorded natural voice (<see cref="NaturalVoice"/>, 1.20.14) was chosen once for everyone whose voice speaks English; whoever picks
+    /// a Windows voice again keeps it.</summary>
+    public bool NaturalVoiceDefaulted { get; set; }
+
     /// <summary>What is announced: with the skill's name (off = only "Attention"), which casts (at you, at everyone = area, lethal at you, lethal at everyone).</summary>
     public bool SpeechSkillName { get; set; } = true;
     public bool SpeechOnYou { get; set; } = true;

@@ -8980,18 +8980,6 @@
     "ja": "オーバーレイに表示",
     "ko": "오버레이에 표시"
   },
-  "Assist.PickHint": {
-    "en": "Untick a skill to take it off the screen; click its speaker to hear when it is back. The skills of your skill bar are listed; basic attacks and chain skills never are.",
-    "de": "Entferne den Haken, um eine Fertigkeit vom Bildschirm zu nehmen; klicke ihren Lautsprecher, um zu hören, wann sie wieder bereit ist. Die Fertigkeiten deiner Leiste stehen hier; Grundangriffe und Kettenfertigkeiten nie.",
-    "fr": "Décoche une compétence pour la retirer de l'écran ; clique son haut-parleur pour entendre quand elle revient. Les compétences de ta barre sont listées ; jamais les attaques de base ni les enchaînements.",
-    "es": "Desmarca una habilidad para quitarla de la pantalla; pulsa su altavoz para oír cuándo vuelve. Se listan las habilidades de tu barra; nunca los ataques básicos ni las habilidades en cadena.",
-    "ru": "Сними галочку, чтобы убрать навык с экрана; нажми его динамик, чтобы слышать, когда он готов. Здесь навыки твоей панели; базовые атаки и цепные навыки — никогда.",
-    "zh": "取消勾选可将技能从屏幕上移除；点击喇叭可在技能就绪时听到提醒。这里列出你技能栏的技能；普通攻击和连锁技能不会列出。",
-    "zh-TW": "取消勾選可將技能從螢幕上移除；點擊喇叭可在技能就緒時聽到提醒。這裡列出你技能列的技能；普通攻擊和連鎖技能不會列出。",
-    "pt": "Desmarque uma habilidade para tirá-la da tela; clique no alto-falante para ouvir quando ela voltar. As habilidades da sua barra são listadas; ataques básicos e habilidades em cadeia nunca.",
-    "ja": "チェックを外すと画面から消えます。スピーカーをクリックすると、使えるようになったときに音声で知らせます。スキルバーのスキルが並び、通常攻撃と連携スキルは表示されません。",
-    "ko": "체크를 해제하면 화면에서 사라집니다. 스피커를 누르면 다시 사용 가능할 때 음성으로 알려 줍니다. 스킬 바의 스킬이 표시되며, 기본 공격과 연계 스킬은 표시되지 않습니다."
-  },
   "Assist.ShowAll": {
     "en": "Show all",
     "de": "Alle zeigen",
@@ -20157,18 +20145,6 @@
     "ja": "小さく",
     "ko": "작게"
   },
-  "Assist.MoveTogetherSwitch": {
-    "en": "Move them all together (dragging one moves every one)",
-    "de": "Alle zusammen bewegen (eine ziehen bewegt alle)",
-    "fr": "Les déplacer toutes ensemble (en glisser une les déplace toutes)",
-    "es": "Moverlos todos juntos (arrastrar uno los mueve todos)",
-    "ru": "Двигать все вместе (перетаскивание одного двигает все)",
-    "zh": "全部一起移动（拖动一个即移动全部）",
-    "zh-TW": "全部一起移動（拖動一個即移動全部）",
-    "pt": "Mover todas juntas (arrastar uma move todas)",
-    "ja": "全部まとめて移動（1つをドラッグすると全部動く）",
-    "ko": "모두 함께 이동 (하나를 끌면 전부 이동)"
-  },
   "Assist.MoveTogetherTip": {
     "en": "Dragging one moves all of them, as they are arranged",
     "de": "Eine ziehen bewegt alle, so wie sie angeordnet sind",
@@ -20265,18 +20241,6 @@
     "ja": "バーの幅",
     "ko": "막대 너비"
   },
-  "Assist.VoiceVolume": {
-    "en": "Voice volume",
-    "de": "Lautstärke der Stimme",
-    "fr": "Volume de la voix",
-    "es": "Volumen de la voz",
-    "ru": "Громкость голоса",
-    "zh": "语音音量",
-    "zh-TW": "語音音量",
-    "pt": "Volume da voz",
-    "ja": "音声の音量",
-    "ko": "음성 볼륨"
-  },
   "Assist.VoiceTest": {
     "en": "Test",
     "de": "Testen",
@@ -20348,5 +20312,221 @@
     "pt": "{0} disponível",
     "ja": "{0} 準備完了",
     "ko": "{0} 준비 완료"
+  },
+  "Assist.Sec.Screen": {
+    "en": "On screen",
+    "de": "Auf dem Bildschirm",
+    "fr": "À l'écran",
+    "es": "En pantalla",
+    "ru": "На экране",
+    "zh": "屏幕显示",
+    "zh-TW": "螢幕顯示",
+    "pt": "Na tela",
+    "ja": "画面表示",
+    "ko": "화면 표시"
+  },
+  "Assist.Sec.ScreenSub": {
+    "en": "Each skill gets its own spot on your screen.",
+    "de": "Jede Fertigkeit bekommt ihren eigenen Platz auf dem Bildschirm.",
+    "fr": "Chaque compétence a sa propre place à l'écran.",
+    "es": "Cada habilidad tiene su propio lugar en la pantalla.",
+    "ru": "У каждого навыка своё место на экране.",
+    "zh": "每个技能在屏幕上都有自己的位置。",
+    "zh-TW": "每個技能在螢幕上都有自己的位置。",
+    "pt": "Cada habilidade tem seu próprio lugar na tela.",
+    "ja": "スキルごとに画面上の好きな場所に置けます。",
+    "ko": "스킬마다 화면에 자기 자리가 있습니다."
+  },
+  "Assist.PlaceButton": {
+    "en": "Place on screen",
+    "de": "Platzieren",
+    "fr": "Placer à l'écran",
+    "es": "Colocar en pantalla",
+    "ru": "Расставить",
+    "zh": "摆放位置",
+    "zh-TW": "擺放位置",
+    "pt": "Posicionar",
+    "ja": "配置する",
+    "ko": "배치하기"
+  },
+  "Assist.PlaceDone": {
+    "en": "Done placing",
+    "de": "Fertig",
+    "fr": "Placement terminé",
+    "es": "Terminar",
+    "ru": "Готово",
+    "zh": "完成摆放",
+    "zh-TW": "完成擺放",
+    "pt": "Concluir",
+    "ja": "配置を終了",
+    "ko": "배치 완료"
+  },
+  "Assist.ResetShort": {
+    "en": "Reset places",
+    "de": "Neu anordnen",
+    "fr": "Réinitialiser",
+    "es": "Reordenar",
+    "ru": "Сбросить места",
+    "zh": "重置位置",
+    "zh-TW": "重設位置",
+    "pt": "Reorganizar",
+    "ja": "並べ直す",
+    "ko": "위치 초기화"
+  },
+  "Assist.TogetherShort": {
+    "en": "Move all together",
+    "de": "Alle zusammen bewegen",
+    "fr": "Tout déplacer ensemble",
+    "es": "Mover todo junto",
+    "ru": "Двигать все вместе",
+    "zh": "全部一起移动",
+    "zh-TW": "全部一起移動",
+    "pt": "Mover todas juntas",
+    "ja": "まとめて移動",
+    "ko": "모두 함께 이동"
+  },
+  "Assist.ReadyShort": {
+    "en": "Show ready skills",
+    "de": "Bereite Fertigkeiten zeigen",
+    "fr": "Afficher les compétences prêtes",
+    "es": "Mostrar habilidades listas",
+    "ru": "Показывать готовые навыки",
+    "zh": "显示已就绪的技能",
+    "zh-TW": "顯示已就緒的技能",
+    "pt": "Mostrar habilidades prontas",
+    "ja": "使用可能なスキルも表示",
+    "ko": "사용 가능한 스킬 표시"
+  },
+  "Assist.Sec.Voice": {
+    "en": "Say when ready",
+    "de": "Ansage, wenn bereit",
+    "fr": "Annonce quand c'est prêt",
+    "es": "Aviso al estar listo",
+    "ru": "Озвучка готовности",
+    "zh": "就绪语音提示",
+    "zh-TW": "就緒語音提示",
+    "pt": "Aviso quando pronta",
+    "ja": "準備完了の読み上げ",
+    "ko": "준비 완료 음성 알림"
+  },
+  "Assist.Sec.VoiceSub": {
+    "en": "Says a skill's name when it's ready again. Turn it on per skill with the speaker in the list.",
+    "de": "Sagt den Namen einer Fertigkeit, sobald sie wieder bereit ist. Pro Fertigkeit mit dem Lautsprecher in der Liste einschalten.",
+    "fr": "Dit le nom d'une compétence dès qu'elle est de nouveau prête. À activer par compétence avec le haut-parleur de la liste.",
+    "es": "Dice el nombre de una habilidad cuando vuelve a estar lista. Actívalo por habilidad con el altavoz de la lista.",
+    "ru": "Называет навык, когда он снова готов. Включается для каждого навыка значком динамика в списке.",
+    "zh": "技能重新就绪时念出它的名字。在列表中用喇叭图标逐个开启。",
+    "zh-TW": "技能重新就緒時念出它的名字。在列表中用喇叭圖示逐個開啟。",
+    "pt": "Diz o nome de uma habilidade quando ela fica pronta de novo. Ative por habilidade com o alto-falante da lista.",
+    "ja": "スキルが再び使えるようになると名前を読み上げます。リストのスピーカーでスキルごとにオンにします。",
+    "ko": "스킬이 다시 준비되면 이름을 읽어 줍니다. 목록의 스피커로 스킬마다 켭니다."
+  },
+  "Assist.VoicePick": {
+    "en": "Voice",
+    "de": "Stimme",
+    "fr": "Voix",
+    "es": "Voz",
+    "ru": "Голос",
+    "zh": "语音",
+    "zh-TW": "語音",
+    "pt": "Voz",
+    "ja": "音声",
+    "ko": "목소리"
+  },
+  "Assist.VoicePickTip": {
+    "en": "The same voice says the boss warnings (Settings, Voice output).",
+    "de": "Dieselbe Stimme sagt auch die Boss-Warnungen an (Einstellungen, Sprachausgabe).",
+    "fr": "La même voix annonce les attaques des boss (Paramètres, Sortie vocale).",
+    "es": "La misma voz anuncia los ataques de los jefes (Ajustes, Salida de voz).",
+    "ru": "Тот же голос озвучивает атаки боссов (Настройки, Голосовой вывод).",
+    "zh": "首领技能提示也用这个语音（设置，语音输出）。",
+    "zh-TW": "首領技能提示也用這個語音（設定，語音輸出）。",
+    "pt": "A mesma voz anuncia os ataques dos chefes (Configurações, Saída de voz).",
+    "ja": "ボスの攻撃の読み上げも同じ音声です（設定、音声出力）。",
+    "ko": "보스 공격 알림도 같은 목소리입니다 (설정, 음성 출력)."
+  },
+  "Assist.Volume": {
+    "en": "Volume",
+    "de": "Lautstärke",
+    "fr": "Volume",
+    "es": "Volumen",
+    "ru": "Громкость",
+    "zh": "音量",
+    "zh-TW": "音量",
+    "pt": "Volume",
+    "ja": "音量",
+    "ko": "볼륨"
+  },
+  "Assist.Sec.Skills": {
+    "en": "Your skills",
+    "de": "Deine Fertigkeiten",
+    "fr": "Tes compétences",
+    "es": "Tus habilidades",
+    "ru": "Твои навыки",
+    "zh": "你的技能",
+    "zh-TW": "你的技能",
+    "pt": "Suas habilidades",
+    "ja": "あなたのスキル",
+    "ko": "내 스킬"
+  },
+  "Assist.SkillsHint": {
+    "en": "Untick a skill to hide it from the screen. Your skill bar is listed; basic attacks and chain skills never are.",
+    "de": "Haken weg, um eine Fertigkeit auszublenden. Gelistet wird deine Fertigkeitenleiste; Grundangriffe und Kettenfertigkeiten nie.",
+    "fr": "Décoche une compétence pour la masquer. Ta barre de compétences est listée ; jamais les attaques de base ni les enchaînements.",
+    "es": "Desmarca una habilidad para ocultarla. Se lista tu barra de habilidades; nunca los ataques básicos ni las cadenas.",
+    "ru": "Сними галочку, чтобы скрыть навык. В списке твоя панель навыков; базовые атаки и цепочки — никогда.",
+    "zh": "取消勾选即可从屏幕隐藏。列出的是你的技能栏；普通攻击和连锁技能不会列出。",
+    "zh-TW": "取消勾選即可從螢幕隱藏。列出的是你的技能欄；普通攻擊和連鎖技能不會列出。",
+    "pt": "Desmarque uma habilidade para ocultá-la. Sua barra de habilidades é listada; ataques básicos e correntes nunca.",
+    "ja": "チェックを外すと画面から隠れます。スキルバーのスキルを表示し、通常攻撃とチェーンスキルは表示しません。",
+    "ko": "체크를 해제하면 화면에서 숨깁니다. 스킬 바의 스킬이 표시되며 기본 공격과 연계 스킬은 표시되지 않습니다."
+  },
+  "Assist.Col.Skill": {
+    "en": "Skill",
+    "de": "Fertigkeit",
+    "fr": "Compétence",
+    "es": "Habilidad",
+    "ru": "Навык",
+    "zh": "技能",
+    "zh-TW": "技能",
+    "pt": "Habilidade",
+    "ja": "スキル",
+    "ko": "스킬"
+  },
+  "Assist.Col.Cooldown": {
+    "en": "Cooldown",
+    "de": "Abklingzeit",
+    "fr": "Recharge",
+    "es": "Enfriamiento",
+    "ru": "Откат",
+    "zh": "冷却",
+    "zh-TW": "冷卻",
+    "pt": "Recarga",
+    "ja": "クールタイム",
+    "ko": "쿨타임"
+  },
+  "Assist.Col.Left": {
+    "en": "Left",
+    "de": "Übrig",
+    "fr": "Restant",
+    "es": "Resta",
+    "ru": "Осталось",
+    "zh": "剩余",
+    "zh-TW": "剩餘",
+    "pt": "Resta",
+    "ja": "残り",
+    "ko": "남음"
+  },
+  "Settings.Speech.Natural": {
+    "en": "natural",
+    "de": "natürlich",
+    "fr": "naturelle",
+    "es": "natural",
+    "ru": "естественный",
+    "zh": "自然",
+    "zh-TW": "自然",
+    "pt": "natural",
+    "ja": "ナチュラル",
+    "ko": "자연스러운"
   }
 }

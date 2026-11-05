@@ -257,6 +257,17 @@ public static class Aion2SkillNames
         return english == "Attack";
     }
 
+    /// <summary>The English name of one skill id as the client has it (a monster's skill too), else <see cref="NameOf"/>: what the recorded voice says.</summary>
+    public static string EnglishOf(int skillId)
+    {
+        if (LoadLocalized().TryGetValue(skillId, out var names) && names.TryGetValue("en", out string? english) && !string.IsNullOrWhiteSpace(english))
+        {
+            return english.Trim();
+        }
+
+        return NameOf(skillId).Trim();
+    }
+
     /// <summary>The game's own text of one skill id in the UI language (English included: a monster's skill is "Attack" in
     /// <see cref="NameOf"/> but has its real name in the client), else <see cref="Display"/> of the English name.</summary>
     public static string DisplayOf(int skillId)
