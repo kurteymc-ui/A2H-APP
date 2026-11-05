@@ -159,6 +159,10 @@ public sealed class PlayerRow : INotifyPropertyChanged
     /// <summary>The meter's optional rate columns (Meter look): rDPS, nDPS and what the buffs gave, short.</summary>
     public string RdpsText => Rdps is double v ? Compact((long)Math.Round(v)) : "–";
 
+    /// <summary>The meter's rDPS column: rDPS, but in the rDPS view (where the big rate is rDPS already) the plain DPS, so the two trade places instead of
+    /// the same figure standing twice (6 November 2026, a player: "if i switch to rdps mode at the top it should switch places").</summary>
+    public string RdpsColumnText => RdpsView ? (Dps is double d ? Compact((long)Math.Round(d)) : "–") : RdpsText;
+
     public string NdpsText => Ndps is double v ? Compact((long)Math.Round(v)) : "–";
 
     public string GivenText => Given is double v && v >= 0.5 ? "+" + Compact((long)Math.Round(v)) : "–";
@@ -232,6 +236,7 @@ public sealed class PlayerRow : INotifyPropertyChanged
     private void RateChanged()
     {
         OnPropertyChanged(nameof(RdpsText));
+        OnPropertyChanged(nameof(RdpsColumnText));
         OnPropertyChanged(nameof(DpsDisplay));
         OnPropertyChanged(nameof(DpsCompact));
         OnPropertyChanged(nameof(RateOrHealDisplay));

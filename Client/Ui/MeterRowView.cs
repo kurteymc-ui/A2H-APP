@@ -19,6 +19,7 @@ public sealed class MeterTitles : INotifyPropertyChanged
     private string _rate = "DPS";
     private string _share = "%";
     private string _total = "Total";
+    private string _otherRate = "rDPS";
 
     public string Rate => _rate;
 
@@ -26,11 +27,15 @@ public sealed class MeterTitles : INotifyPropertyChanged
 
     public string Total => _total;
 
-    public void Set(string rate, string share, string total)
+    /// <summary>The title of the rDPS column: "rDPS", or "DPS" in the rDPS view, where it shows the plain DPS (<see cref="PlayerRow.RdpsColumnText"/>).</summary>
+    public string OtherRate => _otherRate;
+
+    public void Set(string rate, string share, string total, string? otherRate = null)
     {
         Change(ref _rate, rate, nameof(Rate));
         Change(ref _share, share, nameof(Share));
         Change(ref _total, total, nameof(Total));
+        Change(ref _otherRate, otherRate ?? "rDPS", nameof(OtherRate));
     }
 
     private void Change(ref string field, string value, string name)
@@ -385,6 +390,11 @@ public sealed class MeterRowView : Grid
                     if (!IsHeader)
                     {
                         BindFigure(cell, column.Path);
+                    }
+                    else if (column.Id == "rdps")
+                    {
+                        // "rDPS", or "DPS" in the rDPS view: the column then shows the plain DPS
+                        cell.SetBinding(TextBlock.TextProperty, new Binding(nameof(MeterTitles.OtherRate)) { Source = MeterTitles.Instance });
                     }
 
                     Add(cell, new GridLength(look.WidthOf(column)));

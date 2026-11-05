@@ -45,7 +45,7 @@ public sealed class MeterLook
         new("parry", "Look.ColParry", 40, nameof(PlayerRow.ParryText), "Look.ColParryTip"),
         new("hits", "Look.ColHits", 40, nameof(PlayerRow.HitsText), "Look.ColHitsTip"),
         new("ndps", "Look.ColNdps", 46, nameof(PlayerRow.NdpsText), "Look.ColNdpsTip"),
-        new("rdps", "Look.ColRdps", 46, nameof(PlayerRow.RdpsText), "Look.ColRdpsTip"),
+        new("rdps", "Look.ColRdps", 46, nameof(PlayerRow.RdpsColumnText), "Look.ColRdpsTip"),
         new("given", "Look.ColGiven", 46, nameof(PlayerRow.GivenText), "Look.ColGivenTip"),
         new("dps", "", 0, nameof(PlayerRow.RateOrDamageCompact), "Look.ColDpsTip"),
         new("share", "", 42, nameof(PlayerRow.ShareOrHealCompact), "Look.ColShareTip"),

@@ -8815,7 +8815,7 @@ public partial class MainWindow : Window
         OverlayRateHeader.Text = _allMode ? strings["Main.Overlay.ColDamage"] : _healMode ? "HPS" : _takenMode ? "DTPS" : _mode == MeterMode.Raid ? "rDPS" : "DPS";
         OverlayShareHeader.Text = _allMode ? strings["Main.Overlay.ColHeal"] : "%";
         OverlayTotalHeader.Text = _allMode ? strings["Main.Overlay.ColTaken"] : strings["Main.Overlay.ColTotal"];
-        MeterTitles.Instance.Set(OverlayRateHeader.Text, OverlayShareHeader.Text, OverlayTotalHeader.Text);
+        MeterTitles.Instance.Set(OverlayRateHeader.Text, OverlayShareHeader.Text, OverlayTotalHeader.Text, _mode == MeterMode.Raid && !_pvpOnly ? "DPS" : "rDPS");
         bool capturing = (_source as Aion2.Aion2PacketCombatSource)?.ServerFingerprint is not null;
         OverlayStateDot.Fill = _paused ? Brushes.Orange : capturing ? OverlayLiveBrush : Brushes.Gray;
         OverlayStateText.Text = _paused ? "Paused" : capturing ? "" : "Waiting for the game"; // live: the dot says it, the name is in the bar

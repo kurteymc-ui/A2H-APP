@@ -1411,6 +1411,13 @@ internal static class Program
             rows.Add(row);
         }
 
+        if (kind == "rdps")
+        {
+            // the rDPS view with the rDPS and Given columns and their titles: the big rate is rDPS, the rDPS column shows the plain DPS
+            window.ApplyMeterLook(new Ui.MeterSettings { MeterColumnTitles = true, MeterColumns = new() { "icon", "cp", "rdps", "given", "dps", "share", "total" } });
+            Ui.MeterTitles.Instance.Set("rDPS", "%", "Total", "DPS");
+        }
+
         window.ShowSampleBarParts(rdpsView: kind == "rdps", seconds: 111);
         if (kind == "rdps")
         {
