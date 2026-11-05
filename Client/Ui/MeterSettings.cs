@@ -504,7 +504,7 @@ public sealed class MeterSettings
     public string SpeechLanguage { get; set; } = "";
     public string SpeechVoiceId { get; set; } = "";
 
-    /// <summary>The recorded natural voice (<see cref="NaturalVoice"/>, 1.20.14) was chosen once for everyone whose voice speaks English; whoever picks
+    /// <summary>The recorded natural voice (<see cref="NaturalVoice"/>, 1.20.16) was chosen once for everyone whose voice speaks English; whoever picks
     /// a Windows voice again keeps it.</summary>
     public bool NaturalVoiceDefaulted { get; set; }
 
