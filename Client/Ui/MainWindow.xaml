@@ -1387,12 +1387,22 @@
                     <Grid/>
                 </DockPanel>
                 <!-- Find a player (MainWindow.FindPlayer.cs): a name and the region, the characters found, then a card of the one picked. -->
-                <StackPanel x:Name="OverlayFind" Visibility="Collapsed" Margin="10,0,8,8">
+                <!-- Background alpha 1: in the see-through look Windows passes clicks on fully transparent pixels to the game, so the rows and the box could not be clicked -->
+                <StackPanel x:Name="OverlayFind" Visibility="Collapsed" Margin="10,0,8,8" Background="#01000000">
                     <DockPanel>
                         <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayFindCloseClicked" ToolTip="Close">
                             <TextBlock Text="&#xE8BB;" Style="{StaticResource OverlayIconGlyph}" FontSize="10"/>
                         </Border>
-                        <Border x:Name="OverlayFindRegion" DockPanel.Dock="Right" Height="26" Margin="6,0,4,0" Padding="9,0,7,0" CornerRadius="6" BorderThickness="1"
+                        <Border x:Name="OverlayFindServer" DockPanel.Dock="Right" Height="26" Margin="4,0,4,0" Padding="9,0,7,0" CornerRadius="6" BorderThickness="1"
+                                BorderBrush="#33FFFFFF" Background="#10FFFFFF" Cursor="Hand" MouseLeftButtonUp="OnOverlayFindServerClicked" ToolTip="Only one server (pick a region first)">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="OverlayFindServerText" Text="All servers" FontSize="11.5" Foreground="{DynamicResource Brush.OverlayText}" VerticalAlignment="Center"
+                                           MaxWidth="96" TextTrimming="CharacterEllipsis"/>
+                                <Path Data="M0,0 L3.5,3.5 L7,0" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Margin="6,1,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border x:Name="OverlayFindRegion" DockPanel.Dock="Right" Height="26" Margin="6,0,0,0" Padding="9,0,7,0" CornerRadius="6" BorderThickness="1"
                                 BorderBrush="#33FFFFFF" Background="#10FFFFFF" Cursor="Hand" MouseLeftButtonUp="OnOverlayFindRegionClicked" ToolTip="The region to search">
                             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock x:Name="OverlayFindRegionText" Text="Europe" FontSize="11.5" Foreground="{DynamicResource Brush.OverlayText}" VerticalAlignment="Center"/>
@@ -1412,6 +1422,8 @@
                             </Grid>
                         </Border>
                     </DockPanel>
+                    <Border x:Name="OverlayFindServers" Visibility="Collapsed" Margin="0,6,0,0" Padding="8" CornerRadius="8" BorderThickness="1"
+                            BorderBrush="#26FFFFFF" Background="#E6141218"/>
                     <TextBlock x:Name="OverlayFindStatus" Margin="2,6,0,0" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" Visibility="Collapsed" TextWrapping="Wrap"/>
                     <StackPanel x:Name="OverlayFindResults" Margin="0,5,0,0"/>
                     <Border x:Name="OverlayFindCard" Visibility="Collapsed" Margin="0,6,0,0"/>

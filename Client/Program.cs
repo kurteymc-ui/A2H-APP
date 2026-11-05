@@ -1475,6 +1475,16 @@ internal static class Program
                 window.ShowFindResults(found);
                 window.ShowFindCard(found[0]);
             }
+            else if (kind == "findservers")
+            {
+                // Find a player's server picker: Europe's Asmodian servers, Vaizel picked
+                window.OverlayBody.Visibility = System.Windows.Visibility.Collapsed;
+                window.OverlayTimeText.Visibility = System.Windows.Visibility.Collapsed;
+                window.OverlayFind.Visibility = System.Windows.Visibility.Visible;
+                window.OverlayFindBox.Text = "Arhimodon";
+                window.OverlayFindHint.Visibility = System.Windows.Visibility.Collapsed;
+                window.OpenServerPicker("eu", 2302, asmodian: true);
+            }
             else if (kind == "dummy")
             {
                 // a dummy parse running: its card stands in for the lines

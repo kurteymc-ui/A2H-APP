@@ -6,6 +6,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using AionDPS.Aion2;
+using AionDPS.Aion2.Protocol;
 using AionDPS.Upload;
 
 namespace AionDPS.Ui;
@@ -152,6 +153,13 @@ public partial class MainWindow
     private string _findRegion = "";
     private int _findAsked;
 
+    /// <summary>The one server the search keeps (0: every server of the region) and the faction tab of the server picker.</summary>
+    private int _findServer;
+    private bool _findServersAsmodian;
+
+    /// <summary>The region's block in the game's server numbers (1 NA East, 2 NA West, 3 Europe, 4 LATAM, 5 Asia); 0 for all regions.</summary>
+    private static int BlockOf(string region) => region switch { "nae" => 1, "naw" => 2, "eu" => 3, "la" => 4, "as" => 5, _ => 0 };
+
     private void OnOverlayFindClicked(object sender, MouseButtonEventArgs e)
     {
         e.Handled = true;
@@ -178,7 +186,9 @@ public partial class MainWindow
         {
             int server = (_liveSource?.Entities as Aion2EntityDirectory)?.LocalCharacter?.ServerId ?? 0;
             _findRegion = server > 0 ? FindPlayerClient.RegionOf(server) : "all";
+            _findServersAsmodian = server / 1000 == 2;
             OverlayFindRegionText.Text = FindPlayerClient.Regions.First(r => r.Code == _findRegion).Name;
+            ShowFindServer();
         }
 
         OverlayFind.Visibility = Visibility.Visible;
@@ -200,6 +210,7 @@ public partial class MainWindow
     {
         _findAsked++; // an answer still on its way is dropped
         OverlayFind.Visibility = Visibility.Collapsed;
+        OverlayFindServers.Visibility = Visibility.Collapsed;
         OverlayFindResults.Children.Clear();
         OverlayFindCard.Visibility = Visibility.Collapsed;
         OverlayFindStatus.Visibility = Visibility.Collapsed;
@@ -229,11 +240,117 @@ public partial class MainWindow
         {
             _findRegion = r.Code;
             OverlayFindRegionText.Text = r.Name;
+            _findServer = 0; // the servers are the region's
+            OverlayFindServers.Visibility = Visibility.Collapsed;
+            ShowFindServer();
             if (OverlayFindBox.Text.Trim().Length >= 2)
             {
                 _ = RunFindAsync();
             }
         }, r.Code == _findRegion)).ToList());
+    }
+
+    /// <summary>The server pill: "All servers" or the one picked; dimmed while all regions are searched (a server belongs to one region).</summary>
+    private void ShowFindServer()
+    {
+        OverlayFindServerText.Text = _findServer > 0 ? Aion2Servers.NameOf(_findServer).Split(" - ")[^1] : "All servers";
+        OverlayFindServer.Opacity = BlockOf(_findRegion) > 0 ? 1 : 0.45;
+    }
+
+    private void OnOverlayFindServerClicked(object sender, MouseButtonEventArgs e)
+    {
+        e.Handled = true;
+        if (BlockOf(_findRegion) == 0)
+        {
+            ShowFindStatus("Pick a region first to search one of its servers. All regions searches every server.");
+            return;
+        }
+
+        if (OverlayFindServers.Visibility == Visibility.Visible)
+        {
+            OverlayFindServers.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        FillServerPicker();
+        OverlayFindServers.Visibility = Visibility.Visible;
+    }
+
+    /// <summary>
+    /// The server picker as on the website: Elyos and Asmodians tabs, "All servers", then the region's servers A to Z. A pick narrows the results to that server
+    /// (the search itself is the region's) and searches again when a name is in the box.
+    /// </summary>
+    private void FillServerPicker()
+    {
+        var servers = Aion2Servers.LiveServers(BlockOf(_findRegion));
+        var stack = new StackPanel();
+        var tabs = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 7) };
+        foreach (bool asmo in new[] { false, true })
+        {
+            bool on = asmo == _findServersAsmodian;
+            var tab = new Border { CornerRadius = new CornerRadius(6), Padding = new Thickness(10, 3, 10, 3), Margin = new Thickness(0, 0, 5, 0), Cursor = Cursors.Hand,
+                BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(on ? Color.FromArgb(0x99, 0xDC, 0xB8, 0x77) : Color.FromArgb(0x26, 0xFF, 0xFF, 0xFF)),
+                Background = new SolidColorBrush(on ? Color.FromArgb(0x26, 0xDC, 0xB8, 0x77) : Color.FromArgb(0x0D, 0xFF, 0xFF, 0xFF)) };
+            var text = new TextBlock { Text = $"{(asmo ? "Asmodians" : "Elyos")}  {servers.Count(x => x.Asmodian == asmo)}", FontSize = 11.5,
+                FontWeight = on ? FontWeights.SemiBold : FontWeights.Normal };
+            text.SetResourceReference(TextBlock.ForegroundProperty, on ? "Brush.OverlayText" : "Brush.TextMuted");
+            tab.Child = text;
+            bool which = asmo;
+            tab.MouseLeftButtonUp += (_, ev) =>
+            {
+                ev.Handled = true;
+                _findServersAsmodian = which;
+                FillServerPicker();
+            };
+            tabs.Children.Add(tab);
+        }
+
+        stack.Children.Add(tabs);
+        var chips = new WrapPanel();
+        chips.Children.Add(ServerChip("All servers", 0));
+        foreach (var server in servers.Where(x => x.Asmodian == _findServersAsmodian))
+        {
+            chips.Children.Add(ServerChip(server.Name, server.Id));
+        }
+
+        stack.Children.Add(chips);
+        OverlayFindServers.Child = stack;
+    }
+
+    /// <summary>The picker open on a region (the pictures of the meter).</summary>
+    internal void OpenServerPicker(string region, int server, bool asmodian)
+    {
+        _findRegion = region;
+        _findServer = server;
+        _findServersAsmodian = asmodian;
+        OverlayFindRegionText.Text = FindPlayerClient.Regions.First(r => r.Code == region).Name;
+        ShowFindServer();
+        FillServerPicker();
+        OverlayFindServers.Visibility = Visibility.Visible;
+    }
+
+    private Border ServerChip(string name, int id)
+    {
+        bool on = id == _findServer;
+        var chip = new Border { CornerRadius = new CornerRadius(5), Padding = new Thickness(8, 3, 8, 3), Margin = new Thickness(0, 0, 4, 4), Cursor = Cursors.Hand,
+            Background = new SolidColorBrush(on ? Color.FromArgb(0x33, 0xDC, 0xB8, 0x77) : Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF)) };
+        var text = new TextBlock { Text = name, FontSize = 11.5 };
+        text.SetResourceReference(TextBlock.ForegroundProperty, on ? "Brush.Accent" : "Brush.OverlayText");
+        chip.Child = text;
+        chip.MouseEnter += (_, _) => chip.Background = new SolidColorBrush(Color.FromArgb(0x2E, 0xFF, 0xFF, 0xFF));
+        chip.MouseLeave += (_, _) => chip.Background = new SolidColorBrush(on ? Color.FromArgb(0x33, 0xDC, 0xB8, 0x77) : Color.FromArgb(0x12, 0xFF, 0xFF, 0xFF));
+        chip.MouseLeftButtonUp += (_, ev) =>
+        {
+            ev.Handled = true;
+            _findServer = id;
+            OverlayFindServers.Visibility = Visibility.Collapsed;
+            ShowFindServer();
+            if (OverlayFindBox.Text.Trim().Length >= 2)
+            {
+                _ = RunFindAsync();
+            }
+        };
+        return chip;
     }
 
     private async Task RunFindAsync()
@@ -261,16 +378,19 @@ public partial class MainWindow
             return;
         }
 
-        if (answer.Players.Count == 0)
+        IReadOnlyList<FoundPlayer> players = _findServer > 0 ? answer.Players.Where(p => p.ServerId == _findServer).ToList() : answer.Players;
+        if (players.Count == 0)
         {
-            ShowFindStatus($"No character called \"{name}\" in {OverlayFindRegionText.Text}.");
+            ShowFindStatus(_findServer > 0
+                ? $"No character called \"{name}\" on {OverlayFindServerText.Text}" + (answer.Players.Count > 0 ? $" ({answer.Players.Count} on other servers: pick All servers)." : ".")
+                : $"No character called \"{name}\" in {OverlayFindRegionText.Text}.");
             return;
         }
 
-        ShowFindResults(answer.Players);
-        if (answer.Players.Count == 1)
+        ShowFindResults(players);
+        if (players.Count == 1)
         {
-            ShowFindCard(answer.Players[0]);
+            ShowFindCard(players[0]);
         }
     }
 
@@ -311,10 +431,12 @@ public partial class MainWindow
                 grid.Children.Add(power);
             }
 
-            var row = new Border { Child = grid, Padding = new Thickness(7, 4, 7, 4), CornerRadius = new CornerRadius(6), Background = Brushes.Transparent, Cursor = Cursors.Hand,
-                Margin = new Thickness(0, 0, 0, 1) };
+            // never fully transparent: in the see-through look Windows gives clicks on such pixels to the game (5 November 2026: the rows could not be clicked)
+            var rest = new SolidColorBrush(Color.FromArgb(0x0A, 0xFF, 0xFF, 0xFF));
+            var row = new Border { Child = grid, Padding = new Thickness(7, 4, 7, 4), CornerRadius = new CornerRadius(6), Background = rest, Cursor = Cursors.Hand,
+                Margin = new Thickness(0, 0, 0, 2) };
             row.MouseEnter += (_, _) => row.Background = new SolidColorBrush(Color.FromArgb(0x1F, 0xFF, 0xFF, 0xFF));
-            row.MouseLeave += (_, _) => row.Background = Brushes.Transparent;
+            row.MouseLeave += (_, _) => row.Background = rest;
             FoundPlayer picked = player;
             row.MouseLeftButtonUp += (_, ev) =>
             {

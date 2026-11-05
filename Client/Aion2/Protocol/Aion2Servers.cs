@@ -42,6 +42,25 @@ public static class Aion2Servers
         return index < (faction == 1 ? (block == 0 ? Elyos10 : Elyos13) : (block == 0 ? Asmo20 : Asmo23)).Length;
     }
 
+    /// <summary>The live servers of a region block (1 NA East, 2 NA West, 3 Europe, 4 LATAM, 5 Asia), both factions, A to Z: what the meter's "Find a player"
+    /// offers to narrow a search to one server (the website's server picker lists the same).</summary>
+    public static IReadOnlyList<(int Id, string Name, bool Asmodian)> LiveServers(int block)
+    {
+        if (!Regions.TryGetValue(block, out var region))
+        {
+            return Array.Empty<(int, string, bool)>();
+        }
+
+        var list = new List<(int Id, string Name, bool Asmodian)>();
+        for (int i = 0; i < region.PerFaction; i++)
+        {
+            list.Add((1000 + (block * 100) + i + 1, Elyos13[i], false));
+            list.Add((2000 + (block * 100) + i + 1, Asmo23[i], true));
+        }
+
+        return list.OrderBy(s => s.Name, StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
     /// <summary>The region of a server for the event timetable ("nae", "naw", "eu", "latam", "asia"), null for an id that is no server of the table or lies in block 10/20 (region unknown).</summary>
     public static string? RegionCodeOf(int serverId) =>
         !IsKnown(serverId) ? null : (serverId / 100 % 10) switch { 1 => "nae", 2 => "naw", 3 => "eu", 4 => "latam", 5 => "asia", _ => null };

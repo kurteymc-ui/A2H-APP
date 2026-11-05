@@ -35,6 +35,7 @@ jobs:
             @('render-overlay', 'bar.png', 'bar'),
             @('render-overlay', 'dummy.png', 'dummy'),
             @('render-overlay', 'find.png', 'find'),
+            @('render-overlay', 'findservers.png', 'findservers'),
             @('render-overlay', 'tools.png', 'tools'),
             @('render-overlay', 'chips.png', 'chips'),
             @('render-overlay', 'menu.png', 'menu'),
