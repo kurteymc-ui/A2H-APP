@@ -363,12 +363,13 @@ internal sealed class MinimapReader : IDisposable
             return;
         }
 
-        // smoothed and moved on to now (the picture was taken a moment ago), put right by what the game's reports taught on this map, with the speed for the
-        // guess to run on until the next reading
+        // smoothed and moved on to now (the picture was taken a moment ago), then carried on from the game's last exact report (Anchored) or, without one
+        // near, put right by what the game's reports taught on this map; with the speed for the guess to run on until the next reading
         var (sx, sy, svx, svy) = Smooth(fix.X, fix.Y, outcome.At);
         double late = Math.Clamp((now - outcome.At).TotalSeconds, 0, 0.3);
         Aion2MapInfo map = job.Raster.Map;
-        (double cx, double cy) = _cal.Correct(map.Key, MinimapCalibration.StampOf(map), sx + (svx * late), sy + (svy * late), now);
+        double ux = sx + (svx * late), uy = sy + (svy * late);
+        (double cx, double cy) = Anchored(_anchor, map.Key, ux, uy, now) ?? _cal.Correct(map.Key, MinimapCalibration.StampOf(map), ux, uy, now);
         directory.NoteLocalPosition((float)cx, (float)cy, svx, svy);
         if (directory.LocalPosition is { } mine)
         {
@@ -481,6 +482,33 @@ internal sealed class MinimapReader : IDisposable
         return FormattableString.Invariant($"{taught} reports agree on {mx / 100:+0.0;-0.0} {my / 100:+0.0;-0.0} m: learnt as the map's offset here");
     }
 
+    /// <summary>The game's last exact report of the player's place and where the readings' track was at that moment (world units), the map, and when.</summary>
+    private (string Map, double Gx, double Gy, double Rx, double Ry, DateTime At)? _anchor;
+
+    /// <summary>How long and how far from the reading at the report (world units) the readings are carried on from it.</summary>
+    internal static readonly TimeSpan AnchorFor = TimeSpan.FromMinutes(10);
+
+    internal const double AnchorReach = 60000;
+
+    /// <summary>A report this far from the reading (world units) is a teleport or a lost reading: no anchor (the readings stand on their own).</summary>
+    internal const double AnchorMostOff = 15000;
+
+    /// <summary>
+    /// A reading carried on from the game's last exact report: the report plus how far the readings moved since (5 November 2026, the owner: "near the cube it
+    /// says it right, then the map teleports away from me" - in the west of Altgard the map's tiles lie 70 to 90 m off what the game reports, so every reading
+    /// after a report put the player back 88 m away). What the minimap is good at is how far the player moved; where on the map comes from the game. Within
+    /// <see cref="AnchorReach"/> of the reading at the report and <see cref="AnchorFor"/>; null otherwise (then the calibration's correction stands).
+    /// </summary>
+    internal static (double X, double Y)? Anchored((string Map, double Gx, double Gy, double Rx, double Ry, DateTime At)? anchor, string map, double x, double y, DateTime now)
+    {
+        if (anchor is not { } a || a.Map != map || (now - a.At).Duration() > AnchorFor || Distance(x, y, a.Rx, a.Ry) > AnchorReach)
+        {
+            return null;
+        }
+
+        return (a.Gx + (x - a.Rx), a.Gy + (y - a.Ry));
+    }
+
     // the reports the reader itself gave (they are no check of the minimap's middle)
     private readonly Queue<DateTime> _fed = new();
 
@@ -539,6 +567,7 @@ internal sealed class MinimapReader : IDisposable
         _far.Clear();
         _track = null;
         _lastRaw = null;
+        _anchor = null; // the readings move with the middle: the last report's anchor no longer fits them
         Log(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss} the minimap's middle in the {key} window moved by {sx:+0.0;-0.0} {sy:+0.0;-0.0} px to {now[0]:0.0} {now[1]:0.0} (four reports {Math.Sqrt((mx * mx) + (my * my)) / 100:0} m off the readings, the same way)"));
     }
 
@@ -571,6 +600,8 @@ internal sealed class MinimapReader : IDisposable
         }
 
         double rx = t.X + (t.Vx * dt), ry = t.Y + (t.Vy * dt), speed = Math.Sqrt((t.Vx * t.Vx) + (t.Vy * t.Vy));
+        // from now on the readings go on from this report (a teleport or a lost reading, far off, anchors nothing: the readings stand on their own again)
+        _anchor = Distance(exact.X, exact.Y, rx, ry) <= AnchorMostOff ? (map.Key, exact.X, exact.Y, rx, ry, DateTime.UtcNow) : null;
         string stamp = MinimapCalibration.StampOf(map);
         (double cx, double cy) = _cal.Correct(map.Key, stamp, rx, ry, exact.At);
         double ex = exact.X - cx, ey = exact.Y - cy, metres = Math.Sqrt((ex * ex) + (ey * ey)) / 100;

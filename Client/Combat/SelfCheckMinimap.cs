@@ -94,6 +94,16 @@ public static class SelfCheckMinimap
         bool smooth = SmoothCheck(rng);
         bool calibrated2 = CalibrationCheck(rng);
 
+        // the readings carried on from the game's last report (5 November 2026: the map's tiles 88 m off in the west of Altgard put the player back there
+        // after every report): the report plus how far the readings moved; not on another map, not after ten minutes, not 600 m away
+        DateTime t0 = new(2026, 11, 5, 12, 40, 0, DateTimeKind.Utc);
+        var anchor = ("altgard", -127000.0, -100000.0, -135300.0, -97000.0, t0);
+        bool anchored = Ui.MinimapReader.Anchored(anchor, "altgard", -134800, -96500, t0.AddSeconds(20)) is { } on && Math.Abs(on.X - -126500) < 0.01 && Math.Abs(on.Y - -99500) < 0.01
+            && Ui.MinimapReader.Anchored(anchor, "eltnen", -134800, -96500, t0.AddSeconds(20)) is null
+            && Ui.MinimapReader.Anchored(anchor, "altgard", -134800, -96500, t0.AddMinutes(11)) is null
+            && Ui.MinimapReader.Anchored(anchor, "altgard", -135300 + 70000, -97000, t0.AddSeconds(20)) is null;
+        Console.WriteLine($"  -> between the game's reports the readings go on from the last one (a map 88 m off stays right near it): {anchored}");
+
         // the map accuracy upload (Upload/MapShare.cs): the map, its numbers, the day and each check's places to a metre - nothing that names anybody
         string json = AionDPS.Upload.MapShare.Build("altgard", "2|0.01|4000|4000", new[] { new[] { 57500.0, -140500, 58300, -139900, 4.2, 0.08, 0.6 } },
             "0123456789abcdef0123456789abcdef", new DateTime(2026, 11, 5, 9, 30, 0, DateTimeKind.Utc));
@@ -102,7 +112,7 @@ public static class SelfCheckMinimap
         bool shared = root.GetProperty("kind").GetString() == "map-points" && root.GetProperty("day").GetString() == "2026-11-05" && root.GetProperty("map").GetString() == "altgard"
             && root.GetProperty("points")[0].GetArrayLength() == 7 && root.EnumerateObject().Select(prop => prop.Name).Order().SequenceEqual(new[] { "anonymousId", "clientVersion", "day", "formatVersion", "kind", "map", "points", "stamp" });
         Console.WriteLine($"  -> the map accuracy upload holds the map, its numbers, the day and the places, nothing that names anybody: {shared}");
-        return real && accurate && refused && zoomFound && screen && smooth && calibrated2 && shared;
+        return real && accurate && refused && zoomFound && screen && smooth && calibrated2 && shared && anchored;
     }
 
     /// <summary>
