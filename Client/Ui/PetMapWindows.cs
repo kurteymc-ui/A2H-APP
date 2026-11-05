@@ -556,6 +556,8 @@ public static class PetMapMarks
     private static readonly Brush CubeRight = PetMapPalette.BrushOf(Color.FromRgb(0xB4, 0x7C, 0x14));
     private static readonly Brush CubeEdge = PetMapPalette.BrushOf(Color.FromRgb(0x3B, 0x2A, 0x05));
     private static readonly Brush CubeGlow = FrozenGlow();
+    private static readonly Brush CubeHollow = PetMapPalette.BrushOf(Color.FromArgb(0x8C, 0x14, 0x10, 0x08));
+    private static readonly Brush CubeOutline = PetMapPalette.BrushOf(Color.FromArgb(0xD0, 0xF0, 0xC0, 0x50));
 
     /// <summary>
     /// A pet's mark: its portrait cut round, in a ring of the pet's colour (the list beside the map has the same colour); a monster that is there right now
@@ -608,7 +610,9 @@ public static class PetMapMarks
         }
     }
 
-    /// <summary>A Hidden Cube: an isometric cube in gold (three faces, light on top); one the game announces right now (<paramref name="live"/>) glows.</summary>
+    /// <summary>A Hidden Cube: an isometric cube in gold (three faces, light on top) that glows, one the game announces right now (<paramref name="live"/>); a place a
+    /// cube can appear at is only its gold outline on a dark see-through cube, so it is never taken for a cube (5 November 2026: the places were solid gold
+    /// cubes, bigger than the real one).</summary>
     public static ImageSource Cube(double size, bool live)
     {
         lock (Cubes)
@@ -687,7 +691,7 @@ public static class PetMapMarks
         var group = new DrawingGroup();
         double c = size / 2;
         // the outline of an isometric cube is a hexagon; h is half its height, the top face reaches down to the middle
-        double h = live ? size * 0.36 : size * 0.46, w = h * 0.866;
+        double h = live ? size * 0.36 : size * 0.32, w = h * 0.866;
         var top = new Point(c, c - h);
         var upperRight = new Point(c + w, c - h / 2);
         var lowerRight = new Point(c + w, c + h / 2);
@@ -702,6 +706,16 @@ public static class PetMapMarks
             if (live)
             {
                 dc.DrawEllipse(CubeGlow, null, middle, c, c);
+            }
+
+            if (!live)
+            {
+                var outline = new Pen(CubeOutline, size >= 14 ? 1.1 : 0.8) { LineJoin = PenLineJoin.Round };
+                dc.DrawGeometry(CubeHollow, outline, Figure(top, upperRight, lowerRight, bottom, lowerLeft, upperLeft));
+                dc.DrawLine(outline, upperLeft, middle); // the inner edges: the top face's two lower ones and the front corner
+                dc.DrawLine(outline, upperRight, middle);
+                dc.DrawLine(outline, middle, bottom);
+                return group;
             }
 
             dc.DrawGeometry(CubeTop, edge, Figure(top, upperRight, middle, upperLeft));
