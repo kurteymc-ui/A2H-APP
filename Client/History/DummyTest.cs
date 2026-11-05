@@ -66,7 +66,7 @@ public sealed class DummyTest
     public static readonly TimeSpan Grace = TimeSpan.FromSeconds(2.5);
 
     /// <summary>How long "Finished" stays on the overlay (20 s until 5 November 2026: the owner had to wait for it, "the dummy cooldown").</summary>
-    public static readonly TimeSpan FinishedShown = TimeSpan.FromSeconds(8);
+    public static readonly TimeSpan FinishedShown = TimeSpan.FromSeconds(10);
 
     /// <summary>Automatic runs: after a run the player has to stop hitting the dummies this long before the next hit starts a new one, so the hits
     /// that go on right after the time is up do not start the next run at once.</summary>
