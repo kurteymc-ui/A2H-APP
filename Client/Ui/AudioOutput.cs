@@ -13,6 +13,9 @@ public static class AudioOutput
     /// <summary>The chosen device (<c>DeviceInformation.Id</c>); empty = the Windows default device. Set when the settings are loaded or saved.</summary>
     public static string DeviceId { get; set; } = "";
 
+    /// <summary>Every sound of the meter off (MeterSettings.MuteSounds, the meter's Tools → Sound alerts): nothing is played or spoken.</summary>
+    public static bool Muted { get; set; }
+
     /// <summary>The audio outputs the system has; empty when they cannot be listed.</summary>
     public static IReadOnlyList<AudioDevice> Devices()
     {

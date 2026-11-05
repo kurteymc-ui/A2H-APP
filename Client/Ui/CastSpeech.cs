@@ -214,6 +214,11 @@ public sealed class CastSpeech
     /// with an English Windows voice) reads the text.</summary>
     public void Speak(Spoken said, string voiceId, double volume, string deviceId)
     {
+        if (AudioOutput.Muted)
+        {
+            return; // the meter's sound alerts are off
+        }
+
         int mine = Interlocked.Increment(ref _latest);
         IReadOnlyList<string>? clips = NaturalVoice.Is(voiceId) ? NaturalVoice.Clips(voiceId, said.Phrases) : null;
         _ = Task.Run(async () =>

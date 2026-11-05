@@ -31,7 +31,7 @@ public static class NotifySounds
     private static void PlayFile(string id, int volume)
     {
         string path = Path.Combine(AppContext.BaseDirectory, "assets", "sounds", id + ".wav");
-        if (!File.Exists(path) || volume <= 0)
+        if (AudioOutput.Muted || !File.Exists(path) || volume <= 0)
         {
             return;
         }

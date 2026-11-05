@@ -1547,7 +1547,7 @@ public partial class MainWindow : Window
         }
 
         DateTime now = DateTime.Now;
-        bool kept = now < _overlayPeekUntil || _meterOverlay.IsMouseOver || _overlayMenuOpen
+        bool kept = now < _overlayPeekUntil || _meterOverlay.IsMouseOver || _overlayMenuOpen || OverlayFind.Visibility == Visibility.Visible
             || _dummy?.Model.State is DummyState.Armed or DummyState.Running or DummyState.Finished;
         bool inFight = MeterOverlayRule.Shown(_meterOverlayAutoHide, _meterPopUpForBoss, _meterOverlayHideAfter, now - _lastOwnBossFight, now - _lastBossFight,
             now - _lastOwnCombat, _meterOverlay.Wanted, kept);
@@ -7770,6 +7770,8 @@ public partial class MainWindow : Window
         UpdateOverlayIdentity();
         UpdateOverlayTickets();
         UpdateOverlayFold();
+        UpdatePetMapButton(_gateSettings);
+        AudioOutput.Muted = _gateSettings.MuteSounds;
         UpdateMeterOverlay();
 
         if ((DateTime.UtcNow - _gateSettingsAt).TotalSeconds >= 1)
@@ -8144,7 +8146,12 @@ public partial class MainWindow : Window
     private double _overlayExtraWidth;
 
     /// <summary>The meter's width: what its look needs, plus what the player dragged on (or took off).</summary>
-    private double CompactOverlayWidth(MeterLook look) => Math.Clamp(look.PanelWidth + _overlayExtraWidth, MinOverlayWidth, MaxOverlayWidth);
+    /// <summary>The bar's own width (the character, the clock, the cube, the pill and seven buttons): a narrower look widens to it (5 November 2026).</summary>
+    private const double OverlayBarWidth = 470;
+
+    private static double BaseOverlayWidth(MeterLook look) => Math.Max(look.PanelWidth, OverlayBarWidth);
+
+    private double CompactOverlayWidth(MeterLook look) => Math.Clamp(BaseOverlayWidth(look) + _overlayExtraWidth, MinOverlayWidth, MaxOverlayWidth);
 
     /// <summary>The meter's own size, before its scale: the width added to its look's, and the height of its player lines (0: as tall as the lines are).
     /// Lines that do not fit a shorter height are cut off at the bottom (the lowest rates).</summary>
@@ -8152,7 +8159,7 @@ public partial class MainWindow : Window
     {
         _overlayExtraWidth = double.IsFinite(extraWidth) ? Math.Clamp(extraWidth, -MaxOverlayWidth, MaxOverlayWidth) : 0;
         CompactOverlayPanel.Width = CompactOverlayWidth(_meterLook);
-        _overlayExtraWidth = CompactOverlayPanel.Width - _meterLook.PanelWidth; // what is left of it within the limits
+        _overlayExtraWidth = CompactOverlayPanel.Width - BaseOverlayWidth(_meterLook); // what is left of it within the limits
         CompactOverlayRowsArea.Height = double.IsFinite(rowsHeight) && rowsHeight > 0 ? Math.Clamp(rowsHeight, MinOverlayRowsHeight, MaxOverlayRowsHeight) : double.NaN;
     }
 
@@ -8472,42 +8479,6 @@ public partial class MainWindow : Window
         OpenOverlayMenu((FrameworkElement)sender, OverlaySettingsItems());
     }
 
-    /// <summary>
-    /// The lines of the meter's own menu "…" (also drawn by render-overlay … menu): where the rest is, nothing more (5 November 2026, the owner: no huge
-    /// menu, "just redirect"). The meter's switches are on its Meter look page, the training dummy and Grind in the pill's menu.
-    /// </summary>
-    internal IList<Control> OverlaySettingsItems() => new Control[]
-    {
-        OverlayItem("Fight report", () =>
-        {
-            ShowClient();
-            _ = OpenFightReportAsync();
-        }),
-        OverlayItem("History", OpenHistory),
-        OverlayItem("Characters", () =>
-        {
-            ShowClient();
-            OpenChecklist(true);
-        }),
-        OverlayItem("Meter look", () =>
-        {
-            ShowClient();
-            if (_shellBuilt)
-            {
-                ShowShellPage("meterlook");
-            }
-        }),
-        OverlayItem("Settings", () =>
-        {
-            ShowClient();
-            OnSettingsClicked(this, new RoutedEventArgs());
-        }),
-        new Separator(),
-        OverlayItem("Copy to chat", CopyRowsToClipboard),
-        OverlayItem("Open the meter window", ShowClient),
-        OverlayItem("Hide the meter", HideMeterOverlay),
-    };
-
     private MenuItem OverlaySubmenu(string header)
     {
         var item = new MenuItem { Header = header };
@@ -8567,10 +8538,7 @@ public partial class MainWindow : Window
     {
         // at a dummy the reset starts over too: the parse going on is dropped and the next hit starts a new one at once (5 November 2026, the owner:
         // "I cannot reset it, I have to wait for the dummy cooldown")
-        _dummy?.Model.Reset();
-        _dummyCardHidden = false;
-        ClearDamageData();
-        RefreshRows();
+        ResetMeter();
         e.Handled = true;
     }
 

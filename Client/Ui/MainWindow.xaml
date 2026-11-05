@@ -1316,25 +1316,25 @@
                      meter (unless it is locked). -->
                 <DockPanel x:Name="OverlayHeader" Background="Transparent" Margin="8,5,6,5" MinHeight="30" Cursor="SizeAll" MouseLeftButtonDown="OnCompactOverlayDrag">
                     <Border x:Name="OverlayMenuButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlaySettingsClicked"
-                            ToolTip="More: fight report, history, characters, meter look, settings, hide the meter">
+                            ToolTip="More: fight details, history, find a player, settings, what's new, support us, exit">
                         <TextBlock Text="&#xE712;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
                     <Border x:Name="OverlayLockButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayLockClicked" ToolTip="Lock the meter in place">
                         <TextBlock x:Name="OverlayLockGlyph" Text="&#xE785;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
-                    <Border x:Name="OverlayCharactersButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayCharactersClicked"
-                            ToolTip="Characters: Odyle Energy, dailies and weeklies">
-                        <TextBlock Text="&#xE77B;" Style="{StaticResource OverlayIconGlyph}"/>
+                    <Border x:Name="OverlayToolsButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayToolsClicked"
+                            ToolTip="Tools: buff and cooldown timers, pet tracker, sound alerts, clear the fight, history, find a player">
+                        <TextBlock Text="&#xE90F;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
-                    <Border x:Name="OverlayReportButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayReportClicked"
-                            ToolTip="Fight report of what the meter shows">
-                        <TextBlock Text="&#xE9D2;" Style="{StaticResource OverlayIconGlyph}"/>
-                    </Border>
-                    <Border x:Name="OverlayHistoryButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayHistoryClicked" ToolTip="Past fights">
-                        <TextBlock Text="&#xE81C;" Style="{StaticResource OverlayIconGlyph}"/>
+                    <Border x:Name="OverlayPetMapButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayPetMapClicked"
+                            ToolTip="Pet tracker: the map over the game on or off (its list: Tools)">
+                        <TextBlock x:Name="OverlayPetMapGlyph" Text="&#xE707;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
                     <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayResetClicked" ToolTip="{local:Loc Main.Overlay.Reset}">
                         <TextBlock Text="&#xE7A7;" Style="{StaticResource OverlayIconGlyph}"/>
+                    </Border>
+                    <Border x:Name="OverlayFindButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayFindClicked" ToolTip="Find a player">
+                        <TextBlock Text="&#xE721;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
                     <!-- What is measured: a pill with its name, the menu (DPS, rDPS, healing, tanked, buffs, all in one, the dummy parse, Grind) opens under it. -->
                     <Border x:Name="OverlayModeButton" DockPanel.Dock="Right" Height="22" Margin="4,0,4,0" Padding="9,0,7,0" CornerRadius="6" BorderThickness="1"
@@ -1366,7 +1366,7 @@
                         </Grid>
                         <StackPanel Grid.Column="1" VerticalAlignment="Center">
                             <TextBlock x:Name="OverlayOwnName" Text="A2HMeter" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Brush.OverlayText}"
-                                       MaxWidth="112" TextTrimming="CharacterEllipsis"/>
+                                       MaxWidth="100" TextTrimming="CharacterEllipsis"/>
                             <TextBlock x:Name="OverlayOwnCp" FontSize="10" Foreground="{DynamicResource Brush.TextMuted}" Typography.NumeralAlignment="Tabular"
                                        Visibility="Collapsed" Margin="0,-1,0,0"/>
                         </StackPanel>
@@ -1386,6 +1386,36 @@
                     </Border>
                     <Grid/>
                 </DockPanel>
+                <!-- Find a player (MainWindow.FindPlayer.cs): a name and the region, the characters found, then a card of the one picked. -->
+                <StackPanel x:Name="OverlayFind" Visibility="Collapsed" Margin="10,0,8,8">
+                    <DockPanel>
+                        <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayFindCloseClicked" ToolTip="Close">
+                            <TextBlock Text="&#xE8BB;" Style="{StaticResource OverlayIconGlyph}" FontSize="10"/>
+                        </Border>
+                        <Border x:Name="OverlayFindRegion" DockPanel.Dock="Right" Height="26" Margin="6,0,4,0" Padding="9,0,7,0" CornerRadius="6" BorderThickness="1"
+                                BorderBrush="#33FFFFFF" Background="#10FFFFFF" Cursor="Hand" MouseLeftButtonUp="OnOverlayFindRegionClicked" ToolTip="The region to search">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="OverlayFindRegionText" Text="Europe" FontSize="11.5" Foreground="{DynamicResource Brush.OverlayText}" VerticalAlignment="Center"/>
+                                <Path Data="M0,0 L3.5,3.5 L7,0" Stroke="{DynamicResource Brush.TextMuted}" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                      Margin="6,1,0,0" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Border>
+                        <Border Height="26" CornerRadius="6" BorderThickness="1" BorderBrush="#66DCB877" Background="#12FFFFFF">
+                            <Grid>
+                                <TextBlock Text="&#xE721;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="11" Foreground="{DynamicResource Brush.TextSubtle}"
+                                           VerticalAlignment="Center" Margin="8,0,0,0" IsHitTestVisible="False"/>
+                                <TextBlock x:Name="OverlayFindHint" Text="Character name, then Enter" Margin="27,0,0,0" VerticalAlignment="Center" FontSize="11.5"
+                                           Foreground="{DynamicResource Brush.TextSubtle}" IsHitTestVisible="False"/>
+                                <TextBox x:Name="OverlayFindBox" Background="Transparent" BorderThickness="0" Foreground="{DynamicResource Brush.OverlayText}"
+                                         CaretBrush="{DynamicResource Brush.Accent}" FontSize="12" VerticalContentAlignment="Center" Padding="23,0,6,0" MaxLength="40"
+                                         KeyDown="OnOverlayFindKey" TextChanged="OnOverlayFindTextChanged"/>
+                            </Grid>
+                        </Border>
+                    </DockPanel>
+                    <TextBlock x:Name="OverlayFindStatus" Margin="2,6,0,0" FontSize="11" Foreground="{DynamicResource Brush.TextMuted}" Visibility="Collapsed" TextWrapping="Wrap"/>
+                    <StackPanel x:Name="OverlayFindResults" Margin="0,5,0,0"/>
+                    <Border x:Name="OverlayFindCard" Visibility="Collapsed" Margin="0,6,0,0"/>
+                </StackPanel>
                 <!-- The body: the fight. Folded away while no boss fight, dummy parse or Grind view is on (UpdateOverlayFold). -->
                 <StackPanel x:Name="OverlayBody">
                     <Rectangle Height="1" Fill="#16FFFFFF" Margin="0,0,0,5"/>

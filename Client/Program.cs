@@ -1402,11 +1402,11 @@ internal static class Program
         }
 
         System.Windows.FrameworkElement panel;
-        if (kind is "menu" or "menu-dummy")
+        if (kind is "menu" or "menu-dummy" or "tools")
         {
             // the meter's own menu ("…" in its header), or its Training dummy submenu, as they open over the game
             // "menu-dummy": the pill's menu (what is measured, the training dummy, Grind)
-            var items = kind == "menu" ? window.OverlaySettingsItems() : window.OverlayModeItems();
+            var items = kind == "menu" ? window.OverlaySettingsItems() : kind == "tools" ? window.OverlayToolsItems() : window.OverlayModeItems();
             var menu = new System.Windows.Controls.ContextMenu();
             if (window.TryFindResource(typeof(System.Windows.Controls.ContextMenu)) is System.Windows.Style menuStyle)
             {
@@ -1458,6 +1458,22 @@ internal static class Program
                 window.OverlayTimeText.Visibility = System.Windows.Visibility.Collapsed;
                 Ui.MainWindow.ShowCubeChip(window.OverlayCubeCallout, window.OverlayCubeCalloutText, 1, "38 m");
                 window.OverlayCubeCallout.Visibility = System.Windows.Visibility.Visible;
+            }
+            else if (kind == "find")
+            {
+                // Find a player: two characters of the name found, the card of the first open
+                window.OverlayBody.Visibility = System.Windows.Visibility.Collapsed;
+                window.OverlayTimeText.Visibility = System.Windows.Visibility.Collapsed;
+                window.OverlayFind.Visibility = System.Windows.Visibility.Visible;
+                window.OverlayFindBox.Text = "Arhimodon";
+                window.OverlayFindHint.Visibility = System.Windows.Visibility.Collapsed;
+                var found = new[]
+                {
+                    new Upload.FoundPlayer("Arhimodon", "Templar", 45, "Vaizel", 2302, "eu", 182_730, 2968, 21_480, "Thamon", "https://aion2helper.com/armory/?region=eu&server=Vaizel&name=Arhimodon"),
+                    new Upload.FoundPlayer("Arhimodon", "Cleric", 32, "Siel", 1101, "nae", null, null, null, null, "https://aion2helper.com/armory/?region=nae&server=Siel&name=Arhimodon"),
+                };
+                window.ShowFindResults(found);
+                window.ShowFindCard(found[0]);
             }
             else if (kind == "dummy")
             {

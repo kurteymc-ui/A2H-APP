@@ -604,6 +604,9 @@ public sealed class MeterSettings
     /// daily dungeon and Ascension Trial.</summary>
     public bool MeterShowTickets { get; set; } = true;
 
+    /// <summary>Every sound of the meter off at once (the meter's Tools → Sound alerts): the reminders, the cube sounds, the spoken boss casts and cooldowns.</summary>
+    public bool MuteSounds { get; set; }
+
     /// <summary>The meter's panel went see-through and its buttons always there once for everyone (1.20.16).</summary>
     public bool MeterLookDefaulted { get; set; }
 
