@@ -19,7 +19,7 @@ namespace AionDPS.Ui;
 /// </summary>
 public sealed class FightReportWindow : Window
 {
-    public static readonly string[] Tabs = { "Damage", "Healing", "Damage taken", "Shields", "Defense", "Buffs", "Support", "Rotation", "Timeline" };
+    public static readonly string[] Tabs = { "Damage", "Healing", "Damage taken", "Shields", "Defense", "Buffs", "Buffs per skill", "Support", "Rotation", "Timeline" };
 
     private static readonly CultureInfo En = CultureInfo.InvariantCulture;
     private static readonly Brush GoodBrush = ReportPalette.Brush(ReportPalette.Good);
@@ -118,6 +118,7 @@ public sealed class FightReportWindow : Window
             "Shields" => ShieldsTab(),
             "Defense" => DefenseTab(),
             "Buffs" => BuffsTab(),
+            "Buffs per skill" => BuffsPerSkillTab(),
             "Support" => SupportTab(),
             "Rotation" => RotationTab(),
             "Timeline" => TimelineTab(),
@@ -626,6 +627,121 @@ public sealed class FightReportWindow : Window
 
         root.Children.Add(Card(card));
         return root;
+    }
+
+    /// <summary>The most effects the table of buffs per skill has columns for.</summary>
+    private const int MostBuffColumns = 12;
+
+    /// <summary>
+    /// Buffs per skill (5 November 2026, the owner, with a picture of another meter's table): for each skill the player used, how many of its uses had each of
+    /// the effects on the player at that moment - which skills went out under the damage buffs and which missed them. The damage buffs the meter prices first
+    /// (Mantra, Gale, Fury …), then the others by how long they were on; the mouse on an effect's icon names it, its class and who gave it.
+    /// </summary>
+    private FrameworkElement BuffsPerSkillTab()
+    {
+        var root = new StackPanel();
+        var players = _r.Players.Where(p => p.Rotation is { HasData: true }).ToList();
+        root.Children.Add(Pills(players.Count > 0 ? players : _r.Players, HorizontalAlignment.Left));
+        if (Selected(players) is not { Rotation: { } rotation } sel)
+        {
+            return Empty(root, "The capture saw no skills used in this fight.");
+        }
+
+        var uses = rotation.Uses.Where(u => !u.Passive).ToList();
+        var buffs = rotation.Buffs.Where(b => b.Spans is { Count: > 0 } && b.UptimePercent >= 3)
+            .OrderByDescending(b => RaidDps.IsSynergy(RaidDps.DisplayBase(b.SkillId)))
+            .ThenByDescending(b => b.UptimePercent)
+            .Take(MostBuffColumns).ToList();
+        if (uses.Count == 0 || buffs.Count == 0)
+        {
+            return Empty(root, uses.Count == 0 ? "The capture saw no skills used in this fight." : "No effects were seen on this player while they used their skills.");
+        }
+
+        var skills = uses.GroupBy(u => u.Name).Select(g => (Name: g.Key, SkillId: g.First().SkillId, At: g.Select(u => u.At).ToList()))
+            .OrderByDescending(x => x.At.Count).ThenBy(x => x.Name, StringComparer.Ordinal).ToList();
+        var grid = new Grid { Margin = new Thickness(18, 12, 18, 14) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 190 });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+        foreach (BuffRow _ in buffs)
+        {
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(62) });
+        }
+
+        // the head: "Skill", "Casts" and each effect's icon, named by the mouse
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        AddCell(grid, Muted("Skill", 12, semibold: true, margin: new Thickness(0, 0, 0, 8)), 0, 0);
+        var castsHead = Muted("Casts", 12, semibold: true, margin: new Thickness(0, 0, 10, 8));
+        castsHead.HorizontalAlignment = HorizontalAlignment.Right;
+        AddCell(grid, castsHead, 0, 1);
+        for (int c = 0; c < buffs.Count; c++)
+        {
+            BuffRow buff = buffs[c];
+            var icon = IconBox(EffectIcon(buff.SkillId, buff.Name), 28);
+            ((FrameworkElement)icon).HorizontalAlignment = HorizontalAlignment.Center;
+            ((FrameworkElement)icon).Margin = new Thickness(0, 0, 0, 8);
+            ((FrameworkElement)icon).ToolTip = BuffTip(buff);
+            AddCell(grid, icon, 0, c + 2);
+        }
+
+        // a line per skill: its icon and name, its casts, and per effect the share of its casts made while the effect was on
+        int row = 1;
+        foreach (var skill in skills)
+        {
+            grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(30) });
+            var name = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            var skillIcon = IconBox(SkillIcon(skill.SkillId, skill.Name, sel.Player.ClassName), 22);
+            ((FrameworkElement)skillIcon).Margin = new Thickness(0, 0, 8, 0);
+            name.Children.Add(skillIcon);
+            name.Children.Add(new TextBlock { Text = Aion2SkillNames.Display(skill.Name), FontSize = 13, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis });
+            AddCell(grid, name, row, 0);
+            var casts = Right(N(skill.At.Count));
+            casts.Margin = new Thickness(0, 0, 10, 0);
+            AddCell(grid, casts, row, 1);
+            for (int c = 0; c < buffs.Count; c++)
+            {
+                IReadOnlyList<(double Start, double End)> spans = buffs[c].Spans!;
+                int under = skill.At.Count(at => spans.Any(sp => sp.Start <= at && at <= sp.End));
+                double share = 100.0 * under / skill.At.Count;
+                var cell = new Border
+                {
+                    Margin = new Thickness(1), CornerRadius = new CornerRadius(3),
+                    Background = ReportPalette.Brush(Color.FromRgb(0xDC, 0x6E, 0x78), (byte)Math.Round(0x14 + share / 100 * 0x5C)),
+                    Child = new TextBlock
+                    {
+                        Text = Pct0(share), FontSize = 12.5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+                        FontWeight = share >= 99.5 ? FontWeights.SemiBold : FontWeights.Normal, Opacity = share > 0 ? 1 : 0.55,
+                    },
+                    ToolTip = $"{Aion2SkillNames.Display(skill.Name)}: {under} of {skill.At.Count} casts under {buffs[c].Name}",
+                };
+                AddCell(grid, cell, row, c + 2);
+            }
+
+            row++;
+        }
+
+        var card = new StackPanel();
+        card.Children.Add(Muted((sel.Player.IsSelf ? "YOUR" : sel.Player.Name.ToUpperInvariant() + "'S") + " BUFFS PER SKILL", 12, semibold: true, margin: new Thickness(18, 14, 18, 0)));
+        card.Children.Add(new ScrollViewer { HorizontalScrollBarVisibility = ScrollBarVisibility.Auto, VerticalScrollBarVisibility = ScrollBarVisibility.Disabled, Content = grid });
+        root.Children.Add(Card(card));
+        root.Children.Add(Muted("The share of each skill's casts made while the effect was on the player. The damage buffs the meter counts in rDPS come first; the mouse on an icon names the effect, its class and who gave it.",
+            12, margin: new Thickness(4, 8, 4, 0)));
+        return root;
+    }
+
+    /// <summary>An effect's tip: its name, the class it belongs to (or that it is an item's or another effect) and who put it on the player.</summary>
+    private static string BuffTip(BuffRow buff)
+    {
+        string? cls = Aion2SkillNames.ClassOf(buff.SkillId);
+        string kind = RaidDps.IsSynergy(RaidDps.DisplayBase(buff.SkillId)) ? "damage buff" : "effect";
+        string from = buff.Givers.Length == 0 ? "" : "\nFrom: " + buff.Givers.Replace("★", "you");
+        return $"{buff.Name}\n{(cls is not null ? cls + " " + kind : "Item, scroll or other " + kind)}  ·  on {Pct0(buff.UptimePercent)} of the fight{from}";
+    }
+
+    private static void AddCell(Grid grid, UIElement element, int row, int column)
+    {
+        Grid.SetRow(element, row);
+        Grid.SetColumn(element, column);
+        grid.Children.Add(element);
     }
 
     private FrameworkElement SupportTab()

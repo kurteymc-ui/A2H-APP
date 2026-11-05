@@ -96,6 +96,7 @@ jobs:
             @('render-report', 'report-healing.png', 'Healing'),
             @('render-report', 'report-taken.png', 'Damage-taken'),
             @('render-report', 'report-buffs.png', 'Buffs'),
+            @('render-report', 'report-buffskill.png', 'Buffs-per-skill'),
             @('render-report', 'report-support.png', 'Support'),
             @('render-report', 'report-rotation.png', 'Rotation'),
             @('render-report', 'report-timeline.png', 'Timeline'),
