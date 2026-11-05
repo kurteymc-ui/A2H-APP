@@ -40,7 +40,27 @@ public static class SelfCheckCubesGuards
             && !Aion2Guards.IsHostileMap("Intersever/Abyss/Abyss_Reshanta_A", "Elyos") && !Aion2Guards.IsHostileMap("Dungeon/Fire_Temple", "Elyos")
             && !Aion2Guards.IsHostileMap("World/World_D/World_D_A", null);
         Console.WriteLine($"  -> cube arrivals counted once per cube={arrivals}, out of sight remembered={left}, guards among the live monsters={live}/gone again={gone}, the 29 Guard NPC ids={ids}, hostile maps only={hostile}");
-        bool ok = arrivals && left && live && gone && ids && hostile;
+
+        // the cube's metres (Ui.CubeRange): from the map's arrow, the game's own right after its report ("42 m"), the minimap's in between ("~32 m"),
+        // nothing once neither is fresh
+        DateTime t = DateTime.UtcNow;
+        var walker = new Aion2EntityDirectory { Clock = () => t };
+        var oneCube = new List<(float X, float Y)> { (4200, 0) };
+        walker.NoteLocalPosition(0, 0);
+        AionDPS.Ui.PlayerArrow.Reset();
+        var reported = AionDPS.Ui.CubeRange.Nearest(walker, oneCube);
+        t = t.AddSeconds(2);
+        walker.NoteLocalPosition(1000, 0, 0, 0);
+        AionDPS.Ui.PlayerArrow.Reset();
+        var read = AionDPS.Ui.CubeRange.Nearest(walker, oneCube);
+        t = t.AddSeconds(4);
+        var unknown = AionDPS.Ui.CubeRange.Nearest(walker, oneCube);
+        AionDPS.Ui.PlayerArrow.Reset();
+        bool metres = reported is { Exact: true } r && Math.Abs(r.Metres - 42) < 0.01 && read is { Exact: false } m && Math.Abs(m.Metres - 32) < 0.01
+            && unknown is null && AionDPS.Ui.CubeRange.Text(m) == "~32 m";
+        Console.WriteLine($"  -> cube metres: {(reported is { } a1 ? AionDPS.Ui.CubeRange.Text(a1) : "none")} after the game's report, "
+            + $"{(read is { } a2 ? AionDPS.Ui.CubeRange.Text(a2) : "none")} from the minimap 2 s later, {(unknown is null ? "none" : "some")} 4 s after that: {metres}");
+        bool ok = arrivals && left && live && gone && ids && hostile && metres;
         Console.WriteLine(ok ? "  -> OK" : "  -> FAILED");
         return ok;
     }

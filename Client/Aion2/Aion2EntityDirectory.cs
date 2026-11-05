@@ -1234,7 +1234,7 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
     {
         lock (_gate)
         {
-            NoteLocalPosition(x, y);
+            NoteExactLocked(x, y);
             _streamVelocity = double.IsFinite(vx) && double.IsFinite(vy) && _position is { } p ? (vx, vy, p.At) : null;
         }
     }
@@ -1248,19 +1248,45 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
     private (double X, double Y)? StreamVelocity(DateTime now) =>
         _streamVelocity is { } v && _position is { } p && p.At == v.At && (now - v.At).TotalSeconds <= StreamRunOn ? (v.X, v.Y) : null;
 
+    /// <summary>The game's own report of where the player is (a skill, a hit, a dash, an effect he put on, a landing): exact to the centimetre.</summary>
     public void NoteLocalPosition(float x, float y)
     {
         lock (_gate)
         {
-            if (PositionProbe is { } probe && _position is { } before && EnvironmentEstimateLocked(Now) is { } env)
-            {
-                probe(((Now - before.At).TotalSeconds, Distance(before.X, before.Y, x, y), Distance(env.X, env.Y, x, y), env.Count, Now, x, y));
-            }
-
-            _position = (x, y, Now);
-            _positionIsSpawn = false;
-            TrackFix(x, y);
+            NoteExactLocked(x, y);
+            _reported = (x, y, Now);
         }
+    }
+
+    /// <summary>
+    /// The last place the game itself reported for the player (<see cref="NoteLocalPosition(float, float)"/>, a teleport's landing), never a reading of the
+    /// minimap or a guess (5 November 2026): right after one, the Hidden Cube's metres are the game's own (its place comes from the game too); between two
+    /// reports they are the map's (Ui.CubeRange). Null before the first report.
+    /// </summary>
+    public (float X, float Y, DateTime At)? ReportedPosition
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _reported;
+            }
+        }
+    }
+
+    private (float X, float Y, DateTime At)? _reported;
+
+    // an exact place, the game's or the minimap's (under the lock)
+    private void NoteExactLocked(float x, float y)
+    {
+        if (PositionProbe is { } probe && _position is { } before && EnvironmentEstimateLocked(Now) is { } env)
+        {
+            probe(((Now - before.At).TotalSeconds, Distance(before.X, before.Y, x, y), Distance(env.X, env.Y, x, y), env.Count, Now, x, y));
+        }
+
+        _position = (x, y, Now);
+        _positionIsSpawn = false;
+        TrackFix(x, y);
     }
 
     private static double Distance(double ax, double ay, double bx, double by) => Math.Sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by)) / 100.0;
@@ -1273,6 +1299,7 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
         lock (_gate)
         {
             _position = (x, y, Now);
+            _reported = (x, y, Now);
             _positionIsSpawn = true;
             _around.Clear();
             TrackFix(x, y);

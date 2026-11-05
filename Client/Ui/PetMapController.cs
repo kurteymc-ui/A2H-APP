@@ -325,16 +325,9 @@ public sealed class PetMapController : IDisposable
     /// <summary>The pseudo pet id under which the live Hidden Cubes travel with the live monsters (the map draws a cube for it).</summary>
     private const int CubePet = PetMapWindow.CubeMark;
 
-    private readonly MarkerMotion _motion = new();
-
-    /// <summary>Where the player's arrow is drawn now: the position guess through <see cref="MarkerMotion"/> (an exact report at once, a step of the guess
-    /// glided over). Stepped every frame and every tick; the view's middle is the same place.</summary>
-    private (float X, float Y) Follow(Aion2EntityDirectory directory, (float X, float Y, DateTime At) p)
-    {
-        var (vx, vy) = directory.RunOnVelocity;
-        var (x, y) = _motion.Step(p.X, p.Y, directory.LocalPosition?.At, DateTime.UtcNow, vx, vy);
-        return ((float)x, (float)y);
-    }
+    /// <summary>Where the player's arrow is drawn now: the program's one arrow (<see cref="PlayerArrow"/>: an exact report at once, a step of the guess
+    /// glided over), the place the cube line measures from too. Stepped every frame and every tick; the view's middle is the same place.</summary>
+    private static (float X, float Y) Follow(Aion2EntityDirectory directory, (float X, float Y, DateTime At) p) => PlayerArrow.Step(directory, p);
 
     /// <summary>What the last tick drew the map with: every frame in between draws it again with the arrow moved on (null while the map is not drawn
     /// with a known position).</summary>
@@ -581,19 +574,18 @@ public sealed class PetMapController : IDisposable
         }
     }
 
-    /// <summary>"Hidden Cube nearby · 42 m · NE": the nearest cube in range, how far and which way from where the player is now (without the distance while
-    /// the meter does not know where he stands).</summary>
+    /// <summary>"Hidden Cube nearby · 42 m · NE": the nearest cube in range, how far and which way from where the game last reported the player (with the
+    /// report's age once it is a few seconds old; without the distance before any report).</summary>
     private static string CubeNote(Aion2EntityDirectory? directory)
     {
         string text = LocalizationManager.Instance["Cubes.Toast"];
         var cubes = directory?.LiveCubes() ?? Array.Empty<(float X, float Y)>();
-        if (cubes.Count > 0 && CubeRange.Nearest(directory!, cubes, TimeSpan.FromSeconds(5)) is { } near)
+        if (cubes.Count > 0 && CubeRange.Nearest(directory!, cubes) is { } near)
         {
-            double dx = near.Dx, dy = near.Dy, meters = near.Metres;
-            text += string.Format(System.Globalization.CultureInfo.CurrentCulture, " · {0:0} m", meters);
-            if (meters >= 3)
+            text += " · " + CubeRange.Text(near);
+            if (near.Metres >= 3)
             {
-                text += " · " + Compass.Towards(dx, dy);
+                text += " · " + Compass.Towards(near.Dx, near.Dy);
             }
         }
 
@@ -621,8 +613,8 @@ public sealed class PetMapController : IDisposable
     /// <summary>
     /// The Hidden Cube sound works like a parking sensor: while a cube is in range the sound repeats, the faster the closer the player stands to the nearest one
     /// (about every 2.5 s from 100 m away, where the game announces a cube, down to 0.15 s within 3 m; 100 world units are a metre). The scale used to end at 60 m,
-    /// so from the announcement at 100 m to 60 m the rhythm did not change at all and the rise only began near the cube. The own position comes only now and then
-    /// (skills, hits, the monsters around): in between the last rhythm goes on for up to 8 s, and without any position for longer it stays silent.
+    /// so from the announcement at 100 m to 60 m the rhythm did not change at all and the rise only began near the cube. The game reports the own position only now and
+    /// then (skills, hits, dashes): the rhythm follows each report and goes on for up to 8 s after it, and without a report for longer it stays silent.
     /// </summary>
     private void AnnounceCubes(MeterSettings settings)
     {
@@ -638,7 +630,7 @@ public sealed class PetMapController : IDisposable
             return;
         }
 
-        if (CubeRange.Metres(directory!, cubes, TimeSpan.FromSeconds(5)) is double meters)
+        if (CubeRange.Metres(directory!, cubes) is double meters)
         {
             _lastCubeInterval = Math.Clamp(0.15 + (meters - 3) / 97.0 * 2.35, 0.15, 2.5);
             _lastCubeFixAt = DateTime.UtcNow;
@@ -700,13 +692,13 @@ public sealed class PetMapController : IDisposable
             {
                 // an instance without a map of its own, or an open map the meter has none of: the map the player came from must not stay behind it
                 _current = null;
-                _motion.Reset();
+                PlayerArrow.Reset();
                 _pointsKey = "";
             }
             else if (found is not null && found != _current)
             {
                 _current = found;
-                _motion.Reset();
+                PlayerArrow.Reset();
                 _pointsKey = "";
             }
         }
@@ -776,7 +768,7 @@ public sealed class PetMapController : IDisposable
         }
         else
         {
-            _motion.Reset(); // when the position is known again the arrow starts from it, not from where it was left
+            PlayerArrow.Reset(); // when the position is known again the arrow starts from it, not from where it was left
             if (_current is null && !inInstance && settings.PetMapLastMap is { } lastMap)
             {
                 _current = Aion2Maps.All.FirstOrDefault(m => m.Key == lastMap);

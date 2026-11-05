@@ -14301,6 +14301,11 @@
     "de": "{0} m",
     "fr": "{0} m"
   },
+  "Cubes.MetresAbout": {
+    "en": "~{0} m",
+    "de": "~{0} m",
+    "fr": "~{0} m"
+  },
   "Cubes.Seen": {
     "en": "Cubes that came into range since the meter started: {0}",
     "de": "Würfel in Reichweite seit dem Start des Meters: {0}",

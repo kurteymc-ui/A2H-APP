@@ -43,7 +43,7 @@ public partial class MainWindow
             return;
         }
 
-        ShowCubeCallout(OverlayCubeCalloutText, cubes.Count, NearestCubeMetres(directory, cubes));
+        ShowCubeCallout(OverlayCubeCalloutText, cubes.Count, NearestCubeText(directory, cubes));
         OverlayCubeCallout.Visibility = Visibility.Visible;
         if (_cubeLineTimer is null)
         {
@@ -57,17 +57,17 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>The distance to the nearest cube in metres, from where the map's arrow is drawn (<see cref="CubeRange"/>: it counts down smoothly), when the own
-    /// position is fresh (5 s); null while it is not known.</summary>
-    private static double? NearestCubeMetres(Aion2EntityDirectory directory, IReadOnlyList<(float X, float Y)> cubes) =>
-        CubeRange.Metres(directory, cubes, TimeSpan.FromSeconds(5));
+    /// <summary>The distance to the nearest cube from the map's arrow (<see cref="CubeRange"/>): "42 m" right after the game reported the player's place,
+    /// "~42 m" from the minimap in between; null while the place is not known.</summary>
+    private static string? NearestCubeText(Aion2EntityDirectory directory, IReadOnlyList<(float X, float Y)> cubes) =>
+        CubeRange.Nearest(directory, cubes) is { } near ? CubeRange.Text(near) : null;
 
     /// <summary>The meter's cube line: how many are in range and how far the nearest is (also drawn by the overlay pictures).</summary>
-    internal static void ShowCubeCallout(TextBlock text, int count, double? metres)
+    internal static void ShowCubeCallout(TextBlock text, int count, string? distance)
     {
         LocalizationManager loc = LocalizationManager.Instance;
         string what = count > 1 ? string.Format(CultureInfo.CurrentCulture, loc["Cubes.LineMany"], count) : loc["Cubes.LineOne"];
-        text.Text = metres is double m ? what + " · " + string.Format(CultureInfo.CurrentCulture, loc["Cubes.Metres"], Math.Max(1, (int)Math.Round(m))) : what;
+        text.Text = distance is not null ? what + " · " + distance : what;
     }
 
     /// <summary>Tools → Cube finder: what the game announces now, and the switches of the line, the sound and the map.</summary>
@@ -105,10 +105,10 @@ public partial class MainWindow
             }
 
             var cubes = directory.LiveCubes();
-            double? metres = NearestCubeMetres(directory, cubes);
+            string? distance = NearestCubeText(directory, cubes);
             nowLine.Text = cubes.Count == 0 ? loc["Cubes.None"]
                 : (cubes.Count > 1 ? string.Format(CultureInfo.CurrentCulture, loc["Cubes.LineMany"], cubes.Count) : loc["Cubes.LineOne"])
-                  + (metres is double m ? " · " + string.Format(CultureInfo.CurrentCulture, loc["Cubes.Metres"], Math.Max(1, (int)Math.Round(m))) : "");
+                  + (distance is not null ? " · " + distance : "");
             int seen = Math.Max(0, directory.CubeArrivals);
             nowSub.Text = string.Format(CultureInfo.CurrentCulture, loc["Cubes.Seen"], seen);
         }

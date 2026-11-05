@@ -1494,7 +1494,7 @@ internal static class Program
                     new[] { new Upload.BossCallout("Earth Shatter", 0, true), new Upload.BossCallout("Flame Breath", 11.4, false) }, TimeSpan.FromSeconds(48), 37));
                 window.OverlayBossCallout.Visibility = System.Windows.Visibility.Visible;
                 // and the cube finder's line under it
-                Ui.MainWindow.ShowCubeCallout(window.OverlayCubeCalloutText, 1, 42);
+                Ui.MainWindow.ShowCubeCallout(window.OverlayCubeCalloutText, 1, "42 m");
                 window.OverlayCubeCallout.Visibility = System.Windows.Visibility.Visible;
             }
         }
