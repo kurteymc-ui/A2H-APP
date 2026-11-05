@@ -38,8 +38,11 @@ public partial class MainWindow
             return;
         }
 
-        string name = dir.BossNpcIdOf(boss.Id) is int npc ? Aion2.Protocol.Aion2Npcs.NameOf(npc, LocalizationManager.Instance.Language) ?? "" : "";
-        TimeSpan? rage = boss.Since is DateTime since ? TimeSpan.FromSeconds(boss.RageSeconds) - (DateTime.Now - since) : null;
+        // A boss the app's list does not have yet (a new raid's: the game's hit points make it one) is named from the game's monster names; its enrage is not
+        // shown rather than guessed (the usual five minutes would be wrong for most new bosses).
+        int? npc = dir.BossNpcIdOf(boss.Id) ?? dir.NpcIdOf(boss.Id);
+        string name = npc is int id ? Aion2.Protocol.Aion2Npcs.NameOf(id, LocalizationManager.Instance.Language) ?? "" : "";
+        TimeSpan? rage = boss.Since is DateTime since && Aion2.Protocol.Aion2BossRage.Known(dir.BossNpcIdOf(boss.Id)) ? TimeSpan.FromSeconds(boss.RageSeconds) - (DateTime.Now - since) : null;
         ShowBossBar(name, boss.Hp, boss.Max, KillTime(dir, boss.Id), rage);
     }
 
