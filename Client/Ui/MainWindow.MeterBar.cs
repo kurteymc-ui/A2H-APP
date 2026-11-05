@@ -3,16 +3,15 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
-using ShapePath = System.Windows.Shapes.Path;
 using AionDPS.Aion2;
 using AionDPS.Combat;
 using AionDPS.History;
 
 namespace AionDPS.Ui;
 
-/// <summary>One of the own counters at the meter's foot: its picture (a path and its colour), the figure, the bonus on top ("+2,000"), a little more
-/// (the time to the next refill) and its tip; <paramref name="Warn"/> when the next refill would be lost (the counter is full).</summary>
-internal sealed record OverlayTicket(string Glyph, Color Colour, string Value, string? Bonus, string? Extra, string Tip, bool Warn = false, bool Filled = false);
+/// <summary>One of the own counters at the meter's foot: its in-game icon (a path under the app's assets), the figure, the bonus on top ("+2,000"), a
+/// little more (the time to the next refill) and its tip; <paramref name="Warn"/> when the next refill would be lost (the counter is full).</summary>
+internal sealed record OverlayTicket(string Icon, string Value, string? Bonus, string? Extra, string Tip, bool Warn = false);
 
 /// <summary>
 /// The meter's bar and its fold (5 November 2026, the owner, with pictures of another meter: "shows nothing before it goes in a boss fight or dummy,
@@ -177,28 +176,56 @@ public partial class MainWindow
 
     // ------------------------------------------------------------------ the counters at the foot
 
-    private static readonly Color OdyleColour = Color.FromRgb(0x5F, 0xD3, 0xC6);
-    private static readonly Color ShugoColour = Color.FromRgb(0xE8, 0xC3, 0x5A);
-    private static readonly Color InvasionColour = Color.FromRgb(0xB5, 0x8C, 0xFF);
-    private static readonly Color NightmareColour = Color.FromRgb(0xF0, 0x8E, 0x84);
-    private static readonly Color DungeonColour = Color.FromRgb(0x7F, 0xB6, 0xFF);
-    private static readonly Color AscensionColour = Color.FromRgb(0xF2, 0xA6, 0x5A);
-
-    // the counters' pictures, 12 by 12: a crystal, a key, a portal, a crescent, a gate, an arrow going up
-    private const string OdyleGlyph = "M6,0.5 L10,4.5 L6,11.5 L2,4.5 Z M2,4.5 L10,4.5 M6,0.5 L6,11.5";
-    private const string ShugoGlyph = "M3.6,1.2 A2.6,2.6 0 1 1 3.6,6.4 A2.6,2.6 0 1 1 3.6,1.2 Z M5.4,5.4 L11,11 M8.4,8.4 L10.2,6.6 M9.8,9.8 L11.3,8.3";
-    private const string InvasionGlyph = "M6,0.8 A5.2,5.2 0 1 1 5.99,0.8 Z M6,3.6 A2.4,2.4 0 1 1 5.99,3.6 Z";
-    private const string NightmareGlyph = "M8.5,0.8 A5.4,5.4 0 1 0 11.2,8.6 A4.3,4.3 0 1 1 8.5,0.8 Z";
-    private const string DungeonGlyph = "M1.5,11.5 L1.5,5 A4.5,4.5 0 0 1 10.5,5 L10.5,11.5 Z M4.5,11.5 L4.5,7.5 L7.5,7.5 L7.5,11.5";
-    private const string AscensionGlyph = "M6,0.6 L11,6 L7.8,6 L7.8,11.4 L4.2,11.4 L4.2,6 L1,6 Z";
+    // the game's own icons (5 November 2026, the owner: "use the in-game icons"): the items' pictures (Odyle Energy, the Shugo Festival's key, the
+    // Nightmare, daily dungeon and Ascension Trial challenge tickets) and the Dimensional Invasion's event icon (the Timers page has it too)
+    private const string OdyleIcon = "aion2/items/more/Icon_Item_Odenergy_A_001.png";
+    private const string ShugoIcon = "aion2/items/more/Icon_Currency_Treasure_Key_Legend_004.png";
+    private const string InvasionIcon = "aion2/schedule/icons/invasion.png";
+    private const string NightmareIcon = "aion2/items/more/Icon_Ticket_Entrance_BossChallenge_001.png";
+    private const string DungeonIcon = "aion2/items/more/Icon_Ticket_Entrance_DailyDungeon_001.png";
+    private const string AscensionIcon = "aion2/items/more/Icon_Ticket_Entrance_Awaken_001.png";
 
     /// <summary>The counters at the foot: Shugo Festival, Dimensional Invasion, Nightmare, the daily dungeon's weekly entries and Ascension Trial (the
     /// characters page's roster has the same), after the Odyle Energy.</summary>
-    private static readonly (int Id, string Glyph, Color Colour, bool Filled)[] FootTickets =
+    private static readonly (int Id, string Icon)[] FootTickets =
     {
-        (1, ShugoGlyph, ShugoColour, false), (8, InvasionGlyph, InvasionColour, false), (4, NightmareGlyph, NightmareColour, true),
-        (101, DungeonGlyph, DungeonColour, false), (80000001, AscensionGlyph, AscensionColour, true),
+        (1, ShugoIcon), (8, InvasionIcon), (4, NightmareIcon), (101, DungeonIcon), (80000001, AscensionIcon),
     };
+
+    private static readonly Dictionary<string, ImageSource?> TicketIcons = new();
+
+    /// <summary>A counter's icon, read once and kept (null when the file is missing).</summary>
+    private static ImageSource? TicketIcon(string relative)
+    {
+        if (TicketIcons.TryGetValue(relative, out ImageSource? known))
+        {
+            return known;
+        }
+
+        ImageSource? icon = null;
+        string path = System.IO.Path.Combine(AppContext.BaseDirectory, "assets", relative);
+        if (System.IO.File.Exists(path))
+        {
+            try
+            {
+                var bitmap = new System.Windows.Media.Imaging.BitmapImage();
+                bitmap.BeginInit();
+                bitmap.UriSource = new Uri(path, UriKind.Absolute);
+                bitmap.DecodePixelWidth = 32;
+                bitmap.CacheOption = System.Windows.Media.Imaging.BitmapCacheOption.OnLoad;
+                bitmap.EndInit();
+                bitmap.Freeze();
+                icon = bitmap;
+            }
+            catch (Exception ex) when (ex is System.IO.IOException or NotSupportedException or InvalidOperationException or ArgumentException)
+            {
+                icon = null; // a broken file: the counter goes without its picture
+            }
+        }
+
+        TicketIcons[relative] = icon;
+        return icon;
+    }
 
     /// <summary>Every five seconds (and at once after a change of the counters): the character played's counters at the meter's foot, as the game sent them
     /// (worked out from the refills since where the game sent nothing new, "~"). Nothing while no character is known or the counters are switched off.</summary>
@@ -233,11 +260,11 @@ public partial class MainWindow
             string tip = $"{Aion2Tickets.Find(Aion2Tickets.OdyleId)?.NameIn(language) ?? "Odyle Energy"}: {odyle.Count} / {odyle.Cap}"
                 + (odyle.Bonus > 0 ? $"  ·  +{odyle.Bonus.ToString("N0", CultureInfo.CurrentCulture)} charged" : "")
                 + (next is not null ? $"  ·  +{odyle.PerTick} in {next}" : odyle.Full ? "  ·  full" : "");
-            list.Add(new OverlayTicket(OdyleGlyph, OdyleColour, odyle.Count.ToString("N0", CultureInfo.CurrentCulture),
+            list.Add(new OverlayTicket(OdyleIcon, odyle.Count.ToString("N0", CultureInfo.CurrentCulture),
                 odyle.Bonus > 0 ? "+" + odyle.Bonus.ToString("N0", CultureInfo.CurrentCulture) : null, next, tip, odyle.Full));
         }
 
-        foreach ((int id, string glyph, Color colour, bool filled) in FootTickets)
+        foreach ((int id, string icon) in FootTickets)
         {
             if (Aion2Tickets.Find(id) is not { } def || Aion2Tickets.IsLocked(character, id) || !character.Tickets.TryGetValue(id, out TicketValue value))
             {
@@ -249,8 +276,8 @@ public partial class MainWindow
             int lost = Aion2Tickets.LostAtNextRefill(def, count, premium);
             string tip = $"{def.ShortIn(language)}: {count} / {Math.Max(cap, count)}" + (value.Bonus > 0 ? $"  (+{value.Bonus})" : "")
                 + (lost > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[lost == 1 ? "Checklist.WarnLostOne" : "Checklist.WarnLostMany"], lost) : "");
-            list.Add(new OverlayTicket(glyph, colour, (count != value.Count ? "~" : "") + count.ToString(CultureInfo.CurrentCulture),
-                value.Bonus > 0 ? "+" + value.Bonus.ToString(CultureInfo.CurrentCulture) : null, null, tip, lost > 0, filled));
+            list.Add(new OverlayTicket(icon, (count != value.Count ? "~" : "") + count.ToString(CultureInfo.CurrentCulture),
+                value.Bonus > 0 ? "+" + value.Bonus.ToString(CultureInfo.CurrentCulture) : null, null, tip, lost > 0));
         }
 
         return list;
@@ -264,7 +291,7 @@ public partial class MainWindow
     /// <summary>Puts the counters at the foot (built again only when one of them changed).</summary>
     internal void ShowOverlayTickets(IReadOnlyList<OverlayTicket> tickets)
     {
-        string key = string.Join("|", tickets.Select(t => $"{t.Glyph.Length}:{t.Value}:{t.Bonus}:{t.Extra}:{t.Warn}:{t.Tip}"));
+        string key = string.Join("|", tickets.Select(t => $"{t.Icon}:{t.Value}:{t.Bonus}:{t.Extra}:{t.Warn}:{t.Tip}"));
         if (key == _overlayTicketsKey)
         {
             return;
@@ -274,14 +301,12 @@ public partial class MainWindow
         OverlayTickets.Children.Clear();
         foreach (OverlayTicket ticket in tickets)
         {
-            var brush = new SolidColorBrush(ticket.Colour);
-            brush.Freeze();
-            var glyph = new ShapePath
+            var glyph = new Image
             {
-                Data = Geometry.Parse(ticket.Glyph), Width = 12, Height = 12, Stretch = Stretch.Uniform, StrokeThickness = 1.1, Stroke = brush,
-                Fill = ticket.Filled ? brush : Brushes.Transparent, StrokeLineJoin = PenLineJoin.Round, StrokeStartLineCap = PenLineCap.Round, StrokeEndLineCap = PenLineCap.Round,
-                VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 4, 0),
+                Source = TicketIcon(ticket.Icon), Width = 17, Height = 17, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 3, 0),
             };
+            RenderOptions.SetBitmapScalingMode(glyph, BitmapScalingMode.HighQuality);
             var text = new TextBlock { FontSize = 11, VerticalAlignment = VerticalAlignment.Center };
             text.SetValue(System.Windows.Documents.Typography.NumeralAlignmentProperty, FontNumeralAlignment.Tabular);
             var value = new System.Windows.Documents.Run(ticket.Value) { FontWeight = FontWeights.SemiBold };
@@ -319,12 +344,12 @@ public partial class MainWindow
     /// <summary>The counters the pictures show (render-overlay): a character with charged energy, a Shugo bonus key and a full Nightmare.</summary>
     internal static IReadOnlyList<OverlayTicket> SampleTickets() => new[]
     {
-        new OverlayTicket(OdyleGlyph, OdyleColour, "840", "+2,000", "1:35", "Odyle Energy: 840 / 840"),
-        new OverlayTicket(ShugoGlyph, ShugoColour, "20", "+3", null, "Shugo Festival: 20 / 21"),
-        new OverlayTicket(InvasionGlyph, InvasionColour, "7", null, null, "Dimensional Invasion: 7 / 7"),
-        new OverlayTicket(NightmareGlyph, NightmareColour, "14", null, null, "Nightmare: 14 / 14", Warn: true, Filled: true),
-        new OverlayTicket(DungeonGlyph, DungeonColour, "6", "+6", null, "Daily Dungeon: 6 / 14"),
-        new OverlayTicket(AscensionGlyph, AscensionColour, "3", null, null, "Ascension Trial: 3 / 3", Filled: true),
+        new OverlayTicket(OdyleIcon, "840", "+2,000", "1:35", "Odyle Energy: 840 / 840"),
+        new OverlayTicket(ShugoIcon, "20", "+3", null, "Shugo Festival: 20 / 21"),
+        new OverlayTicket(InvasionIcon, "7", null, null, "Dimensional Invasion: 7 / 7"),
+        new OverlayTicket(NightmareIcon, "14", null, null, "Nightmare: 14 / 14", Warn: true),
+        new OverlayTicket(DungeonIcon, "6", "+6", null, "Daily Dungeon: 6 / 14"),
+        new OverlayTicket(AscensionIcon, "3", null, null, "Ascension Trial: 3 / 3"),
     };
 
     // ------------------------------------------------------------------ the dummy card
