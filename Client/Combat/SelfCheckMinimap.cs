@@ -103,6 +103,14 @@ public static class SelfCheckMinimap
             && Ui.MinimapReader.Anchored(anchor, "altgard", -134800, -96500, t0.AddMinutes(11)) is null
             && Ui.MinimapReader.Anchored(anchor, "altgard", -135300 + 70000, -97000, t0.AddSeconds(20)) is null;
         Console.WriteLine($"  -> between the game's reports the readings go on from the last one (a map 88 m off stays right near it): {anchored}");
+        // the match looks for the player where the readings are (5 November 2026: the guess taken as the game's place put the match 85 m off on Altgard's
+        // west, past its 40 m reach): back through the anchor near the report, else through the calibration's correction (here 82.5 m east, 29 m north, 0.3 %)
+        static (double X, double Y) Shifted(double x, double y) => ((1.003 * x) + 8250, y - 2900);
+        bool backToReading = Ui.MinimapReader.ToReading(anchor, "altgard", -126500, -99500, t0.AddSeconds(20), Shifted) is { } r1 && Math.Abs(r1.X - -134800) < 0.01 && Math.Abs(r1.Y - -96500) < 0.01
+            && Ui.MinimapReader.ToReading(anchor, "altgard", -126500, -99500, t0.AddMinutes(11), Shifted) is { } r2 && Shifted(r2.X, r2.Y) is var back2
+            && Math.Abs(back2.X - -126500) < 1 && Math.Abs(back2.Y - -99500) < 1
+            && Ui.MinimapReader.ToReading(null, "altgard", -126500, -99500, t0, (x, y) => (x, y)) == (-126500, -99500);
+        Console.WriteLine($"  -> the minimap is looked for where the readings put the player, not where the game does (a map 85 m off still found): {backToReading}");
         // a reading the game's report a moment ago rules out (a wrong match far away) is not taken; one a walk away is
         (float, float, DateTime)? report = (-127000f, -100000f, t0);
         bool ruledOut = Ui.MinimapReader.Impossible(report, t0.AddSeconds(2), -127000 + 60000, -100000)
@@ -118,7 +126,7 @@ public static class SelfCheckMinimap
         bool shared = root.GetProperty("kind").GetString() == "map-points" && root.GetProperty("day").GetString() == "2026-11-05" && root.GetProperty("map").GetString() == "altgard"
             && root.GetProperty("points")[0].GetArrayLength() == 7 && root.EnumerateObject().Select(prop => prop.Name).Order().SequenceEqual(new[] { "anonymousId", "clientVersion", "day", "formatVersion", "kind", "map", "points", "stamp" });
         Console.WriteLine($"  -> the map accuracy upload holds the map, its numbers, the day and the places, nothing that names anybody: {shared}");
-        return real && accurate && refused && zoomFound && screen && smooth && calibrated2 && shared && anchored && ruledOut;
+        return real && accurate && refused && zoomFound && screen && smooth && calibrated2 && shared && anchored && ruledOut && backToReading;
     }
 
     /// <summary>

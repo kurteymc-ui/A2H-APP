@@ -193,6 +193,12 @@ internal sealed class MinimapReader : IDisposable
 
         _jobAt = now;
         _lastJob = (guess.X, guess.Y);
+        // The guess is a place of the game (its reports, the readings put right, a cube); the match looks in the map's picture, where the readings are. Where
+        // the picture lies off the game the guess has to be taken back there first (5 November 2026, minimap-log: on Altgard's west the picture lies 80 to 90 m
+        // off, so the match looked 85 m from the player with a reach of 40 m and found nothing; every fix came only after eight misses had widened the reach -
+        // "no fix for 8 reads" every 2 to 3 s, and the arrow moved in steps).
+        string stamp = MinimapCalibration.StampOf(map);
+        (double readX, double readY) = ToReading(_anchor, map.Key, guess.X, guess.Y, now, (x, y) => _cal.Correct(map.Key, stamp, x, y, now));
         if (!_rasters.TryGetValue(map.Key, out MapRaster? raster))
         {
             // only the map played now is kept: each holds a decoded picture of its whole map (the memory grew with every map visited)
@@ -225,7 +231,7 @@ internal sealed class MinimapReader : IDisposable
 
         // a window size where the search keeps failing: one picture of its top right corner into the Debug folder (once a start for each size)
         bool saveCorner = layout is null && _searchFails.GetValueOrDefault(key) == 10;
-        var job = new Job(game, client, key, raster, guess.X, guess.Y, layout, save, _misses, reach, recheck, saveLost, hints, saveCorner, arrowCheck);
+        var job = new Job(game, client, key, raster, readX, readY, layout, save, _misses, reach, recheck, saveLost, hints, saveCorner, arrowCheck);
         _ = Task.Run(() =>
         {
             var outcome = new Outcome(null, null, false, 0, null);
@@ -517,6 +523,29 @@ internal sealed class MinimapReader : IDisposable
         }
 
         return (a.Gx + (x - a.Rx), a.Gy + (y - a.Ry));
+    }
+
+    /// <summary>
+    /// Where a place of the game (world units) is in the readings, the map's picture: the other way of <see cref="Anchored"/> near the last report, else of
+    /// the calibration's correction (<paramref name="correct"/>, nearly a shift: a few steps undo it). The match looks around this.
+    /// </summary>
+    internal static (double X, double Y) ToReading((string Map, double Gx, double Gy, double Rx, double Ry, DateTime At)? anchor, string map, double gx, double gy,
+        DateTime now, Func<double, double, (double X, double Y)> correct)
+    {
+        if (anchor is { } a && a.Map == map && (now - a.At).Duration() <= AnchorFor && Distance(gx, gy, a.Gx, a.Gy) <= AnchorReach)
+        {
+            return (gx - (a.Gx - a.Rx), gy - (a.Gy - a.Ry));
+        }
+
+        double rx = gx, ry = gy;
+        for (int i = 0; i < 4; i++)
+        {
+            (double cx, double cy) = correct(rx, ry);
+            rx += gx - cx;
+            ry += gy - cy;
+        }
+
+        return double.IsFinite(rx) && double.IsFinite(ry) && Distance(rx, ry, gx, gy) <= AnchorReach ? (rx, ry) : (gx, gy);
     }
 
     /// <summary>
@@ -1079,7 +1108,7 @@ internal sealed class MinimapReader : IDisposable
             var inv = System.Globalization.CultureInfo.InvariantCulture;
             File.WriteAllText(stem + ".txt", string.Join(Environment.NewLine,
                 $"map {job.Raster.Map.Key}, window {job.Key}, the picture is its top right corner from x {whole.Width - w}",
-                string.Format(inv, "guess {0:0} {1:0} (world units), looking {2:0} m around", job.GuessX, job.GuessY, job.Reach),
+                string.Format(inv, "guess {0:0} {1:0} (world units, on the map's picture), looking {2:0} m around", job.GuessX, job.GuessY, job.Reach),
                 "places tried from other window sizes: " + string.Join("; ", (job.Hints ?? Array.Empty<Layout>()).Select(l =>
                     string.Format(inv, "{0:0} {1:0} half {2:0} x {3:0} at {4:0.000} m a pixel", l.Cx, l.Cy, l.HalfW, l.HalfH, l.MetresPerPixel)))));
             Log(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss} {job.Raster.Map.Key}: the {job.Key} window's top right corner saved as {Path.GetFileName(stem)}.png"));
@@ -1117,7 +1146,7 @@ internal sealed class MinimapReader : IDisposable
             var inv = System.Globalization.CultureInfo.InvariantCulture;
             File.WriteAllText(stem + ".txt", string.Join(Environment.NewLine,
                 $"map {job.Raster.Map.Key}",
-                string.Format(inv, "guess {0:0} {1:0} (world units), {2} reads without a fix, looking {3:0} m around", job.GuessX, job.GuessY, job.Misses, job.Reach),
+                string.Format(inv, "guess {0:0} {1:0} (world units, on the map's picture), {2} reads without a fix, looking {3:0} m around", job.GuessX, job.GuessY, job.Misses, job.Reach),
                 string.Format(inv, "minimap centre {0:0.0} {1:0.0} half size {2:0} x {3:0} metres/pixel {4:0.0000}", layout.Cx, layout.Cy, layout.HalfW, layout.HalfH, layout.MetresPerPixel),
                 match is null ? "no match" : string.Format(inv, "best match score {0:0.000} pieces {1}/{2} margin {3:0.000}", match.Score, match.Agree, match.Pieces, match.Margin)));
             Log(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss} {job.Raster.Map.Key}: lost - the minimap saved as {Path.GetFileName(stem)}.png"));
