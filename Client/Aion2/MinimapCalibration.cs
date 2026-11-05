@@ -15,6 +15,9 @@ namespace AionDPS.Aion2;
 /// <item>Here and now: what is left near the last reports (in the last 10 minutes, within about 150 m), so a place the map's line doesn't fit is
 /// right after one report there. A nearby fresh report counts fully, a farther or older one less.</item>
 /// </list>
+/// The map's picture is drawn where these say the land is (<see cref="PictureAt"/>, 5 November 2026): the tiles' scale and place in maps.json are a little
+/// off on some maps (the owner's Altgard: 10 to 17 m in the south, growing with the distance, about 2 % down), and the cubes, the collectibles and the
+/// arrow - all in the game's own coordinates - stood that far from their spot on the picture.
 /// Only reports made at a walk (8 m/s at most: at speed the moment of the report and of the picture differ a little) and less than 25 m off are used,
 /// or up to 100 m off when several reports in a row agree on it (<see cref="Add"/>'s steady: the owner's Altgard on 3 November 2026 read 30 m west of
 /// every report for an hour, each left out as a teleport). World units throughout (100 a metre).
@@ -25,6 +28,12 @@ public sealed class MinimapCalibration
     private const int Keep = 400, LocalKeep = 60;
 
     private readonly Dictionary<string, MapCal> _maps = new(StringComparer.Ordinal);
+    private readonly object _gate = new(); // the reader learns off the UI thread, the map draws on it
+
+    /// <summary>The program's one calibration (the file beside the settings): the minimap reader learns it, the map draws its picture with it.</summary>
+    public static MinimapCalibration Shared => _shared.Value;
+
+    private static readonly Lazy<MinimapCalibration> _shared = new(() => new MinimapCalibration(DefaultPath));
     private readonly string? _path;
     private int _unsaved;
 
@@ -61,7 +70,13 @@ public sealed class MinimapCalibration
     }
 
     /// <summary>How many reports the map's part rests on.</summary>
-    public int Count(string map) => _maps.TryGetValue(map, out MapCal? cal) ? cal.Pairs.Count : 0;
+    public int Count(string map)
+    {
+        lock (_gate)
+        {
+            return _maps.TryGetValue(map, out MapCal? cal) ? cal.Pairs.Count : 0;
+        }
+    }
 
     /// <summary>
     /// One report of the game: where the reading put the player (<paramref name="rawX"/>, <paramref name="rawY"/>, before any correction) and where the game
@@ -76,6 +91,21 @@ public sealed class MinimapCalibration
             return false;
         }
 
+        lock (_gate)
+        {
+            AddLocked(map, stamp, rawX, rawY, gameX, gameY, at);
+        }
+
+        if (Interlocked.Increment(ref _unsaved) >= 10)
+        {
+            Save();
+        }
+
+        return true;
+    }
+
+    private void AddLocked(string map, string stamp, double rawX, double rawY, double gameX, double gameY, DateTime at)
+    {
         MapCal cal = Of(map, stamp);
         cal.Pairs.Add(new[] { Math.Round(rawX), Math.Round(rawY), Math.Round(gameX), Math.Round(gameY) });
         if (cal.Pairs.Count > Keep)
@@ -89,17 +119,40 @@ public sealed class MinimapCalibration
         {
             cal.Local.RemoveAt(0);
         }
-
-        if (++_unsaved >= 10)
-        {
-            Save();
-        }
-
-        return true;
     }
 
     /// <summary>A reading put right: the map's line, then what is left near the last reports.</summary>
     public (double X, double Y) Correct(string map, string stamp, double rawX, double rawY, DateTime now)
+    {
+        lock (_gate)
+        {
+            return CorrectLocked(map, stamp, rawX, rawY, now);
+        }
+    }
+
+    /// <summary>
+    /// Where the map's picture lies in the game's coordinates around <paramref name="gameX"/>, <paramref name="gameY"/> (the view's middle): per axis
+    /// game = A * picture + B, the picture's place being its own (maps.json) - the map's line, with what is left here and now (near the last reports) added
+    /// to B. (1, 0) on both while nothing is learnt for the map.
+    /// </summary>
+    public ((double A, double B) X, (double A, double B) Y) PictureAt(string map, string stamp, double gameX, double gameY, DateTime now)
+    {
+        lock (_gate)
+        {
+            if (!_maps.TryGetValue(map, out MapCal? cal) || cal.Stamp != stamp)
+            {
+                return ((1, 0), (1, 0));
+            }
+
+            // the picture's place of the middle on the map's line, then what the correction adds there beyond the line
+            double rx = (gameX - cal.Fx.B) / cal.Fx.A, ry = (gameY - cal.Fy.B) / cal.Fy.A;
+            (double cx, double cy) = CorrectLocked(map, stamp, rx, ry, now);
+            (double gx, double gy) = Global(cal, rx, ry);
+            return ((cal.Fx.A, cal.Fx.B + (cx - gx)), (cal.Fy.A, cal.Fy.B + (cy - gy)));
+        }
+    }
+
+    private (double X, double Y) CorrectLocked(string map, string stamp, double rawX, double rawY, DateTime now)
     {
         if (!_maps.TryGetValue(map, out MapCal? cal) || cal.Stamp != stamp)
         {
@@ -142,7 +195,13 @@ public sealed class MinimapCalibration
     }
 
     /// <summary>The map's line now (for the log): scale and offset across and down.</summary>
-    public ((double A, double B) X, (double A, double B) Y) Line(string map) => _maps.TryGetValue(map, out MapCal? cal) ? (cal.Fx, cal.Fy) : ((1, 0), (1, 0));
+    public ((double A, double B) X, (double A, double B) Y) Line(string map)
+    {
+        lock (_gate)
+        {
+            return _maps.TryGetValue(map, out MapCal? cal) ? (cal.Fx, cal.Fy) : ((1, 0), (1, 0));
+        }
+    }
 
     private static (double X, double Y) Global(MapCal cal, double x, double y) => ((cal.Fx.A * x) + cal.Fx.B, (cal.Fy.A * y) + cal.Fy.B);
 
@@ -225,8 +284,13 @@ public sealed class MinimapCalibration
 
         try
         {
-            var data = _maps.ToDictionary(m => m.Key, m => new Saved(m.Value.Stamp, m.Value.Pairs));
-            AionDPS.AtomicFile.WriteAllText(_path, JsonSerializer.Serialize(data));
+            string json;
+            lock (_gate)
+            {
+                json = JsonSerializer.Serialize(_maps.ToDictionary(m => m.Key, m => new Saved(m.Value.Stamp, m.Value.Pairs.ToList())));
+            }
+
+            AionDPS.AtomicFile.WriteAllText(_path, json);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

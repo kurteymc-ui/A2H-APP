@@ -70,7 +70,7 @@ internal sealed class MinimapReader : IDisposable
     private int _noArrow;
     private DateTime _recheckAt = DateTime.MinValue;
     private Bitmap? _whole;
-    private readonly MinimapCalibration _cal = new(MinimapCalibration.DefaultPath);
+    private readonly MinimapCalibration _cal = MinimapCalibration.Shared; // the map draws its picture with it too
 
     /// <summary>The minimap on screen for one window size: where the player is drawn (its middle), how far the map reaches from there across and down
     /// (client pixels), and how many metres one of its pixels shows.</summary>

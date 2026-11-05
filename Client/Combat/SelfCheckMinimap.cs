@@ -130,6 +130,15 @@ public static class SelfCheckMinimap
         double old = cal.Correct(map, stamp, 52000, 20000, t0.AddMinutes(15)).X - Game(52000, 20000).X;
         bool local = Math.Abs(near) < 100 && Math.Abs(far) < 100 && Math.Abs(old) < 100;   // within a metre (the 5 m there or not)
 
+        // the map's picture drawn with it (PictureAt): a picture point P lies at A * P + B in the game's coordinates - the line far from the fresh report,
+        // with the 5 m added where the report was just made
+        var farPic = cal.PictureAt(map, stamp, Game(-20000, 7000).X, Game(-20000, 7000).Y, t0.AddSeconds(5));
+        var nearPic = cal.PictureAt(map, stamp, Game(50000, 20000).X, Game(50000, 20000).Y, t0.AddSeconds(5));
+        double picFar = (farPic.X.A * -20000) + farPic.X.B - Game(-20000, 7000).X, picNear = (nearPic.X.A * 50000) + nearPic.X.B - (Game(50000, 20000).X + 500);
+        bool picture = Math.Abs(picFar) < 100 && Math.Abs(picNear) < 100 && Math.Abs(farPic.Y.B - 800) < 100
+            && new MinimapCalibration().PictureAt(map, stamp, 0, 0, t0) == ((1, 0), (1, 0));
+        Console.WriteLine($"  -> the map's picture where the reports say the land is: {picFar / 100:0.0} m off far from the last report, {picNear / 100:0.0} m off at it: {picture}");
+
         string file = Path.Combine(Path.GetTempPath(), $"a2h-minimap-cal-{Environment.ProcessId}.json");
         bool kept = false;
         try
@@ -166,7 +175,7 @@ public static class SelfCheckMinimap
         Console.WriteLine($"  -> readings put right from the game's reports: the map's scale and offset learnt, {globalOff:0.00} m off where no report was (needs 0.5): {global}; " +
             $"reports at a run left out: {fast}; a fresh report nearby only ({near / 100:0.00} m near, {far / 100:0.00} m far, {old / 100:0.00} m after 15 min): {local}; kept in its file, a changed map starts again: {kept}; " +
             $"a steady 32 m offset agreed by 4 reports learnt ({(sx - 50000) / 100:+0.0;-0.0} {(sy + 124000) / 100:+0.0;-0.0} m put right) where one alone is left out: {steadyOk}");
-        return global && fast && local && kept && steadyOk;
+        return global && fast && local && kept && steadyOk && picture;
     }
 
     /// <summary>
