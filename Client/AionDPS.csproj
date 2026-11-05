@@ -27,12 +27,12 @@
          `namespace AionSniffer.*`/`using AionSniffer.*` in the project was renamed to AionDPS to
          match. -->
     <AssemblyName>A2HMeter</AssemblyName>
-    <Product>A2HMeter</Product>
-    <AssemblyTitle>A2HMeter</AssemblyTitle>
+    <Product>Atreia App</Product>
+    <AssemblyTitle>Atreia App</AssemblyTitle>
     <!-- asInvoker: the meter reads network traffic through the Npcap driver, which the user installs
          separately, so it needs no elevation itself. See app.manifest. -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
-    <!-- The aion2helper emblem (the website's and the Discord bot's icon, content/public/site/discord-icon.png of the site), 16 to 256 px;
+    <!-- The Atreia emblem (the website's and the Discord bot's icon, content/public/site/discord-icon.png of the site), 16 to 256 px;
          assets/app/a2h-emblem.png is the same emblem see-through for the title bar. Earlier designs are in the git history;
          assets/app/make-icon.py is stale, kept only as history. -->
     <ApplicationIcon>assets/app/aiondps.ico</ApplicationIcon>

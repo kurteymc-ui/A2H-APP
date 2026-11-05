@@ -2888,16 +2888,16 @@
     "zh-TW": "同時上傳我看到的其他玩家的資料（名稱、職業、等級、裝備、軍團、戰鬥中的位置）以及我自己軍團的成員"
   },
   "Wizard.Title": {
-    "en": "Welcome to A2HMeter",
-    "de": "Willkommen bei A2HMeter",
-    "fr": "Bienvenue dans A2HMeter",
-    "es": "Bienvenido a A2HMeter",
-    "ru": "Добро пожаловать в A2HMeter",
-    "zh": "欢迎使用 A2HMeter",
-    "zh-TW": "歡迎使用 A2HMeter",
-    "pt": "Bem-vindo ao A2HMeter",
-    "ja": "A2HMeter へようこそ",
-    "ko": "A2HMeter에 오신 것을 환영합니다"
+    "en": "Welcome to Atreia App",
+    "de": "Willkommen bei Atreia App",
+    "fr": "Bienvenue dans Atreia App",
+    "es": "Bienvenido a Atreia App",
+    "ru": "Добро пожаловать в Atreia App",
+    "zh": "欢迎使用 Atreia App",
+    "zh-TW": "歡迎使用 Atreia App",
+    "pt": "Bem-vindo ao Atreia App",
+    "ja": "Atreia App へようこそ",
+    "ko": "Atreia App에 오신 것을 환영합니다"
   },
   "Wizard.LanguageHeading": {
     "en": "Choose your language",
@@ -13070,7 +13070,7 @@
     "zh-TW": "用戶端讀取和上傳的內容"
   },
   "Privacy.Text": {
-    "en": "The meter reads the game's network traffic on your PC, passively; it never sends anything to the game. No game data leaves your PC until you sign in to AION 2 Helper with Discord (AION 2 Helper account, at the bottom of the column on the left) and upload a boss fight (by pressing Upload, or with automatic boss uploads switched on in Settings > Upload), or switch on the sharing below; the map accuracy data (on by default while the app is in beta, see below) and the look-ups at the end of this list aside.\n\n• A boss-fight upload sends the fight as the meter shows it: the boss, when the fight started and ended, your server, and for every player in it their name, class and server, their damage, healing and damage taken by skill, the buffs they had and who gave them, deaths, and the effects the players put on the boss. With \"also upload data of other players\" the other players' legions go along too; your own always does.\n• AION 2 Helper keeps the fight under your Discord account. You choose who can see it: only you, anyone with its link (the default), or everyone. On the fight's page you can change that or delete the fight at any time. Removing your Discord connection on the site deletes all your fights.\n• Character profiles without a fight, replay paths (positions) and the other kinds of upload of the original meter are not sent to AION 2 Helper.\n• If you switch on sharing the Combat Power changes the CP calculator measures (Settings > Upload, off by default), each change it measures at a login is sent without your name, server, legion or account: your class, region, the day, your Item Level and Combat Power (rounded) and how they and your stats changed, with a random number of this installation. AION 2 Helper keeps no IP address with it and uses the changes to refit its Combat Power model.\n• Map accuracy data (on by default while the app is in beta; switch it off in Settings > Upload): when the game reports your exact position while the meter is reading your minimap, both positions go to AION 2 Helper without your name, server, legion or account: the map, the two positions (rounded to a metre), your speed, how well the minimap matched, the day, and a random number of this installation. AION 2 Helper keeps no IP address with it and uses it only to correct where each map's picture lies, so the map, its arrow and the Hidden Cubes are right for everyone.\n• The CP calculator reads your character's public page through atreia.app once per login (it asks with the character's name and server, which that page shows to anyone), for your manastones' values. It also loads the site's current Combat Power model (nothing is sent).\n• The meter asks GitHub for updates (the request itself, nothing else).\n\nThe full privacy policy is on atreia.app/terms."
+    "en": "The meter reads the game's network traffic on your PC, passively; it never sends anything to the game. No game data leaves your PC until you sign in to Atreia with Discord (Atreia account, at the bottom of the column on the left) and upload a boss fight (by pressing Upload, or with automatic boss uploads switched on in Settings > Upload), or switch on the sharing below; the map accuracy data (on by default while the app is in beta, see below) and the look-ups at the end of this list aside.\n\n• A boss-fight upload sends the fight as the meter shows it: the boss, when the fight started and ended, your server, and for every player in it their name, class and server, their damage, healing and damage taken by skill, the buffs they had and who gave them, deaths, and the effects the players put on the boss. With \"also upload data of other players\" the other players' legions go along too; your own always does.\n• Atreia keeps the fight under your Discord account. You choose who can see it: only you, anyone with its link (the default), or everyone. On the fight's page you can change that or delete the fight at any time. Removing your Discord connection on the site deletes all your fights.\n• Character profiles without a fight, replay paths (positions) and the other kinds of upload of the original meter are not sent to Atreia.\n• If you switch on sharing the Combat Power changes the CP calculator measures (Settings > Upload, off by default), each change it measures at a login is sent without your name, server, legion or account: your class, region, the day, your Item Level and Combat Power (rounded) and how they and your stats changed, with a random number of this installation. Atreia keeps no IP address with it and uses the changes to refit its Combat Power model.\n• Map accuracy data (on by default while the app is in beta; switch it off in Settings > Upload): when the game reports your exact position while the meter is reading your minimap, both positions go to Atreia without your name, server, legion or account: the map, the two positions (rounded to a metre), your speed, how well the minimap matched, the day, and a random number of this installation. Atreia keeps no IP address with it and uses it only to correct where each map's picture lies, so the map, its arrow and the Hidden Cubes are right for everyone.\n• The CP calculator reads your character's public page through atreia.app once per login (it asks with the character's name and server, which that page shows to anyone), for your manastones' values. It also loads the site's current Combat Power model (nothing is sent).\n• The meter asks GitHub for updates (the request itself, nothing else).\n\nThe full privacy policy is on atreia.app/terms."
   },
   "Privacy.Link": {
     "en": "Read the full privacy policy on atreia.app",
@@ -13578,7 +13578,7 @@
     "en": "Close the overlay (it stays closed until the eye button or Ctrl+Alt+H brings it back)"
   },
   "Main.CloseToTray.Title": {
-    "en": "A2HMeter keeps running"
+    "en": "Atreia App keeps running"
   },
   "Main.CloseToTray.Text": {
     "en": "The window goes to the tray and the meter keeps running over the game.\n\nOpen it again from the tray icon or the overlay's window button. The tray icon's Exit ends the meter."
@@ -13768,8 +13768,8 @@
     "de": "Auch auf atreia.app für mein Discord-Konto zeigen (zum Nachsehen am Handy)"
   },
   "Checklist.RosterSyncSignIn": {
-    "en": "Also show it on atreia.app (needs the AION 2 Helper sign-in: AION 2 Helper account, at the bottom of the left column)",
-    "de": "Auch auf atreia.app zeigen (braucht die AION 2 Helper-Anmeldung: App-Menü → AION 2 Helper-Konto)"
+    "en": "Also show it on atreia.app (needs the Atreia sign-in: Atreia account, at the bottom of the left column)",
+    "de": "Auch auf atreia.app zeigen (braucht die Atreia-Anmeldung: App-Menü → Atreia-Konto)"
   },
   "Checklist.RosterOpenSite": {
     "en": "Open it on the site →",
@@ -13804,8 +13804,8 @@
     "de": "Werkzeuge"
   },
   "Shell.Account": {
-    "en": "AION 2 Helper account",
-    "de": "AION 2 Helper-Konto"
+    "en": "Atreia account",
+    "de": "Atreia-Konto"
   },
   "Shell.Settings": {
     "en": "Settings",
@@ -13985,8 +13985,8 @@
     "de": "{0}: die Raserei aus den Spieldaten"
   },
   "Loot.WorthSignIn": {
-    "en": "What the loot is worth needs the AION 2 Helper sign-in (AION 2 Helper account, at the bottom of the left column) and the privacy policy accepted.",
-    "de": "Der Wert der Beute braucht die Anmeldung bei AION 2 Helper (App-Menü → AION 2 Helper-Konto) und die angenommene Datenschutzerklärung."
+    "en": "What the loot is worth needs the Atreia sign-in (Atreia account, at the bottom of the left column) and the privacy policy accepted.",
+    "de": "Der Wert der Beute braucht die Anmeldung bei Atreia (App-Menü → Atreia-Konto) und die angenommene Datenschutzerklärung."
   },
   "Loot.Tab.Overview": {
     "en": "Overview",
@@ -14372,16 +14372,16 @@
     "fr": "Ouvrir la carte interactive →"
   },
   "Minimap.Notice": {
-    "en": "A2HMeter now reads your minimap for an exact position (map arrow and Hidden Cube distance). It only looks at the game's picture, like streaming does. Switch it off under Tools → Cube finder.",
-    "de": "A2HMeter liest jetzt deine Minikarte für eine genaue Position (Pfeil auf der Karte und Abstand zu Hidden Cubes). Es schaut nur auf das Bild des Spiels, wie beim Streamen. Abschalten unter Werkzeuge → Würfelfinder.",
-    "fr": "A2HMeter lit maintenant votre mini-carte pour une position exacte (flèche de la carte et distance aux cubes cachés). Il ne regarde que l'image du jeu, comme un stream. Désactivez-le dans Tools → Détecteur de cubes.",
-    "es": "A2HMeter ahora lee tu minimapa para una posición exacta (flecha del mapa y distancia a los cubos ocultos). Solo mira la imagen del juego, como al hacer streaming. Desactívalo en Tools → Cube finder.",
-    "ru": "A2HMeter теперь читает вашу мини-карту для точной позиции (стрелка на карте и расстояние до скрытых кубов). Он смотрит только на изображение игры, как при стриме. Отключить: Tools → Cube finder.",
-    "zh": "A2HMeter 现在会读取你的小地图以获得精确位置（地图箭头和隐藏魔方距离）。它只看游戏画面，就像直播一样。可在 Tools → Cube finder 中关闭。",
-    "pt": "O A2HMeter agora lê seu minimapa para uma posição exata (seta do mapa e distância até os cubos ocultos). Ele só olha a imagem do jogo, como numa transmissão. Desative em Tools → Cube finder.",
-    "ja": "A2HMeter はミニマップを読み取って正確な位置を表示するようになりました（マップの矢印と隠しキューブまでの距離）。配信と同じくゲーム画面を見るだけです。Tools → Cube finder でオフにできます。",
-    "ko": "A2HMeter가 이제 미니맵을 읽어 정확한 위치를 표시합니다(지도 화살표와 숨겨진 큐브까지의 거리). 방송처럼 게임 화면만 봅니다. Tools → Cube finder에서 끌 수 있습니다.",
-    "zh-TW": "A2HMeter 現在會讀取你的小地圖以取得精確位置（地圖箭頭和隱藏魔方距離）。它只看遊戲畫面，就像直播一樣。可在 Tools → Cube finder 中關閉。"
+    "en": "Atreia App now reads your minimap for an exact position (map arrow and Hidden Cube distance). It only looks at the game's picture, like streaming does. Switch it off under Tools → Cube finder.",
+    "de": "Atreia App liest jetzt deine Minikarte für eine genaue Position (Pfeil auf der Karte und Abstand zu Hidden Cubes). Es schaut nur auf das Bild des Spiels, wie beim Streamen. Abschalten unter Werkzeuge → Würfelfinder.",
+    "fr": "Atreia App lit maintenant votre mini-carte pour une position exacte (flèche de la carte et distance aux cubes cachés). Il ne regarde que l'image du jeu, comme un stream. Désactivez-le dans Tools → Détecteur de cubes.",
+    "es": "Atreia App ahora lee tu minimapa para una posición exacta (flecha del mapa y distancia a los cubos ocultos). Solo mira la imagen del juego, como al hacer streaming. Desactívalo en Tools → Cube finder.",
+    "ru": "Atreia App теперь читает вашу мини-карту для точной позиции (стрелка на карте и расстояние до скрытых кубов). Он смотрит только на изображение игры, как при стриме. Отключить: Tools → Cube finder.",
+    "zh": "Atreia App 现在会读取你的小地图以获得精确位置（地图箭头和隐藏魔方距离）。它只看游戏画面，就像直播一样。可在 Tools → Cube finder 中关闭。",
+    "pt": "O Atreia App agora lê seu minimapa para uma posição exata (seta do mapa e distância até os cubos ocultos). Ele só olha a imagem do jogo, como numa transmissão. Desative em Tools → Cube finder.",
+    "ja": "Atreia App はミニマップを読み取って正確な位置を表示するようになりました（マップの矢印と隠しキューブまでの距離）。配信と同じくゲーム画面を見るだけです。Tools → Cube finder でオフにできます。",
+    "ko": "Atreia App가 이제 미니맵을 읽어 정확한 위치를 표시합니다(지도 화살표와 숨겨진 큐브까지의 거리). 방송처럼 게임 화면만 봅니다. Tools → Cube finder에서 끌 수 있습니다.",
+    "zh-TW": "Atreia App 現在會讀取你的小地圖以取得精確位置（地圖箭頭和隱藏魔方距離）。它只看遊戲畫面，就像直播一樣。可在 Tools → Cube finder 中關閉。"
   },
   "Cubes.Minimap": {
     "en": "Read the minimap for an exact position",

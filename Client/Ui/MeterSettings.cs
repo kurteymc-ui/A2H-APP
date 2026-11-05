@@ -399,7 +399,7 @@ public sealed class MeterSettings
     /// <see cref="DummyTestSeconds"/> by itself; it is saved with the other runs when the time is up.</summary>
     public bool DummyAutoStart { get; set; } = true;
 
-    /// <summary>While signed in (AION 2 Helper account), the characters' Odyle Energy and daily and weekly counters go to atreia.app/meter/roster too, for
+    /// <summary>While signed in (Atreia account), the characters' Odyle Energy and daily and weekly counters go to atreia.app/meter/roster too, for
     /// the player's own Discord account only (to check them on the phone). On until switched off (the checklist's roster page).</summary>
     public bool SyncRoster { get; set; } = true;
 

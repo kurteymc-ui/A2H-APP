@@ -1,12 +1,12 @@
 namespace AionDPS;
 
 /// <summary>
-/// A2HMeter's identity: the name, the site it talks to, the folder it keeps its files in and where its updates come from.
+/// Atreia App's identity: the name, the site it talks to, the folder it keeps its files in and where its updates come from.
 /// The parts that come from other projects are listed in THIRD-PARTY-NOTICES.md.
 /// </summary>
 public static class Brand
 {
-    public const string AppName = "A2HMeter";
+    public const string AppName = "Atreia App";
 
     /// <summary>The website: links the meter opens.</summary>
     public const string Site = "https://atreia.app";

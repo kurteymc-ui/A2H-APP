@@ -6,7 +6,7 @@ using System.Text.Json.Serialization;
 namespace AionDPS.Upload;
 
 /// <summary>
-/// Sends an encounter to AION 2 Helper (atreia.app/meter), signed in as the player (<see cref="Account"/>): without a sign-in
+/// Sends an encounter to Atreia (atreia.app/meter), signed in as the player (<see cref="Account"/>): without a sign-in
 /// nothing is sent. One static HttpClient for the
 /// process's lifetime, per the usual .NET guidance (a fresh client per call exhausts sockets under
 /// load) - not a concern here at this call volume, but free to get right.
@@ -15,10 +15,10 @@ public static class UploadClient
 {
     internal const string ApiBaseUrl = Brand.Api;
 
-    /// <summary>AION 2 Helper keeps boss fights; character profiles without a fight are not kept (yet), so the meter does not send them.</summary>
+    /// <summary>Atreia keeps boss fights; character profiles without a fight are not kept (yet), so the meter does not send them.</summary>
     public static bool TakesProfiles => false;
 
-    private const string NotSignedIn = "Sign in first: AION 2 Helper account (bottom of the left column) → Sign in with Discord.";
+    private const string NotSignedIn = "Sign in first: Atreia account (bottom of the left column) → Sign in with Discord.";
 
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
@@ -355,7 +355,7 @@ public static class UploadClient
     {
         if (!TakesProfiles)
         {
-            return UploadResult.Failed("AION 2 Helper keeps boss fights only, not character profiles on their own.");
+            return UploadResult.Failed("Atreia keeps boss fights only, not character profiles on their own.");
         }
 
         if (!Ui.PrivacyConsent.CanUpload)

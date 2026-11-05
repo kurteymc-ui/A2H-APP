@@ -1029,7 +1029,7 @@ public sealed partial class ChecklistWindow : Window
 
         AddRosterInventories(); // every server's characters together: what they hold unbound and the server storage
 
-        // the same roster on the phone: the site keeps it for the player's own Discord account (the meter's AION 2 Helper sign-in)
+        // the same roster on the phone: the site keeps it for the player's own Discord account (the meter's Atreia sign-in)
         var sync = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 10, 4, 0) };
         var box = new CheckBox { IsChecked = MeterSettings.Load().SyncRoster, VerticalAlignment = VerticalAlignment.Center };
         box.Content = Label(AionDPS.Upload.Account.SignedIn ? loc["Checklist.RosterSync"] : loc["Checklist.RosterSyncSignIn"], "Brush.Text", 12);

@@ -23,7 +23,7 @@ from PIL import Image
 API = 'https://tw.ncsoft.com/aion2/api/gameconst/item?lang=en&enchantLevel=0&id={}'
 HOST = 'https://assets.playnccdn.com/static-aion2-gamedata/resources/'
 SIZE = 64
-HEADERS = {'User-Agent': 'A2HMeter icon fetch (github.com/kurteymc-ui/A2H-APP)', 'Accept': 'application/json, image/png'}
+HEADERS = {'User-Agent': 'Atreia App icon fetch (github.com/kurteymc-ui/A2H-APP)', 'Accept': 'application/json, image/png'}
 
 
 def get(url, tries=4):

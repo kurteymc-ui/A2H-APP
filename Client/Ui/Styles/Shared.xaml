@@ -71,7 +71,7 @@
 
     <!-- Coloured meter bar behind a player's row (PlayerRow.FillPercent / ClassBrush): as long as the
          row's damage is of the biggest row shown, in the class colour - the website's meter bars. -->
-    <!-- A player's bar in both views (the A2HMeter look): Foreground is the glow (ClassBrushes.Glow), BorderBrush the bright line
+    <!-- A player's bar in both views (the Atreia App look): Foreground is the glow (ClassBrushes.Glow), BorderBrush the bright line
          along its bottom (ClassBrushes.Line). -->
     <ControlTemplate x:Key="GlowBarTemplate" TargetType="ProgressBar">
         <Grid>

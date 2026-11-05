@@ -8,7 +8,7 @@ using System.Text.Json;
 namespace AionDPS.Upload;
 
 /// <summary>
-/// The meter's sign-in to AION 2 Helper (the player's Discord on the site). Every fight on the site has an owner who decides who may see it,
+/// The meter's sign-in to Atreia (the player's Discord on the site). Every fight on the site has an owner who decides who may see it,
 /// so the meter uploads only when signed in. Signing in: the meter asks the site for a short code (link/start), opens
 /// atreia.app/meter/link?code=... in the browser, where the player, signed in with Discord, approves it; the meter asks every few
 /// seconds (link/poll) and gets a token of its own once approved. The token is kept in the data folder, encrypted for this Windows user

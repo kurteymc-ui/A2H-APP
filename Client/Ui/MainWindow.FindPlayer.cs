@@ -18,7 +18,7 @@ namespace AionDPS.Ui;
 /// </summary>
 public partial class MainWindow
 {
-    private const string KofiPage = "https://ko-fi.com/aion2helper";
+    private const string KofiPage = "https://atreia.app/go/kofi";
 
     // ------------------------------------------------------------------ Tools and "…"
 
@@ -77,7 +77,7 @@ public partial class MainWindow
         OverlayItem("Support us on Ko-fi ♥", () => OpenInBrowser(KofiPage)),
         new Separator(),
         OverlayItem("Hide the meter", HideMeterOverlay),
-        OverlayItem("Exit A2HMeter", Close),
+        OverlayItem("Exit Atreia App", Close),
     };
 
     private static void OpenInBrowser(string url)

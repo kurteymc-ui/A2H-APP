@@ -129,7 +129,7 @@ jobs:
           --channel ${{ steps.version.outputs.channel }} --pre true --token $env:GH_TOKEN --outputDir releases
         shell: pwsh
 
-      # Produces, in "releases": the installer (A2HMeter-win-Setup.exe), a full .nupkg, a
+      # Produces, in "releases": the installer (A2HMeter-win-Setup.exe, renamed below), a full .nupkg, a
       # delta .nupkg when a previous release was fetched above, and releases.win.json -- the index
       # the installed app reads to discover updates. Velopack's GithubSource resolves all of them
       # by asset name from the GitHub release, so they must be attached to it.
@@ -137,14 +137,25 @@ jobs:
         run: >
           vpk pack
           --packId A2HMeter
-          --packTitle "A2HMeter"
-          --packAuthors "A2HMeter"
+          --packTitle "Atreia App"
+          --packAuthors "Atreia"
           --packVersion ${{ steps.version.outputs.pack }}
           --packDir publish
           --mainExe "A2HMeter.exe"
           --icon Client/assets/app/aiondps.ico
           --channel ${{ steps.version.outputs.channel }}
           --outputDir releases
+
+      # The installer is named after the app (Atreia-App-Setup.exe; a test release: Atreia-App-alpha-Setup.exe). The packId, the
+      # .nupkg files and the exe stay A2HMeter: installed apps find their updates by them, and the install keeps its place.
+      - name: Name the installer after the app
+        id: installer
+        shell: bash
+        run: |
+          ch="${{ steps.version.outputs.channel }}"
+          name=$([ "$ch" = "win" ] && echo "Atreia-App-Setup.exe" || echo "Atreia-App-$ch-Setup.exe")
+          mv "releases/A2HMeter-$ch-Setup.exe" "releases/$name"
+          echo "path=releases/$name" >> "$GITHUB_OUTPUT"
 
       # Scans the installer with VirusTotal before anything is attached to the release. Skipped when
       # the VT_API_KEY secret is not set. An unreachable VirusTotal never blocks a release (warning
@@ -156,7 +167,7 @@ jobs:
         id: vt
         env:
           VT_API_KEY: ${{ secrets.VT_API_KEY }}
-          INSTALLER: releases/A2HMeter-${{ steps.version.outputs.channel }}-Setup.exe
+          INSTALLER: ${{ steps.installer.outputs.path }}
         shell: bash
         run: |
           if [ -z "$VT_API_KEY" ]; then echo "VT_API_KEY not set, skipping the VirusTotal scan."; exit 0; fi
@@ -204,8 +215,8 @@ jobs:
       - name: Upload the installer as a build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: A2HMeter-${{ steps.tag.outputs.name }}
-          path: releases/A2HMeter-${{ steps.version.outputs.channel }}-Setup.exe
+          name: Atreia-App-${{ steps.tag.outputs.name }}
+          path: ${{ steps.installer.outputs.path }}
 
       # Everything except the portable zip, which is another ~70 MB per release and duplicates
       # what the installer already carries. The index files are small but load-bearing: without

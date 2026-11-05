@@ -1,6 +1,6 @@
 # Contributing
 
-A2HMeter is made by AION 2 Helper and is not open source (see [LICENSE](LICENSE)), so it does not take code or pull requests.
+Atreia App is made by Atreia and is not open source (see [LICENSE](LICENSE)), so it does not take code or pull requests.
 Everything else helps a lot:
 
 - **Report a bug**: use the bug report form. A debug recording or the network log makes most problems much easier to solve.

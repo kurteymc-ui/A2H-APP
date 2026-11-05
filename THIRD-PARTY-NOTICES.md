@@ -1,11 +1,11 @@
 # Third-party notices
 
-A2HMeter contains code and data from the projects below. Those parts are used under their licenses, which stay in force for
-them; their notices are kept here as the licenses require. Everything else is AION 2 Helper's (see [LICENSE](LICENSE)).
+Atreia App contains code and data from the projects below. Those parts are used under their licenses, which stay in force for
+them; their notices are kept here as the licenses require. Everything else is Atreia's (see [LICENSE](LICENSE)).
 
 ## Aion DPS – Daevas Power Suite
 
-https://github.com/SkeeveAN/Aion-DPS-Meter: the meter A2HMeter started from.
+https://github.com/SkeeveAN/Aion-DPS-Meter: the meter Atreia App started from.
 
 ```
 MIT License
@@ -105,4 +105,4 @@ Microsoft.Data.Sqlite.
 
 ## Game content
 
-AION 2 and all related names, texts and artwork belong to NCSOFT. A2HMeter is not affiliated with or endorsed by NCSOFT.
+AION 2 and all related names, texts and artwork belong to NCSOFT. Atreia App is not affiliated with or endorsed by NCSOFT.

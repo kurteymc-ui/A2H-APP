@@ -4393,7 +4393,7 @@ public partial class MainWindow : Window
     private const string LoginShareLegion = "Akatsuki";
     private const int LoginShareServerId = 1304; // Europe - Kaisinel (Elyos)
 
-    // AION 2 Helper: the upstream login-traffic upload (one legion, off upstream too) is never offered in this copy.
+    // Atreia: the upstream login-traffic upload (one legion, off upstream too) is never offered in this copy.
     private bool IsLoginShareEligible() => false && 
         _source?.Entities is Aion2.Aion2EntityDirectory { LocalCharacter: { } own } directory
         && own.ServerId == LoginShareServerId
@@ -6152,7 +6152,7 @@ public partial class MainWindow : Window
 
     private AccountWindow? _accountWindow;
 
-    /// <summary>App menu → AION 2 Helper: the sign-in window (one at a time).</summary>
+    /// <summary>App menu → Atreia: the sign-in window (one at a time).</summary>
     private void OnAccountClicked(object sender, RoutedEventArgs e)
     {
         AppMenu.IsSubmenuOpen = false;

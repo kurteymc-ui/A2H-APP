@@ -17,7 +17,7 @@ public sealed record MarketBook(int Server, string Name, DateTime? Captured, IRe
 
 /// <summary>
 /// The market's prices for the loot's worth: the site's price service, the same one its crafting pages use (GET /meter/api/prices?server=, the server list at
-/// /meter/api/market-servers; for a meter signed in to AION 2 Helper). Fetched for one server at a time, kept half an hour; the game's server id is the market's
+/// /meter/api/market-servers; for a meter signed in to Atreia). Fetched for one server at a time, kept half an hour; the game's server id is the market's
 /// (else the name is looked up). Asked only with the privacy policy accepted (the caller says so).
 /// </summary>
 public static class MarketPrices
@@ -62,7 +62,7 @@ public static class MarketPrices
         }
     }
 
-    /// <summary>Whether this meter can be given prices at all (signed in to AION 2 Helper).</summary>
+    /// <summary>Whether this meter can be given prices at all (signed in to Atreia).</summary>
     public static bool SignedIn => Account.Token is not null;
 
     /// <summary>Whether the prices of this server are being fetched now.</summary>

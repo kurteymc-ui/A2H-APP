@@ -8,7 +8,7 @@ using AionDPS.Upload;
 namespace AionDPS.Ui;
 
 /// <summary>
-/// App menu → AION 2 Helper: signs the meter in to the player's Discord on atreia.app (see <see cref="Account"/>), shows who it is
+/// App menu → Atreia: signs the meter in to the player's Discord on atreia.app (see <see cref="Account"/>), shows who it is
 /// signed in as, and signs it out. While a sign-in waits, the code is shown here and on the page the browser opened, and the window asks
 /// the site every few seconds whether it was approved; closing the window stops asking. Signed in, it also says how the meter's check of the character
 /// played went (<see cref="CharacterVerify"/>: "Quake (Nemon) verified"), or how that check works before the first one.
@@ -102,7 +102,7 @@ public sealed class AccountWindow : Window
             _pending = null;
             _timer.Stop();
             _status.Text = "Signed in" + (Account.Name is { Length: > 0 } name ? " as " + name : "") + ".";
-            _hint.Text = "Fights you upload go to your AION 2 Helper account. You choose who sees each one on the site: only you, anyone with the link, or everyone. New fights get the choice set on the Discord page (Meter).";
+            _hint.Text = "Fights you upload go to your Atreia account. You choose who sees each one on the site: only you, anyone with the link, or everyone. New fights get the choice set on the Discord page (Meter).";
             _code.Visibility = Visibility.Collapsed;
             _signIn.Visibility = Visibility.Collapsed;
             _openAgain.Visibility = Visibility.Collapsed;

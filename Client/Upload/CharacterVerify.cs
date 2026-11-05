@@ -25,7 +25,7 @@ public sealed record VerifyResult(string Name, string Server, string Kind);
 /// once the game has sent its own record of the character logged in with (not one restored from an earlier session) and the login's character list of
 /// that account was seen (a meter started in the middle of a session sees it at the next login), the meter sends both (POST /meter/api/verify). The site
 /// checks them against its records and NCSOFT's character search; the character then counts as proven theirs on the site and in the Discord servers
-/// with AION 2 Helper (their legion's roles), though never over someone else's proof. Once per character per run of the meter. When the site or NCSOFT
+/// with Atreia (their legion's roles), though never over someone else's proof. Once per character per run of the meter. When the site or NCSOFT
 /// can't answer it is tried again later, quietly (after 5, 15, 45 minutes and so on, at most 3 hours apart); a refusal (the list doesn't fit, someone
 /// else's character) isn't sent again in this run. Only with the privacy policy accepted, and not while the meter is too old to upload.
 /// </summary>

@@ -5,7 +5,7 @@ public static class StreamOverlayPage
 {
     public const string Html = """
         <!doctype html>
-        <html lang="en"><head><meta charset="utf-8"><title>A2HMeter</title>
+        <html lang="en"><head><meta charset="utf-8"><title>Atreia App</title>
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <link rel="stylesheet" href="overlay.css"></head>
         <body><div id="meter"><div id="head"><span id="mode"></span><span id="heads"></span></div><div id="boss" hidden><div id="bossname"></div><div id="bosshp"><div id="bosshpfill"></div></div><div id="bosstext"></div></div><div id="rows"></div></div>

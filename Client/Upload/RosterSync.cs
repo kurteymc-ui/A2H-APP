@@ -23,7 +23,7 @@ public sealed record RosterCharacterUpload(
 public sealed record RosterUpload(int V, IReadOnlyList<RosterCharacterUpload> Characters);
 
 /// <summary>
-/// The roster on the phone: while the meter is signed in to AION 2 Helper (and Settings' <see cref="MeterSettings.SyncRoster"/> is on), the characters'
+/// The roster on the phone: while the meter is signed in to Atreia (and Settings' <see cref="MeterSettings.SyncRoster"/> is on), the characters'
 /// Odyle Energy and counters go to the site (POST /meter/api/roster), which keeps them for the player's own Discord account only and shows them at
 /// atreia.app/meter/roster with the same recharges worked out live. Sent a little after something changed (a login brings a burst), at most every
 /// two minutes, and only the characters that changed since the last send.

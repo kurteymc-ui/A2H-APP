@@ -1,4 +1,4 @@
-# A2HMeter
+# Atreia App
 
 A damage and healing meter for **AION 2**, made for [atreia.app](https://atreia.app) and its Discord.
 
@@ -82,6 +82,6 @@ Updates install themselves from this repository's full releases.
 
 ## License
 
-Copyright (c) 2026 AION 2 Helper. All rights reserved: you may install and use the app, but the source code may not be copied,
+Copyright (c) 2026 Atreia. All rights reserved: you may install and use the app, but the source code may not be copied,
 changed or reused without permission. See [LICENSE](LICENSE). Parts that come from other projects keep their own licenses:
 see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
