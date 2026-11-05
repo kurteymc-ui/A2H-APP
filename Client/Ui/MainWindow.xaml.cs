@@ -8677,7 +8677,7 @@ public partial class MainWindow : Window
                 : "";
         }
         _lastShownHits = shownHits;
-        OverlayHpBlock.Visibility = Visibility.Collapsed; // the boss's health is a window of its own now (CombatOverlayWindow.Part.Hp)
+        UpdateOverlayBossBar(); // the boss's health over the lines, with when it dies
 
         // the header's mode word and the group's total in big
         string unit = _healMode ? "HPS" : _takenMode ? "DTPS" : _mode == MeterMode.Raid && !_pvpOnly ? "rDPS" : "DPS";
@@ -8916,46 +8916,6 @@ public partial class MainWindow : Window
                 FontWeight = FontWeights.SemiBold,
             });
         }
-    }
-
-    /// <summary>The fought boss's health in the compact overlay, with the HP check's verdict on the
-    /// damage counted against it (see <see cref="HpCheck"/>). Only where the source reports hit
-    /// points (Aion 2), for a selected target that is no player, and when Settings ask for it.</summary>
-    private void UpdateOverlayBossHp(IReadOnlyList<DamageEvent> shownHits)
-    {
-        if (!_showBossHp || _pvpOnly || _selectedTargetId is not int targetId
-            || _source?.Entities is not Aion2.Aion2EntityDirectory directory || directory.IsKnownPlayer(targetId))
-        {
-            OverlayHpBlock.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        var onTarget = shownHits.Where(ev => ev.TargetObjectId == targetId).ToList();
-        long highest = directory.HitPoints.HighestSeen(targetId) ?? 0;
-        if (onTarget.Count == 0 || highest <= 0)
-        {
-            OverlayHpBlock.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        DateTime start = onTarget.Min(h => h.Timestamp);
-        DateTime end = onTarget.Max(h => h.Timestamp);
-        var samples = directory.HitPoints.SamplesAround(targetId, start, end);
-        if (samples.Count == 0)
-        {
-            OverlayHpBlock.Visibility = Visibility.Collapsed;
-            return;
-        }
-
-        long hp = samples[^1].Hp;
-        double percent = 100.0 * hp / highest;
-        OverlayHpBar.Value = percent;
-        OverlayHpText.Text = $"{PlayerRow.Compact(hp)} / {PlayerRow.Compact(highest)} · {percent.ToString("0", CultureInfo.CurrentCulture)}%";
-        HpCheckResult? check = HpCheck.Evaluate(samples.Select(s => (s.At, s.Hp)).ToList(), onTarget.Concat(OwnHeals(targetId, start, end)).ToList(), highest);
-        OverlayHpCheckText.Text = check is null ? ""
-            : check.OverFullHealth || check.Verdict != HpCheckVerdict.Match ? "⚠ " + check.Ratio.ToString("P0", CultureInfo.CurrentCulture)
-            : "✓";
-        OverlayHpBlock.Visibility = Visibility.Visible;
     }
 
     private bool _autoBossView;

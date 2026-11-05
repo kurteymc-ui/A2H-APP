@@ -717,7 +717,7 @@ public partial class MainWindow
         return window.Title switch
         {
             OverlayPlaces.BossCast => s.ShowCombatOverlay && s.CombatShowBossCast ? loc["Settings.Combat.CardBossCast"] : null,
-            OverlayPlaces.BossHp => s.ShowCombatOverlay && s.ShowBossHp ? loc["Settings.Combat.CardBossHp"] : null,
+            OverlayPlaces.BossHp => null, // on the meter now
             OverlayPlaces.TargetOfTarget => s.ShowCombatOverlay && s.CombatShowTargetOfTarget ? loc["Combat.Element.TargetOfTarget"] : null,
             OverlayPlaces.Assist => s.ShowAssistOverlay ? loc["Shell.OvCooldowns"] : null,
             OverlayPlaces.Effects => s.EffectsOverlayOn ? loc["Shell.OvEffects"] : null,

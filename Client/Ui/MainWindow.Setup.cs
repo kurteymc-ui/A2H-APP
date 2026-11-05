@@ -370,7 +370,7 @@ public partial class MainWindow
 
         private Border PresetCard(MeterLookPreset preset)
         {
-            var stack = new StackPanel { Width = 176 };
+            var stack = new StackPanel { Width = 158 }; // two cards side by side beside the scroll bar
             MeterLook look = preset.Thumbnail();
             var lines = new StackPanel { Width = 250 };
             Grid.SetIsSharedSizeScope(lines, true);

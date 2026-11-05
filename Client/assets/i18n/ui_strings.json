@@ -21114,5 +21114,25 @@
     "en": "Take it again",
     "de": "Neu aufnehmen",
     "fr": "Reprendre"
+  },
+  "Overlay.BossBar.Boss": {
+    "en": "Boss",
+    "de": "Boss",
+    "fr": "Boss"
+  },
+  "Overlay.BossBar.Dies": {
+    "en": "Dies in {0}",
+    "de": "Stirbt in {0}",
+    "fr": "Meurt dans {0}"
+  },
+  "Overlay.BossBar.NoPace": {
+    "en": "Dies in –",
+    "de": "Stirbt in –",
+    "fr": "Meurt dans –"
+  },
+  "Overlay.BossBar.DiesTip": {
+    "en": "At the pace its health fell over the last 15 seconds (everybody's damage). Green: it dies before its enrage; red: the enrage comes first.",
+    "de": "Bei dem Tempo, mit dem sein Leben in den letzten 15 Sekunden fiel (der Schaden aller). Grün: er stirbt vor seiner Raserei; rot: die Raserei kommt zuerst.",
+    "fr": "Au rythme où sa vie a baissé ces 15 dernières secondes (les dégâts de tous). Vert : il meurt avant sa rage ; rouge : la rage vient d'abord."
   }
 }

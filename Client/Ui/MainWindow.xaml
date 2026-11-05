@@ -1505,12 +1505,8 @@
                             <UniformGrid x:Name="OverlayDummyStats" Columns="2"/>
                         </StackPanel>
                     </Border>
-                    <!-- Kept for the code and the pictures that name them; the boss's health has a window of its own (CombatOverlayWindow). -->
-                    <Grid x:Name="OverlayHpBlock" Visibility="Collapsed">
-                        <TextBlock x:Name="OverlayHpCheckText"/>
-                        <TextBlock x:Name="OverlayHpText"/>
-                        <ProgressBar x:Name="OverlayHpBar" Template="{StaticResource FlatBar}"/>
-                    </Grid>
+                    <!-- The boss's health over the lines (MainWindow.BossBar.cs): its name, what is left, and when it dies at the group's pace against its enrage. -->
+                    <Border x:Name="OverlayBossBar" Visibility="Collapsed" Margin="10,0,10,6"/>
                     <Grid Visibility="Collapsed">
                         <TextBlock x:Name="OverlayRateHeader" Text="DPS"/>
                         <TextBlock x:Name="OverlayShareHeader" Text="%"/>

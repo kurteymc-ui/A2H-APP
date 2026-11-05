@@ -31,7 +31,8 @@ public static class CombatOverlayData
     {
         IReadOnlyList<CastRowData> casts = settings.CombatShowBossCast ? Casts(dir, settings, now, language) : Array.Empty<CastRowData>();
         TargetOfTargetData? tot = settings.CombatShowTargetOfTarget ? TargetOfTarget(dir, settings, now, language) : null;
-        return new CombatFrame(casts, tot, settings.ShowBossHp ? BossHp(dir, now) : null);
+        // the boss's health is on the meter now (MainWindow.BossBar.cs; 5 November 2026, the owner: "remove the boss bar, add it over the meter")
+        return new CombatFrame(casts, tot, null);
     }
 
     /// <summary>The boss being fought: the own target when it is a boss, else the one that cast most recently.</summary>

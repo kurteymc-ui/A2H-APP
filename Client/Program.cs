@@ -1482,6 +1482,11 @@ internal static class Program
                 window.ShowFindResults(found);
                 window.PickFindResult(found[0]); // the one clicked: the others go, "All 2 results" brings them back
             }
+            else if (kind == "bossbar")
+            {
+                // the boss bar over the lines: a boss at 62 %, dying in 1:23 at the group's pace, its enrage in 2:10
+                window.ShowBossBar("Kromede the Corrupt", 7_840_000, 12_600_000, TimeSpan.FromSeconds(83), TimeSpan.FromSeconds(130));
+            }
             else if (kind == "findservers")
             {
                 // Find a player's server picker: Europe's Asmodian servers, Vaizel picked
