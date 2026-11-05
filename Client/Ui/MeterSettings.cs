@@ -86,9 +86,9 @@ public sealed class MeterSettings
     public string FeedbackEmail { get; set; } = "";
 
     /// <summary>Whether the own character profile is uploaded by itself a few seconds after a login
-    /// (see MainWindow.ScheduleOwnProfileUpload), so the player can be found on the website. Off by
-    /// default, like the boss upload: without an opt-in no game data leaves the PC. The manual upload
-    /// button works either way.</summary>
+    /// (see MainWindow.ScheduleOwnProfileUpload), so the player can be found on the website. Off until the
+    /// privacy terms are accepted, which switch it on with the other uploads (PrivacyConsent.Record, terms
+    /// version 5); switched off in Settings, Upload. The manual upload button works either way.</summary>
     public bool AutoUploadProfile { get; set; }
 
     /// <summary>System-wide hotkeys (see GlobalHotkeys), written "Ctrl+Alt+H"; empty = off. They stand
@@ -105,8 +105,7 @@ public sealed class MeterSettings
     public string HotkeyUploadBoss { get; set; } = "Ctrl+Alt+U";
 
     /// <summary>Whether a boss fight is uploaded by itself a few seconds after the boss died (see
-    /// MainWindow.ScheduleBossUpload). Off by default: unlike the own profile, it sends fight data
-    /// without a click, so the player opts in.</summary>
+    /// MainWindow.ScheduleBossUpload). Switched on when the privacy terms are accepted (they name it), off in Settings, Upload.</summary>
     public bool AutoUploadBoss { get; set; }
 
     /// <summary>Whether the game-server traffic is also written to a file on this PC (see DebugRecording), so it can be sent
@@ -114,8 +113,8 @@ public sealed class MeterSettings
     public bool DebugRecording { get; set; }
 
     /// <summary>Whether the profiles of OTHER players the meter has seen (name, class, level, gear, legion)
-    /// go online with the own profile upload, the Upload button and a boss upload. Off by default: it is
-    /// data about people who did not agree to anything. With it off only the own character is sent.</summary>
+    /// go online with the own profile upload, the Upload button and a boss upload. Switched on when the privacy terms are accepted
+    /// (they name it), off in Settings, Upload; with it off only the own character is sent.</summary>
     public bool UploadOtherPlayersProfiles { get; set; }
 
     /// <summary>Only for members of the legion Akatsuki on Kaisinel (the switch is hidden for everybody else): the complete login traffic of the character is
@@ -123,7 +122,7 @@ public sealed class MeterSettings
     public bool ShareLoginWithLegion { get; set; }
 
     /// <summary>Whether the Combat Power changes the CP calculator measures at the logins go to the website, without a name (Upload/CpShare.cs), for its weekly
-    /// refit of the Combat Power model. Off until the player switches it on (Settings, Upload, or the CP calculator); needs the privacy terms accepted.</summary>
+    /// refit of the Combat Power model. Switched on when the privacy terms are accepted (they name it), off in Settings, Upload, or the CP calculator.</summary>
     public bool ShareCpMeasurements { get; set; }
 
     /// <summary>Whether the minimap reader's checks against the game's own reports go to the website without a name (Upload/MapShare.cs), to refit where
@@ -752,6 +751,9 @@ public sealed class MeterSettings
 
     /// <summary>The steps of Home's "Get set up" card the player put away one by one ("not for me": cooldowns, buffs, bosses, map, season, account).</summary>
     public List<string> HomeSetupDismissed { get; set; } = new();
+
+    /// <summary>The steps of Home's "Get set up" card whose page was opened from it: done.</summary>
+    public List<string> HomeSetupOpened { get; set; } = new();
     /// <summary>The game's minimap is read for an exact own position (MinimapReader: the game window's picture matched against the map, while a Hidden Cube is in
     /// range or the map overlay is on). On by default (the owner, 2 Nov 2026), with a note on the meter the first time it gives a position.</summary>
     public bool MinimapReading { get; set; } = true;

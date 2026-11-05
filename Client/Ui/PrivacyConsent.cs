@@ -13,7 +13,8 @@ namespace AionDPS.Ui;
 public static class PrivacyConsent
 {
     /// <summary>Raise with every change of the privacy texts (website page and the client's texts): the accepted version in the settings is then too old and the player is asked again.</summary>
-    public const int Version = 4; // 3: the map accuracy data (5 November 2026); 4: the Genus and pets for the player window, the pictures of the game window (5 November 2026)
+    public const int Version = 5; // 3: the map accuracy data (5 November 2026); 4: the Genus and pets for the player window, the pictures of the game window (5 November 2026);
+                                  // 5: every upload switched on with the answer (5 November 2026, the owner: "all these should be ticked since we requested consent")
 
     public const int NotAsked = 0, Accepted = 1, Declined = 2;
 
@@ -40,13 +41,22 @@ public static class PrivacyConsent
     /// <summary>The answer was written by somebody else (the first-start wizard): the main window re-reads it.</summary>
     public static void NotifyChanged() => Changed?.Invoke();
 
-    /// <summary>Records the answer. A "declined" switches every upload off.</summary>
+    /// <summary>Records the answer. "Accepted" switches every upload the terms name on (each can be switched off in Settings, Upload); "declined" every one off.</summary>
     public static void Record(bool accepted)
     {
         MeterSettings s = MeterSettings.Load();
         s.PrivacyDecision = accepted ? Accepted : Declined;
         s.PrivacyVersion = accepted ? Version : 0;
-        if (!accepted)
+        if (accepted)
+        {
+            s.AutoUploadProfile = true;
+            s.UploadOtherPlayersProfiles = true;
+            s.AutoUploadBoss = true;
+            s.UploadReplay = true;
+            s.ShareCpMeasurements = true;
+            s.ShareMapData = true;
+        }
+        else
         {
             s.AutoUploadBoss = false;
             s.AutoUploadProfile = false;

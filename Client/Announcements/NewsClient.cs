@@ -31,7 +31,9 @@ public sealed record NewsItem(
 /// </summary>
 public static class NewsClient
 {
-    public const string ListUrl = Brand.Site + "/api/app/news";
+    /// <summary>The list (and with "/" and an id one official notice in full). Under the app's own API (/meter/api): the website's /api/ answers its own pages
+    /// only (5 November 2026: the app's first calls to /api/app/news were refused, and Home kept its welcome).</summary>
+    public const string ListUrl = Brand.Api + "/api/news";
     private static readonly HttpClient Http = new(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(12) }; // no redirects: the host is fixed
     private static readonly TimeSpan Fresh = TimeSpan.FromMinutes(20);
     private static readonly object Gate = new();

@@ -147,8 +147,13 @@ public partial class MainWindow
             host.Clip = new RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 8, 8);
         };
         host.Children.Add(new Border { Background = NightBrush() });
+        // the website's pictures are made for the whole banner; NCSOFT's own (an event's key art) fill its right part, the words on the dark left
+        var art = new Grid();
+        art.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36, GridUnitType.Star) });
+        art.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64, GridUnitType.Star) });
         var picture = new Image { Stretch = Stretch.UniformToFill, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        host.Children.Add(picture);
+        art.Children.Add(picture);
+        host.Children.Add(art);
 
         // the words sit on the left: a dark fade from there, and a little at the bottom for the dots
         var fade = new LinearGradientBrush { StartPoint = new Point(0, 0.5), EndPoint = new Point(1, 0.5) };
@@ -216,6 +221,9 @@ public partial class MainWindow
             summary.Text = NewsSummary(item);
             summary.Visibility = summary.Text.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
             picture.Source = null;
+            bool official = item.Image is { } pictureUrl && !pictureUrl.StartsWith(Brand.Site + "/", StringComparison.Ordinal);
+            Grid.SetColumn(picture, official ? 1 : 0);
+            Grid.SetColumnSpan(picture, official ? 1 : 2);
             int shown = _newsAt;
             NewsPicture(item.Image, 1200, source =>
             {

@@ -866,7 +866,7 @@ public sealed class PlayerView : Border
                     return kept;
                 }
 
-                byte[] bytes = await IconHttp.GetByteArrayAsync(Brand.Site + "/api/icon?u=" + Uri.EscapeDataString(url));
+                byte[] bytes = await IconHttp.GetByteArrayAsync(Brand.Api + "/api/icon?u=" + Uri.EscapeDataString(url));
                 if (Decode(bytes) is not { } fetched)
                 {
                     return null;

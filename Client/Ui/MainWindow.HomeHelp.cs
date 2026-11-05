@@ -181,36 +181,28 @@ public partial class MainWindow
     /// <summary>What is worth setting up first, those of the pages there are in this mode.</summary>
     private List<SetupStep> HomeSetupSteps()
     {
+        // 5 November 2026, the owner: cooldowns, then buffs, then the meter, the map, Characters, the CP calculator, then items. A step is done once its page
+        // was opened from here, or its overlay is on already.
         LocalizationManager loc = LocalizationManager.Instance;
         MeterSettings s = MeterSettings.Load();
         Dictionary<string, ShellItem> pages = ShellPages();
+        bool Opened(string id) => s.HomeSetupOpened.Contains(id);
         var steps = new List<SetupStep>();
-        if (pages.ContainsKey("assist"))
+        void Add(string id, string glyph, string key, bool on, string page)
         {
-            steps.Add(new("cooldowns", "", loc["Home.Setup.Cooldowns"], loc["Home.Setup.CooldownsWhat"], s.ShowAssistOverlay, () => ShowShellPage("assist." + AssistWindow.CooldownsTab)));
-            steps.Add(new("buffs", "", loc["Home.Setup.Buffs"], loc["Home.Setup.BuffsWhat"], s.EffectsOverlayOn, () => ShowShellPage("assist." + AssistWindow.BuffsTab)));
+            if (pages.ContainsKey(page.StartsWith("assist.", StringComparison.Ordinal) ? "assist" : page))
+            {
+                steps.Add(new(id, glyph, loc["Home.Setup." + key], loc["Home.Setup." + key + "What"], on || Opened(id), () => ShowShellPage(page)));
+            }
         }
 
-        if (pages.ContainsKey("boss"))
-        {
-            steps.Add(new("bosses", "", loc["Home.Setup.Bosses"], loc["Home.Setup.BossesWhat"], s.BossAlerts.Values.Any(a => a.Enabled), () => ShowShellPage("boss")));
-        }
-
-        if (pages.ContainsKey("petmap"))
-        {
-            steps.Add(new("map", "", loc["Home.Setup.Map"], loc["Home.Setup.MapWhat"], s.ShowPetMap, () => ShowShellPage("petmap")));
-        }
-
-        if (pages.ContainsKey("characters"))
-        {
-            steps.Add(new("season", "", loc["Home.Setup.Season"], loc["Home.Setup.SeasonWhat"], s.ShowSeasonOverlay, () => ShowShellPage("characters")));
-        }
-
-        if (!PrivacyConsent.Restricted)
-        {
-            steps.Add(new("account", "", loc["Home.Setup.Account"], loc["Home.Setup.AccountWhat"], !Headless && Account.SignedIn, () => OnAccountClicked(this, new RoutedEventArgs())));
-        }
-
+        Add("cooldowns", "\uE916", "Cooldowns", s.ShowAssistOverlay, "assist." + AssistWindow.CooldownsTab);
+        Add("buffs", "\uE945", "Buffs", s.EffectsOverlayOn, "assist." + AssistWindow.BuffsTab);
+        Add("meter", "\uE9D2", "Meter", false, "meterlook");
+        Add("map", "\uE707", "Map", s.ShowPetMap, "petmap");
+        Add("characters", "\uE716", "Characters", false, "characters");
+        Add("cpcalc", "\uE8EF", "CpCalc", false, "cpcalc");
+        Add("items", "\uE7B8", "Items", s.ShowLootOverlay, "loot");
         return steps;
     }
 
@@ -247,7 +239,7 @@ public partial class MainWindow
         head.Children.Add(ShellText(loc["Home.SetupTitle"].ToUpperInvariant(), "Brush.TextMuted", 11, bold: true)); // no "1 of 6 done": only what is left shows
         stack.Children.Add(head);
 
-        var tiles = new UniformGrid { Columns = Math.Min(3, open.Count) };
+        var tiles = new UniformGrid { Columns = open.Count <= 4 ? open.Count : open.Count is 5 or 6 ? 3 : 4 };
         foreach (SetupStep step in open)
         {
             tiles.Children.Add(SetupTile(step));
@@ -328,6 +320,13 @@ public partial class MainWindow
         tile.MouseLeftButtonUp += (_, e) =>
         {
             e.Handled = true;
+            MeterSettings opened = MeterSettings.Load();
+            if (!opened.HomeSetupOpened.Contains(step.Id))
+            {
+                opened.HomeSetupOpened.Add(step.Id); // seen: off the card from now on
+                opened.Save();
+            }
+
             step.Go();
         };
         return tile;
