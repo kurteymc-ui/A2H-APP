@@ -370,6 +370,16 @@ internal sealed class MinimapReader : IDisposable
         Aion2MapInfo map = job.Raster.Map;
         double ux = sx + (svx * late), uy = sy + (svy * late);
         (double cx, double cy) = Anchored(_anchor, map.Key, ux, uy, now) ?? _cal.Correct(map.Key, MinimapCalibration.StampOf(map), ux, uy, now);
+        if (Impossible(directory.ReportedPosition, directory.Clock(), cx, cy))
+        {
+            // the game itself put the player somewhere else a moment ago, farther than anyone moves in the time: the minimap matched the wrong place (the owner,
+            // 5 November 2026: "the map teleports to a completely different part"). Not taken; counted as a miss, so the search looks around the guess again.
+            _misses++;
+            _track = null;
+            State = ReadState.Reading;
+            return;
+        }
+
         directory.NoteLocalPosition((float)cx, (float)cy, svx, svy);
         if (directory.LocalPosition is { } mine)
         {
@@ -507,6 +517,21 @@ internal sealed class MinimapReader : IDisposable
         }
 
         return (a.Gx + (x - a.Rx), a.Gy + (y - a.Ry));
+    }
+
+    /// <summary>
+    /// A reading the game's own report rules out: within 20 s of the report and farther from it than 50 m plus 40 m for every second since (no mount or glide is
+    /// faster). The game's place wins; the reading was a wrong match.
+    /// </summary>
+    internal static bool Impossible((float X, float Y, DateTime At)? report, DateTime now, double x, double y)
+    {
+        if (report is not { } r)
+        {
+            return false;
+        }
+
+        double ago = (now - r.At).TotalSeconds;
+        return ago is >= 0 and < 20 && Distance(x, y, r.X, r.Y) > 5000 + (4000 * ago);
     }
 
     // the reports the reader itself gave (they are no check of the minimap's middle)

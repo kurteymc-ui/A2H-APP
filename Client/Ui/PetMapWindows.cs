@@ -1628,18 +1628,18 @@ public sealed class PetMapWindow : MovableOverlay
 
         // the picture: close up the tiles (decoded smaller as the map zooms out); far out the land in one picture instead of dozens of tiles.
         // Only the marks (opacity 0, laid over the game's minimap): no picture at all.
-        // It lies where the game's own reports say the land is (MinimapCalibration.PictureAt, 5 November 2026): the marks - the cubes, the collectibles,
-        // the arrow - are in the game's coordinates, and on a map whose tiles maps.json places a little off they stood up to 17 m from their spot on it.
-        var pic = MinimapCalibration.Shared.PictureAt(map.Key, MinimapCalibration.StampOf(map), midX, midY, DateTime.UtcNow);
+        // It lies where maps.json puts it. From 5 November 2026 (morning) it was moved by the minimap reader's calibration (PictureAt); learnt from a few
+        // reports in one corner of the map, its line moved the whole picture elsewhere on the far side (the owner, the afternoon: "the map teleports to a
+        // completely different part"), so the picture went back to the map's own numbers; the arrow and the marks are the game's coordinates either way.
         double k = ppu / map.Scale;            // view pixels per native map pixel
-        double kx = k * pic.X.A, ky = k * pic.Y.A;
+        double kx = k, ky = k;
         double tileOnScreen = map.Tile * k;    // how wide a tile is in the view
         bool landPicture = land is not null && tileOnScreen < 256;
         int used = 0;
         if (opacity > 0 && !landPicture)
         {
             int decode = Math.Min(map.Tile, tileOnScreen > 640 ? 1536 : 768);
-            var (nx, ny) = Aion2Maps.ToNative(map, (midX - pic.X.B) / pic.X.A, (midY - pic.Y.B) / pic.Y.A); // the view's middle on the picture
+            var (nx, ny) = Aion2Maps.ToNative(map, midX, midY); // the view's middle on the picture
             double halfNative = ViewSize / 2 / k; // generous: the tiles beyond the visible part are clipped
             int c0 = Math.Max(0, (int)Math.Floor((nx - halfNative) / map.Tile)), c1 = Math.Min(map.Grid - 1, (int)Math.Floor((nx + halfNative) / map.Tile));
             int r0 = Math.Max(0, (int)Math.Floor((ny - halfNative) / map.Tile)), r1 = Math.Min(map.Grid - 1, (int)Math.Floor((ny + halfNative) / map.Tile));
@@ -1689,11 +1689,11 @@ public sealed class PetMapWindow : MovableOverlay
                 _canvas.Children.Insert(0, _wholeImage);
             }
 
-            Point corner = At((pic.X.A * l.X0) + pic.X.B, (pic.Y.A * l.Y0) + pic.Y.B);
+            Point corner = At(l.X0, l.Y0);
             _wholeImage.Source = l.Image;
             _wholeImage.Opacity = opacity;
-            _wholeImage.Width = l.W * ppu * pic.X.A;
-            _wholeImage.Height = l.H * ppu * pic.Y.A;
+            _wholeImage.Width = l.W * ppu;
+            _wholeImage.Height = l.H * ppu;
             Canvas.SetLeft(_wholeImage, corner.X);
             Canvas.SetTop(_wholeImage, corner.Y);
             _wholeImage.Visibility = Visibility.Visible;

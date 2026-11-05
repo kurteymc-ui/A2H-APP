@@ -103,6 +103,12 @@ public static class SelfCheckMinimap
             && Ui.MinimapReader.Anchored(anchor, "altgard", -134800, -96500, t0.AddMinutes(11)) is null
             && Ui.MinimapReader.Anchored(anchor, "altgard", -135300 + 70000, -97000, t0.AddSeconds(20)) is null;
         Console.WriteLine($"  -> between the game's reports the readings go on from the last one (a map 88 m off stays right near it): {anchored}");
+        // a reading the game's report a moment ago rules out (a wrong match far away) is not taken; one a walk away is
+        (float, float, DateTime)? report = (-127000f, -100000f, t0);
+        bool ruledOut = Ui.MinimapReader.Impossible(report, t0.AddSeconds(2), -127000 + 60000, -100000)
+            && !Ui.MinimapReader.Impossible(report, t0.AddSeconds(2), -127000 + 9000, -100000)
+            && !Ui.MinimapReader.Impossible(report, t0.AddSeconds(30), -127000 + 60000, -100000);
+        Console.WriteLine($"  -> a reading far from where the game put the player a moment ago is a wrong match, not taken: {ruledOut}");
 
         // the map accuracy upload (Upload/MapShare.cs): the map, its numbers, the day and each check's places to a metre - nothing that names anybody
         string json = AionDPS.Upload.MapShare.Build("altgard", "2|0.01|4000|4000", new[] { new[] { 57500.0, -140500, 58300, -139900, 4.2, 0.08, 0.6 } },
@@ -112,7 +118,7 @@ public static class SelfCheckMinimap
         bool shared = root.GetProperty("kind").GetString() == "map-points" && root.GetProperty("day").GetString() == "2026-11-05" && root.GetProperty("map").GetString() == "altgard"
             && root.GetProperty("points")[0].GetArrayLength() == 7 && root.EnumerateObject().Select(prop => prop.Name).Order().SequenceEqual(new[] { "anonymousId", "clientVersion", "day", "formatVersion", "kind", "map", "points", "stamp" });
         Console.WriteLine($"  -> the map accuracy upload holds the map, its numbers, the day and the places, nothing that names anybody: {shared}");
-        return real && accurate && refused && zoomFound && screen && smooth && calibrated2 && shared && anchored;
+        return real && accurate && refused && zoomFound && screen && smooth && calibrated2 && shared && anchored && ruledOut;
     }
 
     /// <summary>
