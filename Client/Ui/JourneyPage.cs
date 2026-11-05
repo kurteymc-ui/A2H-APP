@@ -309,7 +309,7 @@ internal sealed class JourneyPage : Grid
     private UIElement Hero(JourneyReport r)
     {
         JourneyNumbers n = r.Now;
-        var host = new Grid { Margin = new Thickness(0, 0, 12, 12), MinHeight = 210 };
+        var host = new Grid { Margin = new Thickness(0, 0, 12, 12), Height = 236, ClipToBounds = true };
         host.SizeChanged += (_, e) => host.Clip = new RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 12, 12);
         var back = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
         back.GradientStops.Add(new GradientStop(Color.FromRgb(0x14, 0x17, 0x20), 0));
@@ -540,7 +540,7 @@ internal sealed class JourneyPage : Grid
             JourneyBoss? worst = n.Bosses.Where(x => x.Deaths > 0).MaxBy(x => x.Deaths);
             Add(string.Format(CultureInfo.CurrentCulture, Loc[n.Deaths == 1 ? "Journey.Down.Death" : "Journey.Down.Deaths"], n.Deaths),
                 (worst is not null ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.DeathsMost"], worst.Name, worst.Deaths) + " · " : "")
-                + (b.Deaths >= 0 ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.DeathsBefore"], b.Deaths) : ""), Down);
+                + (b.Deaths > 0 ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.DeathsBefore"], b.Deaths) : Loc["Journey.Down.NoDeathsBefore"]), Down);
         }
 
         foreach (JourneyBoss boss in n.Bosses.Where(x => x.AverageBefore > 0 && x.AverageDps < x.AverageBefore * 0.95).OrderBy(x => x.AverageDps / x.AverageBefore).Take(2))
@@ -684,7 +684,7 @@ internal sealed class JourneyPage : Grid
         // the portrait (or the class's first letter)
         var face = new Border
         {
-            Width = 130, Height = 170, CornerRadius = new CornerRadius(12), VerticalAlignment = VerticalAlignment.Top, ClipToBounds = true,
+            Width = 136, Height = 196, CornerRadius = new CornerRadius(12), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = true,
             Background = new SolidColorBrush(Color.FromArgb(0x30, Gold.R, Gold.G, Gold.B)), BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, Gold.R, Gold.G, Gold.B)),
         };
         face.Child = _portrait is { } portrait
@@ -692,16 +692,16 @@ internal sealed class JourneyPage : Grid
             : new TextBlock { Text = (r.Who.Class ?? r.Who.Name)[..1].ToUpperInvariant(), FontSize = 64, Foreground = new SolidColorBrush(Gold), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         grid.Children.Add(face);
 
-        var words = new StackPanel();
-        var name = new TextBlock { Text = r.Who.Name, FontSize = 30, Foreground = Brushes.White };
+        var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        var name = new TextBlock { Text = r.Who.Name, FontSize = 34, Foreground = Brushes.White };
         name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
         words.Children.Add(name);
         words.Children.Add(new TextBlock
         {
-            Text = string.Join("  ·  ", new[] { r.Who.Class, Aion2Servers.NameOf(r.Who.ServerId) }.Where(s => s is { Length: > 0 })), FontSize = 14,
+            Text = string.Join("  ·  ", new[] { r.Who.Class, Aion2Servers.NameOf(r.Who.ServerId) }.Where(s => s is { Length: > 0 })), FontSize = 16,
             Foreground = new SolidColorBrush(Gold), Margin = new Thickness(0, 2, 0, 0),
         });
-        words.Children.Add(new TextBlock { Text = Loc["Journey.Title"] + "  ·  " + Dates(r.From, r.To), FontSize = 12.5, Foreground = new SolidColorBrush(Color.FromRgb(0xB8, 0xC0, 0xCC)), Margin = new Thickness(0, 4, 0, 16) });
+        words.Children.Add(new TextBlock { Text = Loc["Journey.Title"] + "  ·  " + Dates(r.From, r.To), FontSize = 14, Foreground = new SolidColorBrush(Color.FromRgb(0xB8, 0xC0, 0xCC)), Margin = new Thickness(0, 4, 0, 18) });
         var figures = new UniformGrid { Columns = 3 };
         figures.Children.Add(CardFigure(n.BestBossDps > 0 ? PlayerRow.Compact((long)n.BestBossDps) : "–", Loc["Journey.Card.BestDps"]));
         figures.Children.Add(CardFigure(n.BossKills.ToString(CultureInfo.CurrentCulture), Loc["Journey.Card.Bosses"]));
@@ -711,10 +711,10 @@ internal sealed class JourneyPage : Grid
         Grid.SetColumn(words, 1);
         grid.Children.Add(words);
         var foot = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
-        var site = new TextBlock { Text = "ATREIA.APP", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Gold) };
+        var site = new TextBlock { Text = "ATREIA.APP", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Gold), VerticalAlignment = VerticalAlignment.Center };
         DockPanel.SetDock(site, Dock.Right);
         foot.Children.Add(site);
-        foot.Children.Add(new TextBlock { Text = Headline(r), FontSize = 12, Foreground = new SolidColorBrush(Color.FromRgb(0xD6, 0xDC, 0xE4)), TextTrimming = TextTrimming.CharacterEllipsis });
+        foot.Children.Add(new TextBlock { Text = Headline(r), FontSize = 14, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xEA, 0xF0)), TextTrimming = TextTrimming.CharacterEllipsis });
         Grid.SetRow(foot, 1);
         Grid.SetColumnSpan(foot, 2);
         grid.Children.Add(foot);
@@ -725,8 +725,8 @@ internal sealed class JourneyPage : Grid
     private static UIElement CardFigure(string value, string label)
     {
         var stack = new StackPanel();
-        stack.Children.Add(new TextBlock { Text = value, FontSize = 24, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White });
-        stack.Children.Add(new TextBlock { Text = label, FontSize = 11.5, Foreground = new SolidColorBrush(Color.FromRgb(0xB8, 0xC0, 0xCC)) });
+        stack.Children.Add(new TextBlock { Text = value, FontSize = 30, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White });
+        stack.Children.Add(new TextBlock { Text = label, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0xB8, 0xC0, 0xCC)) });
         return stack;
     }
 
@@ -791,7 +791,7 @@ internal sealed class JourneyPage : Grid
         if (bracketNow is double bn && bracket is { BracketLo: long lo, BracketHi: long hi })
         {
             summary.Children.Add(Badge(Math.Round(bn).ToString(CultureInfo.CurrentCulture),
-                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.AverageBracket"], PlayerRow.Compact(lo), PlayerRow.Compact(hi)), Pct(bn), null));
+                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.AverageBracket"], Thousands(lo), Thousands(hi)), Pct(bn), null));
         }
 
         stack.Children.Add(summary);
@@ -836,6 +836,8 @@ internal sealed class JourneyPage : Grid
         stack.Children.Add(note);
         return Card(stack, string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.TitleWith"], cls));
     }
+
+    private static string Thousands(long value) => (value / 1000.0).ToString("0.#", CultureInfo.CurrentCulture) + "K";
 
     private static double? Average(IEnumerable<double?> values)
     {
