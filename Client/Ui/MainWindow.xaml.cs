@@ -422,6 +422,16 @@ public partial class MainWindow : Window
                 startupSettings.Save();
             }
 
+            if (!startupSettings.MeterBarDefaulted)
+            {
+                // the meter folds to its bar between boss fights now (the own character, the cube, the counters), so it no longer hides all of itself
+                // in between; whoever wants it gone between fights switches "Only during boss fights" on again
+                startupSettings.MeterOverlayAutoHide = false;
+                startupSettings.MeterFoldIdle = true;
+                startupSettings.MeterBarDefaulted = true;
+                startupSettings.Save();
+            }
+
             if (!startupSettings.NaturalVoiceDefaulted && NaturalVoice.Voices().Count > 0)
             {
                 // the skills' and the bosses' announcements in English take the recorded voice once (the Windows voices sound like machines); other
@@ -6464,6 +6474,7 @@ public partial class MainWindow : Window
 
     private void ClearDamageData()
     {
+        _overlayPinned = false; // a fight picked by hand is gone: the meter folds again until the next boss fight
         _aggregator.Clear();
         _groupNames.Clear();
         _avoids.Clear();
@@ -7745,6 +7756,9 @@ public partial class MainWindow : Window
         UpdateOverlayBossCallout();
         UpdateOverlayCubeCallout();
         UpdateOverlayBuffAlert();
+        UpdateOverlayIdentity();
+        UpdateOverlayTickets();
+        UpdateOverlayFold();
         UpdateMeterOverlay();
 
         if ((DateTime.UtcNow - _gateSettingsAt).TotalSeconds >= 1)
@@ -8309,7 +8323,21 @@ public partial class MainWindow : Window
             }, _overlayBuffs, !restricted),
             new Separator(),
             OverlayItem("All in one", () => Pick(MeterMode.All), !_overlayBuffs && _mode == MeterMode.All, !restricted),
+            new Separator(),
+            DummyModeItem(),
+            OverlayItem("Grind: open for every fight, trash and open world too", () => ChangeOverlaySetting(s => s.MeterGrind = !s.MeterGrind), MeterSettings.Load().MeterGrind),
         });
+    }
+
+    /// <summary>The mode menu's dummy line: a parse of the length set (the clock starts with the first hit; the meter opens on its card), or ending the one on.</summary>
+    private MenuItem DummyModeItem()
+    {
+        DummyState state = _dummy?.Model.State ?? DummyState.Idle;
+        int seconds = Math.Clamp(MeterSettings.Load().DummyTestSeconds, 10, 3600);
+        string length = seconds % 60 == 0 ? $"{seconds / 60} min" : $"{seconds} s";
+        return state is DummyState.Armed or DummyState.Running
+            ? OverlayItem(state == DummyState.Running ? "Dummy: end the parse now (it is saved)" : "Dummy: take the waiting parse back", () => _dummy?.Model.Stop(DateTime.Now), true)
+            : OverlayItem($"Dummy: a {length} parse, starting with my first hit", () => _dummy?.Start(TimeSpan.FromSeconds(seconds), ""), false, _dummy is not null);
     }
 
     private void OnOverlayHistoryClicked(object sender, MouseButtonEventArgs e)
@@ -8317,8 +8345,16 @@ public partial class MainWindow : Window
         e.Handled = true;
         var items = new List<Control>
         {
-            OverlayItem("Follow the current fight", () => FollowNewestRun()),
-            OverlayItem("All targets", () => MobBossFilter.SelectedItem = _mobBossAllItem, ReferenceEquals(MobBossFilter.SelectedItem, _mobBossAllItem)),
+            OverlayItem("Follow the current fight", () =>
+            {
+                _overlayPinned = false;
+                FollowNewestRun();
+            }),
+            OverlayItem("All targets", () =>
+            {
+                _overlayPinned = true; // picked by hand: the meter stays open for it, boss or not
+                MobBossFilter.SelectedItem = _mobBossAllItem;
+            }, ReferenceEquals(MobBossFilter.SelectedItem, _mobBossAllItem)),
         };
         var fights = MobBossFilter.Items.OfType<ComboBoxItem>().Where(i => i.Tag is MobBossTag).ToList();
         if (fights.Count > 0)
@@ -8330,7 +8366,11 @@ public partial class MainWindow : Window
         foreach (ComboBoxItem fight in fights.OrderByDescending(i => ((MobBossTag)i.Tag).WindowEnd ?? DateTime.MinValue).Take(14))
         {
             ComboBoxItem chosen = fight;
-            items.Add(OverlayItem(fight.Content as string ?? "?", () => MobBossFilter.SelectedItem = chosen, ReferenceEquals(MobBossFilter.SelectedItem, fight)));
+            items.Add(OverlayItem(fight.Content as string ?? "?", () =>
+            {
+                _overlayPinned = true;
+                MobBossFilter.SelectedItem = chosen;
+            }, ReferenceEquals(MobBossFilter.SelectedItem, fight)));
         }
 
         items.Add(new Separator());
@@ -8368,7 +8408,9 @@ public partial class MainWindow : Window
         var settings = MeterSettings.Load();
         change(settings);
         settings.Save();
-        _gateSettingsAt = DateTime.MinValue;
+        _gateSettings = settings; // the fold, Grind and the counters go by these at once
+        _gateSettingsAt = DateTime.UtcNow;
+        _overlayTicketsAt = DateTime.MinValue;
         RefreshCharacterSettings(settings);
         RefreshRows();
         UpdateMeterOverlay();
@@ -8421,12 +8463,15 @@ public partial class MainWindow : Window
             OverlayItem("Come up by itself when I fight a boss", () => ChangeOverlaySetting(s => s.MeterPopUpForBoss = !s.MeterPopUpForBoss), settings.MeterPopUpForBoss,
                 settings.MeterOverlayAutoHide),
             OverlayItem("Everyone in dungeons, only me at dummies", () => ChangeOverlaySetting(s => s.AutoScope = !s.AutoScope), settings.AutoScope),
-            OverlayItem("Party buffs under the names", () => ChangeOverlaySetting(s => s.ShowPartyBuffs = !s.ShowPartyBuffs), settings.ShowPartyBuffs),
+            OverlayItem("Fold to the bar between boss fights and dummy parses", () => ChangeOverlaySetting(s => s.MeterFoldIdle = !s.MeterFoldIdle), settings.MeterFoldIdle),
+            OverlayItem("Odyle Energy, Shugo and the other counters at the bottom", () => ChangeOverlaySetting(s => s.MeterShowTickets = !s.MeterShowTickets),
+                settings.MeterShowTickets),
             OverlayItem("Boss timers: the next casts and the enrage", () => ChangeOverlaySetting(s => s.OverlayBossTimers = !s.OverlayBossTimers), settings.OverlayBossTimers),
             OverlayItem("Click-through (turn off in Settings)", () => ChangeOverlaySetting(s => s.CompactClickThrough = !s.CompactClickThrough), settings.CompactClickThrough),
             new Separator(),
             OverlayItem("Copy to chat", CopyRowsToClipboard),
             OverlayItem("Open the meter window", ShowClient),
+            OverlayItem("Hide the meter (the eye button brings it back)", HideMeterOverlay),
             OverlayItem("All settings…", () =>
             {
                 ShowClient();
@@ -8613,7 +8658,7 @@ public partial class MainWindow : Window
         MeterTitles.Instance.Set(OverlayRateHeader.Text, OverlayShareHeader.Text, OverlayTotalHeader.Text);
         bool capturing = (_source as Aion2.Aion2PacketCombatSource)?.ServerFingerprint is not null;
         OverlayStateDot.Fill = _paused ? Brushes.Orange : capturing ? OverlayLiveBrush : Brushes.Gray;
-        OverlayStateText.Text = _paused ? "Paused" : capturing ? (CompactOverlayOwnName() is { } own ? "Live   " + own : "Live") : "Waiting for the game";
+        OverlayStateText.Text = _paused ? "Paused" : capturing ? "" : "Waiting for the game"; // live: the dot says it, the name is in the bar
         if (DateTime.UtcNow - _overlayPingAt >= TimeSpan.FromSeconds(1))
         {
             _overlayPingAt = DateTime.UtcNow;
@@ -8631,7 +8676,8 @@ public partial class MainWindow : Window
 
         // the header's mode word and the group's total in big
         string unit = _healMode ? "HPS" : _takenMode ? "DTPS" : _mode == MeterMode.Raid && !_pvpOnly ? "rDPS" : "DPS";
-        OverlayModeShort.Text = _overlayBuffs ? "BUFFS" : _allMode || _allCompactMode ? "ALL" : _takenMode ? "TANK" : _healMode ? "HEAL" : _mode == MeterMode.Raid ? "rDPS" : "DPS";
+        string measured = _overlayBuffs ? "Buffs" : _allMode || _allCompactMode ? "All" : _takenMode ? "Tank" : _healMode ? "Heal" : _mode == MeterMode.Raid ? "rDPS" : "DPS";
+        OverlayModeShort.Text = _dummyHeader ? "Dummy" : _gateSettings.MeterGrind ? measured + " · Grind" : measured;
         if (!_overlayBuffs)
         {
             double total = _rows.Where(r => !r.IsEnemy).Sum(r => (r.RdpsView ? r.Rdps ?? r.Dps : r.Dps) ?? 0);
@@ -8646,12 +8692,21 @@ public partial class MainWindow : Window
             foreach (PlayerRow row in _rows)
             {
                 int id = _historyMode ? _historyLiveIds.GetValueOrDefault(row.ObjectId, row.ObjectId) : row.ObjectId;
-                int? power = (_historyMode ? _liveSource?.Entities as Aion2.Aion2EntityDirectory : powers)?.SeenProfileOf(id)?.CombatPower;
+                var known = _historyMode ? _liveSource?.Entities as Aion2.Aion2EntityDirectory : powers;
+                int? power = known?.SeenProfileOf(id)?.CombatPower;
+                if (power is not > 0 && known is not null && id >= 0 && id == known.LocalPlayerId)
+                {
+                    power = OwnCombatPower(known); // the game shows the own Combat Power nowhere the others' come from (5 November 2026: it was missing)
+                }
+
                 row.CombatPowerText = power is int cp and > 0 and not 397228 ? PlayerRow.Compact(cp) : "";
             }
         }
 
         UpdateOverlayBuffs(shownHits);
+        _overlayBossShown = ShownIsBossFight(shownHits);
+        UpdateOverlayIdentity();
+        UpdateOverlayFold();
     }
 
     /// <summary>The meter's buff view: the effects on the own character over the fight shown (the last minute when nothing is shown), with
@@ -8753,6 +8808,10 @@ public partial class MainWindow : Window
         OverlayDummyChip.Visibility = Visibility.Collapsed;
         OverlayDummyBar.Visibility = fraction is null ? Visibility.Collapsed : Visibility.Visible;
         OverlayDummyBar.Value = fraction ?? 0;
+        if (active)
+        {
+            FillDummyCard(model, now); // the card in the meter's body: the run, the DPS in big, every kind of hit
+        }
     }
 
     private long _calloutAt;

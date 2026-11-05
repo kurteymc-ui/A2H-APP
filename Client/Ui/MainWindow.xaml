@@ -1310,19 +1310,14 @@
                 </Style>
             </Border.Resources>
             <StackPanel>
-                <!-- Header: the free part moves the meter (unless it is locked). -->
-                <DockPanel x:Name="OverlayHeader" Background="Transparent" Margin="10,6,6,0" Height="24" Cursor="SizeAll" MouseLeftButtonDown="OnCompactOverlayDrag">
-                    <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayCloseClicked" ToolTip="{local:Loc Main.Overlay.HideOverlay}">
-                        <TextBlock Text="&#xE8BB;" Style="{StaticResource OverlayIconGlyph}" FontSize="10"/>
-                    </Border>
-                    <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayMinimizeClicked" ToolTip="{local:Loc Main.Overlay.OpenClient}">
-                        <TextBlock Text="&#xE8A7;" Style="{StaticResource OverlayIconGlyph}"/>
-                    </Border>
-                    <Border x:Name="OverlayMenuButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlaySettingsClicked" ToolTip="Look, opacity, click-through and the other meter settings">
+                <!-- The bar, always there (5 November 2026, the owner: the meter shows nothing but the own character until a boss fight or a dummy, then
+                     opens): the own class, name and Combat Power, the fight's clock, the nearest Hidden Cube, what is measured, the buttons and "…" for the
+                     rest. The body under it opens in a boss fight, at a training dummy and in the Grind view (UpdateOverlayFold). The free part moves the
+                     meter (unless it is locked). -->
+                <DockPanel x:Name="OverlayHeader" Background="Transparent" Margin="8,5,6,5" MinHeight="30" Cursor="SizeAll" MouseLeftButtonDown="OnCompactOverlayDrag">
+                    <Border x:Name="OverlayMenuButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlaySettingsClicked"
+                            ToolTip="More: Characters, the training dummy, the meter's look, open the meter window, hide the meter">
                         <TextBlock Text="&#xE712;" Style="{StaticResource OverlayIconGlyph}"/>
-                    </Border>
-                    <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayResetClicked" ToolTip="{local:Loc Main.Overlay.Reset}">
-                        <TextBlock Text="&#xE7A7;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
                     <Border x:Name="OverlayLockButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayLockClicked" ToolTip="Lock the meter in place">
                         <TextBlock x:Name="OverlayLockGlyph" Text="&#xE785;" Style="{StaticResource OverlayIconGlyph}"/>
@@ -1330,12 +1325,17 @@
                     <Border x:Name="OverlayHistoryButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayHistoryClicked" ToolTip="Past fights">
                         <TextBlock Text="&#xE81C;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
-                    <!-- What is measured: a sword, the menu opens under it. -->
-                    <Border x:Name="OverlayModeButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" Width="Auto" Padding="5,0,6,0" MouseLeftButtonUp="OnOverlayModeMenuClicked" ToolTip="Damage, rDPS, healing, damage taken, buffs">
+                    <Border DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayResetClicked" ToolTip="{local:Loc Main.Overlay.Reset}">
+                        <TextBlock Text="&#xE7A7;" Style="{StaticResource OverlayIconGlyph}"/>
+                    </Border>
+                    <!-- What is measured: a pill with its name, the menu (DPS, rDPS, healing, tanked, buffs, all in one, the dummy parse, Grind) opens under it. -->
+                    <Border x:Name="OverlayModeButton" DockPanel.Dock="Right" Height="22" Margin="4,0,4,0" Padding="9,0,7,0" CornerRadius="6" BorderThickness="1"
+                            BorderBrush="#40DCB877" Background="#14DCB877" Cursor="Hand" VerticalAlignment="Center" MouseLeftButtonUp="OnOverlayModeMenuClicked"
+                            ToolTip="What the meter shows: DPS, rDPS, healing, damage taken, buffs, a dummy parse, Grind">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Path Data="M11.5,0.5 L11.5,2.5 L5,9 L4,8 L10.5,1.5 Z M3,7.5 L6.5,11 M2,10 L3.5,11.5 M4.7,9.3 L1,13" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="1.3"
-                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Width="13" Height="13" Stretch="Uniform" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="OverlayModeShort" Text="DPS" FontSize="10.5" FontWeight="Bold" Foreground="#E6C88F" Margin="5,0,0,0" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="OverlayModeShort" Text="DPS" FontSize="11" FontWeight="SemiBold" Foreground="#E6C88F" VerticalAlignment="Center"/>
+                            <Path Data="M0,0 L3.5,3.5 L7,0" Stroke="#B3E6C88F" StrokeThickness="1.3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Margin="6,1,0,0" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
                     <!-- An update is on its way / waiting, or this version may no longer upload (see SetUpdateStatus); a click does what the status row's notice does. -->
@@ -1343,107 +1343,161 @@
                             Cursor="Hand" MouseLeftButtonDown="OnUpdateNoticeClicked" VerticalAlignment="Center">
                         <TextBlock x:Name="CompactUpdateBadgeText" FontSize="10" FontWeight="Bold" VerticalAlignment="Center" Foreground="#FF101820"/>
                     </Border>
-                    <Grid DockPanel.Dock="Left" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,7,0" ToolTip="A2HMeter">
-                        <Path Data="M7,0.6 L13.4,7 L7,13.4 L0.6,7 Z" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="1.2"/>
-                        <Path Data="M7,4 L10,7 L7,10 L4,7 Z" Fill="{DynamicResource Brush.Accent}"/>
+                    <!-- You: the class, the name in its colour and the Combat Power under it; the meter's mark until the game names the character. -->
+                    <Grid DockPanel.Dock="Left" VerticalAlignment="Center" Margin="0,0,10,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="24" Height="24" Margin="0,0,7,0" VerticalAlignment="Center">
+                            <Grid x:Name="OverlayLogo" Width="14" Height="14" ToolTip="A2HMeter">
+                                <Path Data="M7,0.6 L13.4,7 L7,13.4 L0.6,7 Z" Stroke="{DynamicResource Brush.Accent}" StrokeThickness="1.2"/>
+                                <Path Data="M7,4 L10,7 L7,10 L4,7 Z" Fill="{DynamicResource Brush.Accent}"/>
+                            </Grid>
+                            <Image x:Name="OverlayOwnIcon" Width="24" Height="24" Visibility="Collapsed"/>
+                        </Grid>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                            <TextBlock x:Name="OverlayOwnName" Text="A2HMeter" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Brush.OverlayText}"
+                                       MaxWidth="130" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="OverlayOwnCp" FontSize="10" Foreground="{DynamicResource Brush.TextMuted}" Typography.NumeralAlignment="Tabular"
+                                       Visibility="Collapsed" Margin="0,-1,0,0"/>
+                        </StackPanel>
                     </Grid>
+                    <Rectangle x:Name="OverlayBarDivider" DockPanel.Dock="Left" Width="1" Height="18" Fill="#22FFFFFF" Margin="0,0,10,0" VerticalAlignment="Center"/>
                     <TextBlock x:Name="OverlayTimeText" DockPanel.Dock="Left" Foreground="{DynamicResource Brush.OverlayText}" FontWeight="SemiBold"
-                               Typography.NumeralAlignment="Tabular" FontSize="12.5" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock x:Name="OverlayTargetText" Foreground="{DynamicResource Brush.TextMuted}" FontSize="12" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                </DockPanel>
-                <!-- The group's total rate, the dummy countdown when one runs, and whose rows are shown. -->
-                <DockPanel x:Name="OverlayTotalLine" Margin="12,1,10,5">
-                    <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="6" Padding="2" VerticalAlignment="Center">
-                        <StackPanel x:Name="OverlayScopeSwitch" Orientation="Horizontal">
-                            <Border Tag="Me" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked" ToolTip="Only you (picked by itself at a training dummy)">
-                                <TextBlock FontSize="11" FontWeight="SemiBold" Text="Me"/>
-                            </Border>
-                            <Border x:Name="OverlayScopeGroup" Tag="Group" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                                <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
-                            </Border>
-                            <Border x:Name="OverlayScopeCorps" Tag="Corps" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
-                                <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
-                            </Border>
-                            <Border x:Name="OverlayScopeAll" Tag="All" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked" ToolTip="Everybody (picked by itself in dungeons and raids)">
-                                <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
-                            </Border>
+                               Typography.NumeralAlignment="Tabular" FontSize="13" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <!-- The cube finder (MainWindow.Cubes.cs): a Hidden Cube the game announced in range, and how far the nearest is. -->
+                    <Border x:Name="OverlayCubeCallout" DockPanel.Dock="Left" Visibility="Collapsed" Height="22" Padding="6,0,8,0" CornerRadius="6" VerticalAlignment="Center"
+                            Background="#1AE8C35A" BorderBrush="#4DE8C35A" BorderThickness="1" Margin="0,0,8,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Path Data="M6,0.6 L11.2,3.3 L11.2,8.7 L6,11.4 L0.8,8.7 L0.8,3.3 Z M0.8,3.3 L6,6 L11.2,3.3 M6,6 L6,11.4" Stroke="#FFE8C35A" StrokeThickness="1.1"
+                                  StrokeLineJoin="Round" Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                            <TextBlock x:Name="OverlayCubeCalloutText" FontSize="11.5" FontWeight="SemiBold" Foreground="#FFE8C35A"
+                                       Typography.NumeralAlignment="Tabular" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Border>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
-                        <TextBlock x:Name="OverlayTotalRateText" Text="0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Accent}"
-                                   Typography.NumeralAlignment="Tabular" VerticalAlignment="Bottom"/>
-                        <TextBlock x:Name="OverlayTotalUnitText" Text="DPS" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}"
-                                   Margin="6,0,0,4" VerticalAlignment="Bottom"/>
-                        <Border x:Name="OverlayDummyChip" Visibility="Collapsed" Margin="10,0,0,4" Padding="7,1" CornerRadius="4" VerticalAlignment="Bottom"
-                                Background="#26DCB877" BorderBrush="#66DCB877" BorderThickness="1">
-                            <TextBlock x:Name="OverlayDummyText" FontSize="11.5" FontWeight="SemiBold" Foreground="#E6C88F" Typography.NumeralAlignment="Tabular"/>
-                        </Border>
-                    </StackPanel>
+                    <Grid/>
                 </DockPanel>
-                <!-- Boss timers (Upload/BossTimers.cs): the boss's next casts as the uploads learnt them, and the time to its rage. -->
-                <Border x:Name="OverlayBossCallout" Visibility="Collapsed" Margin="10,0,10,5" Padding="8,3,8,4" CornerRadius="5"
-                        Background="#12DCB877" BorderBrush="#30DCB877" BorderThickness="1">
-                    <TextBlock x:Name="OverlayBossCalloutText" FontSize="11.5" Foreground="{DynamicResource Brush.OverlayText}" TextTrimming="CharacterEllipsis"
-                               Typography.NumeralAlignment="Tabular" VerticalAlignment="Center"/>
-                </Border>
-                <!-- The cube finder (MainWindow.Cubes.cs): a Hidden Cube the game announced in range, and how far the nearest is. -->
-                <Border x:Name="OverlayCubeCallout" Visibility="Collapsed" Margin="10,0,10,5" Padding="8,3,8,4" CornerRadius="5"
-                        Background="#14E8C35A" BorderBrush="#40E8C35A" BorderThickness="1">
-                    <StackPanel Orientation="Horizontal">
-                        <Path Data="M6,0.6 L11.2,3.3 L11.2,8.7 L6,11.4 L0.8,8.7 L0.8,3.3 Z M0.8,3.3 L6,6 L11.2,3.3 M6,6 L6,11.4" Stroke="#FFE8C35A" StrokeThickness="1.1"
-                              StrokeLineJoin="Round" Width="12" Height="12" VerticalAlignment="Center" Margin="0,0,7,0"/>
-                        <TextBlock x:Name="OverlayCubeCalloutText" FontSize="11.5" FontWeight="SemiBold" Foreground="#FFE8C35A" TextTrimming="CharacterEllipsis"
-                                   Typography.NumeralAlignment="Tabular" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-                <!-- Buff alerts (MainWindow.BuffAlerts.cs): a damage buff, scroll or food dropped off the player while he fights. -->
-                <Border x:Name="OverlayBuffCallout" Visibility="Collapsed" Margin="10,0,10,5" Padding="8,3,8,4" CornerRadius="5"
-                        Background="#1AF08E84" BorderBrush="#55F08E84" BorderThickness="1">
-                    <TextBlock x:Name="OverlayBuffCalloutText" FontSize="11.5" FontWeight="SemiBold" Foreground="#FFF08E84" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                </Border>
-                <!-- The dummy run's time, running out. -->
-                <ProgressBar x:Name="OverlayDummyBar" Visibility="Collapsed" Height="2" Margin="12,0,12,4" Template="{StaticResource FlatBar}" Minimum="0" Maximum="1"
-                             Background="#14FFFFFF" Foreground="{DynamicResource Brush.Accent}"/>
-                <!-- Kept for the code and the pictures that name them; the boss's health has a window of its own (CombatOverlayWindow). -->
-                <Grid x:Name="OverlayHpBlock" Visibility="Collapsed">
-                    <TextBlock x:Name="OverlayHpCheckText"/>
-                    <TextBlock x:Name="OverlayHpText"/>
-                    <ProgressBar x:Name="OverlayHpBar" Template="{StaticResource FlatBar}"/>
-                </Grid>
-                <Grid Visibility="Collapsed">
-                    <TextBlock x:Name="OverlayRateHeader" Text="DPS"/>
-                    <TextBlock x:Name="OverlayShareHeader" Text="%"/>
-                    <TextBlock x:Name="OverlayTotalHeader" Text="{local:Loc Main.Overlay.ColTotal}"/>
-                </Grid>
-                <!-- The lines: built in code from the look the player chose (MeterRowView, MeterLook; Overlays → Meter look), the titles over them when switched on. -->
-                <StackPanel x:Name="CompactOverlayRowsArea" Grid.IsSharedSizeScope="True" VerticalAlignment="Top" ClipToBounds="True">
-                    <ContentControl x:Name="CompactOverlayTitles" Focusable="False" IsTabStop="False"/>
-                    <local:QuietItemsControl x:Name="CompactOverlayRows" Margin="0,0,0,2"/>
-                </StackPanel>
-                <!-- Buffs: the effects on you over the fight shown, with their uptime. -->
-                <ItemsControl x:Name="OverlayBuffRows" Visibility="Collapsed" Margin="10,0,10,4">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Grid Height="24">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="24"/>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="80"/>
-                                    <ColumnDefinition Width="40"/>
-                                </Grid.ColumnDefinitions>
-                                <Border Width="18" Height="18" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Center" Background="#14FFFFFF">
-                                    <Image Source="{Binding Icon}" Stretch="UniformToFill"/>
+                <!-- The body: the fight. Folded away while no boss fight, dummy parse or Grind view is on (UpdateOverlayFold). -->
+                <StackPanel x:Name="OverlayBody">
+                    <Rectangle Height="1" Fill="#16FFFFFF" Margin="0,0,0,5"/>
+                    <!-- The fight shown, the group's total rate and whose rows are shown. -->
+                    <TextBlock x:Name="OverlayTargetText" Margin="12,0,10,0" Foreground="{DynamicResource Brush.TextMuted}" FontSize="11.5" FontWeight="SemiBold"
+                               TextTrimming="CharacterEllipsis"/>
+                    <DockPanel x:Name="OverlayTotalLine" Margin="12,0,10,5">
+                        <Border DockPanel.Dock="Right" Background="#0AFFFFFF" BorderBrush="#1FFFFFFF" BorderThickness="1" CornerRadius="6" Padding="2" VerticalAlignment="Center">
+                            <StackPanel x:Name="OverlayScopeSwitch" Orientation="Horizontal">
+                                <Border Tag="Me" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked" ToolTip="Only you (picked by itself at a training dummy)">
+                                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="Me"/>
                                 </Border>
-                                <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="{Binding NameBrush}" FontSize="12.5" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                                <ProgressBar Grid.Column="2" Height="4" Margin="6,0" Template="{StaticResource FlatBar}" Minimum="0" Maximum="100" Value="{Binding Percent, Mode=OneWay}"
-                                             Background="#14FFFFFF" Foreground="{Binding BarBrush}" VerticalAlignment="Center"/>
-                                <TextBlock Grid.Column="3" Text="{Binding PercentText}" FontSize="11.5" Foreground="{DynamicResource Brush.TextMuted}" Style="{StaticResource OverlayNumber}"/>
-                            </Grid>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <!-- Status: is the game being read (green: yes; orange: paused; grey: waiting), the ping, and the corner grip that scales the meter. -->
-                <DockPanel x:Name="OverlayStatusLine" Margin="12,1,4,4">
+                                <Border x:Name="OverlayScopeGroup" Tag="Group" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
+                                </Border>
+                                <Border x:Name="OverlayScopeCorps" Tag="Corps" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
+                                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
+                                </Border>
+                                <Border x:Name="OverlayScopeAll" Tag="All" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked" ToolTip="Everybody (picked by itself in dungeons and raids)">
+                                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.All}"/>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom">
+                            <TextBlock x:Name="OverlayTotalRateText" Text="0" FontSize="24" FontWeight="SemiBold" Foreground="{DynamicResource Brush.Accent}"
+                                       Typography.NumeralAlignment="Tabular" VerticalAlignment="Bottom"/>
+                            <TextBlock x:Name="OverlayTotalUnitText" Text="DPS" FontSize="12.5" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}"
+                                       Margin="6,0,0,4" VerticalAlignment="Bottom"/>
+                            <Border x:Name="OverlayDummyChip" Visibility="Collapsed" Margin="10,0,0,4" Padding="7,1" CornerRadius="4" VerticalAlignment="Bottom"
+                                    Background="#26DCB877" BorderBrush="#66DCB877" BorderThickness="1">
+                                <TextBlock x:Name="OverlayDummyText" FontSize="11.5" FontWeight="SemiBold" Foreground="#E6C88F" Typography.NumeralAlignment="Tabular"/>
+                            </Border>
+                        </StackPanel>
+                    </DockPanel>
+                    <!-- Boss timers (Upload/BossTimers.cs): the boss's next casts as the uploads learnt them, and the time to its rage. -->
+                    <Border x:Name="OverlayBossCallout" Visibility="Collapsed" Margin="10,0,10,5" Padding="8,3,8,4" CornerRadius="5"
+                            Background="#12DCB877" BorderBrush="#30DCB877" BorderThickness="1">
+                        <TextBlock x:Name="OverlayBossCalloutText" FontSize="11.5" Foreground="{DynamicResource Brush.OverlayText}" TextTrimming="CharacterEllipsis"
+                                   Typography.NumeralAlignment="Tabular" VerticalAlignment="Center"/>
+                    </Border>
+                    <!-- Buff alerts (MainWindow.BuffAlerts.cs): a damage buff, scroll or food dropped off the player while he fights. -->
+                    <Border x:Name="OverlayBuffCallout" Visibility="Collapsed" Margin="10,0,10,5" Padding="8,3,8,4" CornerRadius="5"
+                            Background="#1AF08E84" BorderBrush="#55F08E84" BorderThickness="1">
+                        <TextBlock x:Name="OverlayBuffCalloutText" FontSize="11.5" FontWeight="SemiBold" Foreground="#FFF08E84" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    </Border>
+                    <!-- A dummy parse (UpdateOverlayDummy): the run, the own DPS in big, its clock running out and every kind of hit. Stands in for the lines. -->
+                    <Border x:Name="OverlayDummyCard" Visibility="Collapsed" Margin="10,0,10,6" Padding="11,8,11,9" CornerRadius="8"
+                            Background="#0CFFFFFF" BorderBrush="#1CFFFFFF" BorderThickness="1">
+                        <StackPanel>
+                            <DockPanel>
+                                <Border DockPanel.Dock="Right" Padding="7,1" CornerRadius="5" BorderBrush="#26FFFFFF" BorderThickness="1" Cursor="Hand"
+                                        MouseLeftButtonUp="OnOverlayDummyHistoryClicked" ToolTip="Past parses (History → Training dummy)">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="&#xE81C;" FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets" FontSize="10" Foreground="{DynamicResource Brush.TextSubtle}"
+                                                   VerticalAlignment="Center" Margin="0,0,5,0"/>
+                                        <TextBlock Text="History" FontSize="10.5" Foreground="{DynamicResource Brush.TextSubtle}" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Border>
+                                <TextBlock x:Name="OverlayDummyRunText" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"
+                                           TextTrimming="CharacterEllipsis"/>
+                            </DockPanel>
+                            <DockPanel Margin="0,3,0,0">
+                                <TextBlock x:Name="OverlayDummyClock" DockPanel.Dock="Right" FontSize="12" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Bottom"
+                                           Typography.NumeralAlignment="Tabular" Margin="0,0,0,5"/>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock x:Name="OverlayDummyDps" Text="0" FontSize="30" FontWeight="SemiBold" Foreground="{DynamicResource Brush.OverlayText}"
+                                               Typography.NumeralAlignment="Tabular" VerticalAlignment="Bottom"/>
+                                    <TextBlock Text="DPS" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource Brush.TextMuted}" Margin="6,0,0,6" VerticalAlignment="Bottom"/>
+                                </StackPanel>
+                            </DockPanel>
+                            <!-- The run's time, running out. -->
+                            <ProgressBar x:Name="OverlayDummyBar" Visibility="Collapsed" Height="3" Margin="0,3,0,7" Template="{StaticResource FlatBar}" Minimum="0" Maximum="1"
+                                         Background="#14FFFFFF" Foreground="{DynamicResource Brush.Accent}"/>
+                            <!-- Total, hits, crit, perfect, double, back, front, the biggest hit: label left, figure right, two to a line (FillDummyStats). -->
+                            <UniformGrid x:Name="OverlayDummyStats" Columns="2"/>
+                        </StackPanel>
+                    </Border>
+                    <!-- Kept for the code and the pictures that name them; the boss's health has a window of its own (CombatOverlayWindow). -->
+                    <Grid x:Name="OverlayHpBlock" Visibility="Collapsed">
+                        <TextBlock x:Name="OverlayHpCheckText"/>
+                        <TextBlock x:Name="OverlayHpText"/>
+                        <ProgressBar x:Name="OverlayHpBar" Template="{StaticResource FlatBar}"/>
+                    </Grid>
+                    <Grid Visibility="Collapsed">
+                        <TextBlock x:Name="OverlayRateHeader" Text="DPS"/>
+                        <TextBlock x:Name="OverlayShareHeader" Text="%"/>
+                        <TextBlock x:Name="OverlayTotalHeader" Text="{local:Loc Main.Overlay.ColTotal}"/>
+                    </Grid>
+                    <!-- The lines: built in code from the look the player chose (MeterRowView, MeterLook; Overlays → Meter look), the titles over them when switched on. -->
+                    <StackPanel x:Name="CompactOverlayRowsArea" Grid.IsSharedSizeScope="True" VerticalAlignment="Top" ClipToBounds="True">
+                        <ContentControl x:Name="CompactOverlayTitles" Focusable="False" IsTabStop="False"/>
+                        <local:QuietItemsControl x:Name="CompactOverlayRows" Margin="0,0,0,2"/>
+                    </StackPanel>
+                    <!-- Buffs: the effects on you over the fight shown, with their uptime. -->
+                    <ItemsControl x:Name="OverlayBuffRows" Visibility="Collapsed" Margin="10,0,10,4">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Height="24">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="24"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="40"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Width="18" Height="18" CornerRadius="3" HorizontalAlignment="Left" VerticalAlignment="Center" Background="#14FFFFFF">
+                                        <Image Source="{Binding Icon}" Stretch="UniformToFill"/>
+                                    </Border>
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" Foreground="{Binding NameBrush}" FontSize="12.5" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                                    <ProgressBar Grid.Column="2" Height="4" Margin="6,0" Template="{StaticResource FlatBar}" Minimum="0" Maximum="100" Value="{Binding Percent, Mode=OneWay}"
+                                                 Background="#14FFFFFF" Foreground="{Binding BarBrush}" VerticalAlignment="Center"/>
+                                    <TextBlock Grid.Column="3" Text="{Binding PercentText}" FontSize="11.5" Foreground="{DynamicResource Brush.TextMuted}" Style="{StaticResource OverlayNumber}"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+                <!-- The foot: the own counters (Odyle Energy with the time to its next refill, Shugo Festival, Dimensional Invasion, Nightmare, the daily
+                     dungeon, Ascension Trial; UpdateOverlayTickets), whether the game is being read (green: yes; orange: paused; grey: waiting), the ping,
+                     and the corner grip that scales the meter. -->
+                <DockPanel x:Name="OverlayStatusLine" Margin="10,1,4,4">
                     <Thumb x:Name="OverlayResizeGrip" DockPanel.Dock="Right" Width="12" Height="12" Cursor="SizeNWSE" Margin="6,0,0,0" VerticalAlignment="Bottom"
                            ToolTip="{local:Loc Main.Overlay.ResizeTip}" MouseDoubleClick="OnCompactOverlayResizeReset" DragStarted="OnCompactOverlayResizeStarted" DragDelta="OnCompactOverlayResize" DragCompleted="OnCompactOverlayResized">
                         <Thumb.Template>
@@ -1459,9 +1513,10 @@
                     <Border x:Name="OverlayModeSwitch" DockPanel.Dock="Right" Visibility="Collapsed" MouseLeftButtonDown="OnOverlayModeClicked">
                         <TextBlock x:Name="OverlayModeText"/>
                     </Border>
-                    <Rectangle x:Name="OverlayStateDot" Width="6" Height="6" RadiusX="1" RadiusY="1" Fill="Gray" VerticalAlignment="Center" Margin="0,0,6,0"/>
-                    <TextBlock x:Name="OverlayStateText" FontSize="10.5" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"
-                               TextTrimming="CharacterEllipsis"/>
+                    <Rectangle x:Name="OverlayStateDot" DockPanel.Dock="Left" Width="6" Height="6" RadiusX="1" RadiusY="1" Fill="Gray" VerticalAlignment="Center" Margin="2,0,8,0"/>
+                    <TextBlock x:Name="OverlayStateText" DockPanel.Dock="Left" FontSize="10.5" Foreground="{DynamicResource Brush.TextMuted}" VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
+                    <StackPanel x:Name="OverlayTickets" Orientation="Horizontal" VerticalAlignment="Center" ClipToBounds="True"/>
                 </DockPanel>
             </StackPanel>
         </Border>

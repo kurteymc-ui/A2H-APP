@@ -1453,6 +1453,38 @@ internal static class Program
         {
             window.CompactOverlayPanel.Visibility = System.Windows.Visibility.Visible;
             panel = window.CompactOverlayPanel;
+            // the bar's own character and the counters at the foot, as on any meter in the game
+            window.ShowOverlayIdentity("Jinwoo", "Gladiator", 196_500);
+            window.ShowOverlayTickets(Ui.MainWindow.SampleTickets());
+            if (kind == "bar")
+            {
+                // folded between fights: the bar (with a cube in range) and the counters, nothing of the last fight
+                window.OverlayBody.Visibility = System.Windows.Visibility.Collapsed;
+                window.OverlayTimeText.Visibility = System.Windows.Visibility.Collapsed;
+                Ui.MainWindow.ShowCubeChip(window.OverlayCubeCallout, window.OverlayCubeCalloutText, 1, "38 m");
+                window.OverlayCubeCallout.Visibility = System.Windows.Visibility.Visible;
+            }
+            else if (kind == "dummy")
+            {
+                // a dummy parse running: its card stands in for the lines
+                var t0 = new DateTime(2026, 11, 5, 12, 0, 0);
+                var hits = new List<DamageEvent>();
+                for (int i = 0; i < 180; i++)
+                {
+                    HitKinds kinds = (i % 9 == 0 ? HitKinds.Perfect : 0) | (i % 6 == 0 ? HitKinds.Double : 0) | (i % 4 == 0 ? HitKinds.Back : HitKinds.Front);
+                    hits.Add(new DamageEvent(t0.AddSeconds(i * 0.23), 1, 900, 4_000 + (i * 37 % 9_000), false, IsCritical: i % 5 < 2, Kinds: kinds));
+                }
+
+                window.ShowDummyCard("Run 3  ·  running", "0:41 / 1:00", 27_600, Ui.MainWindow.DummyStatsOf(hits));
+                window.OverlayDummyCard.Visibility = System.Windows.Visibility.Visible;
+                window.OverlayDummyBar.Visibility = System.Windows.Visibility.Visible;
+                window.OverlayDummyBar.Value = 0.32;
+                window.CompactOverlayRowsArea.Visibility = System.Windows.Visibility.Collapsed;
+                window.OverlayTotalLine.Visibility = System.Windows.Visibility.Collapsed;
+                window.OverlayTargetText.Visibility = System.Windows.Visibility.Collapsed;
+                window.OverlayTimeText.Text = "0:19";
+                window.OverlayModeShort.Text = "Dummy";
+            }
             if (kind.StartsWith("look-", StringComparison.Ordinal))
             {
                 // the meter in other looks (Overlays → Meter look): the page's sample players, with hit kinds and support buffs
@@ -1494,7 +1526,7 @@ internal static class Program
                     new[] { new Upload.BossCallout("Earth Shatter", 0, true), new Upload.BossCallout("Flame Breath", 11.4, false) }, TimeSpan.FromSeconds(48), 37));
                 window.OverlayBossCallout.Visibility = System.Windows.Visibility.Visible;
                 // and the cube finder's line under it
-                Ui.MainWindow.ShowCubeCallout(window.OverlayCubeCalloutText, 1, "42 m");
+                Ui.MainWindow.ShowCubeChip(window.OverlayCubeCallout, window.OverlayCubeCalloutText, 1, "42 m");
                 window.OverlayCubeCallout.Visibility = System.Windows.Visibility.Visible;
             }
         }

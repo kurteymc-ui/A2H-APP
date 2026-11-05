@@ -593,6 +593,20 @@ public sealed class MeterSettings
     /// up while the game is in front.</summary>
     public bool MeterOverlayAutoHide { get; set; } = true;
 
+    /// <summary>The meter folds to its bar (the own class, name and Combat Power, the clock, the nearest cube, the counters at the foot) while no boss fight,
+    /// dummy parse or Grind view is on, and opens by itself for them (5 November 2026, the owner). Off: the whole meter shows all the time.</summary>
+    public bool MeterFoldIdle { get; set; } = true;
+
+    /// <summary>The Grind view: the meter stays open for every fight, the monsters of the open world and the trash of a dungeon too (the mode menu).</summary>
+    public bool MeterGrind { get; set; }
+
+    /// <summary>The own counters at the meter's foot: Odyle Energy (and the time to its next refill), Shugo Festival, Dimensional Invasion, Nightmare, the
+    /// daily dungeon and Ascension Trial.</summary>
+    public bool MeterShowTickets { get; set; } = true;
+
+    /// <summary>The folding meter came (1.20.16): "Only during boss fights" goes off once for everyone, the bar stays up and the fight opens under it.</summary>
+    public bool MeterBarDefaulted { get; set; }
+
     /// <summary>With <see cref="MeterOverlayAutoHide"/>: a boss fight of the own character brings the overlay up by itself, while the overlay is switched on
     /// (4 Nov 2026: no more switching it on again after the player closed it). Off: only the eye button or its hotkey shows it.</summary>
     public bool MeterPopUpForBoss { get; set; } = true;

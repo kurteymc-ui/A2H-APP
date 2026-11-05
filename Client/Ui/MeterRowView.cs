@@ -287,11 +287,8 @@ public sealed class MeterRowView : Grid
                 name.Children.Add(cp);
             }
 
-            var buffs = new TextBlock { FontSize = Math.Round(look.TinySize - 0.5, 1), Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xC8, 0x8F)), Opacity = 0.85,
-                Margin = new Thickness(7, 1, 0, 0), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
-            buffs.SetBinding(TextBlock.TextProperty, new Binding(nameof(PlayerRow.BuffLine)));
-            buffs.SetBinding(VisibilityProperty, new Binding(nameof(PlayerRow.HasBuffLine)) { Converter = Shown });
-            name.Children.Add(buffs);
+            // no party buffs after the name any more (5 November 2026, the owner: "Undefeated Mantra · Predation" made every line long for no reason);
+            // the meter window's list keeps them (Settings), the rDPS and Given columns say what the buffs were worth
             Add(name, new GridLength(1, GridUnitType.Star));
         }
 

@@ -49,8 +49,10 @@ public partial class MainWindow
             }
         }
 
+        _meterShowTotal = settings.MeterShowTotal;
+        _meterShowStatus = settings.MeterShowStatus;
         OverlayTotalLine.Visibility = settings.MeterShowTotal ? Visibility.Visible : Visibility.Collapsed;
-        OverlayStatusLine.Visibility = settings.MeterShowStatus ? Visibility.Visible : Visibility.Collapsed;
+        OverlayStatusLine.Visibility = settings.MeterShowStatus || OverlayTickets.Children.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         _headerOnHover = settings.MeterHeaderButtons == "hover";
         if (!_headerHoverHooked)
         {

@@ -43,7 +43,7 @@ public partial class MainWindow
             return;
         }
 
-        ShowCubeCallout(OverlayCubeCalloutText, cubes.Count, NearestCubeText(directory, cubes));
+        ShowCubeChip(OverlayCubeCallout, OverlayCubeCalloutText, cubes.Count, NearestCubeText(directory, cubes));
         OverlayCubeCallout.Visibility = Visibility.Visible;
         if (_cubeLineTimer is null)
         {
@@ -61,6 +61,16 @@ public partial class MainWindow
     /// "~42 m" from the minimap in between; null while the place is not known.</summary>
     private static string? NearestCubeText(Aion2EntityDirectory directory, IReadOnlyList<(float X, float Y)> cubes) =>
         CubeRange.Nearest(directory, cubes) is { } near ? CubeRange.Text(near) : null;
+
+    /// <summary>The cube chip in the meter's bar (5 November 2026: the bar stays when the rest folds away, so the cube is there in the open world): the
+    /// metres to the nearest, "×2" while the place is not known with two in range; the whole line ("Hidden Cube nearby · 42 m") as its tip.</summary>
+    internal static void ShowCubeChip(FrameworkElement chip, TextBlock text, int count, string? distance)
+    {
+        var line = new TextBlock();
+        ShowCubeCallout(line, count, distance);
+        chip.ToolTip = line.Text;
+        text.Text = distance is not null ? (count > 1 ? distance + "  ×" + count.ToString(CultureInfo.CurrentCulture) : distance) : "×" + count.ToString(CultureInfo.CurrentCulture);
+    }
 
     /// <summary>The meter's cube line: how many are in range and how far the nearest is (also drawn by the overlay pictures).</summary>
     internal static void ShowCubeCallout(TextBlock text, int count, string? distance)
