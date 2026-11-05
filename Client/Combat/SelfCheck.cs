@@ -58,6 +58,7 @@ public static class SelfCheck
         ok &= SelfCheckCubeBeam.Run();
         ok &= SelfCheckBossBar.Run();
         ok &= SelfCheckNews.Run();
+        ok &= SelfCheckJourney.Run();
         ok &= SelfCheckMaps.Run();
         ok &= SelfCheckLoot.Run();
         ok &= SelfCheckBlackCloud.Run();

@@ -38,7 +38,7 @@ public partial class MainWindow
     private static readonly (string Hub, string[] Tabs)[] ShellHubs =
     {
         ("hub.fights", new[] { "history", "dummy", "combat", "assist" }),
-        ("hub.characters", new[] { "characters", "attributes", "cpcalc" }), // the CP calculator replaced the stat calculator (4 November 2026)
+        ("hub.characters", new[] { "characters", "attributes", "cpcalc", "journey" }), // the CP calculator replaced the stat calculator (4 November 2026); Journey beside it (5 November)
         ("hub.map", new[] { "petmap", "petmap.pets", "petmap.gather", "cubes" }),
         ("hub.items", new[] { "loot", "craft" }),
         ("hub.timers", new[] { "timetable", "boss" }),
@@ -62,7 +62,7 @@ public partial class MainWindow
         {
             ["assist"] = "\uE945", ["combat"] = "\uE7C1", ["petmap"] = "\uE707", ["petmap.pets"] = "\uE8D4", ["petmap.gather"] = "\uE8D4", ["cubes"] = "\uE721",
             ["loot"] = "\uE7B8", ["craft"] = "\uE90F", ["timetable"] = "\uE787", ["boss"] = "\uE7BA", ["attributes"] = "\uE9F9", ["cpcalc"] = "\uE8EF",
-            ["analyzer"] = "\uE9D9", ["stream"] = "\uE714", ["network"] = "\uE701", ["theme"] = "\uE790",
+            ["analyzer"] = "\uE9D9", ["stream"] = "\uE714", ["network"] = "\uE701", ["theme"] = "\uE790", ["journey"] = "\uE81C",
         };
         pages.AddRange(ToolsWindow.Groups().SelectMany(g => g).Where(t => t.Id is not ("checklist" or "dummy" or "analyzer")) // the combat analyzer: History and the fight Report do it
             .Where(t => !PrivacyConsent.Restricted || PrivacyConsent.RestrictedTools.Contains(t.Id))

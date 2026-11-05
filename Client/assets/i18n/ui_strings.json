@@ -21484,5 +21484,290 @@
     "en": "What dropped and what it is worth, and the crafting calculator.",
     "de": "Was gedroppt ist und was es wert ist, und der Herstellungsrechner.",
     "fr": "Ce qui est tombé et ce que ça vaut, et le calculateur d'artisanat."
+  },
+  "Main.MenuTools.Journey": {
+    "en": "Journey"
+  },
+  "Journey.Title": {
+    "en": "Journey"
+  },
+  "Journey.Lede": {
+    "en": "Your play over time, kept on this PC while you play, against the period before."
+  },
+  "Journey.NoCharacter": {
+    "en": "No character yet. Play a little with the app running and your journey starts here."
+  },
+  "Journey.Loading": {
+    "en": "Loading…"
+  },
+  "Journey.New": {
+    "en": "new"
+  },
+  "Journey.DayTip": {
+    "en": "{0}: {1} played"
+  },
+  "Journey.Span.Session": {
+    "en": "Session"
+  },
+  "Journey.Span.Day": {
+    "en": "24 hours"
+  },
+  "Journey.Span.Week7": {
+    "en": "7 days"
+  },
+  "Journey.Span.ThisWeek": {
+    "en": "This week"
+  },
+  "Journey.Span.LastWeek": {
+    "en": "Last week"
+  },
+  "Journey.Span.Days30": {
+    "en": "30 days"
+  },
+  "Journey.Span.ThisMonth": {
+    "en": "This month"
+  },
+  "Journey.Span.All": {
+    "en": "All time"
+  },
+  "Journey.Span.Custom": {
+    "en": "Pick dates"
+  },
+  "Journey.From": {
+    "en": "From"
+  },
+  "Journey.To": {
+    "en": "to"
+  },
+  "Journey.Head.Dps": {
+    "en": "Boss DPS up {0}% on the period before."
+  },
+  "Journey.Head.ItemLevel": {
+    "en": "Item Level up {0} this period."
+  },
+  "Journey.Head.Loot": {
+    "en": "Loot worth up {0}% on the period before."
+  },
+  "Journey.Head.Kills": {
+    "en": "{0} bosses down this period."
+  },
+  "Journey.Head.Glance": {
+    "en": "Your period at a glance."
+  },
+  "Journey.BestDrop": {
+    "en": "best drop"
+  },
+  "Journey.BestDpsOn": {
+    "en": "highest DPS, on {0}"
+  },
+  "Journey.KillsAndRuns": {
+    "en": "bosses down, {0} dungeons"
+  },
+  "Journey.BossesDown": {
+    "en": "bosses down"
+  },
+  "Journey.Played": {
+    "en": "Time played"
+  },
+  "Journey.Loot": {
+    "en": "Loot worth"
+  },
+  "Journey.Bosses": {
+    "en": "Bosses down"
+  },
+  "Journey.BossDps": {
+    "en": "Boss DPS"
+  },
+  "Journey.Deaths": {
+    "en": "Deaths"
+  },
+  "Journey.ItemLevel": {
+    "en": "Item Level"
+  },
+  "Journey.AgainstBefore": {
+    "en": "against the period before"
+  },
+  "Journey.TimeFromFights": {
+    "en": "time in fights (play time is kept from now on)"
+  },
+  "Journey.AtMarket": {
+    "en": "at the market's prices"
+  },
+  "Journey.NoPrices": {
+    "en": "sign in for the market's prices"
+  },
+  "Journey.Average": {
+    "en": "average on bosses"
+  },
+  "Journey.InBossFights": {
+    "en": "in boss fights"
+  },
+  "Journey.Cp": {
+    "en": "{0:N0} Combat Power"
+  },
+  "Journey.AtLogins": {
+    "en": "at your logins"
+  },
+  "Journey.Legend.Bosses": {
+    "en": "bosses"
+  },
+  "Journey.Legend.Dungeons": {
+    "en": "dungeons"
+  },
+  "Journey.Legend.Rest": {
+    "en": "the rest"
+  },
+  "Journey.NoDays": {
+    "en": "Nothing played in this period yet."
+  },
+  "Journey.DayByDay": {
+    "en": "Day by day"
+  },
+  "Journey.WeekByWeek": {
+    "en": "Week by week"
+  },
+  "Journey.Improved": {
+    "en": "What improved"
+  },
+  "Journey.Up.Drop": {
+    "en": "Best drop: {0}"
+  },
+  "Journey.Up.DropWorth": {
+    "en": "worth {0} Kinah · {1}"
+  },
+  "Journey.Up.BestDps": {
+    "en": "{0}/s on {1}"
+  },
+  "Journey.Up.BetterThan": {
+    "en": "your highest on a boss, up from {0}/s"
+  },
+  "Journey.Up.Highest": {
+    "en": "your highest on a boss this period"
+  },
+  "Journey.Up.Loot": {
+    "en": "{0} Kinah of loot"
+  },
+  "Journey.Up.LootBefore": {
+    "en": "up from {0} the period before"
+  },
+  "Journey.Up.NothingBefore": {
+    "en": "nothing the period before"
+  },
+  "Journey.Up.ItemLevel": {
+    "en": "Item Level {0:N0} → {1:N0}"
+  },
+  "Journey.Up.ItemLevelGain": {
+    "en": "{0} up in this period"
+  },
+  "Journey.Up.Boss": {
+    "en": "{0}: DPS up {1}%"
+  },
+  "Journey.Up.BossDetail": {
+    "en": "{0}/s on average, from {1}/s"
+  },
+  "Journey.Up.None": {
+    "en": "Nothing to compare yet. Play a little and come back."
+  },
+  "Journey.ToImprove": {
+    "en": "Where to improve"
+  },
+  "Journey.Down.Death": {
+    "en": "You died {0} time in boss fights"
+  },
+  "Journey.Down.Deaths": {
+    "en": "You died {0} times in boss fights"
+  },
+  "Journey.Down.DeathsMost": {
+    "en": "most on {0} ({1})"
+  },
+  "Journey.Down.DeathsBefore": {
+    "en": "{0} the period before"
+  },
+  "Journey.Down.Dps": {
+    "en": "{0}: DPS down {1}%"
+  },
+  "Journey.Down.DpsDetail": {
+    "en": "{0}/s on average, from {1}/s the period before"
+  },
+  "Journey.Down.Idle": {
+    "en": "{0} standing idle"
+  },
+  "Journey.Down.IdleDetail": {
+    "en": "{0}% of your time in game: not fighting and not moving"
+  },
+  "Journey.Down.Run": {
+    "en": "{0} in {1}"
+  },
+  "Journey.Down.RunDetail": {
+    "en": "your best is {0}, {1} faster"
+  },
+  "Journey.Down.None": {
+    "en": "Nothing stands out. Keep it up."
+  },
+  "Journey.ToShare": {
+    "en": "To share"
+  },
+  "Journey.Share.Copy": {
+    "en": "Copy for Discord"
+  },
+  "Journey.Share.Save": {
+    "en": "Save picture…"
+  },
+  "Journey.Share.Copied": {
+    "en": "Copied. Paste it in Discord."
+  },
+  "Journey.Share.Busy": {
+    "en": "The clipboard is busy. Try again."
+  },
+  "Journey.Share.Saved": {
+    "en": "Saved."
+  },
+  "Journey.Card.BestDps": {
+    "en": "best boss DPS"
+  },
+  "Journey.Card.Bosses": {
+    "en": "bosses down"
+  },
+  "Journey.Card.ItemLevel": {
+    "en": "Item Level"
+  },
+  "Journey.Card.Loot": {
+    "en": "loot worth"
+  },
+  "Journey.Class.Title": {
+    "en": "You and your class"
+  },
+  "Journey.Class.TitleWith": {
+    "en": "You and other {0}s"
+  },
+  "Journey.Class.YourClass": {
+    "en": "your class"
+  },
+  "Journey.Class.Offline": {
+    "en": "Your ranks come from atreia.app. They can't be read right now."
+  },
+  "Journey.Class.None": {
+    "en": "No uploaded boss fights of {0} in this period yet. Boss fights you upload show here, ranked against your class and your power."
+  },
+  "Journey.Class.AverageIn": {
+    "en": "average rank among {0}s"
+  },
+  "Journey.Class.AverageBracket": {
+    "en": "at {0}–{1} Combat Power"
+  },
+  "Journey.Class.Boss": {
+    "en": "BOSS"
+  },
+  "Journey.Class.Dps": {
+    "en": "BEST DPS"
+  },
+  "Journey.Class.InClass": {
+    "en": "AMONG {0}S"
+  },
+  "Journey.Class.InBracket": {
+    "en": "AT YOUR POWER"
+  },
+  "Journey.Class.Note": {
+    "en": "A rank is the share of players you beat: 90 means better than 90 of every 100 on that boss. \"At your power\" counts only players within your 10,000 Combat Power."
   }
 }

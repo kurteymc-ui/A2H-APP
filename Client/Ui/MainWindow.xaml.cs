@@ -134,6 +134,10 @@ public partial class MainWindow : Window
     private MenuWatcher? _menuWatcher;
     private Streaming.StreamOverlayServer? _streamServer;
     private readonly DispatcherTimer _streamTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
+
+    // the Journey page's play time: a minute of play noted once a minute (History/JourneyLog.cs)
+    private readonly DispatcherTimer _journeyTimer = new() { Interval = TimeSpan.FromMinutes(1) };
+    private (float X, float Y)? _journeyPlace;
     private IReadOnlyList<DamageEvent> _lastShownHits = Array.Empty<DamageEvent>();
     private string _streamLast = "";
     private DateTime _streamSettingsAt = DateTime.MinValue;
@@ -1471,6 +1475,8 @@ public partial class MainWindow : Window
             _menuWatcher ??= new MenuWatcher();
             _streamTimer.Tick += (_, _) => StreamTick();
             _streamTimer.Start();
+            _journeyTimer.Tick += (_, _) => JourneyMinute();
+            _journeyTimer.Start();
             MeterSettings.BackupOnStart(); // after the first Load of this start, which restores a damaged file from the last copy
             if (MeterSettings.RecoveredFromBackup)
             {
@@ -2088,8 +2094,30 @@ public partial class MainWindow : Window
         }
     }
 
+    /// <summary>A minute of play with the character the game is read for: fighting (it hit something in the last minute), else idle when it did not move 3 m.</summary>
+    private void JourneyMinute()
+    {
+        if (Headless || _liveSource is not Aion2PacketCombatSource { ServerFingerprint: not null } live
+            || live.Entities is not Aion2EntityDirectory dir || dir.LocalCharacter is not { Name.Length: > 0 } me || me.ServerId <= 0 || !Aion2.Capture.GameConnections.GameRunning())
+        {
+            _journeyPlace = null;
+            return;
+        }
+
+        bool fighting = dir.LocalHitTarget is { } hit && DateTime.UtcNow - hit.At < TimeSpan.FromMinutes(1);
+        bool moved = false;
+        if (dir.BestPosition is { } now)
+        {
+            moved = _journeyPlace is { } before && Math.Sqrt(((now.X - before.X) * (double)(now.X - before.X)) + ((now.Y - before.Y) * (double)(now.Y - before.Y))) > 300;
+            _journeyPlace = (now.X, now.Y);
+        }
+
+        AionDPS.History.JourneyLog.Minute(AionDPS.History.JourneyLog.Key(me.Name, me.ServerId), fighting, moved, DateTime.Now);
+    }
+
     protected override void OnClosed(EventArgs e)
     {
+        AionDPS.History.JourneyLog.Save();
         _pollTimer.Stop();
         _updateTimer.Stop();
         if (!ReferenceEquals(_source, _liveSource))
@@ -6952,6 +6980,12 @@ public partial class MainWindow : Window
             {
                 var cpPage = new CpCalcPage(() => _liveSource?.Entities as Aion2EntityDirectory);
                 return new ToolPage { Content = cpPage, Cleanup = cpPage.Stop };
+            }
+
+            case "journey":
+            {
+                var journeyPage = new JourneyPage(() => _liveSource?.Entities as Aion2EntityDirectory);
+                return new ToolPage { Content = journeyPage, Cleanup = journeyPage.Stop };
             }
 
             case "loot":

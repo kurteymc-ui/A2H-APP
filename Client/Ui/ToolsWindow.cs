@@ -52,6 +52,7 @@ public sealed class ToolsWindow : Window
         "attributes" => 1060,
         "statcalc" => 1180,
         "cpcalc" => 1180,
+        "journey" => 1240,
         "craft" => 980,
         "assist" => 640,
         "timetable" => 1040,
@@ -67,7 +68,7 @@ public sealed class ToolsWindow : Window
         var loc = LocalizationManager.Instance;
         return new[]
         {
-            new[] { new ToolEntry("checklist", loc["Main.MenuTools.Checklist"]), new ToolEntry("attributes", loc["Main.MenuTools.Attributes"]), new ToolEntry("cpcalc", loc["Main.MenuTools.CpCalc"]) },
+            new[] { new ToolEntry("checklist", loc["Main.MenuTools.Checklist"]), new ToolEntry("attributes", loc["Main.MenuTools.Attributes"]), new ToolEntry("cpcalc", loc["Main.MenuTools.CpCalc"]), new ToolEntry("journey", loc["Main.MenuTools.Journey"]) },
             new[] { new ToolEntry("loot", loc["Main.MenuTools.Loot"]), new ToolEntry("craft", loc["Main.MenuTools.Craft"]), new ToolEntry("petmap", loc["Settings.Nav.PetMap"]), new ToolEntry("petmap.pets", loc["Settings.Nav.Pets"], Sub: true), new ToolEntry("petmap.gather", loc["Settings.Nav.Gather"], Sub: true), new ToolEntry("cubes", loc["Cubes.Title"], Sub: true) },
             new[] { new ToolEntry("combat", loc["Settings.Nav.Combat"]), new ToolEntry("assist", loc["Main.MenuTools.Assist"]) },
             new[] { new ToolEntry("dummy", loc["Main.MenuTools.DummyTest"]), new ToolEntry("analyzer", loc["Main.MenuTools.Analyzer"], OwnWindow: true) },
