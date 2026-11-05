@@ -77,6 +77,20 @@ public static class ToolRender
                 break;
             }
 
+            case "setup-design":
+            case "setup-columns":
+            case "setup-overlays":
+            case "setup-colours":
+            case "setup-colours-midnight":
+            {
+                // the look setup after the terms: one of its steps (the colours also with a colour set picked)
+                int step = what switch { "setup-design" => 0, "setup-columns" => 1, "setup-overlays" => 2, _ => 3 };
+                shown = hostWindow.LookSetupPicture(step, what == "setup-colours-midnight" ? "midnight" : null);
+                width = 0;
+                height = 0;
+                break;
+            }
+
             case "cube-beam":
             {
                 // the cube beam over a game-like scene: the beam over a cube 34 m ahead and a little right, and the arrow at the edge for one behind the camera

@@ -541,6 +541,8 @@ public partial class MainWindow : Window
                     PrivacyConsent.Ask(this);
                 }
 
+                // after the terms, before the app: the meter's design and columns, the overlays and the colours, each with how it looks in the game (once)
+                ShowLookSetupOnce();
                 ApplyPrivacyRestrictions();
                 RestorePopOuts();
                 WindowPlacement.AskIfNeeded(this);
