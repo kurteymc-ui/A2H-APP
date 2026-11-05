@@ -252,7 +252,14 @@ internal sealed class MinimapReader : IDisposable
 
         // a window size where the search keeps failing: one picture of its top right corner into the Debug folder (once a start for each size)
         bool saveCorner = layout is null && _searchFails.GetValueOrDefault(key) == 10;
-        var job = new Job(game, client, key, raster, readX, readY, layout, save, _misses, reach, recheck, saveLost, hints, saveCorner, arrowCheck, cone);
+        // the cone missed 25 reads in a row while the beam is wanted: one picture of the minimap into the Debug folder (at most every 10 minutes)
+        bool saveCone = cone && _coneMisses >= 25 && layout is not null && now - _coneSavedAt > TimeSpan.FromMinutes(10);
+        if (saveCone)
+        {
+            _coneSavedAt = now;
+        }
+
+        var job = new Job(game, client, key, raster, readX, readY, layout, save, _misses, reach, recheck, saveLost, hints, saveCorner, arrowCheck, cone, saveCone);
         _ = Task.Run(() =>
         {
             var outcome = new Outcome(null, null, false, 0, null);
@@ -278,7 +285,7 @@ internal sealed class MinimapReader : IDisposable
 
     internal sealed record Job(IntPtr Game, Size Client, string Key, MapRaster Raster, double GuessX, double GuessY, Layout? Layout, bool Save, int Misses,
         double Reach = 40, bool Recheck = false, bool SaveLost = false, IReadOnlyList<Layout>? Hints = null, bool SaveCorner = false, bool ArrowCheck = false,
-        bool Cone = false);
+        bool Cone = false, bool SaveCone = false);
 
     /// <summary>Searches for the minimap that found nothing, per window size ("4480x2520"): logged now and then, a picture at the tenth.</summary>
     private readonly Dictionary<string, int> _searchFails = new();
@@ -327,6 +334,11 @@ internal sealed class MinimapReader : IDisposable
     private void Apply(Job job, Outcome outcome)
     {
         LastMs = outcome.Ms;
+        if (job.Cone)
+        {
+            NoteCone(job, outcome.Cone);
+        }
+
         if (outcome.Cone is { } seen)
         {
             Camera = (seen.Yaw, seen.Width, outcome.At);
@@ -852,7 +864,11 @@ internal sealed class MinimapReader : IDisposable
             arrow = ArrowOffset(whole, layout);
             if (job.Cone)
             {
-                coneSeen = ReadCone(whole, layout);
+                coneSeen = ReadCone(whole, layout, arrow);
+                if (job.SaveCone && coneSeen is null)
+                {
+                    SaveLostPicture(whole, job, layout, match, "cone", arrow);
+                }
             }
         }
 
@@ -870,9 +886,11 @@ internal sealed class MinimapReader : IDisposable
         return new Outcome(fix, found, job.Layout is null, watch.Elapsed.TotalMilliseconds, saved, at, match, arrow, coneSeen);
     }
 
-    /// <summary>The minimap's view cone (<see cref="MinimapCone"/>): the rectangle of the minimap out of the window's picture, read around the player's spot.</summary>
-    internal static MinimapCone.Reading? ReadCone(Bitmap whole, Layout layout)
+    /// <summary>The minimap's view cone (<see cref="MinimapCone"/>): the rectangle of the minimap out of the window's picture, read around the player's spot -
+    /// the player's arrow when it was seen (<paramref name="arrow"/>, off the minimap's middle), else the middle; the reading's tip is given from the middle.</summary>
+    internal static MinimapCone.Reading? ReadCone(Bitmap whole, Layout layout, (double X, double Y)? arrow = null)
     {
+        (double ax, double ay) = arrow is { } a && Math.Abs(a.X) <= 14 && Math.Abs(a.Y) <= 14 ? (a.X, a.Y) : (0, 0);
         int x0 = Math.Max(0, (int)(layout.Cx - layout.HalfW) - 4), y0 = Math.Max(0, (int)(layout.Cy - layout.HalfH) - 4);
         int x1 = Math.Min(whole.Width, (int)(layout.Cx + layout.HalfW) + 5), y1 = Math.Min(whole.Height, (int)(layout.Cy + layout.HalfH) + 5);
         int w = x1 - x0, h = y1 - y0;
@@ -895,7 +913,9 @@ internal sealed class MinimapReader : IDisposable
             whole.UnlockBits(data);
         }
 
-        return MinimapCone.Read(pixels, w, h, layout.Cx - x0, layout.Cy - y0, layout.HalfW, layout.HalfH);
+        return MinimapCone.Read(pixels, w, h, layout.Cx + ax - x0, layout.Cy + ay - y0, layout.HalfW, layout.HalfH) is { } read
+            ? read with { Dx = read.Dx + ax, Dy = read.Dy + ay }
+            : null;
     }
 
     // the game window's client area as Windows draws it for us (PrintWindow, client only, full content); null when it fails or comes back black
@@ -1155,6 +1175,49 @@ internal sealed class MinimapReader : IDisposable
 
     private DateTime _lostSavedAt = DateTime.MinValue;
 
+    // the cube beam's reads of the view cone: counted, and written to minimap-log.txt every 20 s while a cube is near (5 November 2026, the owner: "the beam
+    // on cubes won't work" - nothing said whether the cone was seen)
+    private int _coneMisses;
+    private int _coneReads;
+    private int _coneSeen;
+    private DateTime _coneLogAt = DateTime.MinValue;
+    private DateTime _coneSavedAt = DateTime.MinValue;
+    private MinimapCone.Reading? _coneLast;
+
+    private void NoteCone(Job job, MinimapCone.Reading? seen)
+    {
+        _coneReads++;
+        if (seen is not null)
+        {
+            _coneSeen++;
+            _coneLast = seen;
+            _coneMisses = 0;
+        }
+        else
+        {
+            _coneMisses++;
+        }
+
+        DateTime now = DateTime.UtcNow;
+        if (_coneLogAt == DateTime.MinValue)
+        {
+            _coneLogAt = now;
+        }
+
+        if (now - _coneLogAt < TimeSpan.FromSeconds(20))
+        {
+            return;
+        }
+
+        string last = _coneLast is { } c
+            ? FormattableString.Invariant($"; last: looking {c.Yaw * 180 / Math.PI:0} degrees (0 east, 90 north), {c.Width * 180 / Math.PI:0} wide, edges {c.Score:0.00}, the player {c.Dx:+0;-0} {c.Dy:+0;-0} px off the middle")
+            : "";
+        Log(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss} {job.Raster.Map.Key}: cube beam: the view cone seen in {_coneSeen} of {_coneReads} reads{last}"));
+        _coneLogAt = now;
+        _coneReads = _coneSeen = 0;
+        _coneLast = null;
+    }
+
     /// <summary>
     /// When the reader is lost (25 reads without a fix): the minimap's rectangle alone (not the rest of the game window), with the guess and what the match
     /// gave, as minimap-lost-&lt;time&gt;.png/.txt in the Debug folder beside the settings; only the newest 10 are kept. Stays on the player's computer.
@@ -1187,7 +1250,7 @@ internal sealed class MinimapReader : IDisposable
         }
     }
 
-    private static void SaveLostPicture(Bitmap whole, Job job, Layout layout, MinimapFix? match)
+    private static void SaveLostPicture(Bitmap whole, Job job, Layout layout, MinimapFix? match, string kind = "lost", (double X, double Y)? arrow = null)
     {
         try
         {
@@ -1200,12 +1263,12 @@ internal sealed class MinimapReader : IDisposable
 
             string folder = Path.Combine(Path.GetDirectoryName(Aion2CharacterStore.DefaultPath)!, "Debug");
             Directory.CreateDirectory(folder);
-            foreach (FileInfo old in new DirectoryInfo(folder).GetFiles("minimap-lost-*").OrderByDescending(f => f.LastWriteTimeUtc).Skip(20))
+            foreach (FileInfo old in new DirectoryInfo(folder).GetFiles($"minimap-{kind}-*").OrderByDescending(f => f.LastWriteTimeUtc).Skip(20))
             {
                 old.Delete(); // the newest 10 pictures and their notes
             }
 
-            string stem = Path.Combine(folder, $"minimap-lost-{DateTime.Now:yyyy-MM-dd_HH-mm-ss}");
+            string stem = Path.Combine(folder, $"minimap-{kind}-{DateTime.Now:yyyy-MM-dd_HH-mm-ss}");
             using (Bitmap crop = whole.Clone(new Rectangle(x, y, w, h), whole.PixelFormat))
             {
                 crop.Save(stem + ".png", ImageFormat.Png);
@@ -1216,8 +1279,9 @@ internal sealed class MinimapReader : IDisposable
                 $"map {job.Raster.Map.Key}",
                 string.Format(inv, "guess {0:0} {1:0} (world units, on the map's picture), {2} reads without a fix, looking {3:0} m around", job.GuessX, job.GuessY, job.Misses, job.Reach),
                 string.Format(inv, "minimap centre {0:0.0} {1:0.0} half size {2:0} x {3:0} metres/pixel {4:0.0000}", layout.Cx, layout.Cy, layout.HalfW, layout.HalfH, layout.MetresPerPixel),
-                match is null ? "no match" : string.Format(inv, "best match score {0:0.000} pieces {1}/{2} margin {3:0.000}", match.Score, match.Agree, match.Pieces, match.Margin)));
-            Log(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss} {job.Raster.Map.Key}: lost - the minimap saved as {Path.GetFileName(stem)}.png"));
+                match is null ? "no match" : string.Format(inv, "best match score {0:0.000} pieces {1}/{2} margin {3:0.000}", match.Score, match.Agree, match.Pieces, match.Margin),
+                arrow is { } a ? string.Format(inv, "the player's arrow {0:+0.0;-0.0} {1:+0.0;-0.0} px off the centre (the picture's centre is the minimap centre + 8 px)", a.X, a.Y) : "no arrow seen"));
+            Log(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss} {job.Raster.Map.Key}: {(kind == "cone" ? "no view cone for the cube beam" : "lost")} - the minimap saved as {Path.GetFileName(stem)}.png"));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ExternalException or ArgumentException or OutOfMemoryException)
         {

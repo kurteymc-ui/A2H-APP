@@ -24,6 +24,10 @@ public static class SelfCheckCubeBeam
         // the place known a pixel or two off: still read
         var c = MinimapCone.Read(Minimap(170, 281, out w, out h), w, h, 152, 98, 137, 89);
         ok &= Check("read with the minimap's place two pixels off: within 2.5 degrees", c is { } rc && Near(Deg(rc.Yaw), 225.5, 2.5), c is { } z ? $"{Deg(z.Yaw):0.0}" : "none");
+        // the player's arrow 8 and 6 pixels off the spot given (the owner's minimap-log: often 4 to 12 px off the minimap's middle): the tip is found
+        var d = MinimapCone.Read(Minimap(170, 281, out w, out h), w, h, 158, 94, 137, 89);
+        ok &= Check("the spot given 10 px off the player: the cone's tip found, the reading as at the tip", d is { } rd && Near(Deg(rd.Yaw), 225.5, 2.5)
+            && Near(rd.Dx, -8, 1.5) && Near(rd.Dy, 6, 1.5), d is { } q ? $"{Deg(q.Yaw):0.0}, tip {q.Dx:+0;-0} {q.Dy:+0;-0}" : "none");
         // no cone (a menu over the minimap, another picture): nothing
         ok &= Check("no cone, no reading", MinimapCone.Read(Minimap(-1, -1, out w, out h), w, h, 150, 100, 137, 89) is null, "");
 

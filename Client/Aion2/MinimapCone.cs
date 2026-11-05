@@ -10,30 +10,110 @@ namespace AionDPS.Aion2;
 /// </summary>
 public static class MinimapCone
 {
-    /// <summary>The camera's direction on the minimap (radians: 0 east, counter-clockwise, north at half pi), the cone's opening (radians) and how
-    /// clearly its edges stood out (0 to 2).</summary>
-    public sealed record Reading(double Yaw, double Width, double Score);
+    /// <summary>The camera's direction on the minimap (radians: 0 east, counter-clockwise, north at half pi), the cone's opening (radians), how clearly its
+    /// edges stood out (0 to 2) and where its tip (the player) was found from the spot given (pixels right and down).</summary>
+    public sealed record Reading(double Yaw, double Width, double Score, double Dx = 0, double Dy = 0);
 
     private const int Bins = 720; // half a degree each
 
+    /// <summary>How far from the spot given the cone's tip is looked for (pixels): the player's arrow is seldom exactly in the minimap's middle (5 November
+    /// 2026, the owner's minimap-log: of 98 reads 15 had it within 2 pixels, 41 were 4 to 12 off, and the cone read at the middle alone found nothing then -
+    /// the beam never stood).</summary>
+    private const int Reach = 10;
+
+    /// <summary>A read clear enough to take without looking around (two edges each three quarters white or better).</summary>
+    private const double Clear = 1.7;
+
+    private static readonly double[] Cos = Enumerable.Range(0, Bins).Select(b => Math.Cos(b * 2 * Math.PI / Bins)).ToArray();
+    private static readonly double[] Sin = Enumerable.Range(0, Bins).Select(b => Math.Sin(b * 2 * Math.PI / Bins)).ToArray();
+
     /// <summary>
     /// The cone around the player's spot (<paramref name="cx"/>, <paramref name="cy"/>, pixels of the picture <paramref name="argb"/>, a row after row of
-    /// 0xAARRGGBB) on a minimap reaching <paramref name="halfW"/> across and <paramref name="halfH"/> down from there. Null when no cone is seen (a menu over
-    /// it, another picture, no minimap). The spot a pixel or two off turns the reading by about a degree.
+    /// 0xAARRGGBB) on a minimap reaching <paramref name="halfW"/> across and <paramref name="halfH"/> down from there. When the spot is a few pixels off the
+    /// player, the tip is looked for around it: where both edges stand out most. Null when no cone is seen (a menu over it, another picture, no minimap).
     /// </summary>
     public static Reading? Read(int[] argb, int width, int height, double cx, double cy, double halfW, double halfH)
     {
         double r0 = halfH * 0.40, r1 = Math.Min(halfW, halfH) * 0.95;
-        return r1 - r0 < 12 || argb.Length < width * height ? null : ReadAt(argb, width, height, cx, cy, r0, r1);
+        if (r1 - r0 < 12 || argb.Length < width * height)
+        {
+            return null;
+        }
+
+        // each pixel once: white (bright and grey) or not, and how bright
+        var white = new bool[width * height];
+        var lum = new byte[width * height];
+        for (int i = 0; i < width * height; i++)
+        {
+            int p = argb[i];
+            int red = (p >> 16) & 255, green = (p >> 8) & 255, blue = p & 255;
+            int max = Math.Max(red, Math.Max(green, blue)), min = Math.Min(red, Math.Min(green, blue));
+            int l = (red + green + blue) / 3;
+            lum[i] = (byte)l;
+            white[i] = l >= 200 && max - min <= 60;
+        }
+
+        var picture = new Picture(white, lum, width, height);
+        Reading? best = ReadAt(picture, cx, cy, r0, r1);
+
+        // around the spot, every 2 pixels (unless the spot itself read clearly): the clearest; of two as clear the one nearer the spot given
+        double bx = 0, by = 0;
+        int reach = best is { Score: >= Clear } ? 0 : Reach;
+        for (int dy = -reach; dy <= reach; dy += 2)
+        {
+            for (int dx = -reach; dx <= reach; dx += 2)
+            {
+                if ((dx != 0 || dy != 0) && ReadAt(picture, cx + dx, cy + dy, r0, r1) is { } r
+                    && (best is null || r.Score > best.Score + 1e-9 || (Math.Abs(r.Score - best.Score) <= 1e-9 && (dx * dx) + (dy * dy) < (bx * bx) + (by * by))))
+                {
+                    best = r;
+                    bx = dx;
+                    by = dy;
+                }
+            }
+        }
+
+        if (best is null)
+        {
+            return null;
+        }
+
+        // then every pixel around it: the edges are two pixels wide, so a few spots read as clearly as the tip - the tip is the middle of them (taking the one
+        // nearest the spot given would pull the reading towards the spot given)
+        var fine = new List<(double Dx, double Dy, Reading Read)>();
+        for (int dy = -2; dy <= 2; dy++)
+        {
+            for (int dx = -2; dx <= 2; dx++)
+            {
+                if (ReadAt(picture, cx + bx + dx, cy + by + dy, r0, r1) is { } r)
+                {
+                    fine.Add((bx + dx, by + dy, r));
+                }
+            }
+        }
+
+        if (fine.Count == 0)
+        {
+            return best with { Dx = bx, Dy = by };
+        }
+
+        double top = fine.Max(f => f.Read.Score);
+        var clearest = fine.Where(f => f.Read.Score >= top - 0.02).ToList();
+        double mx = clearest.Average(f => f.Dx), my = clearest.Average(f => f.Dy);
+        Reading tip = ReadAt(picture, cx + mx, cy + my, r0, r1) ?? clearest.MinBy(f => ((f.Dx - mx) * (f.Dx - mx)) + ((f.Dy - my) * (f.Dy - my))).Read;
+        return tip with { Dx = mx, Dy = my };
     }
 
-    private static Reading? ReadAt(int[] argb, int w, int h, double cx, double cy, double r0, double r1)
+    private sealed record Picture(bool[] White, byte[] Lum, int Width, int Height);
+
+    private static Reading? ReadAt(Picture picture, double cx, double cy, double r0, double r1)
     {
+        int w = picture.Width, h = picture.Height;
         var white = new double[Bins];
         var lum = new double[Bins];
         for (int b = 0; b < Bins; b++)
         {
-            double a = b * 2 * Math.PI / Bins, cos = Math.Cos(a), sin = Math.Sin(a);
+            double cos = Cos[b], sin = Sin[b];
             int n = 0, whites = 0;
             double sum = 0;
             for (double r = r0; r <= r1; r += 2)
@@ -44,13 +124,10 @@ public static class MinimapCone
                     continue;
                 }
 
-                int p = argb[(y * w) + x];
-                int red = (p >> 16) & 255, green = (p >> 8) & 255, blue = p & 255;
-                int max = Math.Max(red, Math.Max(green, blue)), min = Math.Min(red, Math.Min(green, blue));
-                double l = (red + green + blue) / 3.0;
+                int i = (y * w) + x;
                 n++;
-                sum += l;
-                if (l >= 200 && max - min <= 60)
+                sum += picture.Lum[i];
+                if (picture.White[i])
                 {
                     whites++;
                 }
