@@ -161,7 +161,7 @@ public partial class MainWindow
         host.Children.Add(new Border { Background = bottom });
         host.Children.Add(new Border { BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(8), BorderBrush = new SolidColorBrush(Color.FromArgb(0x40, 0xDC, 0xB8, 0x77)) });
 
-        var words = new StackPanel { VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(30, 0, 30, 24), MaxWidth = 560 };
+        var words = new StackPanel { VerticalAlignment = VerticalAlignment.Bottom, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(30, 0, 30, 24), MaxWidth = 460 };
         var meta = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 8) };
         var tag = new Border { CornerRadius = new CornerRadius(3), Padding = new Thickness(7, 2, 7, 2), VerticalAlignment = VerticalAlignment.Center };
         var tagText = new TextBlock { FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x10, 0x12, 0x18)) };
@@ -180,7 +180,7 @@ public partial class MainWindow
         var summary = new TextBlock
         {
             FontSize = 13.5, Margin = new Thickness(0, 6, 0, 0), Foreground = new SolidColorBrush(Color.FromRgb(0xD6, 0xDC, 0xE4)), TextWrapping = TextWrapping.Wrap,
-            TextTrimming = TextTrimming.WordEllipsis, MaxHeight = 40, LineHeight = 20,
+            TextTrimming = TextTrimming.WordEllipsis, MaxHeight = 60, LineHeight = 20,
         };
         words.Children.Add(summary);
         var read = new Border
@@ -191,6 +191,7 @@ public partial class MainWindow
         };
         words.Children.Add(read);
         host.Children.Add(words);
+        host.SizeChanged += (_, e) => words.MaxWidth = Math.Max(340, (e.NewSize.Width * 0.5) - 30); // the left half: the pictures keep their right half free of words
 
         // arrows on the sides (with the mouse on the banner) and the dots
         var dots = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, 22, 20) };
