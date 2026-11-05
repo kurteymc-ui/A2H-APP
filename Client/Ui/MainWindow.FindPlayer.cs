@@ -18,7 +18,7 @@ namespace AionDPS.Ui;
 /// </summary>
 public partial class MainWindow
 {
-    private const string KofiPage = "https://atreia.app/go/kofi";
+    private const string KofiPage = "https://ko-fi.com/atreia";
 
     // ------------------------------------------------------------------ Tools and "…"
 
