@@ -635,7 +635,8 @@ public sealed class MeterSettings
     /// damage, or when a boss is pulled: the meter shows the current fight, the previous one is kept
     /// in the fight history. Off by default - a reset throws the fight on screen away, so it is the
     /// player's choice. Named AutoResetEnabled since 0.10.19: the earlier "AutoReset" (on by default)
-    /// was never a deliberate choice, and its saved value is dropped.</summary>
+    /// was never a deliberate choice, and its saved value is dropped. The next attempt on a boss after a wipe starts from zero also with it
+    /// off (Combat/BossFight.StartsNextAttempt, 5 November 2026).</summary>
     public bool AutoResetEnabled { get; set; }
 
     /// <summary>Seconds without damage after which the next fight starts from zero (1 to 600).</summary>

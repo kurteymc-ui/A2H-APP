@@ -1565,16 +1565,16 @@
     "ko": "전투 후 초기화 (초)"
   },
   "Settings.AutoReset.Tooltip": {
-    "en": "When a fight starts the set number of seconds or more after the last damage, the meter starts from zero. The previous fight stays on screen until then and is kept in the fight history. Never during an unfinished boss fight.",
-    "de": "Beginnt ein Kampf der eingestellten Zahl an Sekunden oder mehr nach dem letzten Schaden, beginnt das Meter bei null. Der vorige Kampf bleibt bis dahin sichtbar und wird im Kampfverlauf gespeichert. Nie während eines unbeendeten Bosskampfs.",
-    "fr": "Quand un combat commence le nombre de secondes choisi ou plus après les derniers dégâts, le compteur repart de zéro. Le combat précédent reste affiché jusque-là et est gardé dans l'historique. Jamais pendant un combat de boss inachevé.",
-    "es": "Cuando un combate empieza los segundos elegidos o más después del último daño, el medidor vuelve a cero. El combate anterior se ve hasta entonces y queda en el historial. Nunca durante un combate de jefe sin terminar.",
-    "ru": "Если бой начинается через 10 секунд или позже после последнего урона, счётчик начинает с нуля. Предыдущий бой виден до этого момента и сохраняется в истории. Никогда во время незавершённого боя с боссом.",
-    "zh": "当战斗在最后一次伤害 10 秒或更久之后开始时，统计从零开始。上一场战斗在此之前保持显示并保存在战斗记录中。未结束的首领战中绝不重置。",
-    "zh-TW": "當戰鬥在上次傷害後相隔所設秒數或更久才開始時，統計會從零重新開始。在此之前，上一場戰鬥會保持顯示，並保存在戰鬥歷史中。未結束的首領戰期間絕不會重設。",
-    "pt": "Quando uma luta começa o número definido de segundos ou mais após o último dano, o medidor recomeça do zero. A luta anterior permanece na tela até lá e é mantida no histórico de lutas. Nunca durante uma luta de chefe inacabada.",
-    "ja": "最後のダメージから設定した秒数以上経ってから戦闘が始まると、メーターはゼロから集計を始めます。それまでは前回の戦闘が画面に残り、戦闘履歴にも保存されます。未完了のボス戦中は決してリセットされません。",
-    "ko": "마지막 대미지 이후 설정한 시간(초) 이상 지나 새 전투가 시작되면 미터가 0부터 다시 시작합니다. 그때까지 이전 전투가 화면에 남아 있으며 전투 기록에 저장됩니다. 끝나지 않은 보스 전투 중에는 절대 초기화되지 않습니다."
+    "en": "When a fight starts the set number of seconds or more after the last damage, the meter starts from zero. The previous fight stays on screen until then and is kept in the fight history. Never during an unfinished boss fight. After a wipe, the next attempt on the boss always starts from zero, even with this off.",
+    "de": "Beginnt ein Kampf der eingestellten Zahl an Sekunden oder mehr nach dem letzten Schaden, beginnt das Meter bei null. Der vorige Kampf bleibt bis dahin sichtbar und wird im Kampfverlauf gespeichert. Nie während eines unbeendeten Bosskampfs. Nach einem Wipe beginnt der nächste Versuch am Boss immer bei null, auch wenn dies aus ist.",
+    "fr": "Quand un combat commence le nombre de secondes choisi ou plus après les derniers dégâts, le compteur repart de zéro. Le combat précédent reste affiché jusque-là et est gardé dans l'historique. Jamais pendant un combat de boss inachevé. Après un wipe, la tentative suivante sur le boss repart toujours de zéro, même si cette option est désactivée.",
+    "es": "Cuando un combate empieza los segundos elegidos o más después del último daño, el medidor vuelve a cero. El combate anterior se ve hasta entonces y queda en el historial. Nunca durante un combate de jefe sin terminar. Tras un wipe, el siguiente intento contra el jefe siempre empieza de cero, aunque esto esté desactivado.",
+    "ru": "Если бой начинается через 10 секунд или позже после последнего урона, счётчик начинает с нуля. Предыдущий бой виден до этого момента и сохраняется в истории. Никогда во время незавершённого боя с боссом. После вайпа следующая попытка на боссе всегда начинается с нуля, даже если это выключено.",
+    "zh": "当战斗在最后一次伤害 10 秒或更久之后开始时，统计从零开始。上一场战斗在此之前保持显示并保存在战斗记录中。未结束的首领战中绝不重置。团灭后，对首领的下一次尝试总是从零开始，即使此项关闭。",
+    "zh-TW": "當戰鬥在上次傷害後相隔所設秒數或更久才開始時，統計會從零重新開始。在此之前，上一場戰鬥會保持顯示，並保存在戰鬥歷史中。未結束的首領戰期間絕不會重設。團滅後，對首領的下一次嘗試一律從零開始，即使此項已關閉。",
+    "pt": "Quando uma luta começa o número definido de segundos ou mais após o último dano, o medidor recomeça do zero. A luta anterior permanece na tela até lá e é mantida no histórico de lutas. Nunca durante uma luta de chefe inacabada. Depois de um wipe, a próxima tentativa no chefe sempre recomeça do zero, mesmo com isto desligado.",
+    "ja": "最後のダメージから設定した秒数以上経ってから戦闘が始まると、メーターはゼロから集計を始めます。それまでは前回の戦闘が画面に残り、戦闘履歴にも保存されます。未完了のボス戦中は決してリセットされません。全滅後のボスへの次の挑戦は、この設定がオフでも常にゼロから始まります。",
+    "ko": "마지막 대미지 이후 설정한 시간(초) 이상 지나 새 전투가 시작되면 미터가 0부터 다시 시작합니다. 그때까지 이전 전투가 화면에 남아 있으며 전투 기록에 저장됩니다. 끝나지 않은 보스 전투 중에는 절대 초기화되지 않습니다. 전멸 후 보스에 대한 다음 도전은 이 설정이 꺼져 있어도 항상 0부터 시작합니다."
   },
   "Details.Tile.Taken": {
     "en": "TAKEN",

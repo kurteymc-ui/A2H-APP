@@ -1171,8 +1171,10 @@ public partial class MainWindow : Window
         NoteBossActivity(events);
         NoteDefeatedBosses();
 
-        // The "all sessions" view is a long record by design: the automatic reset between fights would leave only the last one.
-        if (_autoReset && !_historyMode && _sessionView == SessionView.Current && (StartsNewFight(events) || StartsNewBossPull(events)))
+        // The "all sessions" view is a long record by design: the automatic reset between fights would leave only the last one. The next attempt
+        // on a boss after a wipe starts from zero also with the automatic reset off (see BossFight.StartsNextAttempt), the way a map change does.
+        if (!_historyMode && _sessionView == SessionView.Current
+            && (_autoReset ? StartsNewFight(events) || StartsNewBossPull(events, afterWipeOnly: false) : StartsNewBossPull(events, afterWipeOnly: true)))
         {
             // Files the finished fight in the history, then starts from zero.
             ClearDamageData();
@@ -1270,76 +1272,15 @@ public partial class MainWindow : Window
     /// <summary>
     /// The first hit on a boss (or on a boss whose last attempt failed: reset to full health by a wipe, or out of combat alive for a while)
     /// starts the meter from zero: the trash before it, or the failed attempt, is filed in the history and the fight on screen is the
-    /// pull. See <see cref="BossFight.StartsNewPull"/>. (3 November 2026, the owner: a failed fight must not count into the next one.)
+    /// pull. See <see cref="BossFight.StartsNextAttempt"/>. (3 November 2026, the owner: a failed fight must not count into the next one.)
+    /// <paramref name="afterWipeOnly"/>: only the failed attempt, which ends the fight on screen also with the automatic reset off.
     /// </summary>
-    private bool StartsNewBossPull(IReadOnlyList<DamageEvent> batch)
-    {
-        if (_source?.Entities is not Aion2.Aion2EntityDirectory directory)
-        {
-            return false;
-        }
+    private bool StartsNewBossPull(IReadOnlyList<DamageEvent> batch, bool afterWipeOnly) =>
+        _source?.Entities is Aion2.Aion2EntityDirectory directory && BossFight.StartsNextAttempt(batch, _aggregator.Events, directory, afterWipeOnly);
 
-        DateTime now = batch.Count > 0 ? batch.Max(ev => ev.Timestamp) : DateTime.Now;
-        return BossFight.StartsNewPull(batch, _aggregator.Events,
-            id => directory.BossNpcIdOf(id) is not null,
-            id => Latest(directory.HitPoints.ResetsOf(id) is { Count: > 0 } resets ? resets[^1] : null, directory.FailedEndOf(id, now)),
-            id => BossFightUnfinished(except: id, now: now));
-    }
-
-    private static DateTime? Latest(DateTime? a, DateTime? b) => a is DateTime x && b is DateTime y ? (x > y ? x : y) : a ?? b;
-
-    /// <summary>A boss nobody has hit for this long no longer holds the fight open (the group left it, or the meter missed its end).</summary>
-    private static readonly TimeSpan BossFightAbandoned = TimeSpan.FromMinutes(3);
-
-    /// <summary>
-    /// A boss fight still going: a boss hurt and alive that someone hit - unless that fight is over: the boss's attempt failed after the
-    /// last hit (out of combat alive, see <see cref="Aion2.Aion2EntityDirectory.FailedEndOf"/>), it disappeared after it (out of range, gone,
-    /// another zone), or nobody has hit it for <see cref="BossFightAbandoned"/>. Before, such a boss kept every reset away, so the next fight
-    /// was added to the failed one.
-    /// </summary>
-    private bool BossFightUnfinished(int? except = null, DateTime? now = null)
-    {
-        if (_source?.Entities is not Aion2.Aion2EntityDirectory directory)
-        {
-            return false;
-        }
-
-        IReadOnlyList<DamageEvent> events = _aggregator.Events;
-        foreach ((int entityId, _) in directory.KnownBosses())
-        {
-            if (entityId == except || directory.HitPoints.Latest(entityId) is not { } hp || hp.Hp <= 0
-                || hp.Hp >= (directory.HitPoints.HighestSeen(entityId) ?? 0) * 0.99)
-            {
-                continue;
-            }
-
-            DateTime? lastHit = null;
-            for (int i = events.Count - 1; i >= 0; i--)
-            {
-                if (!events[i].IsHeal && events[i].TargetObjectId == entityId)
-                {
-                    lastHit = events[i].Timestamp;
-                    break;
-                }
-            }
-
-            if (lastHit is not DateTime hit)
-            {
-                continue;
-            }
-
-            DateTime at = now ?? (events.Count > 0 ? events[^1].Timestamp : DateTime.Now);
-            bool over = directory.FailedEndOf(entityId, at) is DateTime failed && failed >= hit
-                || directory.RemovalOf(entityId) is { } removed && removed.At >= hit
-                || at - hit >= BossFightAbandoned;
-            if (!over)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
+    /// <summary>A boss fight still going (see <see cref="BossFight.Unfinished"/>): it keeps the reset after a quiet spell away.</summary>
+    private bool BossFightUnfinished(int? except = null, DateTime? now = null) =>
+        _source?.Entities is Aion2.Aion2EntityDirectory directory && BossFight.Unfinished(directory, _aggregator.Events, except, now);
 
     /// <summary>The old per-fight history (fights.db) is gone for good - sessions replaced it - so a file left by an earlier version is removed.</summary>
     private static void DeleteLegacyFightHistory()

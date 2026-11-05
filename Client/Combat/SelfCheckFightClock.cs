@@ -36,8 +36,9 @@ public static class SelfCheckFightClock
         bool failed = FailedAttempts();
         bool death = EndsAtDeath();
         bool adds = OnlyAdds();
-        bool ok = start && reset && format && colours && perBoss && failed && death && adds;
-        Console.WriteLine($"  -> start kept at the first signal={start}, cleared when the boss leaves combat={reset}, m:ss and h:mm:ss={format}, yellow from 4:00 and red from 4:40={colours}, per-boss rage time={perBoss}, a failed attempt starts the next pull from zero={failed}: {(ok ? "OK" : "FAILED")}");
+        bool wipes = WipeInTheSameRoom();
+        bool ok = start && reset && format && colours && perBoss && failed && death && adds && wipes;
+        Console.WriteLine($"  -> start kept at the first signal={start}, cleared when the boss leaves combat={reset}, m:ss and h:mm:ss={format}, yellow from 4:00 and red from 4:40={colours}, per-boss rage time={perBoss}, a failed attempt starts the next pull from zero={failed}, also with the automatic reset off (Krao Cave)={wipes}: {(ok ? "OK" : "FAILED")}");
         return ok;
     }
 
@@ -74,6 +75,69 @@ public static class SelfCheckFightClock
         var sameAttempt = new List<DamageEvent> { new(t0.AddSeconds(15), 1, 900, 50, IsHeal: false) };
         bool keep = !BossFight.StartsNewPull(sameAttempt, recorded, id => id == 900, _ => null, _ => false);
         return open && closed && none && pull && keep;
+    }
+
+    /// <summary>
+    /// The Krao Cave run of 4 November 2026: the group wiped on Ultimate Berk three times, revived inside the cave (no map change) and the boss kept
+    /// its entity id; the meter kept all four attempts as one fight, its automatic reset being off. Now the next attempt after a wipe starts from zero
+    /// whatever that setting is (5 November 2026, the owner: "it should be like that in every raid"): by the boss back at full health, and by the boss
+    /// out of combat alive when no reading at full health came. The first hit on the boss with the reset off leaves the trash before on screen; another
+    /// boss still being fought (hurt, alive, hit) holds the fight open. The numbers are the recording's (Berk 24,316,500 in a party of four).
+    /// </summary>
+    private static bool WipeInTheSameRoom()
+    {
+        var dir = new Aion2EntityDirectory();
+        var t0 = new DateTime(2026, 11, 4, 21, 10, 0);
+        const int berk = 21505, harcon = 53144, gadioton = 44089, trash = 30001;
+        dir.RegisterNpc(berk, 2320171);
+        dir.RegisterNpc(harcon, 2320104);
+        dir.RegisterNpc(gadioton, 2320108);
+        bool known = dir.BossNpcIdOf(berk) == 2320171 && dir.BossNpcIdOf(trash) is null;
+        // the bosses before: killed
+        dir.HitPoints.Note(harcon, t0.AddSeconds(-90), 18_574_526);
+        dir.HitPoints.Note(harcon, t0.AddSeconds(20), 0);
+        var recorded = new List<DamageEvent> { new(t0.AddSeconds(10), 1, trash, 900, IsHeal: false), new(t0.AddSeconds(19), 1, harcon, 5_000, IsHeal: false) };
+        List<DamageEvent> Hit(double s) => new() { new DamageEvent(t0.AddSeconds(s), 2, berk, 7_900, IsHeal: false) };
+
+        // the first pull: from zero with the automatic reset on, the trash and Harcon stay with it off
+        dir.NoteEngaged(berk, t0.AddSeconds(62), exact: true);
+        dir.HitPoints.Note(berk, t0.AddSeconds(63), 24_312_032);
+        bool firstOn = BossFight.StartsNextAttempt(Hit(63), recorded, dir, afterWipeOnly: false);
+        bool firstOff = !BossFight.StartsNextAttempt(Hit(63), recorded, dir, afterWipeOnly: true);
+        recorded.AddRange(Hit(63));
+        dir.HitPoints.Note(berk, t0.AddSeconds(101), 20_901_738);
+        recorded.AddRange(Hit(101));
+        bool sameAttempt = !BossFight.StartsNextAttempt(Hit(101.5), recorded, dir, afterWipeOnly: true);
+
+        // the wipe: out of combat at 106 s, back at full health at 107.6 s, pulled again at 120.8 s
+        dir.NoteDisengaged(berk, t0.AddSeconds(106.2));
+        dir.HitPoints.Note(berk, t0.AddSeconds(107.6), 24_316_500);
+        dir.NoteEngaged(berk, t0.AddSeconds(120.9), exact: true);
+        bool retry = BossFight.StartsNextAttempt(Hit(120.8), recorded, dir, afterWipeOnly: true)
+            && BossFight.StartsNextAttempt(Hit(120.8), recorded, dir, afterWipeOnly: false);
+
+        // the same wipe seen by a player who was dead and far: no reading at full health, only the boss out of combat for 14 s
+        var far = new Aion2EntityDirectory();
+        far.RegisterNpc(berk, 2320171);
+        far.HitPoints.Note(berk, t0.AddSeconds(63), 24_312_032);
+        far.HitPoints.Note(berk, t0.AddSeconds(101), 20_901_738);
+        far.NoteDisengaged(berk, t0.AddSeconds(106.2));
+        bool retryFar = BossFight.StartsNextAttempt(Hit(120.8), recorded, far, afterWipeOnly: true);
+
+        // two bosses at once: Gadioton hurt, alive and hit a moment ago holds the fight open
+        dir.HitPoints.Note(gadioton, t0.AddSeconds(60), 18_563_287);
+        dir.HitPoints.Note(gadioton, t0.AddSeconds(104), 9_000_000);
+        var withOther = new List<DamageEvent>(recorded) { new(t0.AddSeconds(104), 3, gadioton, 6_000, IsHeal: false) };
+        bool heldOpen = !BossFight.StartsNextAttempt(Hit(120.8), withOther, dir, afterWipeOnly: true);
+
+        bool ok = known && firstOn && firstOff && sameAttempt && retry && retryFar && heldOpen;
+        if (!ok)
+        {
+            Console.WriteLine($"  -> Krao Cave wipes: boss known={known}, first pull with the reset on={firstOn}, kept with it off={firstOff}, same attempt kept={sameAttempt}, "
+                + $"after the wipe={retry}, seen from afar={retryFar}, another boss held it open={heldOpen}");
+        }
+
+        return ok;
     }
 
     /// <summary>A boss fight runs to the last hit on the boss, the blows the game reports just after the kill included, as the other meters count it
