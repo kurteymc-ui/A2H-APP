@@ -1,0 +1,45 @@
+name: Voice
+
+# Records the natural voice of the skill and boss announcements (Tools/voice: every phrase of phrases.json spoken by Kokoro-82M, Apache-2.0) and puts
+# the clips on the "voice" branch, to be taken into Client/assets/voice after a listen.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [".github/workflows/voice.yml", "Tools/voice/**"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: voice
+  cancel-in-progress: true
+
+jobs:
+  voice:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Record the clips
+        run: |
+          sudo apt-get install -y -q ffmpeg > /dev/null
+          pip install -q kokoro-onnx soundfile
+          base=https://github.com/thewh1teagle/kokoro-onnx/releases/download/model-files-v1.0
+          curl -sSL -o kokoro.onnx "$base/kokoro-v1.0.onnx"
+          curl -sSL -o voices.bin "$base/voices-v1.0.bin"
+          python3 Tools/voice/render.py Tools/voice/phrases.json kokoro.onnx voices.bin out/en-heart
+          du -sh out/en-heart
+          ls out/en-heart | wc -l
+      - name: Put them on the voice branch
+        run: |
+          cd out
+          git init -q
+          git checkout -q -b voice
+          git add .
+          git -c user.name="voice" -c user.email="voice@users.noreply.github.com" commit -q -m "Voice clips for $GITHUB_SHA"
+          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}" voice
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
