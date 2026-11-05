@@ -1395,8 +1395,9 @@ internal static class Program
                 row.Absorbed = rank switch { 1 => 41_800, 3 => 12_400, 4 => 18_900, _ => 0 }; // a group shield on three of them
             }
 
-            // the bar's parts (MeterBarParts): what the buffs lent the others, much from the Cleric, and the healing on the others, over the fight's 1:51
-            row.Given = x.Cls switch { "Cleric" => 1_480, "Spiritmaster" => 310, _ => 120 + 40 * (5 - rank) };
+            // the bar's parts (MeterBarParts): what the buffs lent the others - much from the Cleric, a little from the Gladiator's counter, nothing from a
+            // Ranger or a Sorcerer (their effects are all on themselves) - and the healing on the others, over the fight's 1:51
+            row.Given = x.Cls switch { "Cleric" => 1_480, "Gladiator" => 210, _ => 0 };
             row.HealOthers = x.Cls switch { "Cleric" => 352_000, "Spiritmaster" => 21_600, _ => 0 };
             row.HealOthersRate = row.HealOthers > 0 ? row.HealOthers / 111.0 : null;
             if (kind == "rdps")

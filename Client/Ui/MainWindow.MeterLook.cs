@@ -286,9 +286,11 @@ public partial class MainWindow
             {
                 Name = x.Name, ClassName = x.Cls, Damage = x.Dmg, Dps = x.Dps, SharePercent = 100.0 * x.Dmg / total, FillPercent = 100.0 * x.Dmg / sample[0].Dmg, Rank = rank,
                 CombatPowerText = PlayerRow.Compact(162_000 + 8_700 * (7 - rank)),
-                // what the buffs lent the others (rDPS − nDPS): much from the Chanter and the Cleric, a little from the debuffs of the others
-                Rdps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 1.55 : 0.92), Ndps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 0.97 : 0.86),
-                Given = x.Cls is "Chanter" or "Cleric" ? x.Dps * 0.58 : x.Dps * 0.06,
+                // what the buffs lent the others (rDPS − nDPS): much from the Chanter and the Cleric, a little from the Gladiator's counter and the Templar's
+                // Fury, nothing from the Ranger and the Sorcerer (all their effects are on themselves)
+                Rdps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 1.55 : x.Cls is "Gladiator" or "Templar" ? 0.92 : 0.86),
+                Ndps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 0.97 : 0.86),
+                Given = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 0.58 : x.Cls is "Gladiator" or "Templar" ? 0.06 : 0),
                 // the healing on the others over the sample's two minutes: the Cleric's most, the Chanter's some, a little from the Templar
                 HealOthers = x.Cls switch { "Cleric" => 384_000, "Chanter" => 168_000, "Templar" => 24_000, _ => 0 },
                 Hits = new HitStats { Direct = 400 + rank * 37, Crit = (400 + rank * 37) * x.Crit / 100, Kinded = 400, Back = 4 * x.Back, Front = 4 * x.Front, Perfect = 4 * x.Perfect, Double = 4 * x.Double, Parry = rank == 4 ? 12 : 4 },
