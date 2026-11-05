@@ -751,6 +751,7 @@ public partial class MainWindow
             // the meter's own switches (they were in its "…" menu until 5 November 2026; the owner: "just redirect")
             Check("Fold to the bar until a boss fight or a training dummy", null, now.MeterFoldIdle, on => Change(s => s.MeterFoldIdle = on)),
             Check("Odyle Energy, Shugo and the other counters at the bottom", null, now.MeterShowTickets, on => Change(s => s.MeterShowTickets = on)),
+            Check("Boss health over the lines: what is left, time to kill, enrage", null, now.MeterBossLine, on => Change(s => s.MeterBossLine = on)),
             Check("Boss timers: the next casts and the enrage", null, now.OverlayBossTimers, on => Change(s => s.OverlayBossTimers = on)),
             Check("Everyone in dungeons, only me at training dummies", null, now.AutoScope, on => Change(s => s.AutoScope = on))));
 

@@ -1478,6 +1478,12 @@ internal static class Program
             // the bar's own character and the counters at the foot, as on any meter in the game
             window.ShowOverlayIdentity("Jinwoo", "Gladiator", 196_500);
             window.ShowOverlayTickets(Ui.MainWindow.SampleTickets());
+            if (kind is "compact" or "rdps")
+            {
+                // the boss line over the lines, as in a boss fight: what is left of it, when it dies at the group's pace, its enrage
+                window.ShowBossBar("Transcendent Bakarma", 3_140_000, 12_600_000, TimeSpan.FromSeconds(111), TimeSpan.FromSeconds(129));
+            }
+
             if (kind == "bar")
             {
                 // folded between fights: the bar (with a cube in range) and the counters, nothing of the last fight

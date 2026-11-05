@@ -867,6 +867,10 @@ public sealed class MeterSettings
     /// others' damage, a green part for their healing on the others, with the "+" figures beside the rate (5 November 2026, the owner). On by default.</summary>
     public bool MeterBarParts { get; set; } = true;
 
+    /// <summary>The boss's health over the meter's lines: what is left of it and its whole, when it dies, its enrage (MainWindow.BossBar.cs). Its own switch
+    /// since 5 November 2026: it went with the combat overlay's health bar switch (ShowBossHp), and a player who switched that big bar off lost the line too.</summary>
+    public bool MeterBossLine { get; set; } = true;
+
     /// <summary>The buttons in the meter's head: "always", or "hover" (only while the mouse is over the meter).</summary>
     public string MeterHeaderButtons { get; set; } = "always";
 

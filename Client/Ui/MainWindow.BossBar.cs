@@ -10,7 +10,8 @@ namespace AionDPS.Ui;
 /// long it has to die compared to the DPS", then: "simple, not a huge bar, just a text like 50m/120m and time to enrage / time to kill"): between the meter's
 /// head and its lines, one line - what is left of the boss and its whole, its name, when it dies at the pace of the last 15 seconds of its health readings
 /// (everybody's damage; the group's DPS until there is a pace) and its enrage: green when it dies first, red when the enrage comes first. The boss is the one the combat overlay followed (the target,
-/// else the boss last hit, else the boss casting); the bar goes with the meter's switch for the boss's health (Settings, Combat).
+/// else the boss last hit, else the boss casting); it has its own switch in Meter look (MeterBossLine), no longer the combat overlay's health bar switch, which
+/// a player turning the old big bar off had turned off with it.
 /// </summary>
 public partial class MainWindow
 {
@@ -29,7 +30,7 @@ public partial class MainWindow
             return; // the pictures fill it themselves
         }
 
-        if (!_gateSettings.ShowBossHp || _pvpOnly || _historyMode || _source?.Entities is not Aion2.Aion2EntityDirectory dir
+        if (!_gateSettings.MeterBossLine || _pvpOnly || _historyMode || _source?.Entities is not Aion2.Aion2EntityDirectory dir
             || CombatOverlayData.BossHp(dir, DateTime.Now) is not { } boss)
         {
             OverlayBossBar.Visibility = Visibility.Collapsed;
