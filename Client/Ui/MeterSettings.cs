@@ -863,6 +863,10 @@ public sealed class MeterSettings
     /// <summary>The letter or % sign after a figure (12.4K, 38%) is printed smaller and dimmer, as a log's table prints it. Off by default.</summary>
     public bool MeterSmallUnits { get; set; }
 
+    /// <summary>The meter's bars carry what a player did for the others after their own damage: a grey part for what their buffs added to the
+    /// others' damage, a green part for their healing on the others, with the "+" figures beside the rate (5 November 2026, the owner). On by default.</summary>
+    public bool MeterBarParts { get; set; } = true;
+
     /// <summary>The buttons in the meter's head: "always", or "hover" (only while the mouse is over the meter).</summary>
     public string MeterHeaderButtons { get; set; } = "always";
 

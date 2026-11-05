@@ -286,8 +286,11 @@ public partial class MainWindow
             {
                 Name = x.Name, ClassName = x.Cls, Damage = x.Dmg, Dps = x.Dps, SharePercent = 100.0 * x.Dmg / total, FillPercent = 100.0 * x.Dmg / sample[0].Dmg, Rank = rank,
                 CombatPowerText = PlayerRow.Compact(162_000 + 8_700 * (7 - rank)),
-                Rdps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 1.55 : 1.02), Ndps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 0.97 : 0.86),
-                Given = x.Cls is "Chanter" or "Cleric" ? x.Dps * 0.58 : x.Dps * 0.16,
+                // what the buffs lent the others (rDPS − nDPS): much from the Chanter and the Cleric, a little from the debuffs of the others
+                Rdps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 1.55 : 0.92), Ndps = x.Dps * (x.Cls is "Chanter" or "Cleric" ? 0.97 : 0.86),
+                Given = x.Cls is "Chanter" or "Cleric" ? x.Dps * 0.58 : x.Dps * 0.06,
+                // the healing on the others over the sample's two minutes: the Cleric's most, the Chanter's some, a little from the Templar
+                HealOthers = x.Cls switch { "Cleric" => 384_000, "Chanter" => 168_000, "Templar" => 24_000, _ => 0 },
                 Hits = new HitStats { Direct = 400 + rank * 37, Crit = (400 + rank * 37) * x.Crit / 100, Kinded = 400, Back = 4 * x.Back, Front = 4 * x.Front, Perfect = 4 * x.Perfect, Double = 4 * x.Double, Parry = rank == 4 ? 12 : 4 },
             };
             var badges = new List<SupportBadge>
@@ -301,9 +304,11 @@ public partial class MainWindow
             }
 
             row.SupportBadges = badges;
+            row.HealOthersRate = row.HealOthers > 0 ? row.HealOthers / 120.0 : null;
             rows.Add(row);
         }
 
+        MeterBarParts.Apply(rows, rdpsView: false, on: true, seconds: 120);
         return rows;
     }
 
@@ -360,6 +365,7 @@ public partial class MainWindow
         void DrawPreview(MeterSettings s)
         {
             MeterLook look = MeterLook.From(s);
+            MeterBarParts.Apply(samples, rdpsView: false, look.BarParts, seconds: 120);
             preview.Children.Clear();
             previewHost.Width = look.PanelWidth;
             // the head: the clock, the boss, and the buttons (dimmed when they show only under the mouse)
@@ -401,6 +407,13 @@ public partial class MainWindow
                 Margin = new Thickness(0, 0, 0, 2),
             };
             lines.Children.Add(list);
+            if (look.BarParts)
+            {
+                UIElement legend = MeterBarParts.Legend(look, rdpsView: false);
+                ((FrameworkElement)legend).Margin = new Thickness(10, 1, 10, 4);
+                lines.Children.Add(legend);
+            }
+
             preview.Children.Add(lines);
             if (s.MeterShowStatus)
             {
@@ -635,7 +648,9 @@ public partial class MainWindow
         }
 
         left.Children.Add(Section(loc["Look.Bars"],
-            Choices(MeterLook.Bars, MeterLook.From(now).Bar, BarTile, bar => Change(s => s.MeterBarStyle = bar))));
+            Choices(MeterLook.Bars, MeterLook.From(now).Bar, BarTile, bar => Change(s => s.MeterBarStyle = bar)),
+            Check("Buffs and healing on the bar", "After a player's own damage the bar goes on in grey for what their buffs added to the others' damage and in green for their healing on the others, with the + figures beside the rate. In the rDPS view the bar is rDPS + healing.",
+                now.MeterBarParts, on => Change(s => s.MeterBarParts = on))));
 
         // lines
         left.Children.Add(Section(loc["Look.Lines"],

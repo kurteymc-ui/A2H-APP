@@ -1145,6 +1145,9 @@
                                             <ProgressBar Template="{StaticResource GlowBarTemplate}" Minimum="0" Maximum="100" IsHitTestVisible="False" Value="{Binding FillPercent, Mode=OneWay}"
                                                          Foreground="{Binding ClassGlowBrush}" BorderBrush="{Binding ClassLineBrush}" Background="Transparent" Margin="0,2"
                                                          Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
+                                            <!-- the bar's grey and green parts after the class colour (MeterBarParts): buffs for others, healing on others -->
+                                            <local:MeterBarPartsView Shape="round" Own="{Binding FillPercent, Mode=OneWay}" GivenEnd="{Binding GivenFillPercent, Mode=OneWay}" HealEnd="{Binding HealFillPercent, Mode=OneWay}"
+                                                                     Margin="0,2" Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
                                             <StackPanel VerticalAlignment="Center" Margin="8,3,8,3">
                                                 <Grid>
                                                     <Grid.ColumnDefinitions>
@@ -1517,6 +1520,9 @@
                         <ContentControl x:Name="CompactOverlayTitles" Focusable="False" IsTabStop="False"/>
                         <local:QuietItemsControl x:Name="CompactOverlayRows" Margin="0,0,0,2"/>
                     </StackPanel>
+                    <!-- What the bar's colours are when its parts show (MeterBarParts): own damage, buffs for others, healing on others; outside the
+                         lines, so a meter sized to a few lines never cuts it off. -->
+                    <ContentControl x:Name="OverlayBarLegend" Focusable="False" IsTabStop="False" Visibility="Collapsed" Margin="10,1,10,4"/>
                     <!-- Buffs: the effects on you over the fight shown, with their uptime. -->
                     <ItemsControl x:Name="OverlayBuffRows" Visibility="Collapsed" Margin="10,0,10,4">
                         <ItemsControl.ItemTemplate>
@@ -1591,6 +1597,8 @@
                         <ProgressBar Template="{StaticResource GlowBarTemplate}" Minimum="0" Maximum="100" IsHitTestVisible="False" Value="{Binding FillPercent, Mode=OneWay}"
                                      Foreground="{Binding ClassGlowBrush}" BorderBrush="{Binding ClassLineBrush}" Background="Transparent" Margin="0,1"
                                      Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
+                        <local:MeterBarPartsView Shape="round" Own="{Binding FillPercent, Mode=OneWay}" GivenEnd="{Binding GivenFillPercent, Mode=OneWay}" HealEnd="{Binding HealFillPercent, Mode=OneWay}"
+                                                 Margin="0,1" Visibility="{Binding ShowShareBar, Converter={StaticResource BoolToVis}}"/>
                         <StackPanel VerticalAlignment="Center">
                             <!-- Same fixed columns as the window's row: rank, class icon, name, then DPS and
                                  damage in columns shared by all chips. -->

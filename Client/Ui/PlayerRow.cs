@@ -163,6 +163,49 @@ public sealed class PlayerRow : INotifyPropertyChanged
 
     public string GivenText => Given is double v && v >= 0.5 ? "+" + Compact((long)Math.Round(v)) : "–";
 
+    /// <summary>The healing this player did on the others (not on themself, not on summoned spirits) in the shown window, and per second of it:
+    /// the green part of the bar (<see cref="MeterBarParts"/>). 0 / null when not worked out.</summary>
+    public long HealOthers { get; set; }
+
+    public double? HealOthersRate { get; set; }
+
+    /// <summary>Where the grey part of the bar ends (the own damage, then the buffs given to the others), 0-100 as <see cref="FillPercent"/>;
+    /// <see cref="FillPercent"/> itself when there is no grey part.</summary>
+    public double GivenFillPercent
+    {
+        get => _givenFill;
+        set { if (_givenFill == value) { return; } _givenFill = value; OnPropertyChanged(); }
+    }
+
+    private double _givenFill;
+
+    /// <summary>Where the green part of the bar ends (after the grey one: the healing on the others), 0-100.</summary>
+    public double HealFillPercent
+    {
+        get => _healFill;
+        set { if (_healFill == value) { return; } _healFill = value; OnPropertyChanged(); }
+    }
+
+    private double _healFill;
+
+    /// <summary>The "+" figures beside the rate: what the buffs gave the others per second (grey) and the healing on the others per second (green);
+    /// empty when there is none or the parts are off.</summary>
+    public string BarGivenText
+    {
+        get => _barGivenText;
+        set { if (_barGivenText == value) { return; } _barGivenText = value; OnPropertyChanged(); }
+    }
+
+    private string _barGivenText = "";
+
+    public string BarHealText
+    {
+        get => _barHealText;
+        set { if (_barHealText == value) { return; } _barHealText = value; OnPropertyChanged(); }
+    }
+
+    private string _barHealText = "";
+
     /// <summary>The party buffs on this player right now ("Undefeated Mantra · Wind of Power"), empty when none or switched off.</summary>
     public string BuffLine
     {

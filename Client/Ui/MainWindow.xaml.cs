@@ -2264,6 +2264,12 @@ public partial class MainWindow : Window
             ? HostileHitsTaken(filteredSpan).GroupBy(ev => ev.TargetObjectId).ToDictionary(g => g.Key, g => g.Sum(ev => ev.Amount))
             : new Dictionary<int, long>();
 
+        // The bar's green part (MeterBarParts): each player's healing on the others over the same span, not on themself (a self-heal helps nobody else).
+        Dictionary<int, long> healOthersById = BarPartsOn
+            ? HealsInSpan(filteredSpan).Where(ev => ev.TargetObjectId != ev.SourceObjectId).GroupBy(ev => ev.SourceObjectId).ToDictionary(g => g.Key, g => g.Sum(ev => ev.Amount))
+            : new Dictionary<int, long>();
+        double healSeconds = filteredSpan is (DateTime healFrom, DateTime healTo) && healTo > healFrom ? (healTo - healFrom).TotalSeconds : 0;
+
         // All in One: what the group shields absorbed from monsters, beside the damage taken (blue part of it).
         Dictionary<int, long> absorbedById = _allData
             ? _aggregator.Shields
@@ -2410,6 +2416,8 @@ public partial class MainWindow : Window
             row.AllMode = _allMode;
             row.AllCompact = _allCompactMode;
             row.Healing = healingById.GetValueOrDefault(sourceId);
+            row.HealOthers = healOthersById.GetValueOrDefault(sourceId);
+            row.HealOthersRate = healSeconds > 0 && row.HealOthers > 0 ? row.HealOthers / healSeconds : null;
             row.Absorbed = absorbedById.GetValueOrDefault(sourceId);
             row.DamageTaken = _allData ? hostileTakenById.GetValueOrDefault(sourceId) : TakenOf(sourceId);
             row.Deaths = 0;
@@ -2674,6 +2682,9 @@ public partial class MainWindow : Window
                 row.AbsorbedFillPercent = 0;
             }
 
+            // the bar in parts: nDPS, the buffs given (to rDPS), the healing on the others; or rDPS alone as before
+            MeterBarParts.Apply(_rows, rdpsView: true, BarPartsOn, _rdpsSeconds);
+            UpdateBarLegend();
             return;
         }
 
@@ -2688,6 +2699,56 @@ public partial class MainWindow : Window
             row.SharePercent = shownTotal > 0 ? 100.0 * row.Damage / shownTotal : 0;
             row.FillPercent = shownMax > 0 ? 100.0 * row.Damage / shownMax : 0;
             row.AbsorbedFillPercent = _takenMode && shownMax > 0 && row.Absorbed > 0 ? 100.0 * (row.Damage + row.Absorbed) / shownMax : 0;
+        }
+
+        if (BarPartsOn)
+        {
+            // the damage, the damage the buffs gave the others, the healing on the others, against the longest of those bars
+            MeterBarParts.Apply(_rows, rdpsView: false, on: true, _rdpsSeconds);
+        }
+        else
+        {
+            foreach (PlayerRow row in _rows)
+            {
+                MeterBarParts.Clear(row);
+            }
+        }
+
+        UpdateBarLegend();
+    }
+
+    /// <summary>The bars are drawn in parts (MeterBarParts): in the damage views (DPS, rDPS, All in One) outside PvP, when the look has them (Meter look).</summary>
+    private bool BarPartsOn => _meterLook.BarParts && !_pvpOnly && _mode is MeterMode.Damage or MeterMode.Raid or MeterMode.All or MeterMode.AllCompact;
+
+    /// <summary>The span the last rDPS was worked out over: the given part of a damage bar is the buffs' rate over it.</summary>
+    private double _rdpsSeconds;
+
+    private string _barLegendKey = "";
+
+    /// <summary>The pictures of the build: the sample lines' bars in parts, as RankRows draws them, and the line naming the colours.</summary>
+    internal void ShowSampleBarParts(bool rdpsView, double seconds)
+    {
+        _rdpsSeconds = seconds;
+        MeterBarParts.Apply(_rows, rdpsView, BarPartsOn, seconds);
+        UpdateBarLegend();
+    }
+
+    /// <summary>The line under the meter's lines that names the bar's colours, while some line has a grey or green part.</summary>
+    internal void UpdateBarLegend()
+    {
+        bool show = BarPartsOn && CompactOverlayRowsArea.Visibility == Visibility.Visible && _rows.Any(r => r.HealFillPercent - r.FillPercent >= 0.3);
+        OverlayBarLegend.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (!show)
+        {
+            return;
+        }
+
+        bool rdps = _rows.Count > 0 && _rows[0].RdpsView;
+        string key = _meterLook.Key + "|" + rdps;
+        if (key != _barLegendKey)
+        {
+            _barLegendKey = key;
+            OverlayBarLegend.Content = MeterBarParts.Legend(_meterLook, rdps);
         }
     }
 
@@ -2741,7 +2802,7 @@ public partial class MainWindow : Window
         }
 
         // the meter's rDPS / nDPS / given columns (Meter look) want the same figures in every damage view
-        bool wanted = on || (!_pvpOnly && (_meterLook.Has("rdps") || _meterLook.Has("ndps") || _meterLook.Has("given")));
+        bool wanted = on || (!_pvpOnly && (_meterLook.Has("rdps") || _meterLook.Has("ndps") || _meterLook.Has("given") || BarPartsOn));
         if (!wanted || span is not (DateTime from, DateTime to) || to <= from || _source?.Entities is not Aion2.Aion2EntityDirectory directory)
         {
             return;
@@ -2777,6 +2838,7 @@ public partial class MainWindow : Window
             var participants = players.Select(r => new RaidParticipant(r.ObjectId, r.Dps ?? 0,
                 onPlayers.TryGetValue(r.ObjectId, out var buffs) ? buffs : new List<RaidBuff>(), hitsBy.GetValueOrDefault(r.ObjectId))).ToList();
             Dictionary<int, RaidDpsResult> results = RaidDps.Compute(participants, onBoss, (to - from).TotalSeconds);
+            _rdpsSeconds = (to - from).TotalSeconds;
             // Nobody in the list buffed anyone (open world, a solo run, a group without a Chanter or Cleric): rDPS and nDPS would only repeat DPS,
             // which looked like a fault ("rDPS shows the same as DPS"). The columns then show "–" (their tips say why); the rDPS view shows each
             // player's DPS, which is their rDPS then.
@@ -2850,6 +2912,8 @@ public partial class MainWindow : Window
             row.AllMode = false;
             row.AllCompact = false;
             row.Healing = 0;
+            row.HealOthers = 0;
+            row.HealOthersRate = null;
             row.Deaths = 0;
             row.ShowShareBar = _showShareBars;
             row.ShowDamageTaken = false;

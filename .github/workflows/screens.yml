@@ -32,6 +32,7 @@ jobs:
           $shots = @(
             @('render-overlay', 'window.png', 'window'),
             @('render-overlay', 'compact.png', 'compact'),
+            @('render-overlay', 'compact-rdps.png', 'rdps'),
             @('render-overlay', 'bar.png', 'bar'),
             @('render-overlay', 'dummy.png', 'dummy'),
             @('render-overlay', 'find.png', 'find'),

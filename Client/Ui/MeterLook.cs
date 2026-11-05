@@ -121,6 +121,10 @@ public sealed class MeterLook
     /// <summary>The letter or % sign after a figure (12.4K, 38%) is printed smaller and dimmer, so the digits stand out.</summary>
     public bool SmallUnits { get; init; }
 
+    /// <summary>After the own damage the bar goes on in grey for the buffs given to the others and in green for the healing on the others
+    /// (<see cref="MeterBarParts"/>), with their "+" figures beside the rate.</summary>
+    public bool BarParts { get; init; } = true;
+
     public static MeterLook From(MeterSettings s) => new()
     {
         Bar = Bars.Contains(s.MeterBarStyle) ? s.MeterBarStyle : "glow",
@@ -131,6 +135,7 @@ public sealed class MeterLook
         Shown = (s.MeterColumns ?? DefaultColumns.ToList()).Where(id => NameParts.Contains(id) || Columns.Any(c => c.Id == id)).ToHashSet(),
         Titles = s.MeterColumnTitles,
         SmallUnits = s.MeterSmallUnits,
+        BarParts = s.MeterBarParts,
     };
 
     public bool Has(string id) => Shown.Contains(id);
@@ -182,6 +187,7 @@ public sealed class MeterLook
             }
 
             width += Has("rank") ? 22 : 0;
+            width += BarParts ? 40 : 0; // the "+" figures beside the rate
             width -= Has("icon") ? 0 : 25;
             width *= 0.6 + 0.4 * TextScale;
             return Math.Round(Math.Clamp(width, 240, 1100));
@@ -189,7 +195,7 @@ public sealed class MeterLook
     }
 
     /// <summary>Everything that changes the lines, as one text: the lines are built again only when it changes.</summary>
-    public string Key => string.Join("|", Bar, Size, Font, TextScale.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), Titles, SmallUnits,
+    public string Key => string.Join("|", Bar, Size, Font, TextScale.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture), Titles, SmallUnits, BarParts,
         string.Join(",", Shown.OrderBy(c => c, StringComparer.Ordinal)));
 }
 

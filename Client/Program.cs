@@ -1395,7 +1395,26 @@ internal static class Program
                 row.Absorbed = rank switch { 1 => 41_800, 3 => 12_400, 4 => 18_900, _ => 0 }; // a group shield on three of them
             }
 
+            // the bar's parts (MeterBarParts): what the buffs lent the others, much from the Cleric, and the healing on the others, over the fight's 1:51
+            row.Given = x.Cls switch { "Cleric" => 1_480, "Spiritmaster" => 310, _ => 120 + 40 * (5 - rank) };
+            row.HealOthers = x.Cls switch { "Cleric" => 352_000, "Spiritmaster" => 21_600, _ => 0 };
+            row.HealOthersRate = row.HealOthers > 0 ? row.HealOthers / 111.0 : null;
+            if (kind == "rdps")
+            {
+                // the rDPS view: each one's damage without the others' buffs, and with what their own buffs lent
+                row.Ndps = x.Dps * (x.Cls == "Cleric" ? 0.97 : 0.88);
+                row.Rdps = row.Ndps + row.Given;
+                row.RdpsView = true;
+            }
+
             rows.Add(row);
+        }
+
+        window.ShowSampleBarParts(rdpsView: kind == "rdps", seconds: 111);
+        if (kind == "rdps")
+        {
+            window.OverlayModeText.Text = "rDPS";
+            window.OverlayTotalRateText.Text = Ui.PlayerRow.Compact((long)rows.Sum(r => r.Rdps ?? 0));
         }
 
         window.OverlayTargetText.Text = "Transcendent Bakarma";
@@ -1549,6 +1568,7 @@ internal static class Program
                         MeterColumns = new() { "rank", "icon", "dps", "share" },
                     },
                 });
+                window.UpdateBarLegend();
                 // the rows are sorted by the view: one pass so the order of the look is drawn
                 System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
             }

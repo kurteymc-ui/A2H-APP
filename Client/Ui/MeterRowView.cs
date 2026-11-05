@@ -157,6 +157,15 @@ public sealed class MeterRowView : Grid
             };
             bar.SetBinding(System.Windows.Controls.Primitives.RangeBase.ValueProperty, new Binding(nameof(PlayerRow.FillPercent)) { Mode = BindingMode.OneWay });
             Children.Add(bar);
+            if (look.BarParts)
+            {
+                // after the class part: grey for the buffs given to the others, green for the healing on them (MeterBarParts)
+                var parts = new MeterBarPartsView { Shape = look.Bar };
+                parts.SetBinding(MeterBarPartsView.OwnProperty, new Binding(nameof(PlayerRow.FillPercent)) { Mode = BindingMode.OneWay });
+                parts.SetBinding(MeterBarPartsView.GivenEndProperty, new Binding(nameof(PlayerRow.GivenFillPercent)) { Mode = BindingMode.OneWay });
+                parts.SetBinding(MeterBarPartsView.HealEndProperty, new Binding(nameof(PlayerRow.HealFillPercent)) { Mode = BindingMode.OneWay });
+                Children.Add(parts);
+            }
             if (look.Bar is "glow" or "flat")
             {
                 var edge = new Border { Width = 3, HorizontalAlignment = HorizontalAlignment.Left, IsHitTestVisible = false };
@@ -300,6 +309,34 @@ public sealed class MeterRowView : Grid
             {
                 case "dps":
                 {
+                    if (look.BarParts)
+                    {
+                        // the "+" figures of the bar's parts, before the rate: what the buffs gave the others (grey; the Given column says it when shown)
+                        // and the healing on the others (green), per second
+                        var plus = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Right };
+                        if (!IsHeader)
+                        {
+                            void Plus(string path, Brush brush)
+                            {
+                                TextBlock figure = Text(look.TinySize, "Brush.TextMuted", bold: !table);
+                                figure.Foreground = brush;
+                                figure.Margin = new Thickness(6, 0, 0, 0);
+                                figure.SetBinding(TextBlock.TextProperty, new Binding(path) { Converter = table ? FigureParts.Lower : null, Mode = BindingMode.OneWay });
+                                figure.SetBinding(VisibilityProperty, new Binding(path) { Converter = FilledToVisible.Instance, Mode = BindingMode.OneWay });
+                                plus.Children.Add(figure);
+                            }
+
+                            if (!look.Has("given"))
+                            {
+                                Plus(nameof(PlayerRow.BarGivenText), MeterBarParts.GivenText);
+                            }
+
+                            Plus(nameof(PlayerRow.BarHealText), MeterBarParts.HealText);
+                        }
+
+                        Add(plus, GridLength.Auto, "Plus");
+                    }
+
                     TextBlock rate = IsHeader ? Title("", tip) : Text(table ? look.SmallSize : look.RateSize, "Brush.OverlayText", !table);
                     rate.Margin = new Thickness(8, 0, 0, 0);
                     rate.FontWeight = table ? FontWeights.Normal : IsHeader ? FontWeights.SemiBold : FontWeights.Bold;
