@@ -217,7 +217,8 @@ public sealed class CpCalcPage : Grid
     }
 
     /// <summary>How many of an item the character holds: its bag and storage and its account's storage on the server, as the meter last saw them (null when
-    /// it never saw them).</summary>
+    /// it never saw them). A piece of gear in the server storage does not count: it may be bound to the character that obtained it, which the meter cannot
+    /// see (5 November 2026, a tester: the calculator said to equip a Kromede weapon another character had looted); materials and the like still do.</summary>
     private static Func<int, long>? HeldBy(string? name, int server)
     {
         if (name is null)
@@ -232,7 +233,8 @@ public sealed class CpCalcPage : Grid
             return null;
         }
 
-        return item => (mine?.Bag.GetValueOrDefault(item) ?? 0) + (mine?.Storage.GetValueOrDefault(item) ?? 0) + (account?.Items.GetValueOrDefault(item) ?? 0);
+        return item => (mine?.Bag.GetValueOrDefault(item) ?? 0) + (mine?.Storage.GetValueOrDefault(item) ?? 0)
+            + (Aion2.Protocol.Aion2CpData.Item(item) is null ? account?.Items.GetValueOrDefault(item) ?? 0 : 0);
     }
 
     private void AddChanges(IEnumerable<CpChange> changes)

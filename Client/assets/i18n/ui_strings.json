@@ -20737,5 +20737,65 @@
     "pt": "Não estão na sua barra de habilidades agora. Marque uma para mostrá-la na tela também.",
     "ja": "今はスキルバーにありません。チェックすると画面にも表示されます。",
     "ko": "지금 스킬 바에 없습니다. 체크하면 화면에도 표시됩니다."
+  },
+  "Checklist.PerRun": {
+    "en": "Energy per run",
+    "de": "Energie pro Lauf",
+    "fr": "Énergie par run",
+    "es": "Energía por partida",
+    "ru": "Энергия за забег",
+    "zh": "每次消耗能量",
+    "zh-TW": "每次消耗能量",
+    "pt": "Energia por run",
+    "ja": "1回の消費",
+    "ko": "1회 소모 에너지"
+  },
+  "Checklist.PerRunTip": {
+    "en": "What one run costs: 40 in most level-45 content, 80 for the double reward (most players with the subscription). The cube counts go by it.",
+    "de": "Was ein Lauf kostet: 40 in den meisten Inhalten der Stufe 45, 80 für die doppelte Belohnung (die meisten Spieler mit Abo). Danach richten sich die Würfelzahlen.",
+    "fr": "Le coût d'un run : 40 dans la plupart des contenus de niveau 45, 80 pour la double récompense (la plupart des joueurs abonnés). Le nombre de cubes en dépend.",
+    "es": "Lo que cuesta una partida: 40 en la mayoría del contenido de nivel 45, 80 para la recompensa doble (la mayoría de jugadores con suscripción). Los cubos se cuentan con esto.",
+    "ru": "Стоимость одного забега: 40 в большинстве контента 45 уровня, 80 за двойную награду (у большинства с подпиской). По этому считаются кубы.",
+    "zh": "一次的消耗：大多数 45 级内容为 40，双倍奖励为 80（多数订阅玩家）。魔方数量按此计算。",
+    "zh-TW": "一次的消耗：大多數 45 級內容為 40，雙倍獎勵為 80（多數訂閱玩家）。魔方數量依此計算。",
+    "pt": "O custo de uma run: 40 na maioria do conteúdo de nível 45, 80 para a recompensa dupla (a maioria dos jogadores com assinatura). A contagem de cubos usa isto.",
+    "ja": "1回のコスト：レベル45コンテンツの多くは40、報酬2倍は80（サブスク利用者の多く）。キューブ数はこれで計算します。",
+    "ko": "1회 비용: 대부분의 45레벨 콘텐츠는 40, 2배 보상은 80(구독자 대부분). 큐브 수는 이 값으로 계산합니다."
+  },
+  "Checklist.RosterClaimsAt": {
+    "en": "Claims ready ({0} each)",
+    "de": "Abholungen bereit (je {0})",
+    "fr": "Récompenses prêtes ({0} chacune)",
+    "es": "Recompensas listas ({0} cada una)",
+    "ru": "Готово наград (по {0})",
+    "zh": "可领取（每次 {0}）",
+    "zh-TW": "可領取（每次 {0}）",
+    "pt": "Recompensas prontas ({0} cada)",
+    "ja": "受け取り可能（各{0}）",
+    "ko": "수령 가능 (각 {0})"
+  },
+  "Checklist.RosterOdyleSplit": {
+    "en": "{0} basic + {1} charged + {2} in items",
+    "de": "{0} Basis + {1} geladen + {2} in Gegenständen",
+    "fr": "{0} de base + {1} chargée + {2} en objets",
+    "es": "{0} básica + {1} cargada + {2} en objetos",
+    "ru": "{0} базовой + {1} заряжено + {2} в предметах",
+    "zh": "{0} 基础 + {1} 充能 + {2} 道具",
+    "zh-TW": "{0} 基礎 + {1} 充能 + {2} 道具",
+    "pt": "{0} básica + {1} carregada + {2} em itens",
+    "ja": "基本 {0} + チャージ {1} + アイテム {2}",
+    "ko": "기본 {0} + 충전 {1} + 아이템 {2}"
+  },
+  "Checklist.OdyleTotalAt": {
+    "en": "{0} + {1} charged + {2} in items = {3} energy, about {4} cubes at {5}",
+    "de": "{0} + {1} geladen + {2} in Gegenständen = {3} Energie, etwa {4} Würfel zu {5}",
+    "fr": "{0} + {1} chargée + {2} en objets = {3} d'énergie, environ {4} cubes à {5}",
+    "es": "{0} + {1} cargada + {2} en objetos = {3} de energía, unos {4} cubos de {5}",
+    "ru": "{0} + {1} заряжено + {2} в предметах = {3} энергии, около {4} кубов по {5}",
+    "zh": "{0} + {1} 充能 + {2} 道具 = {3} 能量，约 {4} 个 {5} 能量的魔方",
+    "zh-TW": "{0} + {1} 充能 + {2} 道具 = {3} 能量，約 {4} 個 {5} 能量的魔方",
+    "pt": "{0} + {1} carregada + {2} em itens = {3} de energia, cerca de {4} cubos de {5}",
+    "ja": "{0} + チャージ {1} + アイテム {2} = エネルギー {3}（{5} のキューブ約 {4} 個）",
+    "ko": "{0} + 충전 {1} + 아이템 {2} = 에너지 {3} ({5}짜리 큐브 약 {4}개)"
   }
 }

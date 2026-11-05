@@ -604,6 +604,9 @@ public sealed class MeterSettings
     /// daily dungeon and Ascension Trial.</summary>
     public bool MeterShowTickets { get; set; } = true;
 
+    /// <summary>The Odyle Energy a run costs on the Characters page: 40, or 80 for the double reward (the page's switch).</summary>
+    public int OdylePerRun { get; set; } = 40;
+
     /// <summary>Every sound of the meter off at once (the meter's Tools → Sound alerts): the reminders, the cube sounds, the spoken boss casts and cooldowns.</summary>
     public bool MuteSounds { get; set; }
 

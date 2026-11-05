@@ -758,8 +758,42 @@ public sealed partial class ChecklistWindow : Window
         return string.Format(CultureInfo.CurrentCulture, loc["Checklist.In"], span);
     }
 
-    /// <summary>What a reward cube costs in most level-45 content (the site's Odyle Energy guide: 20 to 80 elsewhere).</summary>
-    private const int OdyleClaim = 40;
+    /// <summary>What a run costs: 40 in most level-45 content, 80 for the double reward most players with the subscription take (5 November 2026, a tester:
+    /// "with sub you go for 80 most of the time"); the player picks it on the page (MeterSettings.OdylePerRun).</summary>
+    private static int OdyleClaim => MeterSettings.Load().OdylePerRun == 80 ? 80 : 40;
+
+    /// <summary>"Energy per run: 40 | 80", the switch the cube counts go by.</summary>
+    private UIElement PerRunSwitch()
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        int now = OdyleClaim;
+        var stack = new StackPanel();
+        stack.Children.Add(Label(loc["Checklist.PerRun"], "Brush.TextMuted", 10.5));
+        var choices = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 0) };
+        foreach (int option in new[] { 40, 80 })
+        {
+            bool on = option == now;
+            TextBlock text = Label(option.ToString(CultureInfo.CurrentCulture), on ? "Brush.Accent" : "Brush.TextMuted", 13, bold: on);
+            var choice = new Border { Padding = new Thickness(9, 1, 9, 2), Margin = new Thickness(0, 0, 3, 0), CornerRadius = new CornerRadius(4), Child = text, Cursor = Cursors.Hand,
+                BorderThickness = new Thickness(1) };
+            choice.SetResourceReference(Border.BorderBrushProperty, on ? "Brush.Accent" : "Brush.Border");
+            choice.MouseLeftButtonUp += (_, _) =>
+            {
+                var settings = MeterSettings.Load();
+                settings.OdylePerRun = option;
+                settings.Save();
+                Refresh();
+            };
+            choices.Children.Add(choice);
+        }
+
+        stack.Children.Add(choices);
+        var box = new Border { Padding = new Thickness(10, 5, 10, 6), Margin = new Thickness(0, 2, 8, 2), CornerRadius = new CornerRadius(5), BorderThickness = new Thickness(1), Child = stack,
+            ToolTip = loc["Checklist.PerRunTip"] };
+        box.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+        box.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        return box;
+    }
 
     /// <summary>
     /// Every character on one page: the Odyle energy now (with the recharges since the meter last saw it), when it is full, the daily tasks, Shugo Festival,
@@ -787,16 +821,22 @@ public sealed partial class ChecklistWindow : Window
         }
 
         var known = odyle.Values.Where(o => o is not null).Select(o => o!).ToList();
+        // all of it, not only the energy that recharges (5 November 2026, a tester: "it says 5k for all my chars when that's just the regenerable one"):
+        // the basic energy, the charged energy and the energy in the items each character holds
+        var inItems = odyle.Where(kv => kv.Value is not null).ToDictionary(kv => kv.Key, kv => Aion2OdyleItems.EnergyHeld(kv.Key));
         if (known.Count > 0)
         {
             int full = known.Count(o => o.Full);
-            resets.Children.Add(Pill(loc["Checklist.RosterOdyle"], known.Sum(o => o.Count).ToString("N0", CultureInfo.CurrentCulture)
-                + (full > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[full == 1 ? "Checklist.RosterFullOne" : "Checklist.RosterFullMany"], full) : ""), full > 0 ? "Brush.Warning" : "Brush.Accent"));
-        }
-
-        if (known.Count > 0)
-        {
-            resets.Children.Add(Pill(loc["Checklist.RosterClaims"], known.Sum(o => (o.Count + o.Bonus) / OdyleClaim).ToString("N0", CultureInfo.CurrentCulture), "Brush.Accent"));
+            long basic = known.Sum(o => (long)o.Count), charged = known.Sum(o => (long)o.Bonus), items = inItems.Values.Sum();
+            UIElement total = Pill(loc["Checklist.RosterOdyle"], (basic + charged + items).ToString("N0", CultureInfo.CurrentCulture)
+                + (full > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[full == 1 ? "Checklist.RosterFullOne" : "Checklist.RosterFullMany"], full) : ""), full > 0 ? "Brush.Warning" : "Brush.Accent");
+            ((FrameworkElement)total).ToolTip = string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterOdyleSplit"], basic.ToString("N0", CultureInfo.CurrentCulture),
+                charged.ToString("N0", CultureInfo.CurrentCulture), items.ToString("N0", CultureInfo.CurrentCulture));
+            resets.Children.Add(total);
+            int per = OdyleClaim;
+            resets.Children.Add(Pill(string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterClaimsAt"], per),
+                known.Zip(odyle.Where(kv => kv.Value is not null).Select(kv => inItems[kv.Key])).Sum(x => (x.First.Count + x.First.Bonus + x.Second) / per).ToString("N0", CultureInfo.CurrentCulture), "Brush.Accent"));
+            resets.Children.Add(PerRunSwitch());
         }
 
         head.Children.Add(resets);
@@ -820,10 +860,11 @@ public sealed partial class ChecklistWindow : Window
                 var who = new System.Windows.Documents.Run(name) { FontWeight = FontWeights.SemiBold };
                 who.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, o.Full ? "Brush.Warning" : "Brush.Text");
                 plan.Inlines.Add(who);
-                int claims = (o.Count + o.Bonus) / OdyleClaim;
+                int per = OdyleClaim;
+                int claims = (int)((o.Count + o.Bonus + inItems.GetValueOrDefault(name)) / per);
                 plan.Inlines.Add(new System.Windows.Documents.Run(" (" + (o.Full ? loc["Checklist.RosterPlanFull"]
                     : o.FullAt is { } at ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterPlanIn"], InText(at - utcNow)) : "–")
-                    + (claims > 0 ? $", {claims} × 40" : "") + ")"));
+                    + (claims > 0 ? $", {claims} × {per}" : "") + ")"));
             }
 
             head.Children.Add(plan);
@@ -1226,9 +1267,10 @@ public sealed partial class ChecklistWindow : Window
         stack.Children.Add(grid);
         long inItems = items.Sum(l => l.Energy);
         long all = value.Count + value.Bonus + inItems;
-        TextBlock total = Label(string.Format(CultureInfo.CurrentCulture, loc["Checklist.OdyleTotal"], value.Count.ToString("N0", CultureInfo.CurrentCulture),
+        int per = OdyleClaim;
+        TextBlock total = Label(string.Format(CultureInfo.CurrentCulture, loc["Checklist.OdyleTotalAt"], value.Count.ToString("N0", CultureInfo.CurrentCulture),
             value.Bonus.ToString("N0", CultureInfo.CurrentCulture), inItems.ToString("N0", CultureInfo.CurrentCulture), all.ToString("N0", CultureInfo.CurrentCulture),
-            (all / OdyleClaim).ToString("N0", CultureInfo.CurrentCulture)), "Brush.Accent", 12.5, bold: true);
+            (all / per).ToString("N0", CultureInfo.CurrentCulture), per), "Brush.Accent", 12.5, bold: true);
         total.Margin = new Thickness(0, 6, 0, 0);
         total.TextWrapping = TextWrapping.Wrap;
         stack.Children.Add(total);

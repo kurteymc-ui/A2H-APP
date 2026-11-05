@@ -747,6 +747,7 @@ public partial class SettingsWindow : Window
         _settings.MeterGrind = onDisk.MeterGrind;
         _settings.MeterShowTickets = onDisk.MeterShowTickets;
         _settings.MuteSounds = onDisk.MuteSounds;
+        _settings.OdylePerRun = onDisk.OdylePerRun; // the Characters page's switch
         _settings.IconRefreshedFor = onDisk.IconRefreshedFor;
         // the route's options are set on the map's page, not in this window: the file's values stand
         _settings.PetRouteOn = onDisk.PetRouteOn;
