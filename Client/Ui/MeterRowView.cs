@@ -256,6 +256,7 @@ public sealed class MeterRowView : Grid
         if (look.Has("icon"))
         {
             var icon = new Image { Width = look.IconSize, Height = look.IconSize, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
+            RenderOptions.SetBitmapScalingMode(icon, BitmapScalingMode.HighQuality); // smooth at 15-21 px (the icons are 128 px)
             if (!IsHeader)
             {
                 icon.SetBinding(Image.SourceProperty, new Binding(nameof(PlayerRow.ClassName)) { Converter = Icons });

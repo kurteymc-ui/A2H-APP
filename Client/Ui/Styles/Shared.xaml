@@ -7,6 +7,11 @@
          DynamicResource brush references), merged once into Application.Resources in Program.cs
          rather than duplicated per window, so any window's DataGrid can reference it via
          StaticResource. -->
+    <!-- Every picture in the app is scaled down smoothly (5 November 2026, the owner: the class icons were "too pixelated"): WPF's default scaling
+         skips pixels when a 128 px icon is drawn at 18 px, which leaves jagged edges. An Image with a style of its own sets this itself. -->
+    <Style TargetType="Image">
+        <Setter Property="RenderOptions.BitmapScalingMode" Value="HighQuality"/>
+    </Style>
     <Style x:Key="ShareBar" TargetType="ProgressBar">
         <Setter Property="Height" Value="3"/>
         <Setter Property="Minimum" Value="0"/>

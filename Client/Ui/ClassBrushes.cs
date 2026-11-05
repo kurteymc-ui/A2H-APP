@@ -2,23 +2,25 @@ using System.Windows.Media;
 
 namespace AionDPS.Ui;
 
-/// <summary>The translucent class colours behind a player's row; the same hues as the website (class pairs share a hue family - Cleric/Chanter yellow, Gladiator/Templar blue, Assassin/Ranger green, Sorcerer/Spiritmaster purple - in a lighter and a deeper shade)'s meter
-/// (app.js CLASS_META), so a class reads the same colour in both.</summary>
+/// <summary>The translucent class colours behind a player's row, the names and the class icons (assets/classes/icons, the game's own emblems in these
+/// colours). Each class its own colour since 5 November 2026 (the owner's picture of the class emblems): Ranger mint, Gladiator cyan, Templar teal,
+/// Sorcerer lavender, Spiritmaster magenta, Cleric pale gold, Chanter amber, Assassin soft green - the picture's hues, a little stronger so the
+/// translucent bars still read. Before, class pairs shared a hue family (Gladiator/Templar blue, Assassin/Ranger green ...).</summary>
 internal static class ClassBrushes
 {
     private static readonly Dictionary<string, Brush> Cache = new();
 
     private static readonly Dictionary<string, string> Colors = new(StringComparer.Ordinal)
     {
-        ["Cleric"] = "#e8c560",
-        ["Chanter"] = "#e39b4c",
-        ["Templar"] = "#9db8e8",
-        ["Gladiator"] = "#6b9fe8",
+        ["Cleric"] = "#d9c777",
+        ["Chanter"] = "#dfa04e",
+        ["Templar"] = "#4ba4bd",
+        ["Gladiator"] = "#7ad0de",
         ["Brawler"] = "#e2735c",
-        ["Assassin"] = "#58c58e",
-        ["Ranger"] = "#a2d373",
-        ["Sorcerer"] = "#ad80f2",
-        ["Spiritmaster"] = "#d48ce8",
+        ["Assassin"] = "#9ad694",
+        ["Ranger"] = "#60b593",
+        ["Sorcerer"] = "#aa7fe1",
+        ["Spiritmaster"] = "#b75abc",
     };
 
     private const string Unknown = "#9fb3c8";

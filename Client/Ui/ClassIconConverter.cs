@@ -22,9 +22,33 @@ public sealed class ClassIconConverter : IValueConverter
             return null;
         }
 
-        string path = Path.Combine(AppContext.BaseDirectory, "assets", "classes", "icons", $"{className}.png");
-        return File.Exists(path) ? new BitmapImage(new Uri(path, UriKind.Absolute)) : null;
+        lock (Cache)
+        {
+            if (Cache.TryGetValue(className, out BitmapSource? known))
+            {
+                return known;
+            }
+
+            string path = Path.Combine(AppContext.BaseDirectory, "assets", "classes", "icons", $"{className}.png");
+            BitmapSource? icon = null;
+            if (File.Exists(path))
+            {
+                // read once and shared by every line (a new picture per line and per refresh before), frozen so the overlay windows can use it too
+                var image = new BitmapImage();
+                image.BeginInit();
+                image.UriSource = new Uri(path, UriKind.Absolute);
+                image.CacheOption = BitmapCacheOption.OnLoad;
+                image.EndInit();
+                image.Freeze();
+                icon = image;
+            }
+
+            Cache[className] = icon;
+            return icon;
+        }
     }
+
+    private static readonly Dictionary<string, BitmapSource?> Cache = new(StringComparer.Ordinal);
 
     public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture) =>
         throw new NotSupportedException();
