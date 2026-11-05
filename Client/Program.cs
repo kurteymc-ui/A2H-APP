@@ -2040,18 +2040,20 @@ internal static class Program
         var who = new Upload.FoundPlayer("Arhimodon", "Templar", 45, "Vaizel", 2302, "eu", 182_730, 2968, 21_480, "Thamon", "https://atreia.app/armory/?region=eu&server=Vaizel&name=Arhimodon", 92, 3, 31);
         static Upload.PlayerLine L(string name, string value, string? grade = null, string? desc = null) => new(name, value, grade, null, desc);
         var none = Array.Empty<Upload.PlayerLine>();
+        // the game's site names its pictures by the client's icon names: the app's own copies are drawn (nothing is downloaded here)
+        static string I(string name) => "https://assets.playnccdn.com/static-aion2-gamedata/resources/" + name + ".png";
         var gear = new List<Upload.PlayerPiece>
         {
-            new("Main Hand", "Tempered Greatsword", "Unique", 15, 2, 3010, null, false, new[] { L("Attack", "912"), L("Accuracy", "120") },
+            new("MainHand", "Tempered Greatsword", "Unique", 15, 2, 3010, I("Icon_WP_SW_011_T01"), false, new[] { L("Attack", "912"), L("Accuracy", "120") },
                 new[] { L("Critical Strike", "+64"), L("Boss damage", "+3.5%") }, new[] { L("Shield Bash", "+2") },
                 new[] { L("Attack", "+12", "Legend"), L("Critical Strike", "+16", "Legend"), L("Accuracy", "+14", "Rare") }, new[] { L("Wrath", "", "Unique", "On hit, a 5% chance of a second strike") }),
-            new("Shield", "Tempered Bulwark", "Unique", 12, 0, 2990, null, false, new[] { L("Defense", "740") }, new[] { L("Block", "+48") }, none, new[] { L("Defense", "+20", "Legend") }, none),
-            new("Helmet", "Warden's Helm", "Legend", 10, 0, 2960, null, false, new[] { L("Defense", "380") }, none, none, none, none),
-            new("Chest", "Warden's Breastplate", "Legend", 10, 1, 2975, null, false, new[] { L("Defense", "520") }, none, none, none, none),
-            new("Gloves", "Warden's Gauntlets", "Epic", 15, 3, 3040, null, false, none, none, none, none, none),
-            new("Necklace", "Pendant of the Pass", "Unique", 8, 0, 2950, null, false, none, none, none, none, none),
-            new("Arcana I", "Arcana of Valor", "Unique", 4, 0, 80, null, true, none, none, none, none, none),
-            new("Arcana II", "Arcana of the Wall", "Legend", 3, 0, 60, null, true, none, none, none, none, none),
+            new("SubHand", "Tempered Bulwark", "Unique", 12, 0, 2990, I("Icon_Weapon_Guarder_U_005"), false, new[] { L("Defense", "740") }, new[] { L("Block", "+48") }, none, new[] { L("Defense", "+20", "Legend") }, none),
+            new("Helmet", "Warden's Helm", "Legend", 10, 0, 2960, I("Icon_Equip_AR_L_0001_T04_Helmet"), false, new[] { L("Defense", "380") }, none, none, none, none),
+            new("Torso", "Warden's Breastplate", "Legend", 10, 1, 2975, I("Icon_Equip_AR_L_0001_T04_Torso"), false, new[] { L("Defense", "520") }, none, none, none, none),
+            new("Gloves", "Warden's Gauntlets", "Epic", 15, 3, 3040, I("Icon_Equip_AR_L_0001_T04_Gloves"), false, none, none, none, none, none),
+            new("Necklace", "Pendant of the Pass", "Unique", 8, 0, 2950, I("Icon_ACC_NL_0011"), false, none, none, none, none, none),
+            new("Arcana1", "Arcana of Valor", "Unique", 4, 0, 80, I("Icon_Arcana_Card_Bell_u_DefenceSet2"), true, none, none, none, none, none),
+            new("Arcana2", "Arcana of the Wall", "Legend", 3, 0, 60, I("Icon_Arcana_Card_Compass_u_DefenceSet2"), true, none, none, none, none, none),
         };
         var stats = new List<(string, string)>
         {
@@ -2060,8 +2062,8 @@ internal static class Program
         };
         var skills = new List<Upload.PlayerSkill>
         {
-            new("Shield Bash", 20, "Active", true, null), new("Punishment", 18, "Active", true, null), new("Divine Fury", 16, "Active", true, null), new("Aegis", 15, "Active", true, null),
-            new("Iron Skin", 12, "Passive", false, null), new("Taunt", 10, "Active", false, null),
+            new("Shield Bash", 20, "Active", true, I("ICON_TE_SKILL_001")), new("Punishment", 18, "Active", true, I("ICON_TE_SKILL_002")), new("Divine Fury", 16, "Active", true, I("ICON_TE_SKILL_003")),
+            new("Aegis", 15, "Active", true, I("ICON_TE_SKILL_004")), new("Iron Skin", 12, "Passive", false, I("ICON_TE_SKILL_006")), new("Taunt", 10, "Active", false, I("ICON_TE_SKILL_007")),
         };
         var parses = new List<Upload.PlayerParse> { new("Thamon", 21_480, 92, 3, 31), new("Kromede", 18_210, 77, 9, 40), new("Debilkarim", 15_400, 51, 22, 45) };
         var boards = new List<Upload.PlayerBoard> { new("Nezekan", 48, 60), new("Zikel", 36, 60), new("Vaizel", 22, 60), new("Triniel", 9, 60) };
@@ -2103,6 +2105,7 @@ internal static class Program
         var gearView = View(page, "Gear");
         grid.Children.Add(gearView);
         grid.Children.Add(View(page, "Genus & Pets"));
+        grid.Children.Add(View(page, "Skills"));
         grid.Children.Add(View(page with { App = null }, "Overview"));
         var strip = new System.Windows.Controls.Border { Padding = new System.Windows.Thickness(20, 20, 2, 2), Child = grid,
             Background = new System.Windows.Media.LinearGradientBrush(System.Windows.Media.Color.FromRgb(0x4a, 0x56, 0x3a), System.Windows.Media.Color.FromRgb(0x22, 0x2c, 0x30), 60) };

@@ -70,7 +70,6 @@ public sealed class PlayerWindow : Window
 /// <summary>The player window's content (also drawn on its own for the pictures of the meter).</summary>
 public sealed class PlayerView : Border
 {
-    private static readonly Dictionary<string, ImageSource?> Remote = new(StringComparer.Ordinal);
     private static readonly Color[] GenusGrades = { Color.FromRgb(0x8A, 0x93, 0x9E), Color.FromRgb(0xD8, 0xDD, 0xE3), Color.FromRgb(0x5B, 0xD3, 0x6B), Color.FromRgb(0x4A, 0xA8, 0xFF),
         Color.FromRgb(0xFF, 0xC9, 0x4D), Color.FromRgb(0xFF, 0x8A, 0x3D) };
     private static readonly string[] TabNames = { "Overview", "Gear", "Stats", "Skills", "Genus & Pets" };
@@ -481,7 +480,7 @@ public sealed class PlayerView : Border
         {
             Width = 34, Height = 34, CornerRadius = new CornerRadius(6), Margin = new Thickness(2, 3, 6, 3), BorderThickness = new Thickness(1),
             BorderBrush = new SolidColorBrush(Color.FromArgb(0x88, grade.R, grade.G, grade.B)), Background = new SolidColorBrush(Color.FromArgb(0x22, grade.R, grade.G, grade.B)),
-            Child = new Image { Source = RemoteImage(g.Icon), Width = 30, Height = 30 },
+            Child = IconImage(g.Icon, 30),
         };
         Put(row, 0, icon);
         var who = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
@@ -498,7 +497,7 @@ public sealed class PlayerView : Border
         }
 
         who.Children.Add(line);
-        who.Children.Add(Text(g.Slot + (g.Stones.Count > 0 ? "  ·  " + g.Stones.Count.ToString(CultureInfo.CurrentCulture) + (g.Stones.Count == 1 ? " stone" : " stones") : ""), 11, "Brush.TextSubtle"));
+        who.Children.Add(Text(SlotName(g.Slot) + (g.Stones.Count > 0 ? "  ·  " + g.Stones.Count.ToString(CultureInfo.CurrentCulture) + (g.Stones.Count == 1 ? " stone" : " stones") : ""), 11, "Brush.TextSubtle"));
         Put(row, 1, who);
         if (g.ItemLevel is int il)
         {
@@ -612,7 +611,9 @@ public sealed class PlayerView : Border
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                 row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                Put(row, 0, new Image { Source = RemoteImage(s.Icon), Width = 26, Height = 26, Margin = new Thickness(0, 0, 6, 0) });
+                var skillIcon = IconImage(s.Icon, 26);
+                skillIcon.Margin = new Thickness(0, 0, 6, 0);
+                Put(row, 0, skillIcon);
                 var name = Text(s.Name, 12, "Brush.OverlayText");
                 name.ToolTip = s.Category.Length > 0 ? s.Category : null;
                 Put(row, 1, name);
@@ -779,45 +780,145 @@ public sealed class PlayerView : Border
         };
     }
 
-    /// <summary>A picture of the game's site, downloaded once per run.</summary>
-    private static ImageSource? RemoteImage(string? url)
+    /// <summary>
+    /// An item's or skill's picture (5 November 2026, the owner: "you're missing the item icons"): the game's site names them on NCSOFT's image host by the
+    /// client's icon name (…/static-aion2-gamedata/resources/Icon_ACC_Ring_0011.png), the name the app's own pictures carry, so those come first (no
+    /// download); else the website's icon store (/api/icon, the pictures the website itself shows), kept on disk so each is fetched once. Filled in when there.
+    /// </summary>
+    private static Image IconImage(string? url, double size)
     {
+        var image = new Image { Width = size, Height = size, Stretch = Stretch.Uniform };
+        RenderOptions.SetBitmapScalingMode(image, BitmapScalingMode.HighQuality);
         if (url is null)
+        {
+            return image;
+        }
+
+        lock (Icons)
+        {
+            if (Icons.TryGetValue(url, out ImageSource? had))
+            {
+                image.Source = had;
+                return image;
+            }
+        }
+
+        if (LocalIcon(url) is { } local)
+        {
+            image.Source = Remember(url, local);
+            return image;
+        }
+
+        _ = FillAsync(image, url);
+        return image;
+    }
+
+    private static readonly Dictionary<string, ImageSource?> Icons = new(StringComparer.Ordinal);
+    private static readonly System.Net.Http.HttpClient IconHttp = new() { Timeout = TimeSpan.FromSeconds(20) };
+    private static readonly string[] LocalFolders = { "items/icons", "items/more", "craft/icons", "skills/icons", "wings/icons", "pets/icons" };
+
+    private static ImageSource? Remember(string url, ImageSource? source)
+    {
+        lock (Icons)
+        {
+            Icons[url] = source;
+        }
+
+        return source;
+    }
+
+    /// <summary>The app's own picture of that icon name, if it has one.</summary>
+    private static ImageSource? LocalIcon(string url)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out Uri? uri))
         {
             return null;
         }
 
-        lock (Remote)
+        string name = System.IO.Path.GetFileNameWithoutExtension(uri.AbsolutePath);
+        if (!System.Text.RegularExpressions.Regex.IsMatch(name, "^[A-Za-z0-9_]{3,80}$"))
         {
-            if (Remote.TryGetValue(url, out ImageSource? had))
+            return null;
+        }
+
+        foreach (string folder in LocalFolders)
+        {
+            string path = System.IO.Path.Combine(AppContext.BaseDirectory, "assets", "aion2", folder.Replace('/', System.IO.Path.DirectorySeparatorChar), name + ".png");
+            if (System.IO.File.Exists(path) && Decode(System.IO.File.ReadAllBytes(path)) is { } local)
             {
-                return had;
+                return local;
             }
         }
 
-        ImageSource? image = null;
+        return null;
+    }
+
+    private static async Task FillAsync(Image image, string url)
+    {
+        ImageSource? source = await Task.Run(async () =>
+        {
+            string folder = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Aion2CharacterStore.DefaultPath)!, "icons");
+            string file = System.IO.Path.Combine(folder, Convert.ToHexString(System.Security.Cryptography.SHA1.HashData(System.Text.Encoding.UTF8.GetBytes(url))) + ".png");
+            try
+            {
+                if (System.IO.File.Exists(file) && Decode(await System.IO.File.ReadAllBytesAsync(file)) is { } kept)
+                {
+                    return kept;
+                }
+
+                byte[] bytes = await IconHttp.GetByteArrayAsync(Brand.Site + "/api/icon?u=" + Uri.EscapeDataString(url));
+                if (Decode(bytes) is not { } fetched)
+                {
+                    return null;
+                }
+
+                System.IO.Directory.CreateDirectory(folder);
+                await System.IO.File.WriteAllBytesAsync(file, bytes);
+                return fetched;
+            }
+            catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or TaskCanceledException or System.IO.IOException or UnauthorizedAccessException)
+            {
+                return null; // no picture this time: the frame stays empty, the next window tries again
+            }
+        });
+        if (source is not null)
+        {
+            Remember(url, source);
+            image.Source = source;
+        }
+    }
+
+    /// <summary>A small frozen picture from a file's bytes (any thread); null when it isn't one.</summary>
+    private static ImageSource? Decode(byte[] bytes)
+    {
         try
         {
             var bitmap = new BitmapImage();
             bitmap.BeginInit();
-            bitmap.UriSource = new Uri(url, UriKind.Absolute);
+            bitmap.StreamSource = new System.IO.MemoryStream(bytes);
             bitmap.DecodePixelWidth = 64;
             bitmap.CacheOption = BitmapCacheOption.OnLoad;
             bitmap.EndInit();
-            image = bitmap;
+            bitmap.Freeze();
+            return bitmap;
         }
-        catch (Exception ex) when (ex is NotSupportedException or UriFormatException or ArgumentException or System.Net.WebException or System.IO.IOException)
+        catch (Exception ex) when (ex is NotSupportedException or ArgumentException or System.IO.IOException or InvalidOperationException
+            or System.Runtime.InteropServices.COMException or System.IO.FileFormatException)
         {
-            image = null;
+            return null;
         }
-
-        lock (Remote)
-        {
-            Remote[url] = image;
-        }
-
-        return image;
     }
+
+    /// <summary>The page's slot keys as players say them.</summary>
+    internal static string SlotName(string slot) => System.Text.RegularExpressions.Regex.Replace(slot, @"\d+$", "") switch
+    {
+        "MainHand" => "Main hand",
+        "SubHand" => "Off hand",
+        "Torso" => "Chest",
+        "Shoulder" => "Shoulders",
+        "Pants" => "Legs",
+        var other => System.Text.RegularExpressions.Regex.Replace(other, "(?<=[a-z])(?=[A-Z])", " "),
+    };
 
     private Border Tile(string label, string value, Color? colour, string? tip)
     {

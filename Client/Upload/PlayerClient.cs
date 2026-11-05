@@ -114,9 +114,11 @@ public static class PlayerClient
     private static IEnumerable<JsonElement> Items(JsonElement e, string key) =>
         e.ValueKind == JsonValueKind.Object && e.TryGetProperty(key, out JsonElement v) && v.ValueKind == JsonValueKind.Array ? v.EnumerateArray().ToList() : Enumerable.Empty<JsonElement>();
 
-    /// <summary>A picture of the game's own site only (the website lets nothing else through either).</summary>
+    /// <summary>A picture of NCSOFT's own hosts only (the image host playnccdn.com, the game's site plaync.com), as the website lets through.</summary>
     private static string? Icon(JsonElement e) => Str(e, "icon") is { Length: > 0 } u && Uri.TryCreate(u, UriKind.Absolute, out Uri? uri) && uri.Scheme == Uri.UriSchemeHttps
-        && (uri.Host.EndsWith(".plaync.com", StringComparison.OrdinalIgnoreCase) || uri.Host.Equals("plaync.com", StringComparison.OrdinalIgnoreCase)) ? u : null;
+        && (NcHost(uri.Host, "playnccdn.com") || NcHost(uri.Host, "plaync.com")) ? u : null;
+
+    private static bool NcHost(string host, string domain) => host.Equals(domain, StringComparison.OrdinalIgnoreCase) || host.EndsWith("." + domain, StringComparison.OrdinalIgnoreCase);
 
     private static string? Str(JsonElement e, string key) => e.ValueKind == JsonValueKind.Object && e.TryGetProperty(key, out JsonElement v)
         ? v.ValueKind switch { JsonValueKind.String => v.GetString(), JsonValueKind.Number => v.GetRawText(), _ => null }
