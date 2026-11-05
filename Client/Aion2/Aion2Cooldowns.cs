@@ -72,6 +72,11 @@ public static class Aion2Cooldowns
     /// <summary>Per skill its last use (the first cast frame of it) and the last cast frame of it at all.</summary>
     private static readonly Dictionary<int, DateTime> LastUse = new(), LastCastFrame = new();
 
+    // The bar as the list last saw it, and when a skill left it (the latest use known then): a skill swapped off the bar is not listed again for a use
+    // from before (5 November 2026, the owner: "when I swap a skill, it changes but then won't swap back to my skill").
+    private static List<int>? _barSeen;
+    private static readonly Dictionary<int, DateTime> LeftBar = new();
+
     /// <summary>Per skill (base id) the variant of its last use: the cast frame's id with its last digit cleared (the specializations chosen).</summary>
     private static readonly Dictionary<int, int> Variants = new();
 
@@ -448,8 +453,28 @@ public static class Aion2Cooldowns
             var list = new List<int>();
             if (bar is { Count: > 0 })
             {
+                if (_barSeen is null || !_barSeen.SequenceEqual(bar))
+                {
+                    if (_barSeen is not null)
+                    {
+                        DateTime latest = LastUse.Count > 0 ? LastUse.Values.Max() : DateTime.MinValue;
+                        foreach (int gone in _barSeen.Where(id => !bar.Contains(id)))
+                        {
+                            LeftBar[gone] = latest;
+                        }
+                    }
+
+                    foreach (int id in bar)
+                    {
+                        LeftBar.Remove(id);
+                    }
+
+                    _barSeen = bar.ToList();
+                }
+
                 list.AddRange(bar.Where(id => Mine(id) && !list.Contains(id)));
-                list.AddRange(LastUse.Keys.Where(id => Mine(id) && !list.Contains(id) && Known.Contains(id)).OrderBy(id => LastUse[id]));
+                list.AddRange(LastUse.Keys.Where(id => Mine(id) && !list.Contains(id) && Known.Contains(id) && !(LeftBar.TryGetValue(id, out DateTime left) && LastUse[id] <= left))
+                    .OrderBy(id => LastUse[id]));
                 return list;
             }
 
@@ -558,6 +583,8 @@ public static class Aion2Cooldowns
             Runs.Clear();
             LastUse.Clear();
             LastCastFrame.Clear();
+            _barSeen = null;
+            LeftBar.Clear();
             Framed.Clear();
             Variants.Clear();
             Gaps.Clear();

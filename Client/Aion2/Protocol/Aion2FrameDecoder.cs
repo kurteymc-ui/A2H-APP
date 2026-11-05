@@ -3617,9 +3617,13 @@ public sealed class Aion2FrameDecoder
     }
 
     /// <summary>
-    /// The skill bar (login): records of <c>03 | macro page (1-3) | slot | main skill id (u32) | 04 | the skill
+    /// The skill bar (0x8ce2 at every login and map change, all three macro pages; 0x93e2 right after the player changes the
+    /// bar, the first page alone): records of <c>03 | macro page (1-3) | slot | main skill id (u32) | 04 | the skill
     /// ids that can sit in that slot</c> (u32 each; variants of a skill have the same first five digits).
     /// The first macro page is what the skill window shows; its base skill ids are the equipped skills.
+    /// 5 November 2026, the owner's recording: Shield of Protection swapped for Empyrean Lord's Punishment in slot 7 and back
+    /// came as a 0x93e2 each time (with a 0x0856 naming the slot); before it was read the Skill Assist kept the old bar until the
+    /// next map change.
     /// </summary>
     private void DecodeSkillBar(ReadOnlySpan<byte> frame)
     {

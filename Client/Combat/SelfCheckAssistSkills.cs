@@ -81,6 +81,7 @@ public static class SelfCheckAssistSkills
         Lengths(Check);
         BarAndVoice(Check);
         Places(Check);
+        Swapped(Check);
         TimeText(Check);
 
         // the effects list: the Abyss's zone states, the artifacts' faction bonus and the game's test states are left off (seen on 2026-10-31 in Reshanta);
@@ -303,6 +304,68 @@ public static class SelfCheckAssistSkills
         Aion2Cooldowns.NoteOwnCast(12120040, t0.AddSeconds(30));
         voice.Due(skills, voiced, t0.AddSeconds(31), true);
         check("nothing said while the game is not in front", voice.Due(skills, voiced, t0.AddSeconds(55), false).Count == 0, "quiet");
+        Aion2Cooldowns.Reset();
+    }
+    /// <summary>
+    /// A skill swapped on the bar in the game (5 November 2026, the owner's recording: Shield of Protection for Empyrean Lord's Punishment in slot 7 and back):
+    /// the game sends the first macro page again at once (0x93e2), the list follows it without a map change, the skill swapped off is not listed again for a
+    /// use from before, and the new one takes its place on the screen.
+    /// </summary>
+    private static void Swapped(Action<string, bool, string> check)
+    {
+        static string Record(int slot, int id) => "0301" + slot.ToString("x2") + Hex(id) + "04" + Hex(id);
+        static string Hex(int v) => Convert.ToHexString(BitConverter.GetBytes(v)).ToLowerInvariant();
+        static byte[] Wire(string hex)
+        {
+            byte[] body = Convert.FromHexString(hex);
+            var wire = new List<byte>();
+            int length = body.Length + 4;
+            while (length >= 0x80)
+            {
+                wire.Add((byte)((length & 0x7f) | 0x80));
+                length >>= 7;
+            }
+
+            wire.Add((byte)length);
+            wire.AddRange(body);
+            return wire.ToArray();
+        }
+
+        // Vicious Strike, Judgment, Shield of Protection, Taunt; then Empyrean Lord's Punishment in Shield of Protection's slot
+        string Page(int third) => "93e2010c" + Record(0, 12010000) + Record(1, 12240000) + Record(2, third) + Record(20, 12120000) + "00";
+        using var source = new Aion2PacketCombatSource(Aion2.Protocol.Aion2Protocol.Load());
+        var at = new DateTime(2026, 11, 5, 20, 41, 0, DateTimeKind.Utc);
+        uint seq = 100;
+        void Send(string hex)
+        {
+            byte[] wire = Wire(hex);
+            source.Ingest(new Aion2.Capture.TcpSegment(at, "10.0.0.1:7777", "192.168.0.2:50000", seq, wire, FromServer: true));
+            seq += (uint)wire.Length;
+        }
+
+        Send(Page(12110000));
+        var dir = (Aion2EntityDirectory)source.Entities;
+        bool first = dir.LocalBarOrder.Take(4).SequenceEqual(new[] { 12010000, 12240000, 12110000, 12120000 }); // by slot: 0, 1, 2, 20
+        Send(Page(12310000));
+        List<int> after = dir.LocalBarOrder.ToList();
+        bool swapped = after.Contains(12310000) && !after.Contains(12110000) && after.IndexOf(12310000) == 2;
+        check("the bar sent again after a swap (0x93e2) is the bar at once: the new skill in the old one's slot", first && swapped, string.Join(",", after.Take(5)));
+
+        var pairs = Ui.AssistController.Swaps(new[] { 1, 2, 3 }, new[] { 1, 4, 3 });
+        bool moved = Ui.AssistController.Swaps(new[] { 1, 2, 3 }, new[] { 2, 1, 3 }).Count == 0;
+        check("a slot holding another skill is a swap; two skills changing places are not", pairs.Count == 1 && pairs[0] == (2, 4) && moved, string.Join(",", pairs));
+
+        // Taunt used, then swapped off the bar for Noble Armor: no longer listed; used again (put back somewhere else), listed again
+        Aion2Cooldowns.Reset();
+        var t0 = new DateTime(2026, 11, 5, 20, 0, 0);
+        int[] bar = { 12010000, 12120000, 12100000 }, swappedBar = { 12010000, 12230000, 12100000 };
+        Aion2Cooldowns.NoteOwnCast(12120040, t0);
+        bool before = Aion2Cooldowns.Skills(bar).Contains(12120000);
+        List<int> off = Aion2Cooldowns.Skills(swappedBar).ToList();
+        Aion2Cooldowns.NoteOwnCast(12120040, t0.AddMinutes(2));
+        bool again = Aion2Cooldowns.Skills(swappedBar).Contains(12120000);
+        check("a skill swapped off the bar is not listed for an earlier use, and is again when used after", before && !off.Contains(12120000) && off.Contains(12230000) && again,
+            string.Join(",", off));
         Aion2Cooldowns.Reset();
     }
 }

@@ -337,11 +337,85 @@ public sealed class AssistController : IDisposable
         }
     }
 
+    private List<int>? _barBefore;
+    private int _barPresetBefore;
+
+    /// <summary>
+    /// A skill swapped onto the bar in the game takes the place on the screen of the one it replaced, in both looks (5 November 2026, the owner: "when swapping
+    /// a skill it should go to the replaced skill's spot, instead of randomly at the top"). A swap is a slot of the bar holding another skill, the old one gone
+    /// from the bar and the new one not on it before; at most two slots at once (a preset switched, or another character, is no swap).
+    /// </summary>
+    private void FollowSwaps(IReadOnlyList<int>? bar, int preset)
+    {
+        if (bar is not { Count: > 0 })
+        {
+            return;
+        }
+
+        List<int>? before = _barBefore;
+        bool samePreset = preset == _barPresetBefore;
+        _barBefore = bar.ToList();
+        _barPresetBefore = preset;
+        if (before is null || !samePreset || before.SequenceEqual(bar))
+        {
+            return;
+        }
+
+        List<(int Was, int Now)> swaps = Swaps(before, bar);
+        if (swaps.Count is 0 or > 2)
+        {
+            return;
+        }
+
+        MeterSettings s = MeterSettings.Load();
+        bool changed = false;
+        foreach ((int was, int now) in swaps)
+        {
+            foreach (Dictionary<int, double[]> places in new[] { s.AssistCooldownPlaces, s.AssistCooldownTilePlaces })
+            {
+                if (places.TryGetValue(was, out double[]? p) && p is { Length: 2 })
+                {
+                    places[now] = p.ToArray();
+                    changed = true;
+                }
+            }
+
+            // its window, if it was up already (used before the swap came), moves there now
+            if (_skills.TryGetValue(now, out CooldownSkillWindow? window)
+                && CooldownSkillWindow.PlacesOf(s, s.AssistCooldownStyle == CooldownArt.Tiles ? CooldownArt.Tiles : CooldownArt.Bars).TryGetValue(now, out double[]? at))
+            {
+                window.MoveTo(at[0], at[1]);
+            }
+        }
+
+        if (changed)
+        {
+            s.Save();
+            _settings = s;
+        }
+    }
+
+    /// <summary>The slots of the bar that hold another skill now: the old one gone from the bar, the new one not on it before.</summary>
+    internal static List<(int Was, int Now)> Swaps(IReadOnlyList<int> before, IReadOnlyList<int> now)
+    {
+        var swaps = new List<(int, int)>();
+        for (int i = 0; i < Math.Min(before.Count, now.Count); i++)
+        {
+            if (before[i] != now[i] && !now.Contains(before[i]) && !before.Contains(now[i]))
+            {
+                swaps.Add((before[i], now[i]));
+            }
+        }
+
+        return swaps;
+    }
+
     /// <summary>The skills' windows: the skills on the bar (else those known to have a cooldown) that are ticked, each where it was put.</summary>
     private void RunSkills(bool inGame)
     {
         Aion2EntityDirectory? dir = _directory();
         IReadOnlyList<int>? bar = SkillBars.For(dir); // the bar the game sent, else the character's remembered one
+        FollowSwaps(bar, dir?.ActivePreset ?? 0);
         var listed = Aion2Cooldowns.Skills(bar).Where(id => AssistPanel.Listed(id, bar)).ToList();
         // the class's other skills the player ticked to show too (Skill Assist, "Other skills"), after the bar's
         int cls = Aion2Cooldowns.CurrentClass(bar);
