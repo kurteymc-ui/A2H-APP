@@ -157,7 +157,8 @@ internal static class JourneyData
         TimeSpan length = to - from;
         IReadOnlyList<FightLogEntry> all = FightLog.Entries().Where(e => Mine(e, who)).ToList();
         JourneyCharacter log = JourneyLog.Of(who.Key);
-        MarketBook? book = PrivacyConsent.CanUpload ? MarketPrices.For(who.ServerId) : null;
+        // the character's server's prices (ExchangePrices: fetched in the background, the page draws again when they come)
+        MarketBook? book = ExchangePrices.For(who.ServerId);
         List<CpCheckPoint> points = CpChecks.State(who.Name, who.ServerId)?.Points ?? new List<CpCheckPoint>();
         JourneyNumbers before = Numbers(who, all, log, book, points, from - length, from, null);
         JourneyNumbers now = Numbers(who, all, log, book, points, from, to, before);

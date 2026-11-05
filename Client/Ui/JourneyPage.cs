@@ -16,8 +16,8 @@ namespace AionDPS.Ui;
 /// <summary>
 /// Journey (Characters, beside the CP calculator; 5 November 2026, the owner: "any period; what improved; where to improve; to share; you and your class"): a
 /// character's play over a period it picks (the session, a day, seven days, the game's week, the week before, thirty days, the month, everything, or dates of its
-/// own) against the period just before: the figures with their change and a line of the days, the days as bars, what got better, what to work on, a card to
-/// copy into Discord, and its uploaded boss fights ranked against its class and its power on atreia.app.
+/// own) against the period just before: the character and the periods on a rail, then the period's story, a scoreboard of its figures, its days as lines, what
+/// went well, what to work on next, and its uploaded boss fights ranked against its class and its power on atreia.app; a card to copy into Discord.
 /// </summary>
 internal sealed class JourneyPage : Grid
 {
@@ -51,7 +51,7 @@ internal sealed class JourneyPage : Grid
             // the market's prices come a moment later (the loot's worth): drawn again then
             _timer.Tick += (_, _) =>
             {
-                if (MarketPrices.Version != _pricesSeen)
+                if (ExchangePrices.Version != _pricesSeen)
                 {
                     Load();
                 }
@@ -65,7 +65,7 @@ internal sealed class JourneyPage : Grid
     private void Load()
     {
         int generation = ++_generation;
-        _pricesSeen = MarketPrices.Version;
+        _pricesSeen = ExchangePrices.Version;
         if (MainWindow.Headless)
         {
             _report = JourneyData.Sample(DateTime.Now);
@@ -164,38 +164,57 @@ internal sealed class JourneyPage : Grid
     }
 
     // ---- the page ----
+    //
+    // 6 November 2026, the owner: the first version "looks too copy pasted from that other site ... improve it". Drawn our own way since: the character on a
+    // rail at the left (its emblem or portrait in its class colour, Item Level and Combat Power, the periods as a list, the card to share), and the period as a
+    // story on the right: a headline, a scoreboard of six figures, the days as lines, what went well and what to work on next (each with what to do about it),
+    // and the boss ranks as marks on a track. The class colour is the page's accent.
+
+    /// <summary>The page's accent: the character's class colour (gold when the class is not known).</summary>
+    private Color Accent => _who?.Class is { Length: > 0 } cls ? ClassBrushes.ClassColor(cls) : Gold;
 
     private void Draw()
     {
         _root.Children.Clear();
         _root.Children.Add(Head());
-        _root.Children.Add(Periods());
         if (_who is null)
         {
             _root.Children.Add(Card(Wrapped(Loc["Journey.NoCharacter"], "Brush.TextMuted", 13)));
             return;
         }
 
+        var body = new Grid();
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(286) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        UIElement rail = Rail(_report);
+        body.Children.Add(rail);
+        var main = new StackPanel { Margin = new Thickness(18, 0, 0, 0) };
         if (_report is not { } r)
         {
-            _root.Children.Add(Card(Text(Loc["Journey.Loading"], "Brush.TextMuted", 13)));
-            return;
+            main.Children.Add(Card(Text(Loc["Journey.Loading"], "Brush.TextMuted", 13)));
+        }
+        else
+        {
+            main.Children.Add(Story(r));
+            main.Children.Add(Scoreboard(r));
+            main.Children.Add(Timeline(r));
+            main.Children.Add(Highlights(r));
+            main.Children.Add(WorkOn(r));
+            if (!PrivacyConsent.Restricted || MainWindow.Headless)
+            {
+                main.Children.Add(Class(r));
+            }
         }
 
-        _root.Children.Add(Hero(r));
-        _root.Children.Add(Figures(r));
-        _root.Children.Add(Row(Days(r), Improved(r), 3, 2));
-        _root.Children.Add(Row(ToImprove(r), Share(r), 3, 2));
-        if (!PrivacyConsent.Restricted || MainWindow.Headless)
-        {
-            _root.Children.Add(Class(r));
-        }
+        Grid.SetColumn(main, 1);
+        body.Children.Add(main);
+        _root.Children.Add(body);
     }
 
     private UIElement Head()
     {
-        var dock = new DockPanel { Margin = new Thickness(0, 0, 12, 12) };
-        if (_characters.Count > 0)
+        var dock = new DockPanel { Margin = new Thickness(0, 0, 0, 16) };
+        if (_characters.Count > 1)
         {
             var pick = new ComboBox { MinWidth = 220, VerticalAlignment = VerticalAlignment.Center };
             foreach (JourneyWho w in _characters)
@@ -228,54 +247,6 @@ internal sealed class JourneyPage : Grid
         return dock;
     }
 
-    private UIElement Periods()
-    {
-        var stack = new StackPanel { Margin = new Thickness(0, 0, 12, 14) };
-        var chips = new WrapPanel();
-        var box = new Border { Child = chips, Padding = new Thickness(4), CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Left };
-        box.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
-        box.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
-        foreach ((JourneySpan span, string key) in new[]
-                 {
-                     (JourneySpan.Session, "Session"), (JourneySpan.Day, "Day"), (JourneySpan.Week7, "Week7"), (JourneySpan.ThisWeek, "ThisWeek"), (JourneySpan.LastWeek, "LastWeek"),
-                     (JourneySpan.Days30, "Days30"), (JourneySpan.ThisMonth, "ThisMonth"), (JourneySpan.All, "All"), (JourneySpan.Custom, "Custom"),
-                 })
-        {
-            chips.Children.Add(Chip(Loc["Journey.Span." + key], _span == span, () =>
-            {
-                _span = span;
-                Load();
-            }, span == JourneySpan.Custom ? "" : null));
-        }
-
-        stack.Children.Add(box);
-        if (_span == JourneySpan.Custom)
-        {
-            var dates = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(4, 10, 0, 0) };
-            var from = new DatePicker { SelectedDate = _customFrom ?? DateTime.Today.AddDays(-6), Width = 140, DisplayDateEnd = DateTime.Today };
-            var to = new DatePicker { SelectedDate = _customTo ?? DateTime.Today, Width = 140, DisplayDateEnd = DateTime.Today };
-            from.SelectedDateChanged += (_, _) =>
-            {
-                _customFrom = from.SelectedDate;
-                Load();
-            };
-            to.SelectedDateChanged += (_, _) =>
-            {
-                _customTo = to.SelectedDate;
-                Load();
-            };
-            dates.Children.Add(Text(Loc["Journey.From"], "Brush.TextMuted", 12.5));
-            from.Margin = new Thickness(8, 0, 16, 0);
-            dates.Children.Add(from);
-            dates.Children.Add(Text(Loc["Journey.To"], "Brush.TextMuted", 12.5));
-            to.Margin = new Thickness(8, 0, 0, 0);
-            dates.Children.Add(to);
-            stack.Children.Add(dates);
-        }
-
-        return stack;
-    }
-
     private static string Dates(DateTime from, DateTime to)
     {
         DateTime last = to.TimeOfDay == TimeSpan.Zero && to > from ? to.AddDays(-1) : to;
@@ -306,120 +277,264 @@ internal sealed class JourneyPage : Grid
         return n.BossKills > 0 ? F("Journey.Head.Kills", n.BossKills) : Loc["Journey.Head.Glance"];
     }
 
-    private UIElement Hero(JourneyReport r)
+    private static string Kinah(long kinah) => PlayerRow.Compact(kinah);
+
+    private static SolidColorBrush Tint(Color colour, byte alpha) => new(Color.FromArgb(alpha, colour.R, colour.G, colour.B));
+
+    /// <summary>A section of the page: a short accent stroke, its title, something on the right of it; then its content on the panel.</summary>
+    private Border Section(string title, UIElement content, UIElement? right = null)
+    {
+        var stack = new StackPanel();
+        var head = new DockPanel { Margin = new Thickness(0, 0, 0, 14) };
+        if (right is not null)
+        {
+            DockPanel.SetDock(right, Dock.Right);
+            head.Children.Add(right);
+        }
+
+        var name = new StackPanel { Orientation = Orientation.Horizontal };
+        name.Children.Add(new Border { Width = 3, Height = 15, CornerRadius = new CornerRadius(2), Background = new SolidColorBrush(Accent), Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center });
+        TextBlock words = Text(title, "Brush.Text", 15, bold: true);
+        name.Children.Add(words);
+        head.Children.Add(name);
+        stack.Children.Add(head);
+        stack.Children.Add(content);
+        var card = new Border { Child = stack, Padding = new Thickness(20, 16, 20, 18), Margin = new Thickness(0, 0, 0, 14), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1) };
+        card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+        card.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        return card;
+    }
+
+    // ---- the rail: the character, the periods, the card to share ----
+
+    private UIElement Rail(JourneyReport? r)
+    {
+        var rail = new StackPanel { VerticalAlignment = VerticalAlignment.Top };
+        rail.Children.Add(Profile(r));
+        rail.Children.Add(PeriodList());
+        if (r is not null)
+        {
+            rail.Children.Add(ShareBox(r));
+        }
+
+        return rail;
+    }
+
+    /// <summary>The character: its class colour washed over the top, its portrait (else its class emblem) in a ring of it, its name, class and server, Item Level and
+    /// Combat Power at the end of the period.</summary>
+    private UIElement Profile(JourneyReport? r)
+    {
+        JourneyWho who = _who!;
+        Color accent = Accent;
+        var host = new Grid { ClipToBounds = true };
+        var wash = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1) };
+        wash.GradientStops.Add(new GradientStop(Color.FromArgb(0x58, accent.R, accent.G, accent.B), 0));
+        wash.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, accent.R, accent.G, accent.B), 0.62));
+        host.Children.Add(new Border { Background = wash });
+        if (who.Class is { Length: > 0 } cls && MainWindow.ClassIcon(cls) is { } emblem)
+        {
+            // the emblem large and faint in the corner, the class's mark on the card
+            host.Children.Add(new Image { Source = emblem, Width = 150, Height = 150, Opacity = 0.13, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, -18, -26, 0) });
+        }
+
+        var stack = new StackPanel { Margin = new Thickness(18, 18, 18, 16) };
+        var face = new Grid { Width = 78, Height = 78, HorizontalAlignment = HorizontalAlignment.Left };
+        face.Children.Add(new System.Windows.Shapes.Ellipse { Stroke = new SolidColorBrush(accent), StrokeThickness = 2, Fill = new SolidColorBrush(Color.FromRgb(0x14, 0x16, 0x1E)) });
+        if (_portrait is { } portrait)
+        {
+            face.Children.Add(new System.Windows.Shapes.Ellipse { Margin = new Thickness(4), Fill = new ImageBrush(portrait) { Stretch = Stretch.UniformToFill, AlignmentY = AlignmentY.Top } });
+        }
+        else if (who.Class is { Length: > 0 } c && MainWindow.ClassIcon(c) is { } icon)
+        {
+            face.Children.Add(new Image { Source = icon, Margin = new Thickness(14) });
+        }
+        else
+        {
+            face.Children.Add(new TextBlock { Text = who.Name[..1].ToUpperInvariant(), FontSize = 32, Foreground = new SolidColorBrush(accent), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+        }
+
+        stack.Children.Add(face);
+        TextBlock name = Text(who.Name, "Brush.Text", 24);
+        name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        name.Margin = new Thickness(0, 12, 0, 0);
+        name.TextTrimming = TextTrimming.CharacterEllipsis;
+        stack.Children.Add(name);
+        stack.Children.Add(new TextBlock
+        {
+            Text = string.Join("  ·  ", new[] { who.Class, Aion2Servers.NameOf(who.ServerId) }.Where(t => t is { Length: > 0 })), FontSize = 13,
+            Foreground = new SolidColorBrush(ClassBrushes.Text(who.Class) is SolidColorBrush lifted ? lifted.Color : accent), Margin = new Thickness(0, 2, 0, 14),
+        });
+
+        var stats = new Grid();
+        stats.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        stats.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        UIElement Stat(string label, string value, UIElement? delta)
+        {
+            var box = new StackPanel();
+            box.Children.Add(Text(label, "Brush.TextSubtle", 11));
+            var line = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 0) };
+            line.Children.Add(Text(value, "Brush.Text", 18, bold: true));
+            if (delta is FrameworkElement d)
+            {
+                d.Margin = new Thickness(7, 3, 0, 0);
+                line.Children.Add(d);
+            }
+
+            box.Children.Add(line);
+            return box;
+        }
+
+        JourneyNumbers? n = r?.Now;
+        stats.Children.Add(Stat(Loc["Journey.ItemLevel"], n?.ItemLevelEnd?.ToString("N0", CultureInfo.CurrentCulture) ?? "–",
+            n is { ItemLevelEnd: int end } && (r!.Before.ItemLevelEnd ?? n.ItemLevelStart) is int start ? Delta(end, start, true, percent: false) : null));
+        UIElement cp = Stat(Loc["Journey.Profile.Cp"], n?.CpEnd is int power ? PlayerRow.Compact(power) : "–", null);
+        Grid.SetColumn(cp, 1);
+        stats.Children.Add(cp);
+        stack.Children.Add(stats);
+        host.Children.Add(stack);
+        var card = new Border { Child = host, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 14), BorderBrush = Tint(accent, 0x55) };
+        card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+        host.SizeChanged += (_, e) => host.Clip = new RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 11, 11);
+        return card;
+    }
+
+    /// <summary>The periods, one under the other; the one shown marked with the class colour. Picked dates open two date boxes under the list.</summary>
+    private UIElement PeriodList()
+    {
+        var list = new StackPanel();
+        Color accent = Accent;
+        foreach ((JourneySpan span, string key) in new[]
+                 {
+                     (JourneySpan.Session, "Session"), (JourneySpan.Day, "Day"), (JourneySpan.Week7, "Week7"), (JourneySpan.ThisWeek, "ThisWeek"), (JourneySpan.LastWeek, "LastWeek"),
+                     (JourneySpan.Days30, "Days30"), (JourneySpan.ThisMonth, "ThisMonth"), (JourneySpan.All, "All"), (JourneySpan.Custom, "Custom"),
+                 })
+        {
+            bool on = _span == span;
+            var line = new DockPanel();
+            line.Children.Add(new Border { Width = 3, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 6, 10, 6), Background = on ? new SolidColorBrush(accent) : Brushes.Transparent });
+            line.Children.Add(Text(Loc["Journey.Span." + key], on ? "Brush.Text" : "Brush.TextMuted", 13, bold: on));
+            var item = new Border { Child = line, Height = 32, CornerRadius = new CornerRadius(7), Cursor = System.Windows.Input.Cursors.Hand, Background = on ? Tint(accent, 0x1C) : Brushes.Transparent };
+            if (!on)
+            {
+                item.MouseEnter += (_, _) => item.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+                item.MouseLeave += (_, _) => item.Background = Brushes.Transparent;
+            }
+
+            item.MouseLeftButtonUp += (_, e) =>
+            {
+                e.Handled = true;
+                _span = span;
+                Load();
+            };
+            list.Children.Add(item);
+        }
+
+        if (_span == JourneySpan.Custom)
+        {
+            var from = new DatePicker { SelectedDate = _customFrom ?? DateTime.Today.AddDays(-6), DisplayDateEnd = DateTime.Today, Margin = new Thickness(13, 8, 0, 4) };
+            var to = new DatePicker { SelectedDate = _customTo ?? DateTime.Today, DisplayDateEnd = DateTime.Today, Margin = new Thickness(13, 0, 0, 4) };
+            from.SelectedDateChanged += (_, _) =>
+            {
+                _customFrom = from.SelectedDate;
+                Load();
+            };
+            to.SelectedDateChanged += (_, _) =>
+            {
+                _customTo = to.SelectedDate;
+                Load();
+            };
+            list.Children.Add(from);
+            list.Children.Add(to);
+        }
+
+        var card = new Border { Child = list, Padding = new Thickness(8), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 14) };
+        card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+        card.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        return card;
+    }
+
+    // ---- the story of the period ----
+
+    private UIElement Story(JourneyReport r)
     {
         JourneyNumbers n = r.Now;
-        var host = new Grid { Margin = new Thickness(0, 0, 12, 12), Height = 236, ClipToBounds = true };
-        host.SizeChanged += (_, e) => host.Clip = new RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 12, 12);
+        Color accent = Accent;
+        var host = new Grid { ClipToBounds = true, Margin = new Thickness(0, 0, 0, 14), MinHeight = 150 };
         var back = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
-        back.GradientStops.Add(new GradientStop(Color.FromRgb(0x14, 0x17, 0x20), 0));
-        back.GradientStops.Add(new GradientStop(Color.FromRgb(0x1B, 0x1A, 0x26), 1));
+        back.GradientStops.Add(new GradientStop(Color.FromRgb(0x12, 0x15, 0x1D), 0));
+        back.GradientStops.Add(new GradientStop(Color.FromRgb(0x18, 0x1A, 0x24), 1));
         host.Children.Add(new Border { Background = back });
+        var glow = new RadialGradientBrush { Center = new Point(0.92, 0.1), GradientOrigin = new Point(0.92, 0.1), RadiusX = 0.55, RadiusY = 1.2 };
+        glow.GradientStops.Add(new GradientStop(Color.FromArgb(0x50, accent.R, accent.G, accent.B), 0));
+        glow.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, accent.R, accent.G, accent.B), 1));
+        host.Children.Add(new Border { Background = glow });
+        host.Children.Add(new Border { CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), BorderBrush = Tint(accent, 0x45) });
+        host.SizeChanged += (_, e) => host.Clip = new RectangleGeometry(new Rect(0, 0, e.NewSize.Width, e.NewSize.Height), 12, 12);
 
-        // the game behind, on the right, fading into the card
-        string art = Path.Combine(AppContext.BaseDirectory, "assets", "setup", "game.jpg");
-        if (File.Exists(art))
-        {
-            var picture = new Image { Stretch = Stretch.UniformToFill, HorizontalAlignment = HorizontalAlignment.Right, Opacity = 0.55 };
-            try
-            {
-                var bitmap = new BitmapImage();
-                bitmap.BeginInit();
-                bitmap.UriSource = new Uri(art, UriKind.Absolute);
-                bitmap.DecodePixelWidth = 1000;
-                bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                bitmap.EndInit();
-                bitmap.Freeze();
-                picture.Source = bitmap;
-            }
-            catch (Exception ex) when (ex is IOException or NotSupportedException or UriFormatException)
-            {
-                picture.Source = null;
-            }
-
-            var mask = new LinearGradientBrush { StartPoint = new Point(0, 0.5), EndPoint = new Point(1, 0.5) };
-            mask.GradientStops.Add(new GradientStop(Colors.Transparent, 0.35));
-            mask.GradientStops.Add(new GradientStop(Colors.Black, 0.85));
-            picture.OpacityMask = mask;
-            host.Children.Add(picture);
-        }
-
-        host.Children.Add(new Border
-        {
-            CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(Color.FromArgb(0x50, Gold.R, Gold.G, Gold.B)),
-        });
-        var words = new StackPanel { Margin = new Thickness(26, 22, 26, 22), VerticalAlignment = VerticalAlignment.Center };
-        var meta = new StackPanel { Orientation = Orientation.Horizontal };
-        if (r.Who.Class is { Length: > 0 } cls)
-        {
-            meta.Children.Add(new Border
-            {
-                CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 2, 8, 3), Margin = new Thickness(0, 0, 10, 0), Background = new SolidColorBrush(Color.FromArgb(0x30, Gold.R, Gold.G, Gold.B)),
-                BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(Color.FromArgb(0x90, Gold.R, Gold.G, Gold.B)),
-                Child = new TextBlock { Text = cls.ToUpperInvariant(), FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Gold) },
-            });
-        }
-
-        meta.Children.Add(new TextBlock { Text = r.Who.Name + "  ·  " + Dates(r.From, r.To), FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0xC9, 0xCF, 0xD8)), VerticalAlignment = VerticalAlignment.Center });
-        words.Children.Add(meta);
+        var grid = new Grid { Margin = new Thickness(26, 22, 22, 22) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         words.Children.Add(new TextBlock
         {
-            Text = Headline(r), FontSize = 28, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap, MaxWidth = 720,
-            Margin = new Thickness(0, 10, 0, 16), HorizontalAlignment = HorizontalAlignment.Left,
+            Text = Dates(r.From, r.To).ToUpper(CultureInfo.CurrentCulture), FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(accent),
         });
-        var tiles = new WrapPanel();
+        var headline = new TextBlock { Text = Headline(r), FontSize = 30, Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 10) };
+        headline.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        words.Children.Add(headline);
+        var facts = new List<string>();
+        if (n.MinutesPlayed > 0)
+        {
+            facts.Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Story.InGame"], Hours(n.MinutesPlayed)));
+        }
+
+        facts.Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Story.Bosses"], n.BossKills));
+        if (n.Dungeons > 0)
+        {
+            facts.Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Story.Dungeons"], n.Dungeons));
+        }
+
+        if (n.WorthKnown && n.LootWorth > 0)
+        {
+            facts.Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Story.Loot"], Kinah(n.LootWorth)));
+        }
+
+        words.Children.Add(new TextBlock { Text = string.Join("   ·   ", facts), FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0xC2, 0xC8, 0xD2)), TextWrapping = TextWrapping.Wrap });
+        grid.Children.Add(words);
+
+        // the best drop on the right, as a medallion in its grade's colour
         if (n.BestDrop is { } drop)
         {
-            tiles.Children.Add(HeroTile(DropIcon(drop, 34), drop.Name, drop.Worth > 0 ? Loc["Journey.BestDrop"] + " · " + Kinah(drop.Worth) : Loc["Journey.BestDrop"]));
+            var medal = new StackPanel { Width = 150, Margin = new Thickness(18, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            UIElement icon = DropIcon(drop, 64);
+            ((FrameworkElement)icon).HorizontalAlignment = HorizontalAlignment.Center;
+            medal.Children.Add(icon);
+            medal.Children.Add(new TextBlock { Text = Loc["Journey.BestDropTitle"].ToUpper(CultureInfo.CurrentCulture), FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x9A, 0xA3, 0xB0)), HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 8, 0, 0) });
+            medal.Children.Add(new TextBlock { Text = drop.Name, FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(LootStats.GradeColor(Math.Max(1, drop.Grade))), TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap, HorizontalAlignment = HorizontalAlignment.Center });
+            if (drop.Worth > 0)
+            {
+                medal.Children.Add(new TextBlock { Text = Kinah(drop.Worth) + " Kinah", FontSize = 12, Foreground = new SolidColorBrush(Gold), HorizontalAlignment = HorizontalAlignment.Center });
+            }
+
+            Grid.SetColumn(medal, 1);
+            grid.Children.Add(medal);
         }
 
-        if (n.BestBossDps > 0)
-        {
-            tiles.Children.Add(HeroTile(GlyphIcon(""), PlayerRow.Compact((long)n.BestBossDps) + "/s", string.Format(CultureInfo.CurrentCulture, Loc["Journey.BestDpsOn"], n.BestBossName)));
-        }
-
-        tiles.Children.Add(HeroTile(GlyphIcon(""), n.BossKills.ToString(CultureInfo.CurrentCulture),
-            n.Dungeons > 0 ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.KillsAndRuns"], n.Dungeons) : Loc["Journey.BossesDown"]));
-        words.Children.Add(tiles);
-        host.Children.Add(words);
+        host.Children.Add(grid);
         return host;
     }
-
-    private static Border HeroTile(UIElement icon, string big, string small)
-    {
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        grid.Children.Add(icon);
-        var words = new StackPanel { Margin = new Thickness(10, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
-        words.Children.Add(new TextBlock { Text = big, FontSize = 15, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White, MaxWidth = 220, TextTrimming = TextTrimming.CharacterEllipsis });
-        words.Children.Add(new TextBlock { Text = small, FontSize = 11.5, Foreground = new SolidColorBrush(Color.FromRgb(0xB8, 0xC0, 0xCC)) });
-        Grid.SetColumn(words, 1);
-        grid.Children.Add(words);
-        return new Border
-        {
-            Child = grid, Padding = new Thickness(10, 8, 12, 8), Margin = new Thickness(0, 0, 10, 0), CornerRadius = new CornerRadius(10),
-            Background = new SolidColorBrush(Color.FromArgb(0x99, 0x10, 0x12, 0x19)), BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF)),
-        };
-    }
-
-    private static UIElement GlyphIcon(string glyph) => new Border
-    {
-        Width = 34, Height = 34, CornerRadius = new CornerRadius(17), Background = new SolidColorBrush(Color.FromArgb(0x30, Gold.R, Gold.G, Gold.B)),
-        Child = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 15, Foreground = new SolidColorBrush(Gold), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
-    };
 
     private static UIElement DropIcon(JourneyDrop drop, double size)
     {
         Color colour = LootStats.GradeColor(Math.Max(1, drop.Grade));
         var frame = new Border
         {
-            Width = size, Height = size, CornerRadius = new CornerRadius(size / 2), BorderThickness = new Thickness(1.5), BorderBrush = new SolidColorBrush(colour),
+            Width = size, Height = size, CornerRadius = new CornerRadius(size / 2), BorderThickness = new Thickness(size >= 48 ? 2 : 1.5), BorderBrush = new SolidColorBrush(colour),
             Background = new SolidColorBrush(Color.FromArgb(0x40, colour.R, colour.G, colour.B)), ToolTip = drop.Name,
         };
         if (drop.ItemId > 0 && OverlayPictures.Load(Aion2Artwork.ItemIconPath(drop.ItemId)) is ImageSource picture)
         {
-            frame.Child = new Image { Source = picture, Margin = new Thickness(4) };
+            frame.Child = new Image { Source = picture, Margin = new Thickness(size * 0.13) };
         }
         else
         {
@@ -429,163 +544,183 @@ internal sealed class JourneyPage : Grid
         return frame;
     }
 
-    private static string Kinah(long kinah) => PlayerRow.Compact(kinah);
+    // ---- the scoreboard: six figures in one panel ----
 
-    private UIElement Figures(JourneyReport r)
+    private UIElement Scoreboard(JourneyReport r)
     {
         JourneyNumbers n = r.Now, b = r.Before;
-        var grid = new UniformGrid { Columns = 6, Margin = new Thickness(0, 0, 2, 2) };
         List<JourneyDayNumbers> days = n.Days;
-        grid.Children.Add(Figure(Loc["Journey.Played"], Hours(n.MinutesPlayed), Delta(n.MinutesPlayed, b.MinutesPlayed, true),
-            n.TimeKnown ? Loc["Journey.AgainstBefore"] : Loc["Journey.TimeFromFights"], days.Select(d => d.Played).ToList(), Color.FromRgb(0x6F, 0xB4, 0xEC)));
-        grid.Children.Add(Figure(Loc["Journey.Loot"], n.WorthKnown ? Kinah(n.LootWorth) : "–", n.WorthKnown ? Delta(n.LootWorth, b.LootWorth, true) : null,
-            n.WorthKnown ? Loc["Journey.AtMarket"] : Loc["Journey.NoPrices"], days.Select(d => (double)d.Worth).ToList(), Gold));
-        grid.Children.Add(Figure(Loc["Journey.Bosses"], n.BossKills.ToString(CultureInfo.CurrentCulture), Delta(n.BossKills, b.BossKills, true),
-            Loc["Journey.AgainstBefore"], days.Select(d => (double)d.Kills).ToList(), Boss));
-        grid.Children.Add(Figure(Loc["Journey.BossDps"], n.BossDps > 0 ? PlayerRow.Compact((long)n.BossDps) + "/s" : "–", Delta(n.BossDps, b.BossDps, true),
-            Loc["Journey.Average"], days.Select(d => d.BossDps).ToList(), Up));
-        grid.Children.Add(Figure(Loc["Journey.Deaths"], n.Deaths.ToString(CultureInfo.CurrentCulture), Delta(n.Deaths, b.Deaths, false),
-            Loc["Journey.InBossFights"], days.Select(d => (double)d.Deaths).ToList(), Down));
-        grid.Children.Add(Figure(Loc["Journey.ItemLevel"], n.ItemLevelEnd?.ToString("N0", CultureInfo.CurrentCulture) ?? "–",
-            n.ItemLevelEnd is int end && (b.ItemLevelEnd ?? n.ItemLevelStart) is int start ? Delta(end, start, true, percent: false) : null,
-            n.CpEnd is int cp ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Cp"], cp) : Loc["Journey.AtLogins"],
-            days.Select(d => (double)(d.ItemLevel ?? 0)).ToList(), Dungeon));
-        return grid;
-    }
-
-    private static UIElement Row(UIElement left, UIElement right, int leftStars, int rightStars)
-    {
-        var row = new Grid();
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(leftStars, GridUnitType.Star) });
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(rightStars, GridUnitType.Star) });
-        if (left is FrameworkElement l)
+        var cells = new List<(string Label, string Value, UIElement? Delta, string Note, IReadOnlyList<double> Line, Color Colour)>
         {
-            l.VerticalAlignment = VerticalAlignment.Stretch;
+            (Loc["Journey.Played"], Hours(n.MinutesPlayed), Delta(n.MinutesPlayed, b.MinutesPlayed, true), n.TimeKnown ? Loc["Journey.AgainstBefore"] : Loc["Journey.TimeFromFights"],
+                days.Select(d => d.Played).ToList(), Color.FromRgb(0x6F, 0xB4, 0xEC)),
+            (Loc["Journey.Loot"], n.WorthKnown ? Kinah(n.LootWorth) : "–", n.WorthKnown ? Delta(n.LootWorth, b.LootWorth, true) : null, n.WorthKnown ? Loc["Journey.AtMarket"] : Loc["Journey.NoPrices"],
+                days.Select(d => (double)d.Worth).ToList(), Gold),
+            (Loc["Journey.Bosses"], n.BossKills.ToString(CultureInfo.CurrentCulture), Delta(n.BossKills, b.BossKills, true), Loc["Journey.AgainstBefore"],
+                days.Select(d => (double)d.Kills).ToList(), Boss),
+            (Loc["Journey.BossDps"], n.BossDps > 0 ? PlayerRow.Compact((long)n.BossDps) + "/s" : "–", Delta(n.BossDps, b.BossDps, true), Loc["Journey.Average"],
+                days.Select(d => d.BossDps).ToList(), Up),
+            (Loc["Journey.Deaths"], n.Deaths.ToString(CultureInfo.CurrentCulture), Delta(n.Deaths, b.Deaths, false), Loc["Journey.InBossFights"],
+                days.Select(d => (double)d.Deaths).ToList(), Down),
+            (Loc["Journey.ItemLevel"], n.ItemLevelEnd?.ToString("N0", CultureInfo.CurrentCulture) ?? "–",
+                n.ItemLevelEnd is int end && (b.ItemLevelEnd ?? n.ItemLevelStart) is int start ? Delta(end, start, true, percent: false) : null,
+                n.CpEnd is int cp ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Cp"], cp) : Loc["Journey.AtLogins"],
+                days.Select(d => (double)(d.ItemLevel ?? 0)).ToList(), Dungeon),
+        };
+
+        var grid = new Grid();
+        for (int c = 0; c < 3; c++)
+        {
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         }
 
-        if (right is FrameworkElement r)
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        for (int i = 0; i < cells.Count; i++)
         {
-            r.VerticalAlignment = VerticalAlignment.Stretch;
+            var (label, value, delta, note, line, colour) = cells[i];
+            int column = i % 3, row = i / 3;
+            var stack = new StackPanel();
+            var top = new StackPanel { Orientation = Orientation.Horizontal };
+            top.Children.Add(new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Fill = new SolidColorBrush(colour), Margin = new Thickness(0, 1, 7, 0), VerticalAlignment = VerticalAlignment.Center });
+            top.Children.Add(Text(label.ToUpper(CultureInfo.CurrentCulture), "Brush.TextMuted", 10.5, bold: true));
+            stack.Children.Add(top);
+            var figure = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 6, 0, 0) };
+            figure.Children.Add(Text(value, "Brush.Text", 24, bold: true));
+            if (delta is FrameworkElement d)
+            {
+                // the change as a small pill in its colour
+                var pill = new Border { Child = d, Padding = new Thickness(6, 1, 6, 2), CornerRadius = new CornerRadius(8), Margin = new Thickness(8, 4, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+                pill.Background = d is TextBlock t && t.Foreground is SolidColorBrush fg ? Tint(fg.Color, 0x24) : Brushes.Transparent;
+                figure.Children.Add(pill);
+            }
+
+            stack.Children.Add(figure);
+            stack.Children.Add(Text(note, "Brush.TextSubtle", 11));
+            UIElement spark = Sparkline(line, colour, 190, 22);
+            stack.Children.Add(new Viewbox { Child = spark, Stretch = Stretch.Fill, Height = 22, Margin = new Thickness(0, 8, 0, 0) });
+            var cell = new Border
+            {
+                Child = stack, Padding = new Thickness(18, 14, 18, 14),
+                BorderThickness = new Thickness(0, 0, column < 2 ? 1 : 0, row == 0 ? 1 : 0),
+            };
+            cell.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+            Grid.SetColumn(cell, column);
+            Grid.SetRow(cell, row);
+            grid.Children.Add(cell);
         }
 
-        Grid.SetColumn(right, 1);
-        row.Children.Add(left);
-        row.Children.Add(right);
-        return row;
+        var panel = new Border { Child = grid, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 14) };
+        panel.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+        panel.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        return panel;
     }
 
-    private UIElement Days(JourneyReport r)
+    // ---- the days as lines ----
+
+    private UIElement Timeline(JourneyReport r)
     {
-        var legend = new StackPanel { Orientation = Orientation.Horizontal };
+        List<JourneyDayNumbers> days = r.Now.Days.TakeLast(14).Reverse().ToList();
+        bool weeks = r.Now.Days.Count >= 2 && (r.Now.Days[1].Day - r.Now.Days[0].Day).TotalDays >= 7;
+        var legend = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         legend.Children.Add(Legend(Boss, Loc["Journey.Legend.Bosses"]));
         legend.Children.Add(Legend(Dungeon, Loc["Journey.Legend.Dungeons"]));
         legend.Children.Add(Legend(Other, Loc["Journey.Legend.Rest"]));
-        var bars = r.Now.Days.Select(d => new DayBar(d.Day, d.BossMinutes, d.DungeonMinutes, Math.Max(0, d.Played - d.BossMinutes - d.DungeonMinutes),
-            d.Worth > 0 ? Kinah(d.Worth) : null, d.Drop is { ItemId: > 0 } drop ? OverlayPictures.Load(Aion2Artwork.ItemIconPath(drop.ItemId)) : null, d.Drop?.Name)).ToList();
-        UIElement content = bars.Count == 0 || bars.All(b => b.Boss + b.Dungeon + b.Other <= 0)
-            ? Wrapped(Loc["Journey.NoDays"], "Brush.TextMuted", 12.5)
-            : DayBars(bars.TakeLast(31).ToList());
-        return Card(content, Loc[r.Now.Days.Count > 0 && r.Now.Days.Count >= 2 && (r.Now.Days[1].Day - r.Now.Days[0].Day).TotalDays >= 7 ? "Journey.WeekByWeek" : "Journey.DayByDay"], legend);
+        string title = Loc[weeks ? "Journey.YourWeeks" : "Journey.YourDays"];
+        if (days.Count == 0 || days.All(d => d.Played <= 0 && d.Kills == 0 && d.Worth == 0))
+        {
+            return Section(title, Wrapped(Loc["Journey.NoDays"], "Brush.TextMuted", 12.5), legend);
+        }
+
+        double longest = Math.Max(1, days.Max(d => Math.Max(d.Played, d.BossMinutes + d.DungeonMinutes)));
+        var table = new Grid();
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(96) });
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(72) });
+        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(34) });
+        int row = 0;
+        void Put(UIElement e, int column, HorizontalAlignment align = HorizontalAlignment.Left)
+        {
+            if (e is FrameworkElement f)
+            {
+                f.HorizontalAlignment = align;
+                f.VerticalAlignment = VerticalAlignment.Center;
+            }
+
+            Grid.SetRow(e, row);
+            Grid.SetColumn(e, column);
+            table.Children.Add(e);
+        }
+
+        table.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        Put(Text(Loc["Journey.Col.Time"], "Brush.TextSubtle", 10.5, bold: true), 2, HorizontalAlignment.Right);
+        Put(Text(Loc["Journey.Col.Bosses"], "Brush.TextSubtle", 10.5, bold: true), 3, HorizontalAlignment.Right);
+        Put(Text(Loc["Journey.Col.Loot"], "Brush.TextSubtle", 10.5, bold: true), 4, HorizontalAlignment.Right);
+        foreach (JourneyDayNumbers d in days)
+        {
+            row++;
+            table.RowDefinitions.Add(new RowDefinition { Height = new GridLength(38) });
+            var label = new StackPanel { Orientation = Orientation.Horizontal };
+            label.Children.Add(Text(weeks ? Loc["Journey.WeekShort"] : d.Day.ToString("ddd", CultureInfo.CurrentCulture), "Brush.Text", 12.5, bold: true));
+            TextBlock date = Text(" " + d.Day.ToString("d MMM", CultureInfo.CurrentCulture), "Brush.TextMuted", 12);
+            label.Children.Add(date);
+            Put(label, 0);
+
+            // the time of the day as one line: bosses, dungeons, the rest, as long as the longest day is the full width
+            double rest = Math.Max(0, d.Played - d.BossMinutes - d.DungeonMinutes), total = d.BossMinutes + d.DungeonMinutes + rest;
+            var track = new Grid { Height = 12, Margin = new Thickness(0, 0, 14, 0) };
+            var under = new Border { CornerRadius = new CornerRadius(6) };
+            under.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+            track.Children.Add(under);
+            var parts = new Grid { HorizontalAlignment = HorizontalAlignment.Left };
+            track.SizeChanged += (_, e) => parts.Width = Math.Max(total > 0 ? 6 : 0, e.NewSize.Width * total / longest);
+            double[] lengths = { d.BossMinutes, d.DungeonMinutes, rest };
+            Color[] colours = { Boss, Dungeon, Other };
+            int first = Array.FindIndex(lengths, v => v > 0), last = Array.FindLastIndex(lengths, v => v > 0);
+            for (int i = 0; i < 3; i++)
+            {
+                parts.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(0, lengths[i]), GridUnitType.Star) });
+                if (lengths[i] <= 0)
+                {
+                    continue;
+                }
+
+                var piece = new Border { Background = new SolidColorBrush(colours[i]), CornerRadius = new CornerRadius(i == first ? 6 : 0, i == last ? 6 : 0, i == last ? 6 : 0, i == first ? 6 : 0) };
+                Grid.SetColumn(piece, i);
+                parts.Children.Add(piece);
+            }
+
+            track.Children.Add(parts);
+            track.ToolTip = string.Format(CultureInfo.CurrentCulture, Loc["Journey.DayTip"], d.Day.ToString("dddd d MMM", CultureInfo.CurrentCulture), Hours(total));
+            Put(track, 1, HorizontalAlignment.Stretch);
+
+            Put(Text(total > 0 ? Hours(total) : "–", total > 0 ? "Brush.Text" : "Brush.TextSubtle", 12.5), 2, HorizontalAlignment.Right);
+            Put(Text(d.Kills > 0 ? d.Kills.ToString(CultureInfo.CurrentCulture) : "–", d.Kills > 0 ? "Brush.Text" : "Brush.TextSubtle", 12.5, bold: d.Kills > 0), 3, HorizontalAlignment.Right);
+            TextBlock loot = Text(d.Worth > 0 ? Kinah(d.Worth) : "–", d.Worth > 0 ? "Brush.Accent" : "Brush.TextSubtle", 12.5, bold: d.Worth > 0);
+            Put(loot, 4, HorizontalAlignment.Right);
+            if (d.Drop is { } drop)
+            {
+                Put(DropIcon(drop, 24), 5, HorizontalAlignment.Right);
+            }
+        }
+
+        return Section(title, table, legend);
     }
 
-    private UIElement Improved(JourneyReport r)
+    // ---- what went well, what to work on ----
+
+    /// <summary>A finding: a stripe and a mark in its colour on a faint wash of it, a title, what it means, and (for the things to work on) what to do.</summary>
+    private static UIElement Finding(string title, string detail, Color colour, string glyph, string? tip = null)
     {
-        JourneyNumbers n = r.Now, b = r.Before;
-        var list = new StackPanel();
-        void Add(string title, string detail) => list.Children.Add(ListPoint(title, detail, Up, ""));
-        if (n.BestDrop is { } drop)
-        {
-            Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.Drop"], drop.Name), drop.Worth > 0 ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.DropWorth"], Kinah(drop.Worth), drop.At.ToString("ddd d MMM", CultureInfo.CurrentCulture))
-                : drop.At.ToString("ddd d MMM", CultureInfo.CurrentCulture));
-        }
-
-        if (n.BestBossDps > 0)
-        {
-            Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.BestDps"], PlayerRow.Compact((long)n.BestBossDps), n.BestBossName),
-                b.BestBossDps > 0 && n.BestBossDps > b.BestBossDps ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.BetterThan"], PlayerRow.Compact((long)b.BestBossDps)) : Loc["Journey.Up.Highest"]);
-        }
-
-        if (n.WorthKnown && n.LootWorth > b.LootWorth && n.LootWorth > 0)
-        {
-            Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.Loot"], Kinah(n.LootWorth)),
-                b.LootWorth > 0 ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.LootBefore"], Kinah(b.LootWorth)) : Loc["Journey.Up.NothingBefore"]);
-        }
-
-        if (n.ItemLevelEnd is int end && n.ItemLevelStart is int start && end > start)
-        {
-            Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.ItemLevel"], start, end), string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.ItemLevelGain"], end - start));
-        }
-
-        if (n.Bosses.Where(x => x.AverageBefore > 0 && x.AverageDps >= x.AverageBefore * 1.03).MaxBy(x => x.AverageDps / x.AverageBefore) is { } boss)
-        {
-            Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.Boss"], boss.Name, Math.Round((boss.AverageDps / boss.AverageBefore - 1) * 100)),
-                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.BossDetail"], PlayerRow.Compact((long)boss.AverageDps), PlayerRow.Compact((long)boss.AverageBefore)));
-        }
-
-        if (list.Children.Count == 0)
-        {
-            list.Children.Add(Wrapped(Loc["Journey.Up.None"], "Brush.TextMuted", 12.5));
-        }
-
-        return Card(list, Loc["Journey.Improved"]);
-    }
-
-    private UIElement ToImprove(JourneyReport r)
-    {
-        JourneyNumbers n = r.Now, b = r.Before;
-        var list = new StackPanel();
-        void Add(string title, string detail, Color colour) => list.Children.Add(ListPoint(title, detail, colour, ""));
-        if (n.Deaths > 0)
-        {
-            JourneyBoss? worst = n.Bosses.Where(x => x.Deaths > 0).MaxBy(x => x.Deaths);
-            Add(string.Format(CultureInfo.CurrentCulture, Loc[n.Deaths == 1 ? "Journey.Down.Death" : "Journey.Down.Deaths"], n.Deaths),
-                (worst is not null ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.DeathsMost"], worst.Name, worst.Deaths) + " · " : "")
-                + (b.Deaths > 0 ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.DeathsBefore"], b.Deaths) : Loc["Journey.Down.NoDeathsBefore"]), Down);
-        }
-
-        foreach (JourneyBoss boss in n.Bosses.Where(x => x.AverageBefore > 0 && x.AverageDps < x.AverageBefore * 0.95).OrderBy(x => x.AverageDps / x.AverageBefore).Take(2))
-        {
-            Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.Dps"], boss.Name, Math.Round((1 - (boss.AverageDps / boss.AverageBefore)) * 100)),
-                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.DpsDetail"], PlayerRow.Compact((long)boss.AverageDps), PlayerRow.Compact((long)boss.AverageBefore)), JourneyViews.Boss);
-        }
-
-        if (n.TimeKnown && n.MinutesPlayed >= 60 && n.MinutesIdle / n.MinutesPlayed >= 0.25)
-        {
-            Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.Idle"], Hours(n.MinutesIdle)),
-                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.IdleDetail"], Math.Round(n.MinutesIdle / n.MinutesPlayed * 100)), Other);
-        }
-
-        foreach (JourneyRun run in r.SlowerRuns)
-        {
-            Add(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.Run"], run.Name, Clock(run.Seconds)),
-                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.RunDetail"], Clock(run.BestSeconds), Clock(run.Seconds - run.BestSeconds)), Dungeon);
-        }
-
-        if (list.Children.Count == 0)
-        {
-            list.Children.Add(Wrapped(Loc["Journey.Down.None"], "Brush.TextMuted", 12.5));
-        }
-
-        return Card(list, Loc["Journey.ToImprove"]);
-    }
-
-    private static string Clock(double seconds)
-    {
-        TimeSpan t = TimeSpan.FromSeconds(Math.Max(0, seconds));
-        return t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss", CultureInfo.InvariantCulture) : t.ToString(@"m\:ss", CultureInfo.InvariantCulture);
-    }
-
-    /// <summary>A line of a list: a round mark in its colour, a title, a detail under it.</summary>
-    private static UIElement ListPoint(string title, string detail, Color colour, string glyph)
-    {
-        var grid = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+        var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.Children.Add(new Border
         {
-            Width = 28, Height = 28, CornerRadius = new CornerRadius(14), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 1, 12, 0),
-            Background = new SolidColorBrush(Color.FromArgb(0x28, colour.R, colour.G, colour.B)),
-            Child = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe MDL2 Assets"), FontSize = 12, Foreground = new SolidColorBrush(colour), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
+            Width = 32, Height = 32, CornerRadius = new CornerRadius(9), VerticalAlignment = VerticalAlignment.Top, Margin = new Thickness(0, 0, 12, 0), Background = Tint(colour, 0x2C),
+            Child = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 14, Foreground = new SolidColorBrush(colour), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center },
         });
         var words = new StackPanel();
         words.Children.Add(Wrapped(title, "Brush.Text", 13.5, bold: true));
@@ -596,23 +731,149 @@ internal sealed class JourneyPage : Grid
             words.Children.Add(d);
         }
 
+        if (tip is not null)
+        {
+            var hint = new TextBlock { TextWrapping = TextWrapping.Wrap, FontSize = 12, Margin = new Thickness(0, 6, 0, 0) };
+            hint.Inlines.Add(new System.Windows.Documents.Run("→ ") { Foreground = new SolidColorBrush(colour), FontWeight = FontWeights.SemiBold });
+            var text = new System.Windows.Documents.Run(tip);
+            text.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Brush.Text");
+            hint.Inlines.Add(text);
+            words.Children.Add(hint);
+        }
+
         Grid.SetColumn(words, 1);
         grid.Children.Add(words);
+        return new Border
+        {
+            Child = grid, Padding = new Thickness(14, 12, 14, 12), Margin = new Thickness(0, 0, 0, 8), CornerRadius = new CornerRadius(9), Background = Tint(colour, 0x0F),
+            BorderThickness = new Thickness(3, 0, 0, 0), BorderBrush = new SolidColorBrush(colour),
+        };
+    }
+
+    /// <summary>Findings two to a line (one on its own when it is the last).</summary>
+    private static UIElement Pairs(List<UIElement> items)
+    {
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        for (int i = 0; i < items.Count; i++)
+        {
+            if (i % 2 == 0)
+            {
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            }
+
+            if (items[i] is FrameworkElement f)
+            {
+                f.Margin = new Thickness(i % 2 == 0 ? 0 : 5, 0, i % 2 == 0 ? 5 : 0, 10);
+            }
+
+            Grid.SetRow(items[i], i / 2);
+            Grid.SetColumn(items[i], i % 2);
+            if (i == items.Count - 1 && i % 2 == 0)
+            {
+                Grid.SetColumnSpan(items[i], 2);
+                ((FrameworkElement)items[i]).Margin = new Thickness(0, 0, 0, 10);
+            }
+
+            grid.Children.Add(items[i]);
+        }
+
         return grid;
+    }
+
+    private UIElement Highlights(JourneyReport r)
+    {
+        JourneyNumbers n = r.Now, b = r.Before;
+        var list = new List<UIElement>();
+        if (n.BestBossDps > 0)
+        {
+            list.Add(Finding(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.BestDps"], PlayerRow.Compact((long)n.BestBossDps), n.BestBossName),
+                b.BestBossDps > 0 && n.BestBossDps > b.BestBossDps ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.BetterThan"], PlayerRow.Compact((long)b.BestBossDps)) : Loc["Journey.Up.Highest"],
+                Up, ""));
+        }
+
+        if (n.Bosses.Where(x => x.AverageBefore > 0 && x.AverageDps >= x.AverageBefore * 1.03).MaxBy(x => x.AverageDps / x.AverageBefore) is { } boss)
+        {
+            list.Add(Finding(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.Boss"], boss.Name, Math.Round((boss.AverageDps / boss.AverageBefore - 1) * 100)),
+                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.BossDetail"], PlayerRow.Compact((long)boss.AverageDps), PlayerRow.Compact((long)boss.AverageBefore)), Up, ""));
+        }
+
+        if (n.ItemLevelEnd is int end && n.ItemLevelStart is int start && end > start)
+        {
+            list.Add(Finding(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.ItemLevel"], start, end), string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.ItemLevelGain"], end - start), Dungeon, ""));
+        }
+
+        if (n.WorthKnown && n.LootWorth > b.LootWorth && n.LootWorth > 0)
+        {
+            list.Add(Finding(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.Loot"], Kinah(n.LootWorth)),
+                b.LootWorth > 0 ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.LootBefore"], Kinah(b.LootWorth)) : Loc["Journey.Up.NothingBefore"], Gold, ""));
+        }
+
+        if (n.BestDrop is { } drop && drop.Worth > 0)
+        {
+            list.Add(Finding(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.Drop"], drop.Name),
+                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Up.DropWorth"], Kinah(drop.Worth), drop.At.ToString("ddd d MMM", CultureInfo.CurrentCulture)), Gold, ""));
+        }
+
+        UIElement content = list.Count == 0 ? Wrapped(Loc["Journey.Up.None"], "Brush.TextMuted", 12.5) : Pairs(list);
+        return Section(Loc["Journey.Highlights"], content);
+    }
+
+    private UIElement WorkOn(JourneyReport r)
+    {
+        JourneyNumbers n = r.Now, b = r.Before;
+        var list = new List<UIElement>();
+        if (n.Deaths > 0)
+        {
+            JourneyBoss? worst = n.Bosses.Where(x => x.Deaths > 0).MaxBy(x => x.Deaths);
+            list.Add(Finding(string.Format(CultureInfo.CurrentCulture, Loc[n.Deaths == 1 ? "Journey.Down.Death" : "Journey.Down.Deaths"], n.Deaths),
+                (worst is not null ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.DeathsMost"], worst.Name, worst.Deaths) + " · " : "")
+                + (b.Deaths > 0 ? string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.DeathsBefore"], b.Deaths) : Loc["Journey.Down.NoDeathsBefore"]),
+                Down, "", Loc["Journey.Tip.Deaths"]));
+        }
+
+        foreach (JourneyBoss boss in n.Bosses.Where(x => x.AverageBefore > 0 && x.AverageDps < x.AverageBefore * 0.95).OrderBy(x => x.AverageDps / x.AverageBefore).Take(2))
+        {
+            list.Add(Finding(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.Dps"], boss.Name, Math.Round((1 - (boss.AverageDps / boss.AverageBefore)) * 100)),
+                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.DpsDetail"], PlayerRow.Compact((long)boss.AverageDps), PlayerRow.Compact((long)boss.AverageBefore)),
+                Boss, "", Loc["Journey.Tip.Dps"]));
+        }
+
+        if (n.TimeKnown && n.MinutesPlayed >= 60 && n.MinutesIdle / n.MinutesPlayed >= 0.25)
+        {
+            list.Add(Finding(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.Idle"], Hours(n.MinutesIdle)),
+                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.IdleDetail"], Math.Round(n.MinutesIdle / n.MinutesPlayed * 100)), Color.FromRgb(0x8A, 0x9A, 0xB0), "", Loc["Journey.Tip.Idle"]));
+        }
+
+        foreach (JourneyRun run in r.SlowerRuns)
+        {
+            list.Add(Finding(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.Run"], run.Name, Clock(run.Seconds)),
+                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Down.RunDetail"], Clock(run.BestSeconds), Clock(run.Seconds - run.BestSeconds)), Dungeon, "", Loc["Journey.Tip.Run"]));
+        }
+
+        UIElement content = list.Count == 0 ? Wrapped(Loc["Journey.Down.None"], "Brush.TextMuted", 12.5) : Pairs(list);
+        return Section(Loc["Journey.WorkOn"], content);
+    }
+
+    private static string Clock(double seconds)
+    {
+        TimeSpan t = TimeSpan.FromSeconds(Math.Max(0, seconds));
+        return t.TotalHours >= 1 ? t.ToString(@"h\:mm\:ss", CultureInfo.InvariantCulture) : t.ToString(@"m\:ss", CultureInfo.InvariantCulture);
     }
 
     // ---- to share ----
 
-    private UIElement Share(JourneyReport r)
+    private UIElement ShareBox(JourneyReport r)
     {
         var stack = new StackPanel();
-        var preview = new Viewbox { Stretch = Stretch.Uniform, MaxWidth = 460, HorizontalAlignment = HorizontalAlignment.Left, Child = ShareCard(r) };
+        stack.Children.Add(Text(Loc["Journey.ToShare"], "Brush.Text", 13, bold: true));
+        var preview = new Viewbox { Stretch = Stretch.Uniform, Margin = new Thickness(0, 10, 0, 10), Child = ShareCard(r) };
         stack.Children.Add(preview);
-        var buttons = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 12, 0, 0) };
-        var copy = new Button { Content = Loc["Journey.Share.Copy"], Padding = new Thickness(14, 6, 14, 6), Margin = new Thickness(0, 0, 8, 0) };
-        var save = new Button { Content = Loc["Journey.Share.Save"], Padding = new Thickness(14, 6, 14, 6) };
+        var copy = new Button { Content = Loc["Journey.Share.Copy"], Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 0, 6) };
+        var save = new Button { Content = Loc["Journey.Share.Save"], Padding = new Thickness(12, 6, 12, 6) };
         TextBlock done = Text("", "Brush.Heal", 12, bold: true);
-        done.Margin = new Thickness(10, 0, 0, 0);
+        done.Margin = new Thickness(0, 8, 0, 0);
         copy.Click += (_, _) =>
         {
             if (RenderCard(r) is { } picture)
@@ -655,62 +916,77 @@ internal sealed class JourneyPage : Grid
                 }
             }
         };
-        buttons.Children.Add(copy);
-        buttons.Children.Add(save);
-        buttons.Children.Add(done);
-        stack.Children.Add(buttons);
-        return Card(stack, Loc["Journey.ToShare"]);
+        stack.Children.Add(copy);
+        stack.Children.Add(save);
+        stack.Children.Add(done);
+        var card = new Border { Child = stack, Padding = new Thickness(14), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 14) };
+        card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+        card.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        return card;
     }
 
-    /// <summary>The card for Discord (600 x 315): the portrait, the name, class and server, the period, three figures, the site.</summary>
+    /// <summary>The card for Discord (600 x 315) in the class colour: the portrait (else the class emblem), the name, class and server, the period, three figures,
+    /// the headline and the site.</summary>
     private FrameworkElement ShareCard(JourneyReport r)
     {
         JourneyNumbers n = r.Now;
-        var card = new Grid { Width = 600, Height = 315 };
+        Color accent = Accent;
+        var card = new Grid { Width = 600, Height = 315, ClipToBounds = true };
         var back = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(1, 1) };
-        back.GradientStops.Add(new GradientStop(Color.FromRgb(0x0C, 0x10, 0x1A), 0));
-        back.GradientStops.Add(new GradientStop(Color.FromRgb(0x1C, 0x16, 0x26), 1));
-        card.Children.Add(new Border { Background = back, CornerRadius = new CornerRadius(14) });
-        card.Children.Add(new Border
+        back.GradientStops.Add(new GradientStop(Color.FromRgb(0x0D, 0x10, 0x18), 0));
+        back.GradientStops.Add(new GradientStop(Color.FromRgb(0x17, 0x18, 0x22), 1));
+        card.Children.Add(new Border { Background = back, CornerRadius = new CornerRadius(16) });
+        var glow = new RadialGradientBrush { Center = new Point(0.15, 0.2), GradientOrigin = new Point(0.15, 0.2), RadiusX = 0.6, RadiusY = 0.9 };
+        glow.GradientStops.Add(new GradientStop(Color.FromArgb(0x5A, accent.R, accent.G, accent.B), 0));
+        glow.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, accent.R, accent.G, accent.B), 1));
+        card.Children.Add(new Border { Background = glow, CornerRadius = new CornerRadius(16) });
+        if (r.Who.Class is { Length: > 0 } cls && MainWindow.ClassIcon(cls) is { } emblem)
         {
-            CornerRadius = new CornerRadius(14), BorderThickness = new Thickness(1.5), BorderBrush = new SolidColorBrush(Color.FromArgb(0x90, Gold.R, Gold.G, Gold.B)),
-        });
-        var grid = new Grid { Margin = new Thickness(28, 24, 28, 22) };
+            card.Children.Add(new Image { Source = emblem, Width = 230, Height = 230, Opacity = 0.09, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Bottom, Margin = new Thickness(0, 0, -40, -50) });
+        }
+
+        card.Children.Add(new Border { CornerRadius = new CornerRadius(16), BorderThickness = new Thickness(1.5), BorderBrush = Tint(accent, 0x90) });
+        var grid = new Grid { Margin = new Thickness(30, 26, 30, 22) };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
         grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
-        // the portrait (or the class's first letter)
-        var face = new Border
+        var face = new Grid { Width = 128, Height = 128, VerticalAlignment = VerticalAlignment.Center, HorizontalAlignment = HorizontalAlignment.Left };
+        face.Children.Add(new System.Windows.Shapes.Ellipse { Stroke = new SolidColorBrush(accent), StrokeThickness = 3, Fill = new SolidColorBrush(Color.FromRgb(0x12, 0x14, 0x1C)) });
+        if (_portrait is { } portrait)
         {
-            Width = 136, Height = 196, CornerRadius = new CornerRadius(12), VerticalAlignment = VerticalAlignment.Center, ClipToBounds = true,
-            Background = new SolidColorBrush(Color.FromArgb(0x30, Gold.R, Gold.G, Gold.B)), BorderThickness = new Thickness(1), BorderBrush = new SolidColorBrush(Color.FromArgb(0x60, Gold.R, Gold.G, Gold.B)),
-        };
-        face.Child = _portrait is { } portrait
-            ? new Image { Source = portrait, Stretch = Stretch.UniformToFill, VerticalAlignment = VerticalAlignment.Top }
-            : new TextBlock { Text = (r.Who.Class ?? r.Who.Name)[..1].ToUpperInvariant(), FontSize = 64, Foreground = new SolidColorBrush(Gold), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
-        grid.Children.Add(face);
+            face.Children.Add(new System.Windows.Shapes.Ellipse { Margin = new Thickness(6), Fill = new ImageBrush(portrait) { Stretch = Stretch.UniformToFill, AlignmentY = AlignmentY.Top } });
+        }
+        else if (r.Who.Class is { Length: > 0 } c && MainWindow.ClassIcon(c) is { } icon)
+        {
+            face.Children.Add(new Image { Source = icon, Margin = new Thickness(22) });
+        }
+        else
+        {
+            face.Children.Add(new TextBlock { Text = r.Who.Name[..1].ToUpperInvariant(), FontSize = 56, Foreground = new SolidColorBrush(accent), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+        }
 
+        grid.Children.Add(face);
         var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        var name = new TextBlock { Text = r.Who.Name, FontSize = 34, Foreground = Brushes.White };
+        var name = new TextBlock { Text = r.Who.Name, FontSize = 36, Foreground = Brushes.White };
         name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
         words.Children.Add(name);
         words.Children.Add(new TextBlock
         {
-            Text = string.Join("  ·  ", new[] { r.Who.Class, Aion2Servers.NameOf(r.Who.ServerId) }.Where(s => s is { Length: > 0 })), FontSize = 16,
-            Foreground = new SolidColorBrush(Gold), Margin = new Thickness(0, 2, 0, 0),
+            Text = string.Join("  ·  ", new[] { r.Who.Class, Aion2Servers.NameOf(r.Who.ServerId) }.Where(t => t is { Length: > 0 })), FontSize = 15,
+            Foreground = new SolidColorBrush(accent), Margin = new Thickness(0, 2, 0, 0),
         });
-        words.Children.Add(new TextBlock { Text = Loc["Journey.Title"] + "  ·  " + Dates(r.From, r.To), FontSize = 14, Foreground = new SolidColorBrush(Color.FromRgb(0xB8, 0xC0, 0xCC)), Margin = new Thickness(0, 4, 0, 18) });
+        words.Children.Add(new TextBlock { Text = Loc["Journey.Title"].ToUpper(CultureInfo.CurrentCulture) + "  ·  " + Dates(r.From, r.To), FontSize = 12.5, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromRgb(0x9A, 0xA3, 0xB0)), Margin = new Thickness(0, 6, 0, 16) });
         var figures = new UniformGrid { Columns = 3 };
-        figures.Children.Add(CardFigure(n.BestBossDps > 0 ? PlayerRow.Compact((long)n.BestBossDps) : "–", Loc["Journey.Card.BestDps"]));
-        figures.Children.Add(CardFigure(n.BossKills.ToString(CultureInfo.CurrentCulture), Loc["Journey.Card.Bosses"]));
+        figures.Children.Add(CardFigure(n.BestBossDps > 0 ? PlayerRow.Compact((long)n.BestBossDps) : "–", Loc["Journey.Card.BestDps"], accent));
+        figures.Children.Add(CardFigure(n.BossKills.ToString(CultureInfo.CurrentCulture), Loc["Journey.Card.Bosses"], accent));
         figures.Children.Add(CardFigure(n.ItemLevelEnd?.ToString("N0", CultureInfo.CurrentCulture) ?? (n.WorthKnown ? Kinah(n.LootWorth) : "–"),
-            Loc[n.ItemLevelEnd is null && n.WorthKnown ? "Journey.Card.Loot" : "Journey.Card.ItemLevel"]));
+            Loc[n.ItemLevelEnd is null && n.WorthKnown ? "Journey.Card.Loot" : "Journey.Card.ItemLevel"], accent));
         words.Children.Add(figures);
         Grid.SetColumn(words, 1);
         grid.Children.Add(words);
-        var foot = new DockPanel { Margin = new Thickness(0, 8, 0, 0) };
+        var foot = new DockPanel { Margin = new Thickness(0, 10, 0, 0) };
         var site = new TextBlock { Text = "ATREIA.APP", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Gold), VerticalAlignment = VerticalAlignment.Center };
         DockPanel.SetDock(site, Dock.Right);
         foot.Children.Add(site);
@@ -722,9 +998,10 @@ internal sealed class JourneyPage : Grid
         return card;
     }
 
-    private static UIElement CardFigure(string value, string label)
+    private static UIElement CardFigure(string value, string label, Color accent)
     {
         var stack = new StackPanel();
+        stack.Children.Add(new Border { Width = 18, Height = 3, CornerRadius = new CornerRadius(2), Background = new SolidColorBrush(accent), HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 0, 0, 6) });
         stack.Children.Add(new TextBlock { Text = value, FontSize = 30, FontWeight = FontWeights.SemiBold, Foreground = Brushes.White });
         stack.Children.Add(new TextBlock { Text = label, FontSize = 13, Foreground = new SolidColorBrush(Color.FromRgb(0xB8, 0xC0, 0xCC)) });
         return stack;
@@ -756,10 +1033,11 @@ internal sealed class JourneyPage : Grid
     {
         var stack = new StackPanel();
         string cls = _ranks?.Class ?? r.Who.Class ?? Loc["Journey.Class.YourClass"];
+        string title = string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.TitleWith"], cls);
         if (_ranksLoading && _ranks is null)
         {
             stack.Children.Add(Text(Loc["Journey.Loading"], "Brush.TextMuted", 12.5));
-            return Card(stack, Loc["Journey.Class.Title"]);
+            return Section(title, stack);
         }
 
         List<JourneyRank> all = _ranks?.Ranks ?? new List<JourneyRank>();
@@ -769,72 +1047,121 @@ internal sealed class JourneyPage : Grid
         if (_ranks is null)
         {
             stack.Children.Add(Wrapped(Loc["Journey.Class.Offline"], "Brush.TextMuted", 12.5));
-            return Card(stack, Loc["Journey.Class.Title"]);
+            return Section(title, stack);
         }
 
         if (now.Count == 0)
         {
             stack.Children.Add(Wrapped(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.None"], r.Who.Name), "Brush.TextMuted", 12.5));
-            return Card(stack, Loc["Journey.Class.Title"]);
+            return Section(title, stack);
         }
 
-        // the period in one line: the average rank in the class and in the power bracket, against the period before
+        // the period in two numbers: the average rank in the class and in the power bracket
         double? classNow = Average(now.Select(x => x.ClassPct)), classBefore = Average(before.Select(x => x.ClassPct)), bracketNow = Average(now.Select(x => x.BracketPct));
         JourneyRank? bracket = now.FirstOrDefault(x => x.BracketLo is not null);
-        var summary = new WrapPanel { Margin = new Thickness(0, 0, 0, 14) };
+        var summary = new WrapPanel { Margin = new Thickness(0, 0, 0, 16) };
         if (classNow is double cn)
         {
             summary.Children.Add(Badge(Math.Round(cn).ToString(CultureInfo.CurrentCulture), string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.AverageIn"], cls), Pct(cn),
-                classBefore is double cb ? Delta(cn, cb, true, percent: false, unit: "") : null));
+                classBefore is double cb ? Delta(cn, cb, true, percent: false, unit: "") : null, filled: true));
         }
 
         if (bracketNow is double bn && bracket is { BracketLo: long lo, BracketHi: long hi })
         {
             summary.Children.Add(Badge(Math.Round(bn).ToString(CultureInfo.CurrentCulture),
-                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.AverageBracket"], Thousands(lo), Thousands(hi)), Pct(bn), null));
+                string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.AverageBracket"], Thousands(lo), Thousands(hi)), Pct(bn), null, filled: false));
         }
 
         stack.Children.Add(summary);
 
-        // each boss: the best fight of the period, its rank in the class and in the bracket
-        var table = new Grid();
-        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1.3, GridUnitType.Star) });
-        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
-        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        table.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        int row = 0;
-        void Cell(UIElement e, int column)
-        {
-            Grid.SetRow(e, row);
-            Grid.SetColumn(e, column);
-            if (e is FrameworkElement f)
-            {
-                f.Margin = new Thickness(0, 6, 14, 6);
-            }
-
-            table.Children.Add(e);
-        }
-
-        table.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        Cell(Text(Loc["Journey.Class.Boss"], "Brush.TextSubtle", 11.5, bold: true), 0);
-        Cell(Text(Loc["Journey.Class.Dps"], "Brush.TextSubtle", 11.5, bold: true), 1);
-        Cell(Text(string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.InClass"], cls.ToUpperInvariant()), "Brush.TextSubtle", 11.5, bold: true), 2);
-        Cell(Text(Loc["Journey.Class.InBracket"], "Brush.TextSubtle", 11.5, bold: true), 3);
+        // each boss: its best fight of the period as two marks on one track: ● in the class, ◇ at the character's power
         foreach (JourneyRank best in now.GroupBy(x => x.Boss).Select(g => g.MaxBy(x => x.ClassPct ?? x.Dps / 1e9)!).OrderByDescending(x => x.ClassPct ?? 0).Take(8))
         {
-            row++;
-            table.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            Cell(Text(best.Boss, "Brush.Text", 13, bold: true), 0);
-            Cell(Text(PlayerRow.Compact((long)best.Dps) + "/s", "Brush.Text", 13), 1);
-            Cell(Bar(best.ClassPct, best.ClassN), 2);
-            Cell(Bar(best.BracketPct, best.BracketN), 3);
+            var line = new Grid { Margin = new Thickness(0, 0, 0, 12) };
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(210) });
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) });
+            var who = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            who.Children.Add(Text(best.Boss, "Brush.Text", 13, bold: true));
+            who.Children.Add(Text(PlayerRow.Compact((long)best.Dps) + "/s", "Brush.TextMuted", 11.5));
+            line.Children.Add(who);
+            UIElement track = RankTrack(best.ClassPct, best.BracketPct);
+            Grid.SetColumn(track, 1);
+            line.Children.Add(track);
+            var numbers = new TextBlock { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, FontSize = 13, FontWeight = FontWeights.SemiBold };
+            if (best.ClassPct is double cp)
+            {
+                numbers.Inlines.Add(new System.Windows.Documents.Run(Math.Round(cp).ToString(CultureInfo.CurrentCulture)) { Foreground = new SolidColorBrush(Pct(cp)) });
+            }
+
+            if (best.BracketPct is double bp)
+            {
+                var sep = new System.Windows.Documents.Run("  ·  ");
+                sep.SetResourceReference(System.Windows.Documents.TextElement.ForegroundProperty, "Brush.TextSubtle");
+                numbers.Inlines.Add(sep);
+                numbers.Inlines.Add(new System.Windows.Documents.Run(Math.Round(bp).ToString(CultureInfo.CurrentCulture)) { Foreground = new SolidColorBrush(Pct(bp)) });
+            }
+
+            Grid.SetColumn(numbers, 2);
+            line.Children.Add(numbers);
+            stack.Children.Add(line);
         }
 
-        stack.Children.Add(table);
         TextBlock note = Wrapped(Loc["Journey.Class.Note"], "Brush.TextSubtle", 11.5);
-        note.Margin = new Thickness(0, 8, 0, 0);
+        note.Margin = new Thickness(0, 4, 0, 0);
         stack.Children.Add(note);
-        return Card(stack, string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.TitleWith"], cls));
+        var marks = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        marks.Children.Add(Text("●  " + string.Format(CultureInfo.CurrentCulture, Loc["Journey.Class.InClassShort"], cls), "Brush.TextMuted", 11.5));
+        marks.Children.Add(Text("     ◇  " + Loc["Journey.Class.InBracketShort"], "Brush.TextMuted", 11.5));
+        return Section(title, stack, marks);
+    }
+
+    /// <summary>A rank track 0 to 100 with its quarter marks: a dot where the class rank is, a diamond where the power-bracket rank is.</summary>
+    private static UIElement RankTrack(double? classPct, double? bracketPct)
+    {
+        var host = new Grid { Height = 22, Margin = new Thickness(0, 0, 16, 0) };
+        var canvas = new Canvas { ClipToBounds = false };
+        host.Children.Add(canvas);
+        host.SizeChanged += (_, e) =>
+        {
+            canvas.Children.Clear();
+            double width = e.NewSize.Width, mid = e.NewSize.Height / 2;
+            var under = new Border { Width = width, Height = 6, CornerRadius = new CornerRadius(3) };
+            under.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+            Canvas.SetTop(under, mid - 3);
+            canvas.Children.Add(under);
+            if (classPct is double fill)
+            {
+                var done = new Border { Width = Math.Max(6, width * Math.Clamp(fill, 0, 100) / 100), Height = 6, CornerRadius = new CornerRadius(3), Background = Tint(Pct(fill), 0x70) };
+                Canvas.SetTop(done, mid - 3);
+                canvas.Children.Add(done);
+            }
+
+            foreach (double tick in new[] { 25.0, 50, 75, 95 })
+            {
+                var mark = new Border { Width = 1, Height = 10, Background = new SolidColorBrush(Color.FromArgb(0x50, 0xFF, 0xFF, 0xFF)) };
+                Canvas.SetLeft(mark, width * tick / 100);
+                Canvas.SetTop(mark, mid - 5);
+                canvas.Children.Add(mark);
+            }
+
+            if (bracketPct is double b)
+            {
+                var diamond = new Border { Width = 11, Height = 11, BorderThickness = new Thickness(2), BorderBrush = new SolidColorBrush(Pct(b)), Background = new SolidColorBrush(Color.FromRgb(0x14, 0x16, 0x1E)), RenderTransformOrigin = new Point(0.5, 0.5), RenderTransform = new RotateTransform(45) };
+                Canvas.SetLeft(diamond, width * Math.Clamp(b, 0, 100) / 100 - 5.5);
+                Canvas.SetTop(diamond, mid - 5.5);
+                canvas.Children.Add(diamond);
+            }
+
+            if (classPct is double c)
+            {
+                var dot = new System.Windows.Shapes.Ellipse { Width = 14, Height = 14, Fill = new SolidColorBrush(Pct(c)), Stroke = new SolidColorBrush(Color.FromRgb(0x14, 0x16, 0x1E)), StrokeThickness = 2 };
+                Canvas.SetLeft(dot, width * Math.Clamp(c, 0, 100) / 100 - 7);
+                Canvas.SetTop(dot, mid - 7);
+                canvas.Children.Add(dot);
+            }
+        };
+        return host;
     }
 
     private static string Thousands(long value) => (value / 1000.0).ToString("0.#", CultureInfo.CurrentCulture) + "K";
@@ -849,51 +1176,28 @@ internal sealed class JourneyPage : Grid
     private static Color Pct(double pct) => pct >= 95 ? Color.FromRgb(0xF2, 0xA6, 0x3A) : pct >= 75 ? Color.FromRgb(0xB0, 0x7C, 0xF0) : pct >= 50 ? Color.FromRgb(0x5A, 0x9C, 0xF0)
         : pct >= 25 ? Color.FromRgb(0x5F, 0xD0, 0x8A) : Color.FromRgb(0x8A, 0x93, 0xA0);
 
-    private static UIElement Bar(double? pct, int? n)
-    {
-        if (pct is not double p)
-        {
-            return Text("–", "Brush.TextSubtle", 12.5);
-        }
-
-        Color colour = Pct(p);
-        var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        var track = new Grid { Height = 8, VerticalAlignment = VerticalAlignment.Center };
-        var back = new Border { CornerRadius = new CornerRadius(4) };
-        back.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
-        track.Children.Add(back);
-        track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Clamp(p, 1, 100), GridUnitType.Star) });
-        track.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Clamp(100 - p, 0, 99), GridUnitType.Star) });
-        Grid.SetColumnSpan(back, 2);
-        track.Children.Add(new Border { CornerRadius = new CornerRadius(4), Background = new SolidColorBrush(colour) });
-        grid.Children.Add(track);
-        var label = new TextBlock
-        {
-            Text = Math.Round(p).ToString(CultureInfo.CurrentCulture) + (n is int count ? $"  /{count}" : ""), FontSize = 12, FontWeight = FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(colour), Margin = new Thickness(10, 0, 0, 0), MinWidth = 54,
-        };
-        Grid.SetColumn(label, 1);
-        grid.Children.Add(label);
-        return grid;
-    }
-
-    private static Border Badge(string big, string label, Color colour, UIElement? delta)
+    /// <summary>A summary number: big in its rank's colour inside a ring (filled: the class; hollow: the power bracket), what it is beside it.</summary>
+    private static Border Badge(string big, string label, Color colour, UIElement? delta, bool filled)
     {
         var line = new StackPanel { Orientation = Orientation.Horizontal };
-        line.Children.Add(new TextBlock { Text = big, FontSize = 26, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(colour), VerticalAlignment = VerticalAlignment.Center });
-        var words = new StackPanel { Margin = new Thickness(10, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
-        words.Children.Add(Text(label, "Brush.TextMuted", 12));
+        var ring = new Grid { Width = 54, Height = 54 };
+        var circle = new System.Windows.Shapes.Ellipse { Stroke = new SolidColorBrush(colour), StrokeThickness = 2.5, Fill = filled ? Tint(colour, 0x22) : Brushes.Transparent };
+        if (!filled)
+        {
+            circle.StrokeDashArray = new DoubleCollection { 2, 1.5 };
+        }
+
+        ring.Children.Add(circle);
+        ring.Children.Add(new TextBlock { Text = big, FontSize = 20, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(colour), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+        line.Children.Add(ring);
+        var words = new StackPanel { Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center, MaxWidth = 200 };
+        words.Children.Add(Wrapped(label, "Brush.TextMuted", 12));
         if (delta is not null)
         {
             words.Children.Add(delta);
         }
 
         line.Children.Add(words);
-        var box = new Border { Child = line, Padding = new Thickness(14, 8, 16, 8), Margin = new Thickness(0, 0, 10, 0), CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1) };
-        box.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
-        box.BorderBrush = new SolidColorBrush(Color.FromArgb(0x50, colour.R, colour.G, colour.B));
-        return box;
+        return new Border { Child = line, Margin = new Thickness(0, 0, 28, 4) };
     }
 }

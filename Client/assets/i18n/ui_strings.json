@@ -21594,7 +21594,7 @@
     "en": "at the market's prices"
   },
   "Journey.NoPrices": {
-    "en": "sign in for the market's prices"
+    "en": "prices are on their way"
   },
   "Journey.Average": {
     "en": "average on bosses"
@@ -21772,5 +21772,65 @@
   },
   "Journey.Down.NoDeathsBefore": {
     "en": "none the period before"
+  },
+  "Journey.Profile.Cp": {
+    "en": "Combat Power"
+  },
+  "Journey.Story.InGame": {
+    "en": "{0} in game"
+  },
+  "Journey.Story.Bosses": {
+    "en": "{0} bosses down"
+  },
+  "Journey.Story.Dungeons": {
+    "en": "{0} dungeons"
+  },
+  "Journey.Story.Loot": {
+    "en": "{0} Kinah of loot"
+  },
+  "Journey.BestDropTitle": {
+    "en": "Best drop"
+  },
+  "Journey.YourDays": {
+    "en": "Your days"
+  },
+  "Journey.YourWeeks": {
+    "en": "Your weeks"
+  },
+  "Journey.WeekShort": {
+    "en": "Week"
+  },
+  "Journey.Col.Time": {
+    "en": "TIME"
+  },
+  "Journey.Col.Bosses": {
+    "en": "BOSSES"
+  },
+  "Journey.Col.Loot": {
+    "en": "LOOT"
+  },
+  "Journey.Highlights": {
+    "en": "What went well"
+  },
+  "Journey.WorkOn": {
+    "en": "Work on next"
+  },
+  "Journey.Tip.Deaths": {
+    "en": "Switch on the boss timers (Overlays → Meter look) to see the big hits coming."
+  },
+  "Journey.Tip.Dps": {
+    "en": "Open the fight in Fights and set it beside your best one on that boss."
+  },
+  "Journey.Tip.Idle": {
+    "en": "The Timers page shows what is up next."
+  },
+  "Journey.Tip.Run": {
+    "en": "The run's report in Fights shows where the time went."
+  },
+  "Journey.Class.InClassShort": {
+    "en": "among {0}s"
+  },
+  "Journey.Class.InBracketShort": {
+    "en": "at your power"
   }
 }
