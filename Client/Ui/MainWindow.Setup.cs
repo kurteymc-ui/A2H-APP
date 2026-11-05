@@ -576,9 +576,11 @@ public partial class MainWindow
             stack.Children.Add(Caption(Loc["Setup.CloseUp"] + (_draft.ShowPetMap ? "" : " · " + Loc["Setup.Map.Off"]), top: 14));
             var row = new StackPanel { Orientation = Orientation.Horizontal };
             (FrameworkElement map, FrameworkElement? list) = MapAndList();
+            map.LayoutTransform = new ScaleTransform(0.82, 0.82); // the map and its list side by side in the preview's width
             row.Children.Add(map);
             if (list is not null)
             {
+                list.LayoutTransform = new ScaleTransform(0.9, 0.9);
                 list.Margin = new Thickness(12, 0, 0, 0);
                 list.VerticalAlignment = VerticalAlignment.Top;
                 row.Children.Add(list);
