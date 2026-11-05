@@ -483,7 +483,7 @@ public sealed class AssistWindow : Window
     private static ComboBox VoicePicker(MeterSettings settings)
     {
         LocalizationManager loc = LocalizationManager.Instance;
-        var combo = new ComboBox { MinWidth = 220, HorizontalAlignment = HorizontalAlignment.Left, ToolTip = loc["Assist.VoicePickTip"] };
+        var combo = new ComboBox { MinWidth = 220, HorizontalAlignment = HorizontalAlignment.Left, ToolTip = loc["Assist.VoicePickTip"], Style = DarkCombo.Value, ItemContainerStyle = DarkComboItem.Value };
         IReadOnlyList<SpeechVoice> voices = CastSpeech.Voices();
         // the natural voice first, then the voice's own language, then the others
         string words = CastSpeech.WordsLanguage(settings);
@@ -600,6 +600,39 @@ public sealed class AssistWindow : Window
         "<Trigger Property='IsDragging' Value='True'><Setter TargetName='Glow' Property='Opacity' Value='0.35'/></Trigger>" +
         "</ControlTemplate.Triggers></ControlTemplate></Thumb.Template></Thumb></Track.Thumb>" +
         "</Track></Grid></ControlTemplate></Setter.Value></Setter></Style>"));
+
+    /// <summary>The voice picker in the window's look (the Settings window's dropdown: the control's colour, round corners, a chevron, the list on the
+    /// panel's colour): the plain Windows one was white.</summary>
+    private static readonly Lazy<Style> DarkCombo = new(() => (Style)XamlReader.Parse(
+        "<Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='ComboBox'>" +
+        "<Setter Property='Height' Value='30'/><Setter Property='Background' Value='{DynamicResource Brush.Control}'/>" +
+        "<Setter Property='Foreground' Value='{DynamicResource Brush.Text}'/><Setter Property='BorderBrush' Value='{DynamicResource Brush.Border}'/><Setter Property='Cursor' Value='Hand'/>" +
+        "<Setter Property='Template'><Setter.Value><ControlTemplate TargetType='ComboBox'><Grid>" +
+        "<ToggleButton Focusable='False' Background='{TemplateBinding Background}' BorderBrush='{TemplateBinding BorderBrush}' ClickMode='Press' " +
+        "IsChecked='{Binding IsDropDownOpen, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}'>" +
+        "<ToggleButton.Template><ControlTemplate TargetType='ToggleButton'>" +
+        "<Border x:Name='Bd' Background='{TemplateBinding Background}' CornerRadius='8' BorderBrush='{TemplateBinding BorderBrush}' BorderThickness='1'>" +
+        "<Path Data='M0.5,0.5 L4,4 L7.5,0.5' Stroke='{DynamicResource Brush.TextMuted}' StrokeThickness='1.6' StrokeStartLineCap='Round' StrokeEndLineCap='Round' " +
+        "StrokeLineJoin='Round' Margin='0,1,12,0' HorizontalAlignment='Right' VerticalAlignment='Center'/></Border>" +
+        "<ControlTemplate.Triggers><Trigger Property='IsMouseOver' Value='True'><Setter TargetName='Bd' Property='Background' Value='{DynamicResource Brush.ControlHover}'/></Trigger>" +
+        "</ControlTemplate.Triggers></ControlTemplate></ToggleButton.Template></ToggleButton>" +
+        "<ContentPresenter IsHitTestVisible='False' Content='{TemplateBinding SelectionBoxItem}' ContentTemplate='{TemplateBinding SelectionBoxItemTemplate}' " +
+        "Margin='12,3,30,3' VerticalAlignment='Center' HorizontalAlignment='Left' TextElement.Foreground='{DynamicResource Brush.Text}'/>" +
+        "<Popup IsOpen='{TemplateBinding IsDropDownOpen}' AllowsTransparency='True' Focusable='False' PopupAnimation='Slide'>" +
+        "<Border Background='{DynamicResource Brush.Panel}' BorderBrush='{DynamicResource Brush.Border}' BorderThickness='1' CornerRadius='10' Padding='0,4' Margin='0,4,0,0' " +
+        "MaxHeight='360' MinWidth='{Binding ActualWidth, RelativeSource={RelativeSource TemplatedParent}}'>" +
+        "<ScrollViewer SnapsToDevicePixels='True'><ItemsPresenter/></ScrollViewer></Border></Popup>" +
+        "</Grid></ControlTemplate></Setter.Value></Setter></Style>"));
+
+    private static readonly Lazy<Style> DarkComboItem = new(() => (Style)XamlReader.Parse(
+        "<Style xmlns='http://schemas.microsoft.com/winfx/2006/xaml/presentation' xmlns:x='http://schemas.microsoft.com/winfx/2006/xaml' TargetType='ComboBoxItem'>" +
+        "<Setter Property='Background' Value='Transparent'/><Setter Property='Foreground' Value='{DynamicResource Brush.Text}'/>" +
+        "<Setter Property='Padding' Value='10,6'/><Setter Property='Margin' Value='4,1'/><Setter Property='Cursor' Value='Hand'/>" +
+        "<Setter Property='Template'><Setter.Value><ControlTemplate TargetType='ComboBoxItem'>" +
+        "<Border x:Name='Bd' Background='{TemplateBinding Background}' CornerRadius='7' Padding='{TemplateBinding Padding}'><ContentPresenter VerticalAlignment='Center'/></Border>" +
+        "<ControlTemplate.Triggers><Trigger Property='IsHighlighted' Value='True'><Setter TargetName='Bd' Property='Background' Value='{DynamicResource Brush.ControlHover}'/></Trigger>" +
+        "<Trigger Property='IsSelected' Value='True'><Setter Property='Foreground' Value='{DynamicResource Brush.Accent}'/></Trigger>" +
+        "</ControlTemplate.Triggers></ControlTemplate></Setter.Value></Setter></Style>"));
 
     /// <summary>The three preset slots: each with its look, size and when it was saved, Load and Save (an empty one only Save); a slot that is full asks
     /// once more before it is written over. The one last saved or loaded is outlined.</summary>
