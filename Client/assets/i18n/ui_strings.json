@@ -18112,6 +18112,15 @@
   "Checklist.TileFullIn": {
     "en": "full {0}"
   },
+  "Checklist.TileFullNow": {
+    "en": "full now"
+  },
+  "Checklist.TileOnline": {
+    "en": "{0} logged in now"
+  },
+  "Checklist.TileNoneOnline": {
+    "en": "none logged in now"
+  },
   "Loot.ResetAll": {
     "en": "Reset loot",
     "de": "Beute zurücksetzen",

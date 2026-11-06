@@ -759,11 +759,13 @@ public sealed partial class ChecklistWindow : Window
                 name.Foreground = ClassBrushes.Text(cls);
             }
 
-            int firstClaims = (int)((o.Count + o.Bonus + inItems.GetValueOrDefault(first.Name)) / per);
-            string why = (o.Full ? loc["Checklist.RosterPlanFull"] : o.FullAt is { } at ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterPlanIn"], InText(at - utcNow)) : "–")
-                + (firstClaims > 0 ? $" · {firstClaims} × {per}" : "");
+            string why = o.Full ? loc["Checklist.TileFullNow"] : o.FullAt is { } at ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterPlanIn"], InText(at - utcNow)) : "–";
             string then = order.Count > 1 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc["Checklist.TileThen"], string.Join(", ", order.Skip(1).Select(x => x.Character.Name))) : "";
-            cells.Add(new Score(loc["Checklist.TilePlayNext"], name, Small(why + then, o.Full ? "Brush.Warning" : "Brush.TextSubtle"), o.Full ? "Brush.Warning" : "Brush.Heal", loc["Checklist.RosterPlanTip"]));
+            string plan = string.Join("\n", order.Select(x => x.Character.Name + ": " + (x.O.Full ? loc["Checklist.RosterPlanFull"]
+                : x.O.FullAt is { } when ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterPlanIn"], InText(when - utcNow)) : "–")
+                + ((x.O.Count + x.O.Bonus + inItems.GetValueOrDefault(x.Character.Name)) / per is long n and > 0 ? $", {n} × {per}" : "")));
+            cells.Add(new Score(loc["Checklist.TilePlayNext"], name, Small(why + then, o.Full ? "Brush.Warning" : "Brush.TextSubtle"), o.Full ? "Brush.Warning" : "Brush.Heal",
+                plan + "\n\n" + loc["Checklist.RosterPlanTip"]));
         }
 
         // the daily tasks: how many characters handed all five in today
@@ -773,6 +775,14 @@ public sealed partial class ChecklistWindow : Window
             int doneAll = all.Count(c => c.Tickets.TryGetValue(Aion2Tickets.MissionsId, out TicketValue m) && !Aion2Tickets.MissionsStale(m, now) && m.Count >= Aion2Tickets.MissionsPerDay);
             cells.Add(new Score(loc["Checklist.RosterTasks"], Big($"{doneAll} / {all.Count}", doneAll >= all.Count ? "Brush.Heal" : "Brush.Text"), Small(loc["Checklist.TileTasksNote"]),
                 "Brush.Heal", loc["Checklist.RosterTasksTip"]));
+        }
+
+        // a board of six: the characters themselves when the daily tasks are not known yet
+        if (cells.Count % 3 != 0)
+        {
+            int loggedIn = online is not null && all.Any(c => c.Name == online) ? 1 : 0;
+            cells.Add(new Score(loc["Checklist.Roster"], Big(all.Count.ToString(CultureInfo.CurrentCulture)),
+                Small(loggedIn == 1 ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.TileOnline"], online) : loc["Checklist.TileNoneOnline"]), "Brush.TextMuted"));
         }
 
         if (cells.Count > 0)

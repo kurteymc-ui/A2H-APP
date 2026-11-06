@@ -1158,6 +1158,15 @@ internal static class Program
                 Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.PremiumId, new Aion2.TicketValue(0, 0, DateTimeOffset.UtcNow.AddDays(20).ToUnixTimeMilliseconds())), t0.AddSeconds(at + 6));
             }
 
+            // their classes, as the login's character list gives them (made up: a Gladiator, a Cleric, an Assassin)
+            long seenMs = DateTimeOffset.UtcNow.AddMinutes(-1).ToUnixTimeMilliseconds();
+            Aion2.Aion2Tickets.NoteListedCharacters(null, new[]
+            {
+                new Aion2.AccountCharacter("Ichigo", 5, 1, 45, 2890, "Dawnbreakers", seenMs, seenMs, 2302, 101),
+                new Aion2.AccountCharacter("Goku", 29, 1, 45, 2760, "Dawnbreakers", seenMs, seenMs, 2302, 102),
+                new Aion2.AccountCharacter("Naruto", 17, 1, 45, 2655, "Dawnbreakers", seenMs, seenMs, 2302, 103),
+            });
+
             // the Black Cloud Merchants: the three characters' pets (Goku has Swift Lugi at the top level, Naruto at 1), the merchant's last offers to Ichigo
             Aion2.Aion2BlackCloud.Reset();
             var everyPet = Aion2.Protocol.Aion2Pets.AllPetIds.Where(p => !Aion2.Protocol.Aion2MerchantPets.Is(p)).Select(p => new Aion2.Protocol.Aion2PetState(p, 3, 0)).ToList();

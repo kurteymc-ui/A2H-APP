@@ -29,6 +29,10 @@ public sealed class HistoryWindow : Window
 
     private readonly StackPanel _tabs = new() { Orientation = Orientation.Horizontal };
     private readonly WrapPanel _characters = new() { Margin = new Thickness(0, 16, 0, 0) };
+    private readonly StackPanel _board = new() { Margin = new Thickness(0, 14, 0, 0) };
+
+    /// <summary>Your best DPS on each boss (killed fights; by the boss's name) for the shown character: the rows' bars and stars measure against it.</summary>
+    private Dictionary<string, double> _bests = new();
     private readonly StackPanel _list = new();
     private readonly StackPanel _page = new() { Margin = new Thickness(30, 22, 30, 30), MaxWidth = 1100 };
     private string _tab = Tabs[0];
@@ -58,6 +62,7 @@ public sealed class HistoryWindow : Window
         page.Children.Add(title);
         page.Children.Add(Muted("Boss fights, Nightmare, training dummy parses and PvP are saved on this PC as they end, each on its own, with every number the meter showed. Click one for its report.", 13.5, new Thickness(0, 4, 0, 0)));
         page.Children.Add(_characters);
+        page.Children.Add(_board);
         var tabLine = new Border { BorderThickness = new Thickness(0, 0, 0, 1), Margin = new Thickness(0, 18, 0, 0), Child = _tabs };
         tabLine.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
         page.Children.Add(tabLine);
@@ -108,6 +113,8 @@ public sealed class HistoryWindow : Window
         IReadOnlyList<FightLogEntry> everything = FightLog.Entries();
         DrawCharacters(everything);
         IReadOnlyList<FightLogEntry> all = _character == AllCharacters ? everything : everything.Where(e => e.You == _character).ToList();
+        _bests = all.Where(e => e.Kind == FightLogKind.Boss && e.Killed == true && e.YourDps > 0).GroupBy(TitleOf).ToDictionary(g => g.Key, g => g.Max(e => e.YourDps));
+        DrawBoard(all);
 
         _tabs.Children.Clear();
         foreach (string name in Tabs)
@@ -372,10 +379,10 @@ public sealed class HistoryWindow : Window
 
     private static string Plural(int n, string word) => n == 1 ? "1 " + word : $"{n} {word}s";
 
-    /// <summary>Your best DPS per boss (killed fights) and per dummy parse length.</summary>
+    /// <summary>Your best DPS per boss (killed fights) and per dummy parse length, each a card: the boss's picture in a gold ring, its name, the DPS large, when.</summary>
     private void DrawBests(IReadOnlyList<FightLogEntry> all)
     {
-        var bosses = all.Where(e => e.Kind == FightLogKind.Boss && e.Killed == true && e.YourDps > 0).GroupBy(TitleOf).Select(g => g.MaxBy(e => e.YourDps)!).OrderBy(TitleOf).ToList();
+        var bosses = all.Where(e => e.Kind == FightLogKind.Boss && e.Killed == true && e.YourDps > 0).GroupBy(TitleOf).Select(g => g.MaxBy(e => e.YourDps)!).OrderByDescending(e => e.YourDps).ToList();
         var dummies = all.Where(e => e.Kind == FightLogKind.Dummy && e.YourDps > 0).GroupBy(e => e.Detail ?? "").Select(g => g.MaxBy(e => e.YourDps)!).OrderBy(e => e.Seconds).ToList();
         if (bosses.Count == 0 && dummies.Count == 0)
         {
@@ -391,29 +398,142 @@ public sealed class HistoryWindow : Window
             }
 
             _list.Children.Add(Muted(heading, 11.5, new Thickness(2, 16, 0, 8), semibold: true));
-            var card = new StackPanel();
-            bool first = true;
+            var grid = new System.Windows.Controls.Primitives.UniformGrid { Columns = 3, Margin = new Thickness(-5, 0, -5, 0) };
+            grid.SizeChanged += (_, e) =>
+            {
+                int columns = e.NewSize.Width < 560 ? 1 : e.NewSize.Width < 820 ? 2 : 3;
+                if (grid.Columns != columns)
+                {
+                    grid.Columns = columns;
+                }
+            };
             foreach (FightLogEntry entry in list)
             {
-                card.Children.Add(Row(entry, first, best: true));
-                first = false;
+                grid.Children.Add(Medal(entry));
             }
 
-            _list.Children.Add(Card(card));
+            _list.Children.Add(grid);
         }
+    }
+
+    private static readonly Brush Gold = Frozen(Color.FromRgb(0xE6, 0xC0, 0x68));
+
+    /// <summary>One personal best as a card; a click opens its report.</summary>
+    private FrameworkElement Medal(FightLogEntry entry)
+    {
+        ImageSource? icon = entry.BossNpcId is int npc ? Picture(Aion2Artwork.BossThumbPath(npc)) : null;
+        icon ??= entry.YourClass is { Length: > 0 } cls ? Picture(Path.Combine(AppContext.BaseDirectory, "assets", "classes", "icons", cls + ".png")) : null;
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        var ring = new Border { Width = 56, Height = 56, CornerRadius = new CornerRadius(28), BorderThickness = new Thickness(2), BorderBrush = Gold, Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Center,
+            Background = icon is not null ? new ImageBrush(icon) { Stretch = Stretch.UniformToFill } : Frozen(Color.FromArgb(0x10, 0xFF, 0xFF, 0xFF)) };
+        grid.Children.Add(ring);
+        var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        string name = TitleOf(entry) + (entry.Kind == FightLogKind.Dummy && entry.Detail is { Length: > 0 } d ? " · " + d : "");
+        words.Children.Add(new TextBlock { Text = name, FontSize = 13.5, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = name });
+        words.Children.Add(new TextBlock { Text = Short(entry.YourDps), FontSize = 22, FontWeight = FontWeights.SemiBold, Foreground = Gold, Margin = new Thickness(0, 1, 0, 0) });
+        string line = entry.Start.ToString("MMM d", En) + " · " + ReportPalette.Clock(entry.Seconds)
+            + (_character == AllCharacters && _characters.Visibility == Visibility.Visible && entry.You is { Length: > 0 } you ? " · " + you : "");
+        TextBlock when = Muted(line, 11.5, new Thickness(0, 1, 0, 0));
+        when.TextWrapping = TextWrapping.NoWrap;
+        when.TextTrimming = TextTrimming.CharacterEllipsis;
+        words.Children.Add(when);
+        Grid.SetColumn(words, 1);
+        grid.Children.Add(words);
+        var card = new Border { Child = grid, Padding = new Thickness(14, 12, 14, 12), Margin = new Thickness(5, 0, 5, 10), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Cursor = Cursors.Hand };
+        card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+        card.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        card.MouseEnter += (_, _) => card.BorderBrush = Frozen(Color.FromArgb(0x90, 0xE6, 0xC0, 0x68));
+        card.MouseLeave += (_, _) => card.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        card.MouseLeftButtonUp += (_, _) => _ = OpenAsync(entry);
+        return card;
+    }
+
+    /// <summary>
+    /// The last 7 days of the shown character (or all): bosses killed and wipes, the time in fights, the best DPS on a boss, the bosses beaten better than ever,
+    /// the dummy parses, the boss fights on the website. Nothing when there is no fight in those days.
+    /// </summary>
+    private void DrawBoard(IReadOnlyList<FightLogEntry> all)
+    {
+        _board.Children.Clear();
+        DateTime since = DateTime.Now.AddDays(-7);
+        var week = all.Where(e => e.Start >= since).ToList();
+        var bosses = week.Where(e => e.Kind == FightLogKind.Boss).ToList();
+        if (week.Count == 0)
+        {
+            return;
+        }
+
+        int kills = bosses.Count(e => e.Killed == true), wipes = bosses.Count - kills;
+        double seconds = week.Where(e => e.Kind is FightLogKind.Boss or FightLogKind.Dummy or FightLogKind.Pvp).Sum(e => e.Seconds);
+        FightLogEntry? top = bosses.Where(e => e.YourDps > 0).MaxBy(e => e.YourDps);
+        int newBests = bosses.Where(e => e.Killed == true && e.YourDps > 0).GroupBy(TitleOf).Count(g => _bests.TryGetValue(g.Key, out double b) && g.Max(e => e.YourDps) >= b);
+        var dummies = week.Where(e => e.Kind == FightLogKind.Dummy).ToList();
+        int online = bosses.Count(e => e.Url is not null);
+        string Duration(double s) => s >= 3600 ? $"{(int)(s / 3600)} h {(int)(s % 3600 / 60)} m" : $"{Math.Max(0, (int)(s / 60))} m";
+        var cells = new (string Caption, string Value, Brush? ValueBrush, string Note, Color Dot)[]
+        {
+            ("Bosses killed", kills.ToString("N0", En), null, wipes == 0 ? "no wipes" : Plural(wipes, "wipe"), Color.FromRgb(0x6F, 0xD6, 0x9B)),
+            ("Time in fights", Duration(seconds), null, Plural(week.Count(e => e.Kind is FightLogKind.Boss or FightLogKind.Dummy or FightLogKind.Pvp), "fight"), Color.FromRgb(0x6F, 0xB4, 0xEC)),
+            ("Best DPS", top is null ? "–" : Short(top.YourDps), Gold, top is null ? "no boss fight" : TitleOf(top), Color.FromRgb(0xE6, 0xC0, 0x68)),
+            ("New personal bests", newBests.ToString("N0", En), null, newBests == 1 ? "boss beaten better than ever" : "bosses beaten better than ever", Color.FromRgb(0xA4, 0x8C, 0xF4)),
+            ("Dummy parses", dummies.Count.ToString("N0", En), null, dummies.Count == 0 ? "none this week" : "best " + Short(dummies.Max(e => e.YourDps)), Color.FromRgb(0xE2, 0x73, 0x5C)),
+            ("On the website", online.ToString("N0", En), null, bosses.Count == 0 ? "no boss fights" : "of " + Plural(bosses.Count, "boss fight"), Color.FromRgb(0x8C, 0x9E, 0xFF)),
+        };
+        _board.Children.Add(Muted("THE LAST 7 DAYS", 11.5, new Thickness(2, 0, 0, 8), semibold: true));
+        var grid = new Grid();
+        for (int c = 0; c < 3; c++)
+        {
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        }
+
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        for (int i = 0; i < cells.Length; i++)
+        {
+            var (caption, value, valueBrush, note, dot) = cells[i];
+            int column = i % 3, row = i / 3;
+            var stack = new StackPanel();
+            var head = new StackPanel { Orientation = Orientation.Horizontal };
+            head.Children.Add(new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Fill = Frozen(dot), Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
+            TextBlock cap = Muted(caption.ToUpperInvariant(), 10.5, new Thickness(0), semibold: true);
+            cap.TextWrapping = TextWrapping.NoWrap;
+            head.Children.Add(cap);
+            stack.Children.Add(head);
+            var big = new TextBlock { Text = value, FontSize = 24, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
+            if (valueBrush is not null)
+            {
+                big.Foreground = valueBrush;
+            }
+
+            stack.Children.Add(big);
+            TextBlock small = Muted(note, 11.5, new Thickness(0, 1, 0, 0));
+            small.TextWrapping = TextWrapping.NoWrap;
+            small.TextTrimming = TextTrimming.CharacterEllipsis;
+            small.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextSubtle");
+            stack.Children.Add(small);
+            var cell = new Border { Child = stack, Padding = new Thickness(18, 14, 18, 14), BorderThickness = new Thickness(0, 0, column < 2 ? 1 : 0, row == 0 ? 1 : 0) };
+            cell.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+            Grid.SetColumn(cell, column);
+            Grid.SetRow(cell, row);
+            grid.Children.Add(cell);
+        }
+
+        _board.Children.Add(Card(grid));
     }
 
     private FrameworkElement Row(FightLogEntry entry, bool first, bool best, bool inVisit = false)
     {
         var grid = new Grid { Margin = new Thickness(14, 9, 18, 9) };
-        foreach (GridLength w in new[] { new GridLength(46), new GridLength(1, GridUnitType.Star), new GridLength(90), new GridLength(110) })
+        foreach (GridLength w in new[] { new GridLength(52), new GridLength(1, GridUnitType.Star), new GridLength(90), new GridLength(110) })
         {
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = w });
         }
 
         ImageSource? icon = entry.BossNpcId is int npc ? Picture(Aion2Artwork.BossThumbPath(npc)) : null;
         icon ??= entry.YourClass is { Length: > 0 } cls ? Picture(Path.Combine(AppContext.BaseDirectory, "assets", "classes", "icons", cls + ".png")) : null;
-        var box = new Border { Width = 34, Height = 34, CornerRadius = new CornerRadius(5), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
+        var box = new Border { Width = 40, Height = 40, CornerRadius = new CornerRadius(8), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
         box.Background = icon is not null ? new ImageBrush(icon) { Stretch = Stretch.UniformToFill } : Frozen(Color.FromArgb(0x10, 0xFF, 0xFF, 0xFF));
         Grid.SetColumn(box, 0);
         grid.Children.Add(box);
@@ -449,18 +569,46 @@ public sealed class HistoryWindow : Window
         bool bad = entry.Kind == FightLogKind.Boss && entry.Killed != true;
         var chip = new Border
         {
-            CornerRadius = new CornerRadius(4), Padding = new Thickness(7, 2, 7, 2), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
+            CornerRadius = new CornerRadius(8), Padding = new Thickness(8, 2, 9, 3), HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center,
             Background = bad ? BadBack : GoodBack,
-            Child = new TextBlock { Text = ReportPalette.Clock(entry.Seconds), FontSize = 12.5, Foreground = bad ? BadText : GoodText },
+            Child = new TextBlock { Text = (entry.Kind == FightLogKind.Boss ? (bad ? "\u2715 " : "\u2713 ") : "") + ReportPalette.Clock(entry.Seconds), FontSize = 12.5, FontWeight = FontWeights.SemiBold, Foreground = bad ? BadText : GoodText },
         };
         Grid.SetColumn(chip, 2);
         grid.Children.Add(chip);
 
-        var dps = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center };
-        dps.Children.Add(new TextBlock { Text = Short(entry.YourDps > 0 ? entry.YourDps : entry.PartyDps), FontSize = 15, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right });
+        var dps = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, MinWidth = 96 };
+        double? bestOnBoss = !best && entry.Kind == FightLogKind.Boss && entry.YourDps > 0 && _bests.TryGetValue(TitleOf(entry), out double b) ? b : null;
+        bool isBest = bestOnBoss is double top && entry.Killed == true && entry.YourDps >= top;
+        var figure = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+        if (isBest)
+        {
+            figure.Children.Add(new TextBlock { Text = "\u2605 ", FontSize = 13, Foreground = Gold, VerticalAlignment = VerticalAlignment.Center, ToolTip = "Your best on this boss" });
+        }
+
+        var dpsText = new TextBlock { Text = Short(entry.YourDps > 0 ? entry.YourDps : entry.PartyDps), FontSize = 15, FontWeight = FontWeights.SemiBold };
+        if (isBest)
+        {
+            dpsText.Foreground = Gold;
+        }
+
+        figure.Children.Add(dpsText);
+        dps.Children.Add(figure);
         if (entry.YourDps > 0 && entry.Kind != FightLogKind.Dummy)
         {
             dps.Children.Add(Muted("party " + Short(entry.PartyDps), 11, new Thickness(0, 1, 0, 0), right: true));
+        }
+
+        if (bestOnBoss is double most && most > 0)
+        {
+            // how close to your best on this boss
+            double share = Math.Clamp(entry.YourDps / most, 0, 1);
+            var track = new Grid { Width = 96, Height = 3, Margin = new Thickness(0, 4, 0, 0), HorizontalAlignment = HorizontalAlignment.Right,
+                ToolTip = isBest ? "Your best on this boss" : $"{share:P0} of your best on this boss ({Short(most)})" };
+            var under = new Border { CornerRadius = new CornerRadius(2) };
+            under.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+            track.Children.Add(under);
+            track.Children.Add(new Border { CornerRadius = new CornerRadius(2), Width = 96 * share, HorizontalAlignment = HorizontalAlignment.Left, Background = isBest ? Gold : Frozen(Color.FromArgb(0xA0, 0xDC, 0xB8, 0x77)) });
+            dps.Children.Add(track);
         }
 
         Grid.SetColumn(dps, 3);
@@ -651,7 +799,7 @@ public sealed class HistoryWindow : Window
 
     private static Border Card(UIElement child)
     {
-        var card = new Border { CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(1), Child = child, ClipToBounds = true };
+        var card = new Border { CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Child = child, ClipToBounds = true };
         card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
         card.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
         return card;
