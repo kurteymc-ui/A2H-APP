@@ -20411,9 +20411,13 @@
     "en": "Stigma Shards a level takes: 1 up to level 5, 2 up to 10, 4 up to 15, 8 above.",
     "de": "Stigma-Splitter je Stufe: 1 bis Stufe 5, 2 bis 10, 4 bis 15, 8 darüber."
   },
-  "CpCalc.Cost.BuildOrder": {
-    "en": "in your class build's order",
-    "de": "in der Reihenfolge deines Klassen-Builds"
+  "CpCalc.Cost.InBuild": {
+    "en": "in your class build",
+    "de": "in deinem Klassen-Build"
+  },
+  "CpCalc.Cost.PastBuild": {
+    "en": "not in your class build: after it",
+    "de": "nicht in deinem Klassen-Build: danach"
   },
   "CpCalc.Cost.SkillTip": {
     "en": "Every skill level counts the same in Combat Power, so the order is your class build's on the website: its most important skills first, each to the next of 5, 10, 15 and 20 before any goes higher.",

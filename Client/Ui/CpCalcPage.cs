@@ -747,12 +747,12 @@ public sealed partial class CpCalcPage : Grid
     {
         if (s.Kind == CpStepKind.Stigma && s.Shards > 0)
         {
-            return (F("CpCalc.Cost.Shards", s.Shards) + (s.Order > 0 ? "  ·  " + Loc("CpCalc.Cost.BuildOrder") : ""), Loc("CpCalc.Cost.ShardsTip"), false);
+            return (F("CpCalc.Cost.Shards", s.Shards) + "  ·  " + Loc(s.Key == "build" ? "CpCalc.Cost.InBuild" : "CpCalc.Cost.PastBuild"), Loc("CpCalc.Cost.ShardsTip"), false);
         }
 
         if (s.Kind == CpStepKind.Skill && s.Order > 0)
         {
-            return (Loc("CpCalc.Cost.BuildOrder"), Loc("CpCalc.Cost.SkillTip"), false);
+            return (Loc(s.Key == "build" ? "CpCalc.Cost.InBuild" : "CpCalc.Cost.PastBuild"), Loc("CpCalc.Cost.SkillTip"), false);
         }
 
         if (s.Cost is not { } c)

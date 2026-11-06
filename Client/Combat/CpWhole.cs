@@ -722,8 +722,10 @@ public static class CpWhole
 
             CpStigmaRow s = worn[p.Index];
             double gain = (Aion2CpSources.StigmaPoints(p.To) - Aion2CpSources.StigmaPoints(p.From)) * stigmaWeight;
+            // "build": a Stigma of the class build, not past the level the build takes it to
+            bool inBuild = plan is not null && plan.StigmaGoals.TryGetValue(CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId)), out int goal) && p.To <= goal;
             steps.Add(new CpStep(CpStepKind.Stigma, gain, gain, CpCertainty.Exact, OtherId: s.SkillId, ToLevel: p.To, FromLevel: p.From, Shards: CpPlan.ShardsTo(p.From, p.To),
-                Order: ++order));
+                Order: ++order, Key: inBuild ? "build" : null));
         }
 
         // skill levels: every counted skill gives the same per level; the build says which first
@@ -738,7 +740,8 @@ public static class CpWhole
 
             CpSkillRow s = counted[p.Index];
             double gain = (p.To - p.From) * s.PerLevel;
-            steps.Add(new CpStep(CpStepKind.Skill, gain, gain, CpCertainty.Exact, OtherId: s.SkillId, ToLevel: p.To, FromLevel: p.From, Order: ++order));
+            bool inBuild = plan is not null && plan.SkillTargets.TryGetValue(CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId)), out int target) && p.To <= target;
+            steps.Add(new CpStep(CpStepKind.Skill, gain, gain, CpCertainty.Exact, OtherId: s.SkillId, ToLevel: p.To, FromLevel: p.From, Order: ++order, Key: inBuild ? "build" : null));
         }
 
         // Genus Insight: the line of each board a new Analysis beats on average by the most
