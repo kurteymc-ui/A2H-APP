@@ -236,14 +236,15 @@ public static class StreamOverlayPage
             var me = s.me, panel = $('card');
             panel.classList.toggle('hide', !me);
             if (!me) { return; }
+            var cls = me.cls || me.className || '';   // the app sends className
             panel.style.setProperty('--c', me.color || '#e6c068');
-            $('c-art').src = icon(me.cls); $('c-emblem').src = icon(me.cls);
+            $('c-art').src = icon(cls); $('c-emblem').src = icon(cls);
             var face = $('c-portrait');
             if (me.portrait) { if (face.getAttribute('src') !== me.portrait) { face.setAttribute('src', me.portrait); } face.hidden = false; $('c-emblem').hidden = true; }
             else { face.hidden = true; $('c-emblem').hidden = false; }
             text($('c-live'), me.live ? 'Live · ' + me.live : 'Playing now');
             text($('c-name'), me.name);
-            var sub = [me.cls, me.level ? 'Level ' + me.level : '', me.server, me.legion ? '<' + me.legion + '>' : ''].filter(function (x) { return x; });
+            var sub = [cls, me.level ? 'Level ' + me.level : '', me.server, me.legion ? '<' + me.legion + '>' : ''].filter(function (x) { return x; });
             text($('c-sub'), sub.join('  ·  '));
             text($('c-il'), me.itemLevel ? me.itemLevel.toLocaleString() : '–');
             text($('c-cp'), me.cp ? me.cp.toLocaleString() : '–');

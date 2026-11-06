@@ -65,6 +65,10 @@ public static class SelfCheckStream
             bool script = http.GetAsync(basePath + "overlay.js").GetAwaiter().GetResult().StatusCode == HttpStatusCode.OK
                 && http.GetAsync(basePath + "overlay.css").GetAwaiter().GetResult().StatusCode == HttpStatusCode.OK;
             Console.WriteLine($"  -> a random 32-character key ({keyShape}); the page, its script and style are served with a strict policy ({served && script})");
+            // the link for this PC is 127.0.0.1 (a network address can change under OBS); a second PC gets its own
+            bool links = basePath == $"http://127.0.0.1:{server.Port}/{key}/" && server.NetworkUrl is string far && far.EndsWith($":{server.Port}/{key}/", StringComparison.Ordinal);
+            Console.WriteLine($"  -> the link on this PC is 127.0.0.1, a second PC has the network address: {links}");
+            ok &= links;
             ok &= keyShape && served && script;
             bool widgets = StreamOverlayPage.Widgets.All(w =>
             {

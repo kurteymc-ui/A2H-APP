@@ -58,6 +58,7 @@ jobs:
             @('render-app', 'app-journey.png', 'journey', '1900'),
             @('render-app', 'app-legion.png', 'legion', '1500'),
             @('render-app', 'app-status.png', 'status'),
+            @('render-app', 'app-stream.png', 'stream'),
             @('render-app', 'app-overlays.png', 'overlays'),
             @('render-app', 'app-characters.png', 'characters'),
             @('render-app', 'app-history.png', 'history'),

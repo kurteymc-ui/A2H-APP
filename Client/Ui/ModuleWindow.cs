@@ -22,7 +22,7 @@ public sealed class ModulePage : DockPanel
     private bool _syncing;
 
     public ModulePage(string title, UIElement body, Func<MeterSettings, bool> getOn, Action<MeterSettings, bool> setOn, Func<MeterSettings, string>? getKey,
-        Action openHotkeys, Action? openSettings, Action<MeterSettings> applied, Action? tick = null, UIElement? left = null)
+        Action openHotkeys, Action? openSettings, Action<MeterSettings> applied, Action? tick = null, UIElement? left = null, string? masterLabel = null)
     {
         _getOn = getOn;
         _getKey = getKey;
@@ -32,7 +32,7 @@ public sealed class ModulePage : DockPanel
         // the head in the look of Journey and Legion (6 November 2026): the name large in the title face, the tool's controls together on a bar at the right
         var header = new DockPanel { Margin = new Thickness(0, 0, 0, 16) };
         var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        var masterText = new TextBlock { Text = loc["Settings.Overlay.Master"], VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+        var masterText = new TextBlock { Text = masterLabel ?? loc["Settings.Overlay.Master"], VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
         masterText.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextSubtle");
         _master.VerticalAlignment = VerticalAlignment.Center;
         if (Application.Current?.TryFindResource("SettingsSwitch") is Style style)

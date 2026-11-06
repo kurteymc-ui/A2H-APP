@@ -56,8 +56,14 @@ public sealed class StreamOverlayServer : IDisposable
         }
     }
 
-    /// <summary>The link to put into the browser source, or null while the server is not running.</summary>
-    public string? Url => Running ? $"http://{_address}:{Port}/{_key}/" : null;
+    /// <summary>
+    /// The link to put into the browser source on this PC, or null while the server is not running: always 127.0.0.1 (6 November 2026: it carried the PC's
+    /// network address, which the router may change, and a link in OBS then stops working).
+    /// </summary>
+    public string? Url => Running ? $"http://127.0.0.1:{Port}/{_key}/" : null;
+
+    /// <summary>The link for a second PC in the network (this PC's network address), or null when only this PC may reach it.</summary>
+    public string? NetworkUrl => Running && _network ? $"http://{_address}:{Port}/{_key}/" : null;
 
     /// <summary>Whether other PCs of the network can reach it (else only this PC).</summary>
     public bool Network => Running && _network;
@@ -294,7 +300,10 @@ public sealed class StreamOverlayServer : IDisposable
         {
             try
             {
-                if (!IsLocalPeer((connection.Client.RemoteEndPoint as IPEndPoint)?.Address))
+                IPAddress? peer = (connection.Client.RemoteEndPoint as IPEndPoint)?.Address;
+                // this PC itself is always let in, also by an address that isn't private (a PC that holds a public or carrier address itself)
+                bool self = peer is not null && peer.Equals((connection.Client.LocalEndPoint as IPEndPoint)?.Address);
+                if (!self && !IsLocalPeer(peer))
                 {
                     return; // not from this PC or the own network: no answer at all
                 }

@@ -3493,6 +3493,7 @@ public partial class MainWindow : Window
             {
                 _streamServer?.Dispose();
                 _streamServer = null;
+                _streamFailed = false;
             }
             else if (_streamServer is null || !_streamServer.Running || _streamServer.Url?.Contains("/" + _streamSettings.StreamOverlayKey + "/") != true
                 || _streamServer.Network != _streamSettings.StreamOverlayNetwork
@@ -3501,9 +3502,15 @@ public partial class MainWindow : Window
                 _streamServer?.Dispose();
                 _streamServer = new Streaming.StreamOverlayServer();
                 int port = Math.Clamp(_streamSettings.StreamOverlayPort, 1024, 65000);
-                if (!_streamServer.Start(port, _streamSettings.StreamOverlayKey, _streamSettings.StreamOverlayNetwork))
+                bool failedBefore = _streamFailed;
+                _streamFailed = !_streamServer.Start(port, _streamSettings.StreamOverlayKey, _streamSettings.StreamOverlayNetwork);
+                if (_streamFailed)
                 {
-                    ShowUploadStatus(LocalizationManager.Instance["Stream.NoPort"]);
+                    if (!failedBefore)
+                    {
+                        ShowUploadStatus(LocalizationManager.Instance["Stream.NoPort"]);   // once, not at every try
+                    }
+
                     _streamServer.Dispose();
                     _streamServer = null;
                 }
@@ -7413,166 +7420,7 @@ public partial class MainWindow : Window
             }
 
             case "stream":
-            {
-                // 6 November 2026, the owner: "fix obs overlay, its kinda shit rn": three widgets with a link each, how to add them, the link's options
-                var stack = new StackPanel { Margin = new Thickness(0, 4, 0, 0), MaxWidth = 900, HorizontalAlignment = HorizontalAlignment.Left };
-                TextBlock Words(string text, string brush, double size, bool bold = false)
-                {
-                    var t = new TextBlock { Text = text, FontSize = size, FontWeight = bold ? FontWeights.SemiBold : FontWeights.Normal, TextWrapping = TextWrapping.Wrap };
-                    t.SetResourceReference(TextBlock.ForegroundProperty, brush);
-                    return t;
-                }
-
-                Border Panel(UIElement child, Thickness? margin = null)
-                {
-                    var b = new Border { Child = child, Padding = new Thickness(16, 14, 16, 14), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = margin ?? new Thickness(0, 0, 0, 12) };
-                    b.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
-                    b.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
-                    return b;
-                }
-
-                // the state: running where, how many browser sources; names on stream
-                var dot = new System.Windows.Shapes.Ellipse { Width = 9, Height = 9, Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
-                TextBlock status = Words("", "Brush.Text", 13, bold: true);
-                TextBlock where = Words("", "Brush.TextMuted", 12);
-                var head = new StackPanel();
-                var line = new StackPanel { Orientation = Orientation.Horizontal };
-                line.Children.Add(dot);
-                line.Children.Add(status);
-                head.Children.Add(line);
-                where.Margin = new Thickness(18, 2, 0, 10);
-                head.Children.Add(where);
-                var names = new CheckBox { Content = "Show the other players' names on the meter (else each by class: \"Cleric\", \"Cleric 2\" ...). The card always shows your own.", IsChecked = MeterSettings.Load().StreamShowNames };
-                names.Click += (_, _) =>
-                {
-                    var current = MeterSettings.Load();
-                    current.StreamShowNames = names.IsChecked == true;
-                    current.Save();
-                    _streamSettingsAt = DateTime.MinValue;
-                };
-                head.Children.Add(names);
-                stack.Children.Add(Panel(head));
-
-                // the widgets
-                var links = new List<(TextBox Box, string Widget, Button Copy, Button Look)>();
-                var cards = new UniformGrid { Columns = 1 };
-                foreach ((string widget, string title, string what, string size, string glyph) in new[]
-                         {
-                             ("meter", "Meter", "The meter as you see it over the game: ten lines in their class colours, the buffs and healing on the bars, the boss line with its kill and enrage times. The lines slide into their new places.", "400 × 420", "\uE9D2"),
-                             ("card", "Character card", "Your character: portrait (or class emblem) in your class colour, level, server, legion, Item Level and Combat Power, and this stream so far: how long, bosses killed, best DPS, Combat Power gained.", "680 × 160", "\uE77B"),
-                             ("boss", "Boss bar", "The boss you fight: its health as a wide bar with the percent, when it dies at your pace and its enrage. Shows itself on a boss and fades out after.", "900 × 110", "\uE7C1"),
-                         })
-                {
-                    var grid = new Grid();
-                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-                    var mark = new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(10), Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Top,
-                        Background = new SolidColorBrush(Color.FromArgb(0x26, 0xE6, 0xC0, 0x68)),
-                        Child = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 17, Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xC0, 0x68)), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
-                    grid.Children.Add(mark);
-                    var body = new StackPanel();
-                    var top = new DockPanel();
-                    TextBlock sizeText = Words("Browser source " + size, "Brush.TextSubtle", 11.5);
-                    DockPanel.SetDock(sizeText, Dock.Right);
-                    top.Children.Add(sizeText);
-                    top.Children.Add(Words(title, "Brush.Text", 15, bold: true));
-                    body.Children.Add(top);
-                    TextBlock about = Words(what, "Brush.TextMuted", 12.5);
-                    about.Margin = new Thickness(0, 3, 0, 10);
-                    body.Children.Add(about);
-                    var row = new DockPanel();
-                    var copy = new Button { Content = "Copy link", Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(8, 0, 0, 0) };
-                    var look = new Button { Content = "Preview", Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(8, 0, 0, 0), ToolTip = "Opens it in your browser with made-up numbers" };
-                    DockPanel.SetDock(look, Dock.Right);
-                    DockPanel.SetDock(copy, Dock.Right);
-                    row.Children.Add(look);
-                    row.Children.Add(copy);
-                    var box = new TextBox { IsReadOnly = true, VerticalContentAlignment = VerticalAlignment.Center, Padding = new Thickness(6, 3, 6, 3), FontFamily = new FontFamily("Cascadia Mono, Consolas") };
-                    row.Children.Add(box);
-                    body.Children.Add(row);
-                    Grid.SetColumn(body, 1);
-                    grid.Children.Add(body);
-                    copy.Click += (_, _) =>
-                    {
-                        try
-                        {
-                            Clipboard.SetText(box.Text);
-                            ShowUploadStatus(loc["Stream.LinkCopied"]);
-                        }
-                        catch (COMException)
-                        {
-                            ShowUploadStatus(box.Text);
-                        }
-                    };
-                    look.Click += (_, _) =>
-                    {
-                        try
-                        {
-                            Process.Start(new ProcessStartInfo(box.Text + "?demo=1") { UseShellExecute = true });
-                        }
-                        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
-                        {
-                            ShowUploadStatus(box.Text);
-                        }
-                    };
-                    links.Add((box, widget, copy, look));
-                    cards.Children.Add(Panel(grid));
-                }
-
-                stack.Children.Add(cards);
-
-                // how to add one, and what the link can say
-                var how = new StackPanel();
-                how.Children.Add(Words("Adding a widget to OBS or Streamlabs", "Brush.Text", 14, bold: true));
-                foreach (string step in new[]
-                         {
-                             "1.  Sources  →  +  →  Browser (Streamlabs: Browser Source), and give it a name.",
-                             "2.  Paste the widget's link as the URL and set the width and height shown beside it.",
-                             "3.  That is all: the background is see-through, the widget fades in when there is something to show.",
-                         })
-                {
-                    TextBlock t = Words(step, "Brush.TextMuted", 12.5);
-                    t.Margin = new Thickness(0, 6, 0, 0);
-                    how.Children.Add(t);
-                }
-
-                TextBlock options = Words("Add to the end of a link:   ?scale=1.25  larger    ?rows=5  fewer lines    ?style=solid  no see-through    ?style=clear  no panel    ?always=1  stays between fights    ?demo=1  made-up numbers   (several: ?scale=1.2&rows=6)", "Brush.TextSubtle", 12);
-                options.Margin = new Thickness(0, 12, 0, 0);
-                how.Children.Add(options);
-                TextBlock twoPc = Words("Streaming from a second PC: the setting \"" + loc["Settings.Stream.Network"] + "\" (Settings) lets it reach this PC; the links carry this PC's address then.", "Brush.TextSubtle", 12);
-                twoPc.Margin = new Thickness(0, 8, 0, 0);
-                how.Children.Add(twoPc);
-                var renew = new Button { Content = "New links (the old ones stop working)", HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(0, 12, 0, 0) };
-                renew.Click += (_, _) =>
-                {
-                    var current = MeterSettings.Load();
-                    current.StreamOverlayKey = Streaming.StreamOverlayServer.NewKey();
-                    current.Save();
-                    _streamSettingsAt = DateTime.MinValue; // the server restarts with the new key at the next look
-                    StreamTick();
-                };
-                how.Children.Add(renew);
-                stack.Children.Add(Panel(how));
-
-                void Show()
-                {
-                    bool on = _streamServer is { Running: true };
-                    dot.Fill = new SolidColorBrush(on ? Color.FromRgb(0x6C, 0xD4, 0x8A) : Color.FromRgb(0x7A, 0x84, 0x90));
-                    status.Text = on ? "Running" : "Off: switch it on above";
-                    where.Text = _streamServer is { Running: true } server
-                        ? (server.Network ? "This PC and the others in your network" : "This PC only") + "  ·  " + string.Format(loc["Stream.Clients"], server.ClientCount)
-                        : "The widgets' links work once it is on.";
-                    foreach (var (box, widget, copy, look) in links)
-                    {
-                        box.Text = _streamServer?.Url is string url ? url + widget : "";
-                        copy.IsEnabled = look.IsEnabled = on;
-                    }
-                }
-
-                Show();
-                var page = new ModulePage(loc["Settings.Nav.Stream"], stack, s => s.StreamOverlayOn, (s, v) => s.StreamOverlayOn = v, null, hotkeys, settingsPage, applied, Show);
-                return new ToolPage { Content = page, Cleanup = page.Stop };
-            }
+                return BuildStreamPage(hotkeys, settingsPage, applied);
         }
 
         return null;
