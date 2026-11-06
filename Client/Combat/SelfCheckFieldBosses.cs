@@ -24,6 +24,12 @@ public static class SelfCheckFieldBosses
         Console.WriteLine($"  -> every region has its number, Lower Reshanta's bosses in the game's order: {numbered && order} (numbers {numbered}, order {order})");
         ok &= numbered && order;
 
+        // a face for every boss but one (the game has no portrait of Wings of Hellfire Fios)
+        int faces = Aion2FieldBosses.Maps.SelectMany(m => m.Bosses).Count(b => Aion2.Protocol.Aion2Artwork.FieldBossPortraitPath(b.Npc) is not null);
+        int all = Aion2FieldBosses.Maps.Sum(m => m.Bosses.Count);
+        Console.WriteLine($"  -> the game's portrait for {faces} of {all} bosses: {faces >= all - 1}");
+        ok &= faces >= all - 1;
+
         // a list of Lower Reshanta (map 20): one dead with its time back, one with an extra byte before its time, one alive with its place
         long back = DateTimeOffset.UtcNow.AddHours(3).ToUnixTimeMilliseconds();
         var abyss = new List<byte> { 0x01, 0x91, 0x00, 0x00 };
