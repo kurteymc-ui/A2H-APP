@@ -160,11 +160,11 @@ public sealed partial class ChecklistWindow
     {
         var grid = new Grid();
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(128) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(84) });
         for (int k = 0; k < counters; k++)
         {
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
         }
 
         return grid;
@@ -194,7 +194,8 @@ public sealed partial class ChecklistWindow
         head.Margin = new Thickness(12, 0, 6, 6);
         void Title(string text, string? tip, int column, bool left = false)
         {
-            TextBlock t = Label(text.ToUpper(CultureInfo.CurrentCulture), "Brush.TextSubtle", 9.5, bold: true);
+            // as the game writes them, broken between words only ("Dimensional / Invasion")
+            TextBlock t = Label(text, "Brush.TextMuted", 10.5, bold: true);
             t.TextWrapping = TextWrapping.Wrap;
             t.TextAlignment = left ? TextAlignment.Left : TextAlignment.Center;
             t.HorizontalAlignment = left ? HorizontalAlignment.Left : HorizontalAlignment.Center;
