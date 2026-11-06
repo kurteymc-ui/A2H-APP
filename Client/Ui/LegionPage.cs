@@ -538,13 +538,27 @@ internal sealed class LegionPage : Grid
     {
         var stack = new StackPanel();
         var tools = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        var search = new TextBox { Width = 170, Text = _search, VerticalContentAlignment = VerticalAlignment.Center, Padding = new Thickness(6, 3, 6, 3), Margin = new Thickness(0, 0, 10, 0), ToolTip = Loc["Legion.Search"] };
+        // the search box in the theme's colours, its hint inside while empty
+        var search = new TextBox { Width = 190, Text = _search, VerticalContentAlignment = VerticalAlignment.Center, Padding = new Thickness(8, 4, 8, 4), BorderThickness = new Thickness(1) };
+        search.SetResourceReference(Control.BackgroundProperty, "Brush.Control");
+        search.SetResourceReference(Control.ForegroundProperty, "Brush.Text");
+        search.SetResourceReference(Control.BorderBrushProperty, "Brush.Border");
+        search.SetResourceReference(TextBox.CaretBrushProperty, "Brush.Text");
+        TextBlock hint = Text(Loc["Legion.Search"], "Brush.TextSubtle", 12);
+        hint.IsHitTestVisible = false;
+        hint.Margin = new Thickness(11, 0, 0, 0);
+        hint.VerticalAlignment = VerticalAlignment.Center;
+        hint.Visibility = _search.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
         search.TextChanged += (_, _) =>
         {
             _search = search.Text.Trim();
+            hint.Visibility = search.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
             FillList(legion);
         };
-        tools.Children.Add(search);
+        var box = new Grid { Margin = new Thickness(0, 0, 10, 0) };
+        box.Children.Add(search);
+        box.Children.Add(hint);
+        tools.Children.Add(box);
         foreach ((Sort sort, string key) in new[] { (Sort.Cp, "Cp"), (Sort.ItemLevel, "ItemLevel"), (Sort.Active, "Active"), (Sort.Rank, "Rank"), (Sort.Class, "Class"), (Sort.Name, "Name") })
         {
             bool on = _sort == sort;
@@ -579,6 +593,7 @@ internal sealed class LegionPage : Grid
         Title(3, "Legion.Col.Rank");
         Title(4, "Legion.Col.ItemLevel", HorizontalAlignment.Right);
         Title(5, "Legion.Col.Cp");
+        ((FrameworkElement)heads.Children[heads.Children.Count - 1]).Margin = new Thickness(16, 0, 0, 0);
         Title(6, "Legion.Col.Active", HorizontalAlignment.Right);
         heads.Margin = new Thickness(8, 0, 8, 6);
         stack.Children.Add(heads);
@@ -611,6 +626,7 @@ internal sealed class LegionPage : Grid
 
         _list.Children.Clear();
         int topCp = Math.Max(1, legion.Members.Select(m => m.CombatPower).DefaultIfEmpty(0).Max());
+        int topLevel = legion.Members.Select(m => m.Level).DefaultIfEmpty(0).Max();
         var linked = new HashSet<string>(_info?.Linked ?? Array.Empty<string>(), StringComparer.OrdinalIgnoreCase);
         IEnumerable<LegionMember> members = legion.Members.Where(m => _search.Length == 0 || m.Name.Contains(_search, StringComparison.OrdinalIgnoreCase)
             || (ClassOf(m)?.Contains(_search, StringComparison.OrdinalIgnoreCase) ?? false));
@@ -644,7 +660,8 @@ internal sealed class LegionPage : Grid
 
             var who = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
             who.Children.Add(new TextBlock { Text = m.Name, FontSize = 13.5, FontWeight = FontWeights.SemiBold, Foreground = ClassBrushes.Text(cls), TextTrimming = TextTrimming.CharacterEllipsis });
-            TextBlock what = Text((cls ?? "") + (m.Level > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, Loc["Legion.LevelShort"], m.Level) : ""), "Brush.TextSubtle", 11);
+            TextBlock what = Text((cls ?? "") + (m.Level > 0 && m.Level < topLevel ? "  ·  " + string.Format(CultureInfo.CurrentCulture, Loc["Legion.LevelShort"], m.Level) : ""), "Brush.TextSubtle", 11);
+            what.ToolTip = m.Level > 0 ? string.Format(CultureInfo.CurrentCulture, Loc["Legion.LevelShort"], m.Level) : null;
             what.TextTrimming = TextTrimming.CharacterEllipsis;
             who.Children.Add(what);
             Put(who, 2);
