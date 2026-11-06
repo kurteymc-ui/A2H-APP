@@ -177,7 +177,7 @@ public sealed class AccountWindow : Window
     }
 
     /// <summary>The legion list's last send, in the window's words (how it works before the first one).</summary>
-    private static string LegionText(LegionShareResult? last)
+    internal static string LegionText(LegionShareResult? last)
     {
         var loc = LocalizationManager.Instance;
         return last switch

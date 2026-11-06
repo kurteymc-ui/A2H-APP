@@ -21488,6 +21488,9 @@
   "Main.MenuTools.Journey": {
     "en": "Journey"
   },
+  "Main.MenuTools.Legion": {
+    "en": "Legion"
+  },
   "Journey.Title": {
     "en": "Journey"
   },
@@ -21832,5 +21835,188 @@
   },
   "Journey.Class.InBracketShort": {
     "en": "at your power"
+  },
+  "Legion.Title": {
+    "en": "Legion"
+  },
+  "Legion.Lede": {
+    "en": "Your legion's members as the game lists them at a login, kept on this PC, with what the Atreia bot has of the legion on Discord."
+  },
+  "Legion.None": {
+    "en": "No legion list yet. Log in with a character that is in a legion while the app runs: the game sends the member list at the login, and it shows here from then on."
+  },
+  "Legion.Kicker": {
+    "en": "Your legion"
+  },
+  "Legion.MembersCount": {
+    "en": "{0} members"
+  },
+  "Legion.AvgItemLevel": {
+    "en": "Average Item Level"
+  },
+  "Legion.AvgCp": {
+    "en": "Average Combat Power"
+  },
+  "Legion.ListFrom": {
+    "en": "List from the login of {1}, {0}"
+  },
+  "Legion.Classes": {
+    "en": "Classes"
+  },
+  "Legion.Discord": {
+    "en": "On Discord"
+  },
+  "Legion.Discord.Asking": {
+    "en": "Asking the Atreia bot…"
+  },
+  "Legion.Discord.Off": {
+    "en": "Uploads are off, so the app does not ask the Atreia bot about the legion."
+  },
+  "Legion.Discord.Offline": {
+    "en": "The Atreia bot could not be reached just now. The page asks again when you open it."
+  },
+  "Legion.Discord.NoServer": {
+    "en": "No Discord server follows this legion with the Atreia bot yet."
+  },
+  "Legion.Discord.Private": {
+    "en": "A private server"
+  },
+  "Legion.Discord.Recruiting": {
+    "en": "Recruiting"
+  },
+  "Legion.Discord.Join": {
+    "en": "Join"
+  },
+  "Legion.Discord.Linked": {
+    "en": "{0} of {1} linked"
+  },
+  "Legion.Discord.How": {
+    "en": "Add the Atreia bot to your legion's Discord server, then run the command there as an admin: the server's roster follows the legion."
+  },
+  "Legion.Discord.Another": {
+    "en": "To follow the legion on another server: add the bot there and run the command."
+  },
+  "Legion.Discord.Add": {
+    "en": "Add the Atreia bot to a Discord server"
+  },
+  "Legion.Discord.CopyCommand": {
+    "en": "Copy  {0}"
+  },
+  "Legion.CopyList": {
+    "en": "Copy the member list"
+  },
+  "Legion.Copied": {
+    "en": "Copied."
+  },
+  "Legion.Score.Members": {
+    "en": "Members"
+  },
+  "Legion.Score.MembersNote": {
+    "en": "in the game's list"
+  },
+  "Legion.Score.Online": {
+    "en": "Online"
+  },
+  "Legion.Score.OnlineNote": {
+    "en": "when the list came"
+  },
+  "Legion.Score.Today": {
+    "en": "Played today"
+  },
+  "Legion.Score.Week": {
+    "en": "Played this week"
+  },
+  "Legion.Score.Share": {
+    "en": "{0}% of the legion"
+  },
+  "Legion.Score.Top": {
+    "en": "Strongest"
+  },
+  "Legion.Score.Linked": {
+    "en": "Linked on Discord"
+  },
+  "Legion.Score.LinkedNote": {
+    "en": "members the bot knows"
+  },
+  "Legion.Score.LinkedUnknown": {
+    "en": "not known yet"
+  },
+  "Legion.Members": {
+    "en": "Members"
+  },
+  "Legion.Search": {
+    "en": "Search a name or class"
+  },
+  "Legion.Sort.Cp": {
+    "en": "Combat Power"
+  },
+  "Legion.Sort.ItemLevel": {
+    "en": "Item Level"
+  },
+  "Legion.Sort.Active": {
+    "en": "Last seen"
+  },
+  "Legion.Sort.Rank": {
+    "en": "Rank"
+  },
+  "Legion.Sort.Class": {
+    "en": "Class"
+  },
+  "Legion.Sort.Name": {
+    "en": "Name"
+  },
+  "Legion.Col.Name": {
+    "en": "Member"
+  },
+  "Legion.Col.Rank": {
+    "en": "Rank"
+  },
+  "Legion.Col.ItemLevel": {
+    "en": "Item Level"
+  },
+  "Legion.Col.Cp": {
+    "en": "Combat Power"
+  },
+  "Legion.Col.Active": {
+    "en": "Last seen"
+  },
+  "Legion.Leader": {
+    "en": "Leader"
+  },
+  "Legion.Officer": {
+    "en": "Officer"
+  },
+  "Legion.LevelShort": {
+    "en": "Lv {0}"
+  },
+  "Legion.Online": {
+    "en": "Online"
+  },
+  "Legion.OnlineTip": {
+    "en": "In the game when the list came"
+  },
+  "Legion.MinutesAgo": {
+    "en": "{0} min ago"
+  },
+  "Legion.HoursAgo": {
+    "en": "{0} h ago"
+  },
+  "Legion.DaysAgo": {
+    "en": "{0} d ago"
+  },
+  "Legion.LinkedTip": {
+    "en": "Linked on Discord with the Atreia bot"
+  },
+  "Legion.NoMatch": {
+    "en": "No member matches."
+  },
+  "Legion.Send": {
+    "en": "Send the list to the bot"
+  },
+  "Legion.Send.SignIn": {
+    "en": "Sign in with Discord in the app and verify your character: the list then goes to the bot at a login, and the servers following the legion have every member on their roster with the game's numbers."
+  },
+  "Legion.Send.SignInButton": {
+    "en": "Sign in with Discord"
   }
 }

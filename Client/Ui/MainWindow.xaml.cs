@@ -2116,7 +2116,15 @@ public partial class MainWindow : Window
         }
 
         AionDPS.History.JourneyLog.Minute(AionDPS.History.JourneyLog.Key(me.Name, me.ServerId), fighting, moved, DateTime.Now);
+
+        // the legion's member list of this login onto the Legion page, kept for when the game is closed (once the legion's name is known)
+        if (dir.LegionRosterAt > _legionNoted && AionDPS.History.LegionStore.NoteLive(dir))
+        {
+            _legionNoted = dir.LegionRosterAt;
+        }
     }
+
+    private DateTime _legionNoted = DateTime.MinValue;
 
     protected override void OnClosed(EventArgs e)
     {
@@ -7114,6 +7122,12 @@ public partial class MainWindow : Window
             {
                 var journeyPage = new JourneyPage(() => _liveSource?.Entities as Aion2EntityDirectory);
                 return new ToolPage { Content = journeyPage, Cleanup = journeyPage.Stop };
+            }
+
+            case "legion":
+            {
+                var legionPage = new LegionPage(() => _liveSource?.Entities as Aion2EntityDirectory, () => OnAccountClicked(this, new RoutedEventArgs()));
+                return new ToolPage { Content = legionPage, Cleanup = legionPage.Stop };
             }
 
             case "loot":
