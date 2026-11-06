@@ -1224,12 +1224,33 @@ public partial class MainWindow : Window
         NoteDefeatedBosses();
 
         // The "all sessions" view is a long record by design: the automatic reset between fights would leave only the last one. The next attempt
-        // on a boss after a wipe starts from zero also with the automatic reset off (see BossFight.StartsNextAttempt), the way a map change does.
-        if (!_historyMode && _sessionView == SessionView.Current
-            && (_autoReset ? StartsNewFight(events) || StartsNewBossPull(events, afterWipeOnly: false) : StartsNewBossPull(events, afterWipeOnly: true)))
+        // on a boss after a wipe starts from zero also with the automatic reset off (see BossFight.NextAttemptStart), the way a map change does.
+        if (!_historyMode && _sessionView == SessionView.Current)
         {
-            // Files the finished fight in the history, then starts from zero.
-            ClearDamageData();
+            DateTime? keepFrom = null;
+            bool fresh = _autoReset && StartsNewFight(events);
+            if (!fresh && NextBossAttempt(events, afterWipeOnly: !_autoReset) is DateTime attempt)
+            {
+                fresh = true;
+                keepFrom = attempt;
+            }
+
+            if (fresh)
+            {
+                // the next attempt's first hits can be on record already (they may come just before the game says the boss is in combat again): kept
+                var kept = keepFrom is DateTime from ? _aggregator.Events.Where(ev => ev.Timestamp >= from).ToList() : null;
+                var keptAvoids = keepFrom is DateTime avoidFrom ? _avoids.Where(a => a.Timestamp >= avoidFrom).ToList() : null;
+                var keptKills = keepFrom is DateTime killFrom ? _kills.Where(k => k.Timestamp >= killFrom).ToList() : null;
+                // Files the finished fight in the history, then starts from zero.
+                ClearDamageData();
+                if (kept is { Count: > 0 })
+                {
+                    _aggregator.IngestEvents(kept);
+                }
+
+                _avoids.AddRange(keptAvoids ?? new List<AvoidEvent>());
+                _kills.AddRange(keptKills ?? new List<KillEvent>());
+            }
         }
 
         if (events.Count > 0 || batch.Avoids.Count > 0 || batch.Kills.Count > 0)
@@ -1327,8 +1348,8 @@ public partial class MainWindow : Window
     /// pull. See <see cref="BossFight.StartsNextAttempt"/>. (3 November 2026, the owner: a failed fight must not count into the next one.)
     /// <paramref name="afterWipeOnly"/>: only the failed attempt, which ends the fight on screen also with the automatic reset off.
     /// </summary>
-    private bool StartsNewBossPull(IReadOnlyList<DamageEvent> batch, bool afterWipeOnly) =>
-        _source?.Entities is Aion2.Aion2EntityDirectory directory && BossFight.StartsNextAttempt(batch, _aggregator.Events, directory, afterWipeOnly);
+    private DateTime? NextBossAttempt(IReadOnlyList<DamageEvent> batch, bool afterWipeOnly) =>
+        _source?.Entities is Aion2.Aion2EntityDirectory directory ? BossFight.NextAttemptStart(batch, _aggregator.Events, directory, afterWipeOnly) : null;
 
     /// <summary>A boss fight still going (see <see cref="BossFight.Unfinished"/>): it keeps the reset after a quiet spell away.</summary>
     private bool BossFightUnfinished(int? except = null, DateTime? now = null) =>
@@ -3244,12 +3265,17 @@ public partial class MainWindow : Window
         }
 
         // A wipe and retry keeps the boss's entity id and can come within the gap below, so the
-        // moments the server put the boss back to full health cut the hits as well, and so do the
-        // attempts that ended with the boss out of combat alive (see FailedEndsOf). A run that
-        // ended in either is a wipe and carries a skull.
+        // next attempt's start cuts the hits as well: the boss pulled again after it was put back to
+        // full health or left combat alive (see BossFight.AttemptStarts) - not the wipe itself, so a
+        // last hit landing on the boss as it resets stays with the attempt that failed instead of
+        // becoming a run of its own (6 November 2026). A run that ended in a wipe carries a skull.
         var directoryOfRuns = _source?.Entities as Aion2.Aion2EntityDirectory;
-        IReadOnlyList<DateTime> resets = directoryOfRuns is null ? Array.Empty<DateTime>()
-            : directoryOfRuns.HitPoints.ResetsOf(targetId).Concat(directoryOfRuns.FailedEndsOf(targetId, hits[^1].Timestamp > DateTime.Now ? hits[^1].Timestamp : DateTime.Now)).ToList();
+        DateTime runsNow = hits[^1].Timestamp > DateTime.Now ? hits[^1].Timestamp : DateTime.Now;
+        IReadOnlyList<DateTime> wipes = directoryOfRuns is null ? Array.Empty<DateTime>()
+            : directoryOfRuns.HitPoints.ResetsOf(targetId).Concat(directoryOfRuns.FailedEndsOf(targetId, runsNow)).ToList();
+        IReadOnlyList<DateTime> resets = directoryOfRuns is null || directoryOfRuns.BossNpcIdOf(targetId) is null
+            ? wipes
+            : BossFight.AttemptStarts(directoryOfRuns, targetId, hits, runsNow);
         var clusters = new List<List<DamageEvent>>();
         var wiped = new List<bool>();
         foreach (DamageEvent hit in hits)
@@ -3275,10 +3301,10 @@ public partial class MainWindow : Window
             }
         }
 
-        // The last run is a wipe too when the boss went back to full health after its final hit,
-        // even if nobody pulled it again.
-        DateTime lastHit = clusters[^1][^1].Timestamp;
-        wiped[^1] = resets.Any(at => at > lastHit);
+        // The last run is a wipe too when the boss went back to full health or left combat alive
+        // after it began, even if nobody pulled it again.
+        DateTime lastStart = clusters[^1][0].Timestamp;
+        wiped[^1] = wipes.Any(at => at > lastStart);
 
         if (clusters.Count == 1 && !wiped[0])
         {

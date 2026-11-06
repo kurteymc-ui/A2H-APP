@@ -164,10 +164,12 @@ public static class SessionAnalyzer
     }
 
     /// <summary>A boss that came back to full health under the same id, or left combat alive (a wipe), starts another attempt: the fight is cut at each
-    /// such moment (<see cref="TargetHp.Resets"/> holds both).</summary>
+    /// such moment (<see cref="TargetHp.Resets"/> holds both) - at the pull after it (<see cref="BossFight.PullAfter"/>), so a last hit landing on the boss
+    /// as it resets stays with the attempt that failed instead of starting the next one early (6 November 2026).</summary>
     private static IEnumerable<(DateTime From, DateTime To, List<DamageEvent> Hits)> SplitAtResets(FightSegment fight, IReadOnlyList<DateTime> resets)
     {
-        var cuts = resets.Where(r => r > fight.Start && r < fight.End).OrderBy(r => r).ToList();
+        var inOrder = fight.Hits.OrderBy(h => h.Timestamp).ToList();
+        var cuts = resets.Where(r => r > fight.Start && r < fight.End).Select(r => BossFight.PullAfter(inOrder, r) ?? r).Distinct().OrderBy(r => r).ToList();
         DateTime from = fight.Start;
         foreach (DateTime cut in cuts)
         {

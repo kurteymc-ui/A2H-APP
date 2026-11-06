@@ -116,13 +116,39 @@ public static class SelfCheckFightClock
         bool retry = BossFight.StartsNextAttempt(Hit(120.8), recorded, dir, afterWipeOnly: true)
             && BossFight.StartsNextAttempt(Hit(120.8), recorded, dir, afterWipeOnly: false);
 
-        // the same wipe seen by a player who was dead and far: no reading at full health, only the boss out of combat for 14 s
+        // the same wipe seen by a player who was dead and far: no reading at full health, only the boss out of combat for 14 s, and no signal that it is
+        // in combat again: the pull is its run of hits (three, a moment apart)
         var far = new Aion2EntityDirectory();
         far.RegisterNpc(berk, 2320171);
         far.HitPoints.Note(berk, t0.AddSeconds(63), 24_312_032);
         far.HitPoints.Note(berk, t0.AddSeconds(101), 20_901_738);
         far.NoteDisengaged(berk, t0.AddSeconds(106.2));
-        bool retryFar = BossFight.StartsNextAttempt(Hit(120.8), recorded, far, afterWipeOnly: true);
+        var farPull = new List<DamageEvent>(recorded);
+        farPull.AddRange(Hit(120.8));
+        farPull.AddRange(Hit(121.4));
+        bool retryFar = !BossFight.StartsNextAttempt(Hit(120.8), recorded, far, afterWipeOnly: true)
+            && BossFight.NextAttemptStart(Hit(122.1), farPull, far, afterWipeOnly: true) == t0.AddSeconds(120.8);
+
+        // a last hit landing on the boss as it resets (45k, 6 s after it left combat; 6 November 2026) starts nothing: the meter keeps the failed
+        // attempt on screen, and the pull after it starts the next one where the game says the boss is in combat again, its first hits kept
+        var late = new Aion2EntityDirectory();
+        late.RegisterNpc(berk, 2320171);
+        late.HitPoints.Note(berk, t0.AddSeconds(63), 24_312_032);
+        late.HitPoints.Note(berk, t0.AddSeconds(101), 20_901_738);
+        late.NoteDisengaged(berk, t0.AddSeconds(106.2));
+        List<DamageEvent> lastBlow = new() { new DamageEvent(t0.AddSeconds(112.4), 4, berk, 45_000, IsHeal: false) };
+        bool stragglerKept = !BossFight.StartsNextAttempt(lastBlow, recorded, late, afterWipeOnly: true);
+        var withStraggler = new List<DamageEvent>(recorded);
+        withStraggler.AddRange(lastBlow);
+        withStraggler.AddRange(Hit(130.8)); // the pull's first hit, before the game's signal
+        late.NoteEngaged(berk, t0.AddSeconds(130.9), exact: true);
+        DateTime? next = BossFight.NextAttemptStart(Hit(131.5), withStraggler, late, afterWipeOnly: true);
+        var lateHits = withStraggler.Concat(Hit(131.5)).Where(e => e.TargetObjectId == berk).OrderBy(e => e.Timestamp).ToList();
+        IReadOnlyList<DateTime> starts = BossFight.AttemptStarts(late, berk, lateHits, t0.AddSeconds(131.5));
+        bool stragglerApart = next is DateTime n && n > t0.AddSeconds(112.4) && n <= t0.AddSeconds(130.8) && starts.Count == 1
+            && BossFight.PullAfter(lateHits, t0.AddSeconds(106.2)) is null && BossFight.PullAfter(lateHits.Concat(Hit(132)).ToList(), t0.AddSeconds(106.2)) == t0.AddSeconds(130.8);
+        Console.WriteLine($"  -> a last hit on a boss resetting after a wipe stays with the failed attempt; the next starts at the pull: {stragglerKept && stragglerApart} " +
+            $"(kept {stragglerKept}, next attempt at {(next is DateTime at ? (at - t0).TotalSeconds.ToString("0.0") : "none")} s)");
 
         // two bosses at once: Gadioton hurt, alive and hit a moment ago holds the fight open
         dir.HitPoints.Note(gadioton, t0.AddSeconds(60), 18_563_287);
@@ -130,11 +156,11 @@ public static class SelfCheckFightClock
         var withOther = new List<DamageEvent>(recorded) { new(t0.AddSeconds(104), 3, gadioton, 6_000, IsHeal: false) };
         bool heldOpen = !BossFight.StartsNextAttempt(Hit(120.8), withOther, dir, afterWipeOnly: true);
 
-        bool ok = known && firstOn && firstOff && sameAttempt && retry && retryFar && heldOpen;
+        bool ok = known && firstOn && firstOff && sameAttempt && retry && retryFar && heldOpen && stragglerKept && stragglerApart;
         if (!ok)
         {
             Console.WriteLine($"  -> Krao Cave wipes: boss known={known}, first pull with the reset on={firstOn}, kept with it off={firstOff}, same attempt kept={sameAttempt}, "
-                + $"after the wipe={retry}, seen from afar={retryFar}, another boss held it open={heldOpen}");
+                + $"after the wipe={retry}, seen from afar={retryFar}, another boss held it open={heldOpen}, last hit kept={stragglerKept}, pull apart={stragglerApart}");
         }
 
         return ok;

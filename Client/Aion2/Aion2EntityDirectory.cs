@@ -2517,6 +2517,17 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
             if (_leftCombat.TryGetValue(entity, out var left) && left.Back is null && at >= left.At)
             {
                 _leftCombat[entity] = left with { Back = at }; // back in combat: the time out is over
+                if (!_backs.TryGetValue(entity, out List<DateTime>? backs))
+                {
+                    _backs[entity] = backs = new List<DateTime>();
+                }
+
+                if (backs.Count >= 100)
+                {
+                    backs.RemoveRange(0, 50);
+                }
+
+                backs.Add(at);
                 if (FailedLocked(entity, left with { Back = at }, at) is DateTime failed)
                 {
                     if (!_failedEnds.TryGetValue(entity, out List<DateTime>? list))
@@ -2594,6 +2605,30 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
 
     // Each entity's failed attempts it came back into combat from.
     private readonly Dictionary<int, List<DateTime>> _failedEnds = new();
+
+    // Each entity's times back in combat after a time out of it, oldest first.
+    private readonly Dictionary<int, List<DateTime>> _backs = new();
+
+    /// <summary>The first time the entity came back into combat at or after <paramref name="at"/> from a time out of combat (a boss pulled again after
+    /// a wipe); null when it has not (yet). See <see cref="AionDPS.Combat.BossFight.AttemptStarts"/>.</summary>
+    public DateTime? EngagedAgainAfter(int entity, DateTime at)
+    {
+        lock (_gate)
+        {
+            if (_backs.TryGetValue(entity, out List<DateTime>? backs))
+            {
+                foreach (DateTime back in backs)
+                {
+                    if (back >= at)
+                    {
+                        return back;
+                    }
+                }
+            }
+
+            return null;
+        }
+    }
 
     private DateTime? FailedLocked(int entity, (DateTime At, long? Hp, DateTime? Back) left, DateTime now)
     {
