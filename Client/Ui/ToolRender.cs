@@ -77,26 +77,6 @@ public static class ToolRender
                 break;
             }
 
-            case "rank-toast":
-            {
-                // the note over the game after uploads: your rank on each boss (made-up ranks)
-                DateTime at = DateTime.UtcNow;
-                UIElement body = RankToast.Build(new[]
-                {
-                    new RankToastLine("Ashen Warden", "Templar", new History.FightRanks.Own(96.4, 7, 182, 10, 50_000, 60_000, at)),
-                    new RankToastLine("Grendal the Witch", "Templar", new History.FightRanks.Own(78.2, 41, 184, 10, 50_000, 60_000, at)),
-                    new RankToastLine("Kromede the Corrupt", "Templar", new History.FightRanks.Own(54.9, 96, 211, 10, null, null, at)),
-                });
-                shown = new Border
-                {
-                    Padding = new Thickness(24), Background = new LinearGradientBrush(Color.FromRgb(0x3a, 0x4a, 0x3a), Color.FromRgb(0x24, 0x30, 0x40), 45),
-                    Child = new Border { Child = body, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top },
-                };
-                width = 0;
-                height = 0;
-                break;
-            }
-
             case "setup-design":
             case "setup-columns":
             case "setup-overlays":

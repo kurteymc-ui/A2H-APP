@@ -14,56 +14,20 @@ public partial class MainWindow
             : null;
 
     /// <summary>
-    /// Your rank on the bosses just uploaded (6 November 2026, "fight percentiles"): asked of the website and kept for History, added to the upload line
-    /// ("Boss fight uploaded. 78th percentile of Templars."), and shown over the game with <see cref="MeterSettings.RankPopup"/>. <paramref name="said"/> is
-    /// what the upload line said: a newer line is left alone.
+    /// Your rank on the bosses just uploaded ("fight percentiles"), asked of the website and kept for History, so it is there when History opens. Shown
+    /// only in History and on the fight's page: no note over the game and nothing added to the upload line (6 November 2026, the owner: "remove that weird
+    /// percentile pop up after a raid. Just leave it in the history page and the webpage").
     /// </summary>
-    private async Task ShowRanksAsync(IReadOnlyList<JustUploaded> fights, string said, string? url)
+    private static async Task FetchRanksAsync(IReadOnlyList<JustUploaded> fights)
     {
-        if (fights.Count == 0 || Headless)
+        if (Headless)
         {
             return;
         }
 
-        var lines = new List<RankToastLine>();
         foreach (JustUploaded f in fights.TakeLast(4))
         {
-            if (await FightRanks.FetchAsync(f.Url, f.You) is { } rank)
-            {
-                lines.Add(new RankToastLine(f.Boss, f.ClassName, rank));
-            }
-        }
-
-        if (lines.Count == 0)
-        {
-            return;
-        }
-
-        if (UploadStatusText.Text.StartsWith(said, StringComparison.Ordinal))
-        {
-            string add;
-            if (lines.Count == 1)
-            {
-                RankToastLine one = lines[0];
-                add = one.Rank.Ranked
-                    ? $" {RankTier.Percentile(one.Rank.Percent)} of {RankTier.Many(one.ClassName)} on {one.Boss}."
-                    : one.Rank.Of > 0 ? $" Not ranked yet: {one.Rank.Of} of {one.Rank.Min} {RankTier.Many(one.ClassName)} logged on {one.Boss} so far." : "";
-            }
-            else
-            {
-                var ranked = lines.Where(l => l.Rank.Ranked).ToList();
-                add = ranked.Count == 0 ? "" : " Your ranks: " + string.Join(" · ", ranked.Select(l => $"{l.Boss} {RankTier.Number(l.Rank.Percent)}")) + ".";
-            }
-
-            if (add.Length > 0)
-            {
-                ShowUploadStatus(said + add, url);
-            }
-        }
-
-        if (MeterSettings.Load().RankPopup)
-        {
-            RankToast.Show(lines);
+            await FightRanks.FetchAsync(f.Url, f.You);
         }
     }
 }

@@ -659,7 +659,6 @@
                                           ToolTip="Also sends the data of other players the meter has seen (name, class, level, gear, legion), the members of your own legion and, with the replay upload, their positions in a fight. Off by default: with it off only your own character is sent."/>
                                 <CheckBox x:Name="AutoUploadBossBox" Content="{local:Loc Settings.AutoUploadBoss}"
                                           ToolTip="Uploads the fight to atreia.app a few seconds after a boss died, the same as the Upload button. Off by default."/>
-                                <CheckBox x:Name="RankPopupBox" Content="{local:Loc Settings.RankPopup}" ToolTip="{local:Loc Settings.RankPopup.Hint}"/>
                                 <CheckBox x:Name="UploadReplayBox" Content="{local:Loc Settings.UploadReplay}"
                                           ToolTip="Sends where your character, the boss and the other monsters were during the fight, for the replay on the fight's page on atreia.app. Other players' positions only with the switch above. Off by default."/>
                                 <CheckBox x:Name="ShareCpBox" Content="{local:Loc Settings.ShareCp}" ToolTip="{local:Loc Settings.ShareCp.Hint}"/>

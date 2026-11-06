@@ -4631,7 +4631,7 @@ public partial class MainWindow : Window
             string said = uploadedNames.Count == 1 ? "Uploaded." : $"Uploaded {uploadedNames.Count} boss fights: {string.Join(", ", uploadedNames)}.";
             string? page = uploadedNames.Count == 1 ? UploadClient.LastFightUrl : null;
             ShowUploadStatus(said, page);
-            await ShowRanksAsync(justUploaded, said, page);
+            await FetchRanksAsync(justUploaded);
         }
         else
         {
@@ -5070,7 +5070,7 @@ public partial class MainWindow : Window
             string said = uploaded == 1 ? "Boss fight uploaded." : $"{uploaded} boss fights uploaded.";
             string? page = uploaded == 1 ? UploadClient.LastFightUrl : null;
             ShowUploadStatus(said, page);
-            await ShowRanksAsync(justUploaded, said, page);
+            await FetchRanksAsync(justUploaded);
         }
         else if (lastError is not null)
         {
