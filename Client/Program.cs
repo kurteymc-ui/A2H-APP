@@ -1119,6 +1119,29 @@ internal static class Program
     }
 
     /// <summary>
+    /// Made-up lists of the game for the world boss page's picture: Altgard with some bosses up, most dead with their time back, Lower Reshanta with its
+    /// Executor up; the other regions not read (nothing is saved).
+    /// </summary>
+    private static void SampleFieldBosses()
+    {
+        long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var altgard = new List<Aion2.Aion2FieldBosses.Slot>();
+        for (int n = 1; n <= 24; n++)
+        {
+            bool alive = n % 6 == 2;
+            long time = alive ? now - (n * 7 * 60_000) : n % 9 == 0 ? 0 : now + ((n * 37 % 300) + 3) * 60_000L;
+            altgard.Add(new Aion2.Aion2FieldBosses.Slot(n, alive, 0, 0, time));
+        }
+
+        Aion2.Aion2FieldBosses.Update(1110, altgard);
+        Aion2.Aion2FieldBosses.Update(20, new[]
+        {
+            new Aion2.Aion2FieldBosses.Slot(1, false, 0, 0, now + (14 * 3_600_000L)), new Aion2.Aion2FieldBosses.Slot(2, false, 0, 0, 0),
+            new Aion2.Aion2FieldBosses.Slot(8, true, -17728, -30749, now - (25 * 60_000L)),
+        });
+    }
+
+    /// <summary>
     /// Made-up website ranks for the pictures' killed boss fights (nothing is asked of the website): most of them on the website with a percentile of every
     /// colour, one with too few logs of the class yet, every fourth not uploaded.
     /// </summary>
@@ -1176,6 +1199,7 @@ internal static class Program
             }
 
             SampleRanks();
+            SampleFieldBosses();
 
             // characters: the checklist's real login list, three characters, one of them full of Odyle Energy
             Aion2.Aion2Tickets.Reset();

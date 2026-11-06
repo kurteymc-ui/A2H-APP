@@ -7234,11 +7234,15 @@ public partial class MainWindow : Window
                 return new ToolPage { Content = page, Cleanup = () => { page.Stop(); _network?.RemoveView(view); } };
             }
 
-            case "boss" when _worldBoss is not null:
+            case "boss":
             {
-                var view = _worldBoss.CreateView();
-                var page = new ModulePage(loc["Settings.Nav.Boss"], view.DetachBody()!, s => s.ShowBossOverlay, (s, v) => s.ShowBossOverlay = v, s => s.HotkeyWorldBoss, hotkeys, settingsPage, applied);
-                return new ToolPage { Content = page, Cleanup = () => { page.Stop(); _worldBoss?.RemoveView(view); } };
+                // the world bosses as a page of their own (6 November 2026): up now, coming next, one region at a time; the overlay is its own switch
+                var bosses = new WorldBossPage();
+                var page = new ModulePage(loc["Settings.Nav.Boss"], bosses, s => s.ShowBossOverlay, (s, v) => s.ShowBossOverlay = v, s => s.HotkeyWorldBoss, hotkeys, settingsPage, applied, bosses.Tick)
+                {
+                    FitWidth = true,
+                };
+                return new ToolPage { Content = page, Cleanup = page.Stop };
             }
 
             case "timetable":

@@ -254,7 +254,9 @@ public static class Aion2FieldBosses
 
         map = (int)BitConverter.ToUInt32(frame[4..8]);
         int count = frame[8];
-        if (map is < 1000 or > 99999 || count is 0 or > 64)
+        // the map number is the zone's id: 1010 Verteron, 1011 Eltnen, 1110 Altgard, 1111 Morheim, and 20 and 22 for Lower and Middle Reshanta (6 November
+        // 2026: numbers below 1000 were refused, so the Abyss lists never counted)
+        if (map is < 1 or > 99999 || count is 0 or > 64)
         {
             return false;
         }
@@ -281,31 +283,37 @@ public static class Aion2FieldBosses
             }
 
             bool read = false;
-            for (int extra = 0; extra <= 1 && !read; extra++)
+            bool last = n == count - 1;
+            // strict: the next place (or only zeros at the end) must follow; for the last place a second, loose look takes any good time - some lists
+            // carry a second part after the bosses (6 November 2026: one such list of Altgard was dropped whole)
+            for (int pass = 0; pass <= (last ? 1 : 0) && !read; pass++)
             {
-                int t = at + extra;
-                if (t + 8 > frame.Length)
+                for (int extra = 0; extra <= 1 && !read; extra++)
                 {
-                    break;
-                }
+                    int t = at + extra;
+                    if (t + 8 > frame.Length)
+                    {
+                        break;
+                    }
 
-                long time = BitConverter.ToInt64(frame.Slice(t, 8));
-                if (time != 0 && (time < 1_600_000_000_000 || time > 2_600_000_000_000))
-                {
-                    continue;
-                }
+                    long time = BitConverter.ToInt64(frame.Slice(t, 8));
+                    if (time != 0 && (time < 1_600_000_000_000 || time > 2_600_000_000_000))
+                    {
+                        continue;
+                    }
 
-                int end = t + 8;
-                bool last = n == count - 1;
-                bool fits = last ? end <= frame.Length && frame[end..].IndexOfAnyExcept((byte)0) < 0 && frame.Length - end <= 8 : ReadHeader(frame, end, map, out _, out _, out _);
-                if (!fits)
-                {
-                    continue;
-                }
+                    int end = t + 8;
+                    bool fits = pass == 1
+                        || (last ? end <= frame.Length && frame[end..].IndexOfAnyExcept((byte)0) < 0 && frame.Length - end <= 8 : ReadHeader(frame, end, map, out _, out _, out _));
+                    if (!fits)
+                    {
+                        continue;
+                    }
 
-                slots.Add(new Slot(number, alive, x, y, time));
-                o = end;
-                read = true;
+                    slots.Add(new Slot(number, alive, x, y, time));
+                    o = end;
+                    read = true;
+                }
             }
 
             if (!read)
@@ -434,7 +442,17 @@ public static class Aion2FieldBosses
     /// <summary>The map a boss is listed under, or null.</summary>
     public static FieldBossMap? MapOf(FieldBoss boss) => Maps.FirstOrDefault(m => m.Bosses.Contains(boss));
 
-    /// <summary>Where a boss stands now: what the game last said, or its fixed time.</summary>
+    /// <summary>
+    /// The clock the fixed times are written in: the own region's server clock (set by the app from the timetable's region; Europe/Berlin until then). The
+    /// times were read as the PC's own clock before (6 November 2026: an hour off in Cyprus).
+    /// </summary>
+    public static TimeZoneInfo RuleZone { get; set; } = Schedule.EventSchedule.FindZone("Europe/Berlin") ?? TimeZoneInfo.Local;
+
+    /// <summary>
+    /// Where a boss stands now. What the game's list said comes first: alive, or the moment it comes back while that is still ahead (also for a boss with
+    /// a fixed time - the server's own time beats the table's). Without it, a boss with a fixed time follows its schedule; a boss whose time has come is
+    /// there since then (as far as the last list knew).
+    /// </summary>
     public static BossStatus StatusOf(FieldBoss boss, DateTime now)
     {
         SavedState? state;
@@ -443,33 +461,62 @@ public static class Aion2FieldBosses
             States.TryGetValue(boss.Npc, out state);
         }
 
-        // A boss with a fixed time (the Abyss) follows its schedule, not the last list the player happened to open on that map.
+        DateTime? seen = state is null ? null : DateTimeOffset.FromUnixTimeMilliseconds(state.SeenMs).LocalDateTime;
+        DateTime? back = state is { TimeMs: > 0 } ? DateTimeOffset.FromUnixTimeMilliseconds(state.TimeMs).LocalDateTime : null;
+        if (state is { Alive: true } && (boss.Rule is null || now - seen < TimeSpan.FromHours(2)))
+        {
+            return new BossStatus(BossPhase.Now, back, seen);   // back: since when (when the game says)
+        }
+
+        if (state is { Alive: false } && back > now)
+        {
+            return new BossStatus(boss.Rule is null ? BossPhase.Respawn : BossPhase.Fixed, back, seen);
+        }
+
         if (boss.Rule is { } fixedRule && FixedWindow(fixedRule, now) is { } fixedWindow)
         {
-            DateTime? fixedSeen = state is null ? null : DateTimeOffset.FromUnixTimeMilliseconds(state.SeenMs).LocalDateTime;
-            return fixedWindow.Start <= now ? new BossStatus(BossPhase.Now, fixedWindow.Start, fixedSeen) : new BossStatus(BossPhase.Fixed, fixedWindow.Start, fixedSeen);
+            return fixedWindow.Start <= now ? new BossStatus(BossPhase.Now, fixedWindow.Start, seen) : new BossStatus(BossPhase.Fixed, fixedWindow.Start, seen);
         }
 
-        if (state is not null)
+        if (back is DateTime came)
         {
-            DateTime seen = DateTimeOffset.FromUnixTimeMilliseconds(state.SeenMs).LocalDateTime;
-            if (state.Alive)
-            {
-                return new BossStatus(BossPhase.Now, null, seen);
-            }
-
-            if (state.TimeMs > 0)
-            {
-                DateTime back = DateTimeOffset.FromUnixTimeMilliseconds(state.TimeMs).LocalDateTime;
-                return back > now ? new BossStatus(BossPhase.Respawn, back, seen) : new BossStatus(BossPhase.Now, back, seen);
-            }
+            return new BossStatus(BossPhase.Now, came, seen);
         }
 
-        return new BossStatus(BossPhase.Unknown, null, state is null ? null : DateTimeOffset.FromUnixTimeMilliseconds(state.SeenMs).LocalDateTime);
+        return new BossStatus(BossPhase.Unknown, null, seen);
     }
 
-    /// <summary>The window that is open now, else the next one.</summary>
+    /// <summary>When the game's list of a map was last read (null: never on this PC).</summary>
+    public static DateTime? ReadAt(FieldBossMap map)
+    {
+        lock (Gate)
+        {
+            long newest = map.Bosses.Select(b => States.TryGetValue(b.Npc, out SavedState? st) ? st.SeenMs : 0).DefaultIfEmpty(0).Max();
+            return newest > 0 ? DateTimeOffset.FromUnixTimeMilliseconds(newest).LocalDateTime : null;
+        }
+    }
+
+    /// <summary>The window that is open now, else the next one (the PC's own time; the rule is read on the server's clock, <see cref="RuleZone"/>).</summary>
     public static (DateTime Start, DateTime End)? FixedWindow(FixedBossRule rule, DateTime now)
+    {
+        TimeZoneInfo zone = RuleZone;
+        DateTime onServer = ReferenceEquals(zone, TimeZoneInfo.Local) ? now : TimeZoneInfo.ConvertTimeFromUtc(now.ToUniversalTime(), zone);
+        if (FixedWindowOn(rule, onServer) is not { } window)
+        {
+            return null;
+        }
+
+        if (ReferenceEquals(zone, TimeZoneInfo.Local))
+        {
+            return window;
+        }
+
+        DateTime ToLocal(DateTime server) => TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(server, DateTimeKind.Unspecified), zone).ToLocalTime();
+        return (ToLocal(window.Start), ToLocal(window.End));
+    }
+
+    /// <summary>The window that is open now, else the next one, all on one clock.</summary>
+    private static (DateTime Start, DateTime End)? FixedWindowOn(FixedBossRule rule, DateTime now)
     {
         TimeSpan open = TimeSpan.FromMinutes(Math.Max(1, rule.OpenMinutes));
         var starts = new List<DateTime>();
