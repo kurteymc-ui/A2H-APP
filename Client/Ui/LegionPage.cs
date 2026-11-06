@@ -472,17 +472,15 @@ internal sealed class LegionPage : Grid
 
     private static DateTime? LastActive(LegionMember m) => m.LastActiveMs > 0 ? DateTimeOffset.FromUnixTimeMilliseconds(m.LastActiveMs).UtcDateTime : null;
 
-    /// <summary>In the game when the list came: the list gives an online member the subzone he is in, an offline one 0 (docs/protocol, 0x058a).</summary>
-    private static bool Online(LegionMember m) => m.Zone != 0;
-
-    /// <summary>Played within the span before the list came: online then, or last seen within it.</summary>
-    private static bool ActiveWithin(LegionMember m, DateTime listAt, TimeSpan span) => Online(m) || (LastActive(m) is DateTime at && listAt - at < span);
+    /// <summary>Played within the span before the list came, by the time the list gives each member (the list says nothing of who is online: its place
+    /// field is set for members seen in the last two days, online or not; a login's list of 115, 6 November 2026).</summary>
+    private static bool ActiveWithin(LegionMember m, DateTime listAt, TimeSpan span) => LastActive(m) is DateTime at && listAt - at < span;
 
     private UIElement Scoreboard(LegionSnapshot legion)
     {
         int count = legion.Members.Count;
         string Share(int n) => string.Format(CultureInfo.CurrentCulture, Loc["Legion.Score.Share"], count == 0 ? 0 : Math.Round(100.0 * n / count));
-        int online = legion.Members.Count(Online);
+        int online = legion.Members.Count(m => ActiveWithin(m, legion.At, TimeSpan.FromHours(1)));
         int today = legion.Members.Count(m => ActiveWithin(m, legion.At, TimeSpan.FromHours(24)));
         int week = legion.Members.Count(m => ActiveWithin(m, legion.At, TimeSpan.FromDays(7)));
         LegionMember? top = legion.Members.Where(m => m.CombatPower > 0).MaxBy(m => m.CombatPower);
@@ -640,7 +638,7 @@ internal sealed class LegionPage : Grid
         {
             Sort.ItemLevel => members.OrderByDescending(m => m.ItemLevel).ThenByDescending(m => m.CombatPower),
             Sort.Name => members.OrderBy(m => m.Name, StringComparer.CurrentCultureIgnoreCase),
-            Sort.Active => members.OrderByDescending(Online).ThenByDescending(m => m.LastActiveMs),
+            Sort.Active => members.OrderByDescending(m => m.LastActiveMs),
             Sort.Class => members.OrderBy(m => ClassOf(m) ?? "~").ThenByDescending(m => m.CombatPower),
             Sort.Rank => members.OrderBy(m => m.Rank).ThenByDescending(m => m.CombatPower),
             _ => members.OrderByDescending(m => m.CombatPower).ThenByDescending(m => m.ItemLevel),
@@ -697,26 +695,17 @@ internal sealed class LegionPage : Grid
             cp.Children.Add(track);
             Put(cp, 5);
 
-            // online when the list came (a dot), else when last seen before it
-            UIElement active;
-            if (Online(m))
+            // when the member was last active, as the list gives it: within the hour before the list in green
+            TextBlock active = Text(Ago(LastActive(m), MainWindow.Headless ? legion.At : DateTime.UtcNow), "Brush.TextMuted", 12);
+            if (ActiveWithin(m, legion.At, TimeSpan.FromHours(1)))
             {
-                var on = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, ToolTip = Loc["Legion.OnlineTip"] };
-                on.Children.Add(new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Fill = new SolidColorBrush(Up), Margin = new Thickness(0, 1, 6, 0), VerticalAlignment = VerticalAlignment.Center });
-                TextBlock word = Text(Loc["Legion.Online"], "Brush.Text", 12, bold: true);
-                word.Foreground = new SolidColorBrush(Up);
-                on.Children.Add(word);
-                active = on;
-            }
-            else
-            {
-                TextBlock ago = Text(Ago(LastActive(m), MainWindow.Headless ? legion.At : DateTime.UtcNow), "Brush.TextMuted", 12);
-                ago.HorizontalAlignment = HorizontalAlignment.Right;
-                ago.VerticalAlignment = VerticalAlignment.Center;
-                ago.ToolTip = LastActive(m)?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
-                active = ago;
+                active.Foreground = new SolidColorBrush(Up);
+                active.FontWeight = FontWeights.SemiBold;
             }
 
+            active.HorizontalAlignment = HorizontalAlignment.Right;
+            active.VerticalAlignment = VerticalAlignment.Center;
+            active.ToolTip = LastActive(m)?.ToLocalTime().ToString("g", CultureInfo.CurrentCulture);
             Put(active, 6);
             if (linked.Contains(m.Name))
             {

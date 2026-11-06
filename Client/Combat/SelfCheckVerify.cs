@@ -53,28 +53,29 @@ public static class SelfCheckVerify
         {
             new(1001, 1303, 9, "Aahz", 45, 0, 1_790_000_000_000, 7, 2900, 150000),
             new(1002, 1304, 30, "Sidy", 45, 2, 1_790_000_000_000, 0, 2100, 95000),
-            new(1003, 1303, 30, "Sidy", 45, 2, 1_790_000_000_000, 0, 0, 0),
+            new(1003, 1303, 30, "Rin", 45, 2, 1_790_000_000_000, 0, 0, 0),
         };
         LegionUpload? upload = LegionShare.Build(played, account, legion);
         bool built = upload is { V: 1, Legion: "Dawnbreakers", Character: { Name: "Aahz", ServerId: 1303 } } && upload.Members.Count == 3
-            && upload.Members[1] is { Name: "Sidy", ServerId: 1304, Cls: "Cleric", Level: 45, Il: 2100, Cp: 95000 }
-            && upload.Members[2] is { Name: "Sidy", ServerId: 1303, Il: null, Cp: null };
+            && upload.Members[1] is { Name: "Sidy", ServerId: 1303, Cls: "Cleric", Level: 45, Il: 2100, Cp: 95000 }
+            && upload.Members[2] is { Name: "Rin", ServerId: 1303, Il: null, Cp: null };
         string json = JsonSerializer.Serialize(upload, CharacterVerify.JsonOptions);
         bool shape = json.StartsWith("{\"v\":1,\"legion\":\"Dawnbreakers\",\"character\":{\"name\":\"Aahz\",\"serverId\":1303},\"members\":[{\"name\":\"Aahz\",\"serverId\":1303,\"cls\":\"Templar\",\"level\":45,\"il\":2900,\"cp\":150000}", StringComparison.Ordinal)
             && !json.Contains("lastActive", StringComparison.OrdinalIgnoreCase) && !json.Contains("zone", StringComparison.OrdinalIgnoreCase) && !json.Contains("rank", StringComparison.OrdinalIgnoreCase);
         bool none = LegionShare.Build(played, account, legion.Skip(1).ToList()) is null && LegionShare.Build(played with { Restored = true }, account, legion) is null
             && LegionShare.Build(played, account, Array.Empty<LegionMember>()) is null
             && LegionShare.Build(played with { Name = "Twink", ServerId = 1303 }, account, legion.Select(m => m with { Name = m.Name == "Aahz" ? "Twink" : m.Name }).ToList()) is null;
-        // the list names the server the character was made on: the only member of its name is the character played, and the members on that old server go
-        // as on its new one
+        // the list names the server each was made on: the only member of its name is the character played, and every member goes as on the server played
+        // on, the legion's (made there, on the character's old server or on another one)
         var movedLegion = new List<LegionMember>
         {
             new(1001, 2309, 9, "Aahz", 45, 0, 1_790_000_000_000, 7, 2900, 150000),
             new(1004, 2309, 30, "Rin", 45, 2, 1_790_000_000_000, 0, 2100, 95000),
             new(1005, 2302, 13, "Dead", 45, 2, 1_790_000_000_000, 0, 1500, 60000),
+            new(1006, 2312, 5, "Atina", 45, 2, 1_790_000_000_000, 0, 1400, 58000),
         };
         bool moved = LegionShare.Build(played with { ServerId = 2302 }, new[] { account[0] with { ServerId = 2309 } }, movedLegion) is { Character: { ServerId: 2302 } } fromMoved
-            && string.Join(" ", fromMoved.Members.Select(m => $"{m.Name}@{m.ServerId}")) == "Aahz@2302 Rin@2302 Dead@2302";
+            && string.Join(" ", fromMoved.Members.Select(m => $"{m.Name}@{m.ServerId}")) == "Aahz@2302 Rin@2302 Dead@2302 Atina@2302";
         Console.WriteLine($"  -> the legion list sent: the members with the game's numbers={built}; as the site reads it, no last-online time, zone or rank={shape}; nothing without the character played in it or a legion={none}; "
             + $"a character listed on the server it was made on, with its legion={moved}");
         return built && shape && none && moved;

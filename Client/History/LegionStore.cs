@@ -85,7 +85,7 @@ public static class LegionStore
     /// <summary>
     /// The live capture's legion list into the store, as the legion share reads it (<see cref="Upload.LegionShare.Build"/>): the game's own record of the
     /// character played, a list that names it (same name and server, or the only member of that name: lists keep the server a character was made on, so
-    /// members on that old server are put on the new one), under the legion the login's character list names for it, else the legion the game showed over
+    /// every member is put on the server played on, the legion's), under the legion the login's character list names for it, else the legion the game showed over
     /// its head, else the legion of the list kept before for this character when most of its members are the same.
     /// </summary>
     public static bool NoteLive(Aion2EntityDirectory? dir)
@@ -96,14 +96,14 @@ public static class LegionStore
         }
 
         IReadOnlyList<LegionMember> roster = dir.LegionRoster();
-        if (roster.Count == 0 || Aion2Moved.Find(roster, m => m.Name, m => m.ServerId, me.Name, me.ServerId) is not { } own)
+        if (roster.Count == 0 || Aion2Moved.Find(roster, m => m.Name, m => m.ServerId, me.Name, me.ServerId) is null)
         {
             return false;
         }
 
-        var moved = Aion2Moved.Of(own.ServerId, me.ServerId);
+        // every member on the legion's server, the one played on (the list keeps the server each was made on)
         List<LegionMember> members = roster.Where(m => m.Name.Length > 0 && m.ServerId > 0)
-            .Select(m => m with { ServerId = Aion2Moved.Now(m.ServerId, moved) })
+            .Select(m => m with { ServerId = me.ServerId })
             .GroupBy(m => (m.Name, m.ServerId)).Select(g => g.First()).ToList();
         string? legion = Aion2Moved.Find(dir.AccountCharacters(), c => c.Name, c => c.ServerId, me.Name, me.ServerId)?.Legion?.Trim();
         if (string.IsNullOrEmpty(legion))

@@ -8,7 +8,7 @@ public sealed record LegionMember(int CharacterId, int ServerId, int ClassCode, 
 
 /// <summary>
 /// The legion list frame 0x058a, sent at login: <c>opcode | 14 bytes head | member ...</c>, a member being
-/// <c>character id u32 | 00 00 | server u16 | class code u32 | name (length in characters, UTF-8) | level u8 | 00 00 00 | rank u8 | [comment: length in bytes + text, and a byte]
+/// <c>character id u32 | 00 00 | server u16 | class code u32 | name (length in bytes, UTF-8) | level u8 | 00 00 00 | rank u8 | [comment: length in bytes + text, and a byte]
 /// | time u64 (ms) | zone u32 | item level u32 | combat power u32 | 0 u32 | flag u8 | E u32 | 0 u32</c>. The comment is
 /// optional and has no marker, so the time (an epoch value of 2020 to 2030) is looked for after the rank. The server is the game's own record of the character:
 /// it does not depend on any combat id or party frame.
@@ -61,7 +61,8 @@ public static class Aion2LegionList
 
     private static bool IsTime(ulong ms) => ms is > MinTimeMs and < MaxTimeMs;
 
-    /// <summary>A name: a length in characters, then that many UTF-8 characters.</summary>
+    /// <summary>A name: its length in bytes, then the UTF-8 text (6 November 2026, a login's list of 115: "Taïra" is 06 54 61 c3 af 72 61, "Cross十" 08 ...;
+    /// counted in characters, every name with an accent or a CJK sign took the level byte in and threw the members after it off).</summary>
     private static bool TryReadName(ReadOnlySpan<byte> frame, ref int p, out string name)
     {
         name = "";
@@ -70,20 +71,10 @@ public static class Aion2LegionList
             return false;
         }
 
-        int chars = frame[p++];
+        int length = frame[p++];
         int start = p;
-        for (int i = 0; i < chars; i++)
-        {
-            if (p >= frame.Length)
-            {
-                return false;
-            }
-
-            byte lead = frame[p];
-            p += lead < 0x80 ? 1 : lead < 0xE0 ? 2 : lead < 0xF0 ? 3 : 4;
-        }
-
-        if (p > frame.Length || chars < 2)
+        p += length;
+        if (length < 2 || p > frame.Length)
         {
             return false;
         }

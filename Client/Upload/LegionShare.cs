@@ -89,8 +89,8 @@ public static class LegionShare
     /// <summary>
     /// What is sent, or null while there is nothing to send: the game's own record of the character played (not one restored from an earlier session), its
     /// legion as the login's character list names it, and that legion's list from the login, which must name the character played (same name and server, or
-    /// the only member of that name: the lists keep the server a character was made on, see <see cref="Aion2Moved"/>; members on the old server of the
-    /// character played go as on its new one).
+    /// the only member of that name: the lists keep the server a character was made on, see <see cref="Aion2Moved"/>; every member goes as on the server
+    /// the character is played on, the legion's).
     /// </summary>
     public static LegionUpload? Build(Aion2CharacterInfo? played, IReadOnlyList<AccountCharacter> account, IReadOnlyList<LegionMember> legion)
     {
@@ -106,10 +106,11 @@ public static class LegionShare
             return null;
         }
 
-        var moved = Aion2Moved.Of(own.ServerId, played.ServerId);
+        // a legion is on one server, the one the character is played on: the list keeps the server each member was made on (6 November 2026, a legion of
+        // 115 on Zikel: members made on eight other servers), so every member goes as on the played one
         var members = legion
             .Where(m => m.Name.Length > 0 && m.ServerId > 0)
-            .Select(m => m with { ServerId = Aion2Moved.Now(m.ServerId, moved) })
+            .Select(m => m with { ServerId = played.ServerId })
             .GroupBy(m => (m.Name, m.ServerId))
             .Select(g => g.First())
             .Take(300)

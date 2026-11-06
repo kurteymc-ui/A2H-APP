@@ -173,7 +173,7 @@ public static class SelfCheckCraft
         bool chain = opened && closed && expired;
         Console.WriteLine($"  -> a chain skill is open for 3 s after frame 1838, closed by 1938 or by the time: {chain}");
 
-        // the legion list: a member with a comment (length in bytes, one more byte) and one without, the name's length counting characters
+        // the legion list: a member with a comment (length in bytes, one more byte) and one without, the name's length counting bytes (an accented name in the middle)
         static byte[] Member(int id, int server, int classCode, string name, int level, int rank, string? comment)
         {
             var m = new List<byte>();
@@ -181,8 +181,9 @@ public static class SelfCheckCraft
             m.AddRange(new byte[] { 0, 0 });
             m.AddRange(BitConverter.GetBytes((ushort)server));
             m.AddRange(BitConverter.GetBytes(classCode));
-            m.Add((byte)name.Length);
-            m.AddRange(System.Text.Encoding.UTF8.GetBytes(name));
+            byte[] text = System.Text.Encoding.UTF8.GetBytes(name);
+            m.Add((byte)text.Length);
+            m.AddRange(text);
             m.AddRange(new byte[] { (byte)level, 0, 0, 0, (byte)rank });
             if (comment is not null)
             {
@@ -208,10 +209,13 @@ public static class SelfCheckCraft
         legionFrame.AddRange(Member(207710, 1304, 30, "Sidy", 45, 2, "Hier könnte Werbung stehen"));
         legionFrame.AddRange(Member(208558, 1304, 18, "Pencilgon", 22, 0, null));
         legionFrame.AddRange(Member(208939, 2304, 34, "Ärgernis", 45, 1, null));
-        bool legion = Aion2LegionList.TryParse(legionFrame.ToArray(), out List<LegionMember> listed) && listed.Count == 3
+        legionFrame.AddRange(Member(208940, 2304, 7, "Kreuz十", 45, 2, "gg"));
+        legionFrame.AddRange(Member(208941, 2304, 9, "Last", 45, 2, null));
+        bool legion = Aion2LegionList.TryParse(legionFrame.ToArray(), out List<LegionMember> listed) && listed.Count == 5
             && listed[0] is { Name: "Sidy", ServerId: 1304, ClassCode: 30, Level: 45, Rank: 2, ItemLevel: 2100, CombatPower: 95000, CharacterId: 207710 }
-            && listed[1] is { Name: "Pencilgon", Level: 22, Rank: 0 } && listed[2] is { Name: "Ärgernis", ServerId: 2304 };
-        Console.WriteLine($"  -> the legion list is read with and without a comment, names counted in characters: {legion}");
+            && listed[1] is { Name: "Pencilgon", Level: 22, Rank: 0 } && listed[2] is { Name: "Ärgernis", ServerId: 2304, Level: 45, Rank: 1 }
+            && listed[3] is { Name: "Kreuz十", Level: 45, Rank: 2 } && listed[4] is { Name: "Last", Level: 45 };
+        Console.WriteLine($"  -> the legion list is read with and without a comment, names counted in bytes (accents, CJK signs): {legion} ({string.Join(", ", listed.Select(m => m.Name + "/" + m.Level))})");
 
         // the weekly points of the achievements frame: only that entry is read
         var ach = new List<byte> { 0x83, 0x56, 2 };

@@ -21957,10 +21957,10 @@
     "en": "in the game's list"
   },
   "Legion.Score.Online": {
-    "en": "Online"
+    "en": "Active this hour"
   },
   "Legion.Score.OnlineNote": {
-    "en": "when the list came"
+    "en": "in the hour before the list came"
   },
   "Legion.Score.Today": {
     "en": "Played today"
@@ -22036,12 +22036,6 @@
   },
   "Legion.LevelShort": {
     "en": "Lv {0}"
-  },
-  "Legion.Online": {
-    "en": "Online"
-  },
-  "Legion.OnlineTip": {
-    "en": "In the game when the list came"
   },
   "Legion.MinutesAgo": {
     "en": "{0} min ago"
