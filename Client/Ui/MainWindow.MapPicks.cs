@@ -35,7 +35,7 @@ public partial class MainWindow
         string? faction = Aion2Gather.OwnFaction();
         HashSet<string> start = MeterSettings.Load().PetMapGatherItems.ToHashSet();
         var stack = new StackPanel();
-        stack.Children.Add(ShellText(loc["Settings.Nav.Gather"], "Brush.Text", 14, bold: true));
+        stack.Children.Add(ModulePage.Stroked(loc["Settings.Nav.Gather"]));
         TextBlock lede = Wrapped(loc["Settings.Gather.Hint"], "Brush.TextMuted", 12);
         lede.Margin = new Thickness(0, 2, 0, 8);
         stack.Children.Add(lede);
@@ -245,7 +245,7 @@ public partial class MainWindow
         LocalizationManager loc = LocalizationManager.Instance;
         MeterSettings s0 = MeterSettings.Load();
         var stack = new StackPanel();
-        stack.Children.Add(ShellText(loc["Settings.PetMap.Gather.Cube"], "Brush.Text", 14, bold: true));
+        stack.Children.Add(ModulePage.Stroked(loc["Settings.PetMap.Gather.Cube"]));
         TextBlock lede = Wrapped(loc["Cubes.Note"], "Brush.TextMuted", 12);
         lede.Margin = new Thickness(0, 2, 0, 10);
         stack.Children.Add(lede);

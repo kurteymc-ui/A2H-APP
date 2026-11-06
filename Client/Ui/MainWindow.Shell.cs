@@ -957,7 +957,7 @@ public partial class MainWindow
         stack.Children.Add(content);
         var card = new Border
         {
-            Child = stack, Padding = new Thickness(16, 12, 16, 14), Margin = new Thickness(0, 0, 12, 12), CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1),
+            Child = stack, Padding = new Thickness(18, 14, 18, 16), Margin = new Thickness(0, 0, 12, 12), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1),
             VerticalAlignment = VerticalAlignment.Top,
         };
         if (width > 0)

@@ -16,7 +16,7 @@ public partial class MainWindow
         LocalizationManager loc = LocalizationManager.Instance;
         MeterSettings now = MeterSettings.Load();
         var stack = new StackPanel { MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Left };
-        stack.Children.Add(ShellText(loc["PetRoute.Title"], "Brush.Text", 14, bold: true));
+        stack.Children.Add(ModulePage.Stroked(loc["PetRoute.Title"]));
         TextBlock lede = Wrapped(loc["PetRoute.Lede"], "Brush.TextMuted", 12);
         lede.Margin = new Thickness(0, 2, 0, 8);
         stack.Children.Add(lede);
@@ -98,7 +98,7 @@ public partial class MainWindow
         // the map's own card (3 November 2026: the switches touched most, on top, apart from the route): the two overlays (the map, and the list of what is near
         // with how many metres away; also in the configuration), the map's shape for the minimap, the compass, how to zoom
         var display = new StackPanel { MaxWidth = 760, HorizontalAlignment = HorizontalAlignment.Left };
-        display.Children.Add(ShellText(loc["PetMap.DisplayTitle"], "Brush.Text", 14, bold: true));
+        display.Children.Add(ModulePage.Stroked(loc["PetMap.DisplayTitle"]));
         TextBlock displayLede = Wrapped(loc["PetMap.DisplayLede"], "Brush.TextMuted", 12);
         displayLede.Margin = new Thickness(0, 2, 0, 8);
         display.Children.Add(displayLede);

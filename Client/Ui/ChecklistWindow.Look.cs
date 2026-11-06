@@ -267,7 +267,7 @@ public sealed partial class ChecklistWindow
             }
 
             bool soon = !o.Full && o.FullAt is { } f && f - utcNow < TimeSpan.FromHours(6);
-            string fullText = o.Full ? "▲ " + loc["Checklist.RosterFull"] : o.FullAt is { } at ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.TileFullIn"], (o.NextTick is null ? "~" : "") + InText(at - utcNow)) : "–";
+            string fullText = o.Full ? "▲ " + loc["Checklist.RosterFull"] : o.FullAt is { } at ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.TileFullIn"], string.Format(CultureInfo.CurrentCulture, loc["Checklist.In"], (o.NextTick is null ? "~" : "") + SpanText(at - utcNow))) : "–";
             TextBlock full = Label(fullText, o.Full || soon ? "Brush.Warning" : "Brush.TextMuted", 11.5, bold: o.Full);
             full.ToolTip = o.Full ? loc["Checklist.RosterFullWaste"]
                 : o.FullAt is { } when ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterFullAt"], when.ToLocalTime().ToString("g", CultureInfo.CurrentCulture))
