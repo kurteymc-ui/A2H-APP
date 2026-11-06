@@ -61,6 +61,7 @@ public static class SelfCheck
         ok &= SelfCheckBarParts.Run();
         ok &= SelfCheckLegion.Run();
         ok &= SelfCheckRanks.Run();
+        ok &= SelfCheckValue.Run();
         ok &= SelfCheckMaps.Run();
         ok &= SelfCheckLoot.Run();
         ok &= SelfCheckBlackCloud.Run();

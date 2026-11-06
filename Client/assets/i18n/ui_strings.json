@@ -1176,6 +1176,63 @@
     "ja": "ボスを倒した後、ボス戦を自動的にアップロードする",
     "ko": "보스 처치 후 보스 전투를 자동으로 업로드"
   },
+  "CpCalc.Value": {
+    "en": "Best value for your Kina"
+  },
+  "CpCalc.Value.Lede": {
+    "en": "Every step that costs something, priced at the market prices on {0} ({1} old) and ranked by CP per million Kina: the most Combat Power for your Kina first."
+  },
+  "CpCalc.Value.LedeNoAge": {
+    "en": "Every step that costs something, priced at the market prices on {0} and ranked by CP per million Kina: the most Combat Power for your Kina first."
+  },
+  "CpCalc.Value.NoServer": {
+    "en": "Log in with the character once: the market prices are those of its server."
+  },
+  "CpCalc.Value.Loading": {
+    "en": "Loading the market prices of your server…"
+  },
+  "CpCalc.Value.NoPrices": {
+    "en": "The market prices of your server couldn't be read just now. They are asked again in a few minutes."
+  },
+  "CpCalc.Value.NonePriced": {
+    "en": "None of the steps can be priced yet: the items they take have no market price on your server."
+  },
+  "CpCalc.Value.Note": {
+    "en": "Kina and items at what they sell for on your server's market now (the average sale, else the cheapest listing); for a level that can fail, the average over its tries. Items you already hold count at their price too, as you could sell them; an item with no price counts nothing when you hold enough of it. Prices move: the order can change from one day to the next."
+  },
+  "CpCalc.Value.Unpriced": {
+    "en": "{0} more steps aren't ranked: they take items with no market price that you don't hold enough of."
+  },
+  "CpCalc.Value.Split": {
+    "en": "({0} Kina + {1} in items)"
+  },
+  "CpCalc.Value.AllItems": {
+    "en": "(in items)"
+  },
+  "CpCalc.Value.Per": {
+    "en": "{0} CP per 1M"
+  },
+  "CpCalc.Value.PartPriced": {
+    "en": "{0} {1} at {2} Kina = {3} Kina"
+  },
+  "CpCalc.Value.PartHeld": {
+    "en": "{0} {1}: no market price, you hold enough"
+  },
+  "CpCalc.Value.Whole": {
+    "en": "In all {0} Kina: {1} CP per million Kina"
+  },
+  "CpCalc.Value.Now": {
+    "en": "just now"
+  },
+  "CpCalc.Value.Minutes": {
+    "en": "{0} min"
+  },
+  "CpCalc.Value.Hours": {
+    "en": "{0} h"
+  },
+  "CpCalc.Value.Days": {
+    "en": "{0} days"
+  },
   "Settings.RankPopup": {
     "en": "Show my rank on the boss over the game after an upload",
     "de": "Nach einem Upload meinen Rang beim Boss über dem Spiel zeigen",

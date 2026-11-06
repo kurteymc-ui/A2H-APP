@@ -23,7 +23,7 @@ namespace AionDPS.Ui;
 /// and what the calculator was checked against. Values come from the item data, CP from the website's model, fitted to the game's own number when it came.
 /// A reading page: no overlay, no hotkey.
 /// </summary>
-public sealed class CpCalcPage : Grid
+public sealed partial class CpCalcPage : Grid
 {
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(10) };
     /// <summary>The steps a group of the best next steps shows before its "more" link.</summary>
@@ -274,7 +274,7 @@ public sealed class CpCalcPage : Grid
 
         IReadOnlyDictionary<int, int>? frame = directory?.LocalStats;
         string frameSig = frame is null ? "-" : string.Join(',', new[] { 31, 317, 19, 128, 104, 318, 193, 52, 307, 1, 13, 5, 14, 8, 4, 10 }.Select(id => frame.GetValueOrDefault(id)));
-        string signature = $"{name}|{GearSignature(gear)}|{frameSig}|{RestSignature(directory)}|{Aion2CpData.Model.FromWebsite}|{Lang}|{CpChecks.Version}|{_selected}|{_tab}|{_pending is null}";
+        string signature = $"{name}|{GearSignature(gear)}|{frameSig}|{RestSignature(directory)}|{Aion2CpData.Model.FromWebsite}|{Lang}|{CpChecks.Version}|{_selected}|{_tab}|{_pending is null}|{ExchangePrices.Version}";
         if (!force && signature == _signature && _pending is null)
         {
             return;
@@ -409,6 +409,11 @@ public sealed class CpCalcPage : Grid
 
         _body.Children.Add(Hero(view, model));
         _body.Children.Add(GroupedStepsCard(view.Whole.Steps, Loc("CpCalc.Steps"), Loc("CpCalc.Steps.Note")));
+        if (ValueCard(view.Whole.Steps) is { } value)
+        {
+            _body.Children.Add(value);
+        }
+
         _body.Children.Add(TabStrip(view));
         UIElement content = _tab switch
         {
