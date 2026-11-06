@@ -1097,10 +1097,14 @@ public sealed class FightReportWindow : Window
                 var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 12, 4) };
                 item.Children.Add(IconBox(SkillIcon(sk.SkillId, sk.Name, player?.ClassName), 22));
                 var label = new TextBlock { FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 0, 0) };
-                label.Inlines.Add(new Run(sk.Uses > 1 ? $"×{sk.Uses}" : sk.Uses == 1 ? "" : "·") { FontWeight = FontWeights.SemiBold });
+                if (sk.Uses > 1)
+                {
+                    label.Inlines.Add(new Run($"×{sk.Uses} ") { FontWeight = FontWeights.SemiBold });
+                }
+
                 if (sk.Damage > 0)
                 {
-                    var dmg = new Run((sk.Uses > 0 ? " " : "") + ReportPalette.Short(sk.Damage));
+                    var dmg = new Run(ReportPalette.Short(sk.Damage));
                     dmg.SetResourceReference(TextElement.ForegroundProperty, "Brush.TextMuted");
                     label.Inlines.Add(dmg);
                 }
@@ -1111,7 +1115,8 @@ public sealed class FightReportWindow : Window
                 }
 
                 item.Children.Add(label);
-                item.ToolTip = $"{Aion2SkillNames.Display(sk.Name)}\nUsed {sk.Uses} times here · {N(sk.Damage)} damage" + (sk.Stagger > 0 ? $" · {sk.Stagger} stagger" : "");
+                item.ToolTip = Aion2SkillNames.Display(sk.Name) + "\n" + (sk.Uses > 0 ? $"Used {sk.Uses} time{(sk.Uses == 1 ? "" : "s")} here · " : "") + $"{N(sk.Damage)} damage"
+                    + (sk.Stagger > 0 ? $" · {sk.Stagger} stagger" : "");
                 skills.Children.Add(item);
             }
 

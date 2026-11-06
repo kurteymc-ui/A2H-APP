@@ -120,7 +120,7 @@ public static class FightMoments
 
         long total = hits.Sum(h => h.Amount);
         var casts = r.CastBars.Where(c => c.End >= from && c.Start <= to).Select(c => c.Name)
-            .Concat(r.BossCasts.Where(c => c.At >= from && c.At <= to).Select(c => c.Name)).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().ToList();
+            .Concat(r.BossCasts.Where(c => c.At >= from && c.At <= to).Select(c => c.Name)).Where(n => n.Any(char.IsLetter)).Distinct().ToList();   // a skill the game has no name for says nothing
         return new FightWindow(from, to, total, total / seconds, players.OrderByDescending(p => p.Damage).ToList(), casts, r.Stagger.Breaks.Count(b => b.At >= from && b.At <= to));
     }
 
@@ -146,7 +146,7 @@ public static class FightMoments
     private static IReadOnlyList<string> DropWhy(FightReport r, double from, double to)
     {
         var why = new List<string>();
-        foreach (string cast in r.CastBars.Where(c => c.End >= from && c.Start <= to).Select(c => c.Name).Where(n => !string.IsNullOrWhiteSpace(n)).Distinct().Take(2))
+        foreach (string cast in r.CastBars.Where(c => c.End >= from && c.Start <= to).Select(c => c.Name).Where(n => n.Any(char.IsLetter)).Distinct().Take(2))
         {
             why.Add($"{r.BossName ?? "The boss"} cast {Aion2SkillNames.Display(cast)}");
         }
