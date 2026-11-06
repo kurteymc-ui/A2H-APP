@@ -14057,8 +14057,8 @@
     "de": "In Raserei"
   },
   "Overlay.BossTimersTip": {
-    "en": "{0}: the next casts as {1} uploaded fights of it show them",
-    "de": "{0}: die nächsten Zauber, wie {1} hochgeladene Kämpfe sie zeigen"
+    "en": "{0}: the next attacks, learnt from {1} fights of it (everyone's uploads and the fights saved on this PC): each by the attack before it, the boss's health or the time, only where the fights agreed",
+    "de": "{0}: die nächsten Angriffe, gelernt aus {1} Kämpfen (die Uploads aller und die auf diesem PC gespeicherten Kämpfe): jeder nach dem Angriff davor, der Gesundheit des Bosses oder der Zeit, nur wo die Kämpfe übereinstimmten"
   },
   "Overlay.BossTimersTipRage": {
     "en": "; the enrage from the game's data",
