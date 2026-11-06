@@ -345,8 +345,6 @@ internal sealed class HudWatcher : IDisposable
         _maskMean = null;
     }
 
-    private Bitmap? _whole;
-
     /// <summary>
     /// The brightness step at every point of the top and the bottom band; null for a black or failed picture. The picture is the game window's client
     /// area, drawn by Windows into a bitmap of ours (PrintWindow, with the flag that takes a DirectX window's real content): the screen is not read.
@@ -360,42 +358,26 @@ internal sealed class HudWatcher : IDisposable
 
         try
         {
-            if (_whole is null || _whole.Width != area.Width || _whole.Height != area.Height)
+            // the picture the minimap reader took a moment ago does as well (GameCapture: one picture for both, 6 November 2026)
+            Bitmap top = _top, bottom = _bottom;
+            bool drawn = GameCapture.Use(game, area.Size, TimeSpan.FromMilliseconds(400), whole =>
             {
-                _whole?.Dispose();
-                _whole = new Bitmap(area.Width, area.Height, PixelFormat.Format32bppRgb);
-            }
-
-            bool drawn;
-            using (var g = Graphics.FromImage(_whole))
-            {
-                IntPtr dc = g.GetHdc();
-                try
+                // the two bands out of the whole picture
+                using (var g = Graphics.FromImage(top))
                 {
-                    drawn = GameWindow.InRealPixels(() => PrintWindow(game, dc, PwClientOnly | PwRenderFullContent));
+                    g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                    g.DrawImage(whole, new Rectangle(0, 0, top.Width, top.Height), new Rectangle(0, 0, top.Width, top.Height), GraphicsUnit.Pixel);
                 }
-                finally
-                {
-                    g.ReleaseHdc(dc);
-                }
-            }
 
+                using (var g = Graphics.FromImage(bottom))
+                {
+                    g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                    g.DrawImage(whole, new Rectangle(0, 0, bottom.Width, bottom.Height), new Rectangle(0, whole.Height - bottom.Height, bottom.Width, bottom.Height), GraphicsUnit.Pixel);
+                }
+            });
             if (!drawn)
             {
                 return null;
-            }
-
-            // the two bands out of the whole picture
-            using (var g = Graphics.FromImage(_top))
-            {
-                g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-                g.DrawImage(_whole, new Rectangle(0, 0, _top.Width, _top.Height), new Rectangle(0, 0, _top.Width, _top.Height), GraphicsUnit.Pixel);
-            }
-
-            using (var g = Graphics.FromImage(_bottom))
-            {
-                g.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-                g.DrawImage(_whole, new Rectangle(0, 0, _bottom.Width, _bottom.Height), new Rectangle(0, area.Height - _bottom.Height, _bottom.Width, _bottom.Height), GraphicsUnit.Pixel);
             }
         }
         catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or ArgumentException or InvalidOperationException or ExternalException)
@@ -536,11 +518,6 @@ internal sealed class HudWatcher : IDisposable
         }
     }
 
-    private const uint PwClientOnly = 1, PwRenderFullContent = 2;
-
-    [DllImport("user32.dll")]
-    private static extern bool PrintWindow(IntPtr hwnd, IntPtr dc, uint flags);
-
     /// <summary>For each point: whether one of the meter's own overlays stands on it.</summary>
     private static bool[] Covered(Rectangle area, int band, List<Rectangle> overlays)
     {
@@ -659,6 +636,5 @@ internal sealed class HudWatcher : IDisposable
         Save();
         _top?.Dispose();
         _bottom?.Dispose();
-        _whole?.Dispose();
     }
 }

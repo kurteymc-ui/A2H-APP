@@ -58,7 +58,7 @@ public sealed class MenuWatcher : IDisposable
     /// then steps the overlays aside within a second.
     /// </summary>
     private TimeSpan HudEvery(bool cursor) =>
-        _hud.MenuOpen || (cursor && DateTime.UtcNow - _lastOwnHit >= TimeSpan.FromSeconds(1.5)) ? TimeSpan.FromMilliseconds(300) : TimeSpan.FromSeconds(1);
+        _hud.MenuOpen || (cursor && DateTime.UtcNow - _lastOwnHit >= TimeSpan.FromSeconds(1.5)) ? TimeSpan.FromMilliseconds(400) : TimeSpan.FromSeconds(1);
 
     public static bool AllOverlaysLocked(MeterSettings s) => UnlockedOverlays(s).Count == 0;
 

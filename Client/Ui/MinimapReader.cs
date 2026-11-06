@@ -186,7 +186,8 @@ internal sealed class MinimapReader : IDisposable
         // at most five reads a second, two while the player stands (3 November 2026 review: up to ten, each drawing the whole game window); the
         // search for the minimap's place keeps its own pace above
         bool standing = _lastJob is { } before && now - _lastFixAt < TimeSpan.FromSeconds(2) && Distance(before.X, before.Y, guess.X, guess.Y) < 50;
-        if (layout is not null && now - _jobAt < TimeSpan.FromMilliseconds(standing ? 500 : 200) && !SaveNext)
+        // (6 November 2026, the lag: four a second while moving, one while standing)
+        if (layout is not null && now - _jobAt < TimeSpan.FromMilliseconds(standing ? 1000 : 250) && !SaveNext)
         {
             return;
         }
@@ -830,7 +831,8 @@ internal sealed class MinimapReader : IDisposable
         return new Outcome(fix, found, job.Layout is null, watch.Elapsed.TotalMilliseconds, saved, at, match, arrow);
     }
 
-    // the game window's client area as Windows draws it for us (PrintWindow, client only, full content); null when it fails or comes back black
+    // the game window's client area as Windows draws it for us (PrintWindow, client only, full content; GameCapture: one picture for the HUD watcher and this,
+    // 6 November 2026), copied into our own so the work on it holds nobody up; null when it fails
     private Bitmap? Capture(IntPtr game, Size client)
     {
         if (client.Width < 400 || client.Height < 300)
@@ -838,29 +840,10 @@ internal sealed class MinimapReader : IDisposable
             return null;
         }
 
-        if (_whole is null || _whole.Width != client.Width || _whole.Height != client.Height)
-        {
-            _whole?.Dispose();
-            _whole = new Bitmap(client.Width, client.Height, PixelFormat.Format32bppRgb);
-        }
-
-        using (var g = Graphics.FromImage(_whole))
-        {
-            IntPtr dc = g.GetHdc();
-            try
-            {
-                if (!GameWindow.InRealPixels(() => PrintWindow(game, dc, PwClientOnly | PwRenderFullContent)))
-                {
-                    return null;
-                }
-            }
-            finally
-            {
-                g.ReleaseHdc(dc);
-            }
-        }
-
-        return _whole;
+        Bitmap? copy = _whole;
+        bool drawn = GameCapture.Use(game, client, TimeSpan.FromMilliseconds(120), whole => GameCapture.CopyInto(whole, ref copy));
+        _whole = copy;
+        return drawn ? _whole : null;
     }
 
     /// <summary>
@@ -1183,8 +1166,4 @@ internal sealed class MinimapReader : IDisposable
         }
     }
 
-    private const uint PwClientOnly = 1, PwRenderFullContent = 2;
-
-    [DllImport("user32.dll")]
-    private static extern bool PrintWindow(IntPtr hwnd, IntPtr dc, uint flags);
 }

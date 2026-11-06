@@ -15591,6 +15591,9 @@
     "de": "Feedback",
     "fr": "Avis"
   },
+  "Shell.Status": {
+    "en": "Status"
+  },
   "Main.OpenWorld.On": {
     "en": "Open world: on",
     "de": "Offene Welt: an",
@@ -22055,5 +22058,149 @@
   },
   "Legion.Send.Cant": {
     "en": "It can't be sent from here: sign in with Discord and allow uploads first."
+  },
+  "Status.Title": {
+    "en": "Status"
+  },
+  "Status.Lede": {
+    "en": "What the app is doing right now. Green works, amber waits for something, red is wrong. When something looks off, copy the report and paste it in a message to us."
+  },
+  "Status.Copy": {
+    "en": "Copy the report"
+  },
+  "Status.Copied": {
+    "en": "Copied. Nothing secret is in it."
+  },
+  "Status.Folder": {
+    "en": "Open the data folder"
+  },
+  "Status.Network": {
+    "en": "Network analysis"
+  },
+  "Status.AgoSeconds": {
+    "en": "{0} s ago"
+  },
+  "Status.AgoMinutes": {
+    "en": "{0} min ago"
+  },
+  "Status.AgoHours": {
+    "en": "{0} h ago"
+  },
+  "Status.AgoDays": {
+    "en": "{0} d ago"
+  },
+  "Status.Game": {
+    "en": "Game connection"
+  },
+  "Status.GameOn": {
+    "en": "Reading the game ({0})"
+  },
+  "Status.Ping": {
+    "en": "ping {0} ms"
+  },
+  "Status.GameDetail": {
+    "en": "Resent packets {0}, gaps {1}, dropped by the app {2}"
+  },
+  "Status.GameWaiting": {
+    "en": "The game is running, but no game traffic is read yet"
+  },
+  "Status.GameOff": {
+    "en": "The game isn't running"
+  },
+  "Status.Character": {
+    "en": "Character"
+  },
+  "Status.Level": {
+    "en": "Lv {0}"
+  },
+  "Status.CharacterAt": {
+    "en": "Read from the game {0}"
+  },
+  "Status.CharacterRestored": {
+    "en": "From an earlier session: log in (or change character) to read it again"
+  },
+  "Status.CharacterNone": {
+    "en": "No character read yet: log in while the app runs"
+  },
+  "Status.Account": {
+    "en": "Atreia account"
+  },
+  "Status.UploadsOff": {
+    "en": "Uploads are off, so nothing goes to Atreia"
+  },
+  "Status.SignedOut": {
+    "en": "Not signed in: Atreia account, at the bottom of the column"
+  },
+  "Status.SignedIn": {
+    "en": "Signed in as {0}"
+  },
+  "Status.Verified": {
+    "en": "{0} verified as yours"
+  },
+  "Status.VerifyMismatch": {
+    "en": "{0} not verified: the account's character list doesn't match the site's records"
+  },
+  "Status.VerifyTaken": {
+    "en": "{0} is proven to be someone else's"
+  },
+  "Status.VerifyFull": {
+    "en": "the most characters the app can verify are verified"
+  },
+  "Status.VerifyLater": {
+    "en": "{0}: the check is tried again later"
+  },
+  "Status.VerifyNotYet": {
+    "en": "no character checked yet"
+  },
+  "Status.TooOld": {
+    "en": "This version is too old to upload: update the app"
+  },
+  "Status.LastUpload": {
+    "en": "Last upload: {0}"
+  },
+  "Status.Legion": {
+    "en": "Legion list"
+  },
+  "Status.LegionRead": {
+    "en": "{0} members read {1}"
+  },
+  "Status.LegionNoName": {
+    "en": "The legion's name isn't known yet: it comes with the character list at a login"
+  },
+  "Status.LegionKept": {
+    "en": "{0}: {1} members, from {2}"
+  },
+  "Status.LegionNone": {
+    "en": "No legion list yet: the game sends it at a login"
+  },
+  "Status.Minimap": {
+    "en": "Minimap"
+  },
+  "Status.Pictures": {
+    "en": "Game window pictures"
+  },
+  "Status.PicturesNone": {
+    "en": "None taken now (the map and the menu watch take them while they need them)"
+  },
+  "Status.PicturesRate": {
+    "en": "{0} a second, {1} ms each, at most {2} ms"
+  },
+  "Status.PicturesShared": {
+    "en": "{0} times a picture just taken did for another part (fewer pictures, a smoother game)"
+  },
+  "Status.App": {
+    "en": "The app"
+  },
+  "Status.AppUse": {
+    "en": "{0} % of the CPU, {1} MB of memory"
+  },
+  "Status.AppDetail": {
+    "en": "The meter's work: {0} ms a tick on average, at most {1} ms; the app's window stalled {2} times in the last minute, at most {3} ms"
+  },
+  "Status.Version": {
+    "en": "Version"
+  },
+  "Status.Running": {
+    "en": "Running since {0}"
   }
 }

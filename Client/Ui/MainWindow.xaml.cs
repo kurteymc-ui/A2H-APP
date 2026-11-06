@@ -389,6 +389,7 @@ public partial class MainWindow : Window
         MeterRowView.RowClicked += ShowPlayerDetails;
 
         _pollTimer.Tick += OnPollTimerTick;
+        AppPerf.StartWatch(); // the window thread's stalls, for the Status page
 
         // Startup check is announced (per the user: should behave exactly like clicking "Check for
         // updates" in the App menu, not stay silent) -- a launch is never mid-fight, so a message
@@ -846,8 +847,12 @@ public partial class MainWindow : Window
     /// <summary>Only states the user can act on reach the status line; "connected" is the normal
     /// case and needs no announcement. Marshalled because a capture-based source reports from its
     /// own thread.</summary>
+    /// <summary>The capture's last word on its state (the Status page shows it).</summary>
+    internal static SourceStatus? LastSourceStatus { get; private set; }
+
     private void OnSourceStatusChanged(SourceStatus status)
     {
+        LastSourceStatus = status;
         // "Connected" is normally silent; the Aion 2 source's live counters (frames/events) are the
         // one exception, since they are how a stalled capture is told apart from a stalled decoder.
         bool aion2Counters = status.State == SourceState.Connected && _source is Aion2PacketCombatSource;
@@ -1013,7 +1018,21 @@ public partial class MainWindow : Window
         _petMapController.OnCubeArrived(settings);
     }
 
+    /// <summary>The meter's tick, timed for the Status page (AppPerf).</summary>
     private void OnPollTimerTick(object? sender, EventArgs e)
+    {
+        long start = System.Diagnostics.Stopwatch.GetTimestamp();
+        try
+        {
+            PollTick();
+        }
+        finally
+        {
+            AppPerf.NoteTick(System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds);
+        }
+    }
+
+    private void PollTick()
     {
         PollCubeMap();
         // The own server shows up when the character is seen: the timetable is asked again for its region (once per region and session; the timer retries).

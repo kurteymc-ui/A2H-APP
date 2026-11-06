@@ -107,7 +107,7 @@ public partial class MainWindow
             }
         }
 
-        var bottom = new List<ShellItem> { new("feedback", loc["Shell.Feedback"], "\uED15") };
+        var bottom = new List<ShellItem> { new("feedback", loc["Shell.Feedback"], "\uED15"), new("status", loc["Shell.Status"], "\uE95E") };
         if (pages.TryGetValue("network", out ShellItem? network))
         {
             bottom.Add(network);
@@ -335,6 +335,7 @@ public partial class MainWindow
             "overlays" => BuildOverlaysPage(),
             "meterlook" => BuildMeterLookPage(),
             "history" => HostWindow(new HistoryWindow()),
+            "status" => new StatusPage(() => _liveSource?.Entities as Aion2EntityDirectory, () => ShowShellPage("network")),
             "characters" => HostTool("checklist"),
             _ => HostTool(id),
         };
