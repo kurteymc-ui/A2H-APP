@@ -1310,7 +1310,8 @@
                                 <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc BlackCloud.Title}"/>
                                 <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc BlackCloud.Lede}" TextWrapping="Wrap" MaxWidth="{x:Static local:SettingsWindow.BlackCloudTextWidth}" HorizontalAlignment="Left" Margin="0,0,0,8"/>
                                 <CheckBox x:Name="BlackCloudPopupBox" Content="{local:Loc BlackCloud.Popup}" ToolTip="{local:Loc BlackCloud.Popup.Tip}"/>
-                                <CheckBox x:Name="BlackCloudRenewBox" Content="{local:Loc BlackCloud.RenewNote}" ToolTip="{local:Loc BlackCloud.RenewNote.Tip}" Margin="0,4,0,10"/>
+                                <CheckBox x:Name="BlackCloudRenewBox" Content="{local:Loc BlackCloud.RenewNote}" ToolTip="{local:Loc BlackCloud.RenewNote.Tip}" Margin="0,4,0,0"/>
+                                <CheckBox x:Name="BlackCloudClockBox" Content="{local:Loc BlackCloud.ClockShow}" ToolTip="{local:Loc BlackCloud.ClockShow.Tip}" Margin="0,4,0,10"/>
                                 <StackPanel x:Name="BlackCloudPets"/>
                                 <StackPanel x:Name="BlackCloudOffers" Margin="0,10,0,0"/>
                             </StackPanel>

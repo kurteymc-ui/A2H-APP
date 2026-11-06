@@ -73,10 +73,21 @@ public static class SelfCheckBlackCloud
         var watched = new[] { 1111, 1240 };
         bool notYet = Aion2BlackCloud.DueRenewals(at.AddMinutes(5), watched).Count == 0;
         var due = Aion2BlackCloud.DueRenewals(at.AddMinutes(7), watched);
-        Aion2BlackCloud.MarkAnnounced(due.Select(d => d.Name));
+        Aion2BlackCloud.MarkAnnounced(due.Select(d => d.Name), at.AddMinutes(7));
         bool renewOk = notYet && due is [("YIELD", 1)] && Aion2BlackCloud.DueRenewals(at.AddMinutes(8), watched).Count == 0
             && Aion2BlackCloud.DueRenewals(at.AddMinutes(7), new[] { 1240 }).Count == 0;
-        Console.WriteLine($"  -> the offers renew at 16:00: a note once, for YIELD (1 ticked pet still missing), none before and none after: {renewOk}");
+        // every hour after it, without the shop opened again: 17:00 once more; a renewal the meter missed by more than 20 minutes not at all
+        var next = Aion2BlackCloud.DueRenewals(at.AddMinutes(67), watched);
+        Aion2BlackCloud.MarkAnnounced(next.Select(d => d.Name), at.AddMinutes(67));
+        bool hourly = next is [("YIELD", 1)] && Aion2BlackCloud.DueRenewals(at.AddMinutes(70), watched).Count == 0 && Aion2BlackCloud.DueRenewals(at.AddMinutes(156), watched).Count == 0;
+        // the pet list's clock: at 15:54 the list renews at 16:00 (the one on offer since 15:00), at 17:30 at 18:00 (since 17:00)
+        bool clock = Aion2BlackCloud.Clock(at) is { } c1 && c1.Next == at.AddMinutes(6) && c1.Since == at.AddMinutes(-54)
+            && Aion2BlackCloud.Clock(at.AddMinutes(96)) is { } c2 && c2.Next == at.AddMinutes(126) && c2.Since == at.AddMinutes(66);
+        // the line on the pet list: 36 min left and 24 min on offer at 19:23:57, as the game's 00:36:03
+        string? line = Ui.PetMapController.ShopClock(new DateTime(2026, 11, 3, 19, 23, 57, DateTimeKind.Utc));
+        clock = clock && line is not null && line.Contains("36 min") && line.Contains("24 min");
+        renewOk = renewOk && hourly && clock;
+        Console.WriteLine($"  -> the offers renew at 16:00 and every hour after: a note once each, for YIELD (1 ticked pet still missing), none before and none after; the clock: {renewOk} (hourly {hourly}, clock {clock})");
         Aion2BlackCloud.Reset();
 
         // the Odyle energy items: 40 for Odyle Energy, 10 for a small one (the game's texts), the 7-day ones run out; a character's bag and storage by kind

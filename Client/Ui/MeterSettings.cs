@@ -741,6 +741,9 @@ public sealed class MeterSettings
     /// them: the game sends the offers only then). On by default.</summary>
     public bool BlackCloudRenewNote { get; set; } = true;
 
+    /// <summary>The Black Cloud shop's clock under the pet list overlay: when its product list renews (every hour) and since when the one on offer is there. On by default.</summary>
+    public bool BlackCloudClock { get; set; } = true;
+
     /// <summary>The pets only the merchant sells that the player unticked (finished, or not wanted): no note for them. Every other one is ticked, new ones too.</summary>
     public List<int> BlackCloudUnwatched { get; set; } = new();
 

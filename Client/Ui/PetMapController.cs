@@ -242,6 +242,29 @@ public sealed class PetMapController : IDisposable
     private bool _listUseless;
     private const double ShopListOpacity = 0.95;
 
+    /// <summary>
+    /// The Black Cloud shop's clock for the pet list: "new list in 36 min · this one started 24 min ago" (its product list renews every hour, on the hour:
+    /// <see cref="Aion2BlackCloud.Clock"/>); null before the shop was ever opened with the meter running (6 November 2026, the owner: "remind me every
+    /// time my shop refreshes ... 36 minutes left, started 24m ago").
+    /// </summary>
+    internal static string? ShopClock(DateTime utcNow)
+    {
+        if (Aion2BlackCloud.Clock(utcNow) is not { } clock)
+        {
+            return null;
+        }
+
+        LocalizationManager loc = LocalizationManager.Instance;
+        // whole minutes, rounded as the game's own countdown reads (00:36:03: 36 min left, the list on offer for 24); under half a minute "<1 min"
+        string Minutes(TimeSpan span)
+        {
+            int m = (int)Math.Round(Math.Max(0, span.TotalMinutes), MidpointRounding.AwayFromZero);
+            return string.Format(System.Globalization.CultureInfo.CurrentCulture, loc["BlackCloud.Minutes"], m > 0 ? m.ToString(System.Globalization.CultureInfo.CurrentCulture) : "<1");
+        }
+
+        return string.Format(System.Globalization.CultureInfo.CurrentCulture, loc["BlackCloud.Clock"], Minutes(clock.Next - utcNow), Minutes(utcNow - clock.Since));
+    }
+
     /// <summary>The Black Cloud shop counts as open from the moment it sends a tab until the player walks away from where they stood (a closed shop sends nothing, so there is no other end to read).</summary>
     private void UpdateShopOpen(Aion2EntityDirectory? directory)
     {
@@ -925,6 +948,8 @@ public sealed class PetMapController : IDisposable
             {
                 view.RenderHead(headTitle, headDetail);
             }
+
+            _list.RenderShopClock(settings.BlackCloudClock ? ShopClock(DateTime.UtcNow) : null);
             if (nothing && rows.Count == 0)
             {
                 // nothing picked: samples on the overlay while it is placed, a word on the tool page why the list is empty

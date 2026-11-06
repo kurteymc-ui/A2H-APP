@@ -196,31 +196,69 @@ public static class Aion2BlackCloud
     }
 
     /// <summary>
-    /// The characters whose offers have renewed since the shop was last opened on them, with how many of the <paramref name="watched"/> pets (the merchant's
-    /// list that the player ticked) they still miss or have below the top level; a character with none is left out. Each renewal is given once
-    /// (<see cref="MarkAnnounced"/>), and one more than six hours old not at all.
+    /// The shop's product list renews every hour, on the hour: every renewal time a shop page gave was the next whole hour after it was read (six readings
+    /// of 2 to 5 November 2026, 6 to 47 minutes before), and the shop itself counts down from an hour ("Product list will refresh in 00:36:03" 24 minutes
+    /// after the hour, the owner's picture of 6 November). So one opening tells every renewal after it.
+    /// </summary>
+    public const long RenewEveryMs = 3_600_000;
+
+    /// <summary>A renewal of the same hourly round older than this is not announced any more (the meter started long after it).</summary>
+    private const long AnnounceWithinMs = 20 * 60_000;
+
+    private static long Ms(DateTime utc) => new DateTimeOffset(utc.Kind == DateTimeKind.Local ? utc.ToUniversalTime() : utc).ToUnixTimeMilliseconds();
+
+    /// <summary>The last renewal at or before <paramref name="now"/> in the hourly round of a known one (0: none yet).</summary>
+    private static long LastRenewal(long known, long now) => known <= 0 || now < known ? 0 : known + (now - known) / RenewEveryMs * RenewEveryMs;
+
+    /// <summary>
+    /// When the shop's product list renews next and when the one on offer began (UTC), from the newest renewal any shop page gave; null before the shop was
+    /// ever opened with the meter running.
+    /// </summary>
+    public static (DateTime Next, DateTime Since)? Clock(DateTime utcNow)
+    {
+        long now = Ms(utcNow), known;
+        lock (Gate)
+        {
+            known = Math.Max(_unknownRenewMs, _characters.Values.Select(c => c.RenewMs).DefaultIfEmpty(0).Max());
+        }
+
+        if (known <= 0)
+        {
+            return null;
+        }
+
+        long next = now < known ? known : LastRenewal(known, now) + RenewEveryMs;
+        return (DateTimeOffset.FromUnixTimeMilliseconds(next).UtcDateTime, DateTimeOffset.FromUnixTimeMilliseconds(next - RenewEveryMs).UtcDateTime);
+    }
+
+    /// <summary>
+    /// The characters whose offers have renewed (every hour, see <see cref="RenewEveryMs"/>) since the shop was opened on them, with how many of the
+    /// <paramref name="watched"/> pets (the merchant's list that the player ticked) they still miss or have below the top level; a character with none is left
+    /// out. Each renewal is given once (<see cref="MarkAnnounced"/>), and one more than 20 minutes old not at all.
     /// </summary>
     public static IReadOnlyList<(string Name, int Wanted)> DueRenewals(DateTime utcNow, IReadOnlyCollection<int> watched)
     {
-        long now = new DateTimeOffset(utcNow).ToUnixTimeMilliseconds();
+        long now = Ms(utcNow);
         lock (Gate)
         {
-            return _characters.Values.Where(c => c.RenewMs > 0 && now >= c.RenewMs && now - c.RenewMs < 6 * 3_600_000L && c.AnnouncedMs != c.RenewMs)
-                .Select(c => (c.Name, watched.Count(p => c.Pets.GetValueOrDefault(p) < Aion2Pets.TopLevel)))
+            return _characters.Values.Select(c => (c, last: LastRenewal(c.RenewMs, now)))
+                .Where(x => x.last > 0 && now - x.last < AnnounceWithinMs && x.c.AnnouncedMs != x.last)
+                .Select(x => (x.c.Name, watched.Count(p => x.c.Pets.GetValueOrDefault(p) < Aion2Pets.TopLevel)))
                 .Where(c => c.Item2 > 0).ToList();
         }
     }
 
-    /// <summary>The renewal notes of these characters were shown.</summary>
-    public static void MarkAnnounced(IEnumerable<string> names)
+    /// <summary>The renewal notes of these characters were shown (the renewal of <paramref name="utcNow"/>'s hour).</summary>
+    public static void MarkAnnounced(IEnumerable<string> names, DateTime utcNow)
     {
+        long now = Ms(utcNow);
         lock (Gate)
         {
             foreach (string name in names)
             {
                 if (_characters.TryGetValue(name, out var c))
                 {
-                    c.AnnouncedMs = c.RenewMs;
+                    c.AnnouncedMs = LastRenewal(c.RenewMs, now);
                 }
             }
 

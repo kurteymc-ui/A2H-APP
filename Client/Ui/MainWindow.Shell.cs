@@ -833,7 +833,8 @@ public partial class MainWindow
             return;
         }
 
-        var due = Aion2.Aion2BlackCloud.DueRenewals(DateTime.UtcNow, WatchedShopPets(s));
+        DateTime utcNow = DateTime.UtcNow;
+        var due = Aion2.Aion2BlackCloud.DueRenewals(utcNow, WatchedShopPets(s));
         if (due.Count == 0 || CubeToast.Active)
         {
             return;
@@ -842,7 +843,7 @@ public partial class MainWindow
         LocalizationManager loc = LocalizationManager.Instance;
         CubeToast.Note(string.Format(System.Globalization.CultureInfo.CurrentCulture, loc["BlackCloud.Renewed"],
             string.Join(", ", due.Select(d => $"{d.Name} ({d.Wanted})"))), 10);
-        Aion2.Aion2BlackCloud.MarkAnnounced(due.Select(d => d.Name));
+        Aion2.Aion2BlackCloud.MarkAnnounced(due.Select(d => d.Name), utcNow);
     }
 
     /// <summary>Every overlay that is on a little smaller or bigger (each within its own limits).</summary>

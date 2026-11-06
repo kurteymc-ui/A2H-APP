@@ -2307,6 +2307,13 @@ public sealed class PetListWindow : MovableOverlay
     private readonly TextBlock _headDetail = new() { FontSize = 11.5, Foreground = new SolidColorBrush(Color.FromRgb(0x9D, 0xB3, 0xC2)), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 1, 0, 0) };
     private readonly Border _head = new() { Visibility = Visibility.Collapsed, BorderThickness = new Thickness(0, 0, 0, 1), Padding = new Thickness(0, 0, 0, 5), Margin = new Thickness(0, 0, 0, 4), MaxWidth = 380 };
 
+    /// <summary>The Black Cloud shop's clock under the rows: when its product list renews, how long the one on offer has been there.</summary>
+    private readonly TextBlock _shop = new()
+    {
+        FontSize = 11.5, Foreground = new SolidColorBrush(Color.FromRgb(0xC9, 0xB2, 0xE8)), TextWrapping = TextWrapping.Wrap, MaxWidth = 380, Margin = new Thickness(0, 5, 0, 0),
+        Visibility = Visibility.Collapsed,
+    };
+
     public PetListWindow() : base("Aion DPS Pet List", new Border { Child = null }, Load, Save, SystemParameters.WorkArea.Right - 300, 580, LoadSize, SaveSize)
     {
         _head.BorderBrush = new SolidColorBrush(Color.FromArgb(0x66, 0xE8, 0xC3, 0x5A));
@@ -2317,12 +2324,23 @@ public sealed class PetListWindow : MovableOverlay
         var stack = new StackPanel();
         stack.Children.Add(_head);
         stack.Children.Add(_rows);
+        stack.Children.Add(_shop);
         var panel = new Border
         {
             Background = new SolidColorBrush(Color.FromArgb(0x99, 0x0E, 0x18, 0x20)), BorderBrush = new SolidColorBrush(Color.FromArgb(0x99, 0x29, 0x45, 0x57)),
             BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Padding = new Thickness(10, 6, 10, 6), Child = stack,
         };
         Body = panel;
+    }
+
+    /// <summary>The Black Cloud shop's clock under the rows (null: none).</summary>
+    public void RenderShopClock(string? text)
+    {
+        _shop.Visibility = text is null ? Visibility.Collapsed : Visibility.Visible;
+        if (_shop.Text != (text ?? ""))
+        {
+            _shop.Text = text ?? "";
+        }
     }
 
     /// <summary>The route's head over the rows: the stop being farmed and how far (gold), what comes after; null: no head.</summary>

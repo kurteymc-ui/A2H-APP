@@ -26,6 +26,7 @@ public partial class SettingsWindow
     {
         BlackCloudPopupBox.IsChecked = settings.BlackCloudPopup;
         BlackCloudRenewBox.IsChecked = settings.BlackCloudRenewNote;
+        BlackCloudClockBox.IsChecked = settings.BlackCloudClock;
         _blackCloudUnwatched.Clear();
         _blackCloudUnwatched.UnionWith(settings.BlackCloudUnwatched);
         FillBlackCloud();
@@ -45,6 +46,7 @@ public partial class SettingsWindow
     {
         s.BlackCloudPopup = BlackCloudPopupBox.IsChecked ?? true;
         s.BlackCloudRenewNote = BlackCloudRenewBox.IsChecked ?? true;
+        s.BlackCloudClock = BlackCloudClockBox.IsChecked ?? true;
         s.BlackCloudUnwatched = _blackCloudUnwatched.OrderBy(i => i).ToList();
     }
 
