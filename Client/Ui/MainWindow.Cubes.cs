@@ -15,9 +15,6 @@ public partial class MainWindow
 {
     private long _cubeCalloutAt;
 
-    /// <summary>The column of light over the game where the cube in range is (Tools, Cube finder).</summary>
-    private CubeBeam? _cubeBeam;
-
     /// <summary>Runs the cube line ten times a second while it is shown (the meter's own refresh comes only four times a second).</summary>
     private System.Windows.Threading.DispatcherTimer? _cubeLineTimer;
 
@@ -171,7 +168,6 @@ public partial class MainWindow
 
         Switch(loc["Cubes.Line"], loc["Cubes.LineTip"], s0.CubeOverlayAlert, (s, v) => s.CubeOverlayAlert = v);
         Switch(loc["Cubes.Popup"], loc["Cubes.PopupTip"], s0.CubePopup, (s, v) => s.CubePopup = v);
-        Switch(loc["Cubes.Beam"], loc["Cubes.BeamTip"], s0.CubeBeam, (s, v) => s.CubeBeam = v);
         CheckBox sound = Switch(loc["Cubes.Chime"], loc["Cubes.ChimeTip"], s0.CubeArrivalSound, (s, v) => s.CubeArrivalSound = v);
         Switch(loc["Cubes.Beeps"], loc["Cubes.BeepsTip"], s0.CubeBeeps, (s, v) => s.CubeBeeps = v);
         var volumeRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(26, -4, 0, 14) };

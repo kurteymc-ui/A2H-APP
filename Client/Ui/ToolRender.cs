@@ -7,7 +7,7 @@ using System.Windows.Media.Imaging;
 namespace AionDPS.Ui;
 
 /// <summary>
-/// Test mode <c>render-tool &lt;png&gt; &lt;tools|dummy|timetable|timetable-overlay|stream|hotkeys|blackcloud-toast|cube-beam&gt;</c>: draws the tools window (with its list of tools and the checklist), the page of a tool inside that window, the timers overlay or the hotkey help into a picture, never showing a window.
+/// Test mode <c>render-tool &lt;png&gt; &lt;tools|dummy|timetable|timetable-overlay|stream|hotkeys|blackcloud-toast&gt;</c>: draws the tools window (with its list of tools and the checklist), the page of a tool inside that window, the timers overlay or the hotkey help into a picture, never showing a window.
 /// Set AIONDPS_DATA_DIR to a throw-away folder; AIONDPS_LANG picks the language, AIONDPS_RENDER_SCALE=2 makes the picture sharp, AIONDPS_RENDER_HEIGHT sets the height of a tool page picture.
 /// </summary>
 public static class ToolRender
@@ -95,31 +95,6 @@ public static class ToolRender
                     }
                     : null;
                 shown = hostWindow.LookSetupPicture(step, what == "setup-colours-midnight" ? "midnight" : null, sample);
-                width = 0;
-                height = 0;
-                break;
-            }
-
-            case "cube-beam":
-            {
-                // the cube beam over a game-like scene: the beam over a cube 34 m ahead and a little right, and the arrow at the edge for one behind the camera
-                var scene = new Grid { Width = 1280, Height = 720, ClipToBounds = true };
-                scene.Background = new LinearGradientBrush(new GradientStopCollection
-                {
-                    new(Color.FromRgb(0x6d, 0x8d, 0xb0), 0), new(Color.FromRgb(0xb8, 0xc6, 0xc8), 0.42), new(Color.FromRgb(0x8a, 0x86, 0x5a), 0.47),
-                    new(Color.FromRgb(0x5b, 0x63, 0x3c), 0.75), new(Color.FromRgb(0x3c, 0x44, 0x2a), 1),
-                }, new Point(0, 0), new Point(0, 1));
-                Grid beam = CubeBeam.Beam(out TextBlock beamText);
-                beamText.Text = "~34 m";
-                var holder = new Border { Width = 150, Child = beam, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(760 - 75, 0, 0, 0) };
-                scene.Children.Add(holder);
-                Grid arrow = CubeBeam.EdgeArrow(out TextBlock arrowText, out System.Windows.Shapes.Path chevron);
-                arrowText.Text = "62 m";
-                arrow.Visibility = Visibility.Visible;
-                arrow.HorizontalAlignment = HorizontalAlignment.Right;
-                var arrowHolder = new Border { Width = 150, Child = arrow, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 0, 6, 0) };
-                scene.Children.Add(arrowHolder);
-                shown = scene;
                 width = 0;
                 height = 0;
                 break;

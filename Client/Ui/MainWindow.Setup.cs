@@ -518,19 +518,6 @@ public partial class MainWindow
                 }
             }
 
-            if (!_restricted)
-            {
-                var text = new StackPanel();
-                text.Children.Add(ShellText(Loc["Cubes.Beam"], "Brush.Text", 13, bold: true));
-                TextBlock what = Wrapped(Loc["Setup.BeamWhat"], "Brush.TextMuted", 11.5);
-                what.Margin = new Thickness(0, 1, 0, 0);
-                what.MaxWidth = 360;
-                text.Children.Add(what);
-                CheckBox box = Check(text, _draft.CubeBeam, on => Change(s => s.CubeBeam = on));
-                box.Margin = new Thickness(0, 0, 0, 10);
-                stack.Children.Add(box);
-            }
-
             stack.Children.Add(Note(Loc["Setup.OverlaysNote"]));
             return stack;
         }
@@ -1066,15 +1053,6 @@ public partial class MainWindow
             {
                 DrawScene(canvas);
             }
-            if (!meterOnly && _draft.CubeBeam && !_restricted)
-            {
-                Grid beam = CubeBeam.Beam(out TextBlock metres);
-                metres.Text = "~34 m";
-                beam.Height = 1080;
-                beam.Width = 150;
-                Place(canvas, beam, 1010, 0);
-            }
-
             bool edit = _steps[_step] == "Overlays";
             (double screenW, double screenH) = ScreenSize();
             foreach (OverlayDef def in Overlays())

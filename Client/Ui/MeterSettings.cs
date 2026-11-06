@@ -740,9 +740,6 @@ public sealed class MeterSettings
     /// <summary>A line on the meter while a Hidden Cube is in range ("Hidden Cube nearby · 42 m"). On by default.</summary>
     public bool CubeOverlayAlert { get; set; } = true;
 
-    /// <summary>A beam of light over the game where the Hidden Cube in range is (an arrow at the screen's edge while it is behind the camera), from the camera's
-    /// direction on the minimap (<see cref="CubeBeam"/>). On by default (5 November 2026, the owner: "a beacon of light above the cubes for easier spotting").</summary>
-    public bool CubeBeam { get; set; } = true;
 
     /// <summary>The look setup after the terms ("Make it yours": the meter's design and columns, the overlays, the colours, with previews) was done or skipped;
     /// it is shown once, also to installs from before it (MainWindow.Setup.cs).</summary>
