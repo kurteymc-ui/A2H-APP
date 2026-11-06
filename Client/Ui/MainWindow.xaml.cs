@@ -1209,6 +1209,7 @@ public partial class MainWindow : Window
         {
             _historyTickCounter = 0;
             _sessions.RefreshNames();
+            LogFinishedFights();
         }
     }
 
@@ -1845,19 +1846,65 @@ public partial class MainWindow : Window
     /// <summary>What was saved already: a map stay ends again each time the player comes back from an instance, and its boss fights must not be saved twice.</summary>
     private readonly HashSet<string> _loggedFights = new();
 
+    /// <summary>1 while the open stay's finished fights are being looked at (<see cref="LogFinishedFights"/>).</summary>
+    private int _loggingOpen;
+
+    /// <summary>A boss attempt counts as over this long after its last hit (the blows the game reports just after a kill come within a second).</summary>
+    private static readonly TimeSpan AttemptOverAfter = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// Every five seconds: the boss fights of the stay the player is still in that are over - killed, or wiped (the boss back at full health or out of
+    /// combat alive after them) - go to the History at once, each attempt on its own, instead of when the player leaves (6 November 2026, the owner:
+    /// "every log should show after the kill, don't wait for the whole raid to be over ... wipe or clear, like boss 1 2 3"). The run itself, gate to
+    /// gate, is saved when the stay ends (<see cref="LogStay"/>); a fight saved here is not saved again then.
+    /// </summary>
+    private void LogFinishedFights()
+    {
+        if (Headless || _sessions.Current is not { } open || open.FromFile || open.Data.Events.Count == 0
+            || _liveSource?.Entities is not Aion2.Aion2EntityDirectory || System.Threading.Interlocked.CompareExchange(ref _loggingOpen, 1, 0) != 0)
+        {
+            return;
+        }
+
+        // a copy up to now: the open stay grows on this thread while the analysis runs in the background
+        var copy = new SessionInfo(open.Number, open.ZoneId, open.Kind, open.Start) { End = open.Data.Events[^1].Timestamp };
+        copy.Data.IngestEvents(open.Data.Events.Concat(open.Data.Shields).ToList());
+        foreach ((int id, string name) in open.Names)
+        {
+            copy.Names[id] = name;
+        }
+
+        foreach ((int id, string cls) in open.Classes)
+        {
+            copy.Classes[id] = cls;
+        }
+
+        copy.Enrages.AddRange(open.Enrages);
+        _sessions.CaptureHp(copy);
+        if (LogStay(copy, partial: true) is { } work)
+        {
+            work.ContinueWith(_ => System.Threading.Interlocked.Exchange(ref _loggingOpen, 0), TaskScheduler.Default);
+        }
+        else
+        {
+            System.Threading.Interlocked.Exchange(ref _loggingOpen, 0);
+        }
+    }
+
     /// <summary>A stay ended: an instance is a dungeon run (an arena a PvP stay), and every boss fight in it, in an instance or in the open world, is an entry
-    /// of its own. The data is taken here; the analysis and the files are made off the window's thread.</summary>
-    private void LogStay(SessionInfo stay)
+    /// of its own. The data is taken here; the analysis and the files are made off the window's thread. <paramref name="partial"/>: the stay is still
+    /// open (<see cref="LogFinishedFights"/>): only the boss attempts that are over, no run. Returns the background work, or null when there is none.</summary>
+    private Task? LogStay(SessionInfo stay, bool partial = false)
     {
         if (Headless || stay.FromFile || stay.End is not DateTime end || _liveSource?.Entities is not Aion2.Aion2EntityDirectory directory)
         {
-            return;
+            return null;
         }
 
         List<DamageEvent> events = stay.Data.Events.ToList();
         if (events.Count == 0)
         {
-            return;
+            return null;
         }
 
         List<DamageEvent> shields = stay.Data.Shields.ToList();
@@ -1880,7 +1927,7 @@ public partial class MainWindow : Window
         }).ToList();
         if (players.Count == 0)
         {
-            return;
+            return null;
         }
 
         var playerIds = players.Select(p => p.Id).ToHashSet();
@@ -1896,9 +1943,22 @@ public partial class MainWindow : Window
         // the server of the own character, so a fight can still be uploaded from the History later (HistoryUpload)
         int? serverId = Aion2OwnServerId();
         string stayKey = $"stay:{stay.Number}:{stay.Start.Ticks}";
-        FightExtras? runExtras = run && !_loggedFights.Contains(stayKey) ? directory.Combat.Slice(stay.Start, end, nameOf, Keep) : null;
+        FightExtras? runExtras = run && !partial && !_loggedFights.Contains(stayKey) ? directory.Combat.Slice(stay.Start, end, nameOf, Keep) : null;
+        // a boss attempt of a stay still open is over when it was killed, or wiped: the boss back at full health or out of combat alive after it began;
+        // either way nobody has hit it for a few seconds
+        bool Over(BossAttempt attempt)
+        {
+            DateTime now = DateTime.Now > end ? DateTime.Now : end;
+            if (now - attempt.End < AttemptOverAfter)
+            {
+                return false;
+            }
+
+            return attempt.Killed || directory.HitPoints.ResetsOf(attempt.TargetId).Concat(directory.FailedEndsOf(attempt.TargetId, now)).Any(cut => cut > attempt.Start);
+        }
+
         // the boss fights' extras are cut here (the capture forgets), the analysis that finds the fights runs in the background
-        _ = Task.Run(() =>
+        return Task.Run(() =>
         {
             try
             {
@@ -1907,6 +1967,11 @@ public partial class MainWindow : Window
                 var attempts = analysis.Attempts.ToList();
                 foreach (BossAttempt attempt in attempts)
                 {
+                    if (partial && !Over(attempt))
+                    {
+                        continue; // still being fought (or not known to be over): saved later
+                    }
+
                     string key = $"boss:{attempt.TargetId}:{attempt.Start.Ticks}";
                     bool fresh;
                     lock (_loggedFights)
