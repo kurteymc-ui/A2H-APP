@@ -243,7 +243,7 @@ internal sealed class WorldBossPage : Grid
         var columns = new Grid { Margin = new Thickness(8, 0, 8, 4) };
         Columns(columns);
         TextBlock bossHead = Text("BOSS", "Brush.TextSubtle", 10.5, bold: true);
-        bossHead.Margin = new Thickness(50, 0, 0, 0);
+        bossHead.Margin = new Thickness(58, 0, 0, 0);
         AddCell(columns, bossHead, 1);
         AddCell(columns, Text("STATE", "Brush.TextSubtle", 10.5, bold: true), 2);
         TextBlock whenHead = Text("WHEN", "Brush.TextSubtle", 10.5, bold: true);
@@ -341,7 +341,7 @@ internal sealed class WorldBossPage : Grid
         }
 
         var who = new DockPanel { Margin = new Thickness(0, 0, 10, 0) };
-        FrameworkElement face = Portrait(r.Boss, r.Name, r.Status, now, 38);
+        FrameworkElement face = Portrait(r.Boss, r.Name, r.Status, now, 46);
         face.Margin = new Thickness(0, 0, 12, 0);
         DockPanel.SetDock(face, Dock.Left);
         who.Children.Add(face);
@@ -363,7 +363,7 @@ internal sealed class WorldBossPage : Grid
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        FrameworkElement face = Portrait(r.Boss, r.Name, r.Status, now, 34);
+        FrameworkElement face = Portrait(r.Boss, r.Name, r.Status, now, 42);
         face.Margin = new Thickness(0, 0, 11, 0);
         AddCell(grid, face, 0);
         var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
