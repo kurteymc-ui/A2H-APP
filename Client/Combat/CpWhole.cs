@@ -710,17 +710,17 @@ public static class CpWhole
         // Stigmas and skills: each one's next step along the class build's path (CpPlan: the build's order, the lower ranks first), in that order
         CpClassPlan? plan = CpPlan.For(input.ClassName);
         double stigmaWeight = model.Weight("stigma") * r.Scale * r.Totals.Factor("stigma");
-        var equipped = r.Stigmas.Where(s => s.Equipped && s.Level >= 1).ToList();
+        var worn = r.Stigmas.Where(s => s.Equipped && s.Level >= 1).ToList();
         int order = 0;
         var stigmaSeen = new HashSet<int>();
-        foreach (CpLevelStep p in CpPlan.StigmaPath(equipped.Select(s => CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId))).ToList(), equipped.Select(s => s.Level).ToList(), plan, StigmaTop))
+        foreach (CpLevelStep p in CpPlan.StigmaPath(worn.Select(s => CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId))).ToList(), worn.Select(s => s.Level).ToList(), plan, StigmaTop))
         {
             if (!stigmaSeen.Add(p.Index))
             {
                 continue;
             }
 
-            CpStigmaRow s = equipped[p.Index];
+            CpStigmaRow s = worn[p.Index];
             double gain = (Aion2CpSources.StigmaPoints(p.To) - Aion2CpSources.StigmaPoints(p.From)) * stigmaWeight;
             steps.Add(new CpStep(CpStepKind.Stigma, gain, gain, CpCertainty.Exact, OtherId: s.SkillId, ToLevel: p.To, FromLevel: p.From, Shards: CpPlan.ShardsTo(p.From, p.To),
                 Order: ++order));
