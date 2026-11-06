@@ -34,9 +34,9 @@ public static class SelfCheckBossPattern
                 casts.Add(new PatternCast(at, Every, 1, Health(at)));
             }
 
-            double phase = seconds * 0.5 + jitter;
-            casts.Add(new PatternCast(phase, Phase, 2, Health(phase)));
-            casts.Add(new PatternCast(phase + 3.7, PhaseFollow, 1, Health(phase + 3.7)));
+            double half = seconds * 0.5 + jitter;
+            casts.Add(new PatternCast(half, Phase, 2, Health(half)));
+            casts.Add(new PatternCast(half + 3.7, PhaseFollow, 1, Health(half + 3.7)));
             casts.Add(new PatternCast(rng.Next(10, 70), Random, 1, null));
             fights.Add(new PatternFight(seconds, true, casts.OrderBy(c => c.At).ToList()));
         }
@@ -94,7 +94,7 @@ public static class SelfCheckBossPattern
             new(t0.AddSeconds(60), boss, Every, 1, 0, 0, 0, 0, false),
             new(t0.AddSeconds(70), 99, Opener, 1, 1000, 0, 0, 0, false),
         };
-        var input = new ReportInput("Boss", t0, t0.AddSeconds(100), Array.Empty<ReportPlayer>(), events, Array.Empty<DamageEvent>(), Array.Empty<AvoidEvent>(),
+        var input = new ReportInput("Boss", t0, t0.AddSeconds(100), Array.Empty<ReportPlayer>(), events, Array.Empty<DamageEvent>(), Array.Empty<AionDPS.Combat.Sources.AvoidEvent>(),
             FightExtras.Empty with { Windups = windups }, BossId: boss, BossNpcId: 2320471, Killed: true);
         PatternFight? saved = PatternFights.From(input);
         bool file = saved is { Casts.Count: 1 } && saved.Casts[0].SkillId == Phase && Math.Abs(saved.Casts[0].At - 49.5) < 1e-6 && saved.Casts[0].Health is double hh
