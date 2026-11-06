@@ -603,9 +603,10 @@ public sealed partial class CpCalcPage : Grid
         }
 
         var groups = steps.GroupBy(s => s.Group).OrderBy(g => g.Key == CpStepGroup.Free ? 0 : 1).ThenByDescending(g => g.Max(s => s.Rank)).ToList();
+        Func<CpStep, double?> price = StepPrice();
         foreach (var group in groups)
         {
-            var list = group.OrderByDescending(s => s.Rank).ToList();
+            var list = InOrder(group, price);
             // the group as a tag in its colour, how many steps it has beside it
             Color tone = GroupColor(group.Key);
             var head = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, stack.Children.Count > 1 ? 16 : 2, 0, 6) };
@@ -656,6 +657,37 @@ public sealed partial class CpCalcPage : Grid
         var card = Card(stack);
         card.Margin = new Thickness(0, 0, 0, 12);
         return card;
+    }
+
+    /// <summary>
+    /// A group's steps in the order to do them (6 November 2026, the owner: "all upgrades should be cheapest amount of Kina to most expensive, cheapest first"):
+    /// Stigmas and skills in the class build's order (<see cref="CpStep.Order"/>, see <see cref="CpPlan"/>); everything else the cheapest first - free, then by
+    /// what it costs (at the server's market prices when they are in, else its Kina), the most CP first among equals, the ones whose cost isn't known last.
+    /// </summary>
+    private static List<CpStep> InOrder(IEnumerable<CpStep> group, Func<CpStep, double?> price) =>
+        group.OrderBy(s => s.Order > 0 ? 0 : 1).ThenBy(s => s.Order)
+            .ThenBy(s => price(s) is null ? 1 : 0).ThenBy(s => price(s) ?? 0).ThenByDescending(s => s.Rank).ToList();
+
+    /// <summary>What a step costs in Kina: 0 when free, its market price (Kina and items) when the server's prices are in, else the Kina it takes; null when not known.</summary>
+    private Func<CpStep, double?> StepPrice()
+    {
+        MarketBook? book = MainWindow.Headless ? null : ExchangePrices.For(_server);
+        Func<int, long>? held = HeldBy(_character, _server);
+        var cache = new Dictionary<CpStep, double?>(ReferenceEqualityComparer.Instance);
+        return s =>
+        {
+            if (cache.TryGetValue(s, out double? known))
+            {
+                return known;
+            }
+
+            double? value = s.Cost is not { } cost ? null
+                : cost.IsFree ? 0
+                : book is not null && Price(s, book, held) is { Total: > 0 } priced ? priced.Total
+                : cost.Kina > 0 ? cost.Kina : null;
+            cache[s] = value;
+            return value;
+        };
     }
 
     private static Color GroupColor(CpStepGroup group) => group switch
@@ -713,6 +745,16 @@ public sealed partial class CpCalcPage : Grid
     /// CP per million Kina; "free" for what it already has.</summary>
     private (string Text, string? Tip, bool Free)? CostText(CpStep s)
     {
+        if (s.Kind == CpStepKind.Stigma && s.Shards > 0)
+        {
+            return (F("CpCalc.Cost.Shards", s.Shards) + (s.Order > 0 ? "  ·  " + Loc("CpCalc.Cost.BuildOrder") : ""), Loc("CpCalc.Cost.ShardsTip"), false);
+        }
+
+        if (s.Kind == CpStepKind.Skill && s.Order > 0)
+        {
+            return (Loc("CpCalc.Cost.BuildOrder"), Loc("CpCalc.Cost.SkillTip"), false);
+        }
+
         if (s.Cost is not { } c)
         {
             return null;
@@ -820,8 +862,8 @@ public sealed partial class CpCalcPage : Grid
         CpStepKind.BetterItem when s.Held => F("CpCalc.U.BetterHeld", SlotOf(s.ItemId), LootText.ItemName(s.OtherId), s.ToLevel),
         CpStepKind.BetterItem => F("CpCalc.U.Better", SlotOf(s.ItemId), LootText.ItemName(s.OtherId), s.ToLevel),
         CpStepKind.Transfer => F("CpCalc.U.Transfer", SlotOf(s.ItemId), LootText.ItemName(s.ItemId), LootText.ItemName(s.OtherId), s.ToLevel),
-        CpStepKind.Stigma => F("CpCalc.S.Stigma", Aion2SkillNames.DisplayOf(s.OtherId), s.ToLevel),
-        CpStepKind.Skill => F("CpCalc.S.Skill", s.Count, CpWhole.SkillTop),
+        CpStepKind.Stigma => F("CpCalc.S.Stigma", Aion2SkillNames.DisplayOf(s.OtherId), s.FromLevel, s.ToLevel),
+        CpStepKind.Skill => F("CpCalc.S.Skill", Aion2SkillNames.DisplayOf(s.OtherId), s.FromLevel, s.ToLevel),
         CpStepKind.Genus => F("CpCalc.S.Genus", Aion2Artwork.SpeciesName(s.OtherId, Lang), s.Slot, Aion2CpData.Name(s.FromStat ?? "", Lang)),
         CpStepKind.PetLevel => F("CpCalc.S.PetLevel", GenusName(s.Key), s.ToLevel, s.Count),
         CpStepKind.PetNew => F("CpCalc.S.PetNew", GenusName(s.Key), s.Count),

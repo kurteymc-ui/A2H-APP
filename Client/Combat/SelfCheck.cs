@@ -64,6 +64,7 @@ public static class SelfCheck
         ok &= SelfCheckValue.Run();
         ok &= SelfCheckFieldBosses.Run();
         ok &= SelfCheckStagger.Run();
+        ok &= SelfCheckCpPlan.Run();
         ok &= SelfCheckMaps.Run();
         ok &= SelfCheckLoot.Run();
         ok &= SelfCheckBlackCloud.Run();

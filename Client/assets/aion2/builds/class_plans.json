@@ -1,0 +1,773 @@
+{
+ "_readme": "Each class build of the website (Class Builds, PvE: the most damage on bosses): the skills in priority order with the level each is taken to, and the Stigmas: the level each is taken to (goal) and the plan, the order they are levelled in ([name, level, all at once]). Names are lower case without punctuation. Made from the website build data, 20 Oct 2026.",
+ "updated": "20 Oct 2026",
+ "classes": {
+  "gladiator": {
+   "name": "Gladiator",
+   "skills": {
+    "order": [
+     "overhead slam",
+     "rending blow",
+     "ruinous blow",
+     "keen strike",
+     "rush strike",
+     "leaping slam",
+     "defiance",
+     "aerial snare",
+     "sword aura rampage",
+     "ankle slice",
+     "mocking blade",
+     "crushing wave"
+    ],
+    "targets": {
+     "overhead slam": 20,
+     "rending blow": 20,
+     "ruinous blow": 20,
+     "keen strike": 12,
+     "rush strike": 12,
+     "leaping slam": 12,
+     "defiance": 12,
+     "aerial snare": 8,
+     "sword aura rampage": 8,
+     "ankle slice": 8,
+     "mocking blade": 8,
+     "crushing wave": 5
+    }
+   },
+   "stigmas": {
+    "goals": {
+     "lunge stance": 20,
+     "rage burst": 20,
+     "zikel s blessing": 15,
+     "focused block": 10,
+     "wave armor": 15,
+     "lifestealing blade": 10,
+     "blade toss": 1
+    },
+    "plan": [
+     [
+      "lunge stance",
+      5,
+      false
+     ],
+     [
+      "zikel s blessing",
+      5,
+      false
+     ],
+     [
+      "rage burst",
+      5,
+      false
+     ],
+     [
+      "focused block",
+      5,
+      false
+     ],
+     [
+      "zikel s blessing",
+      10,
+      false
+     ],
+     [
+      "lunge stance",
+      10,
+      false
+     ],
+     [
+      "zikel s blessing",
+      15,
+      false
+     ],
+     [
+      "lunge stance",
+      20,
+      false
+     ],
+     [
+      "rage burst",
+      10,
+      false
+     ],
+     [
+      "rage burst",
+      15,
+      false
+     ],
+     [
+      "rage burst",
+      20,
+      false
+     ],
+     [
+      "focused block",
+      10,
+      false
+     ],
+     [
+      "zikel s blessing",
+      20,
+      false
+     ]
+    ]
+   }
+  },
+  "ranger": {
+   "name": "Ranger",
+   "skills": {
+    "order": [
+     "deadshot",
+     "drill dart",
+     "tempest shot",
+     "gale arrow",
+     "snipe",
+     "burst arrow",
+     "marking shot",
+     "snare shot",
+     "defiance",
+     "explosion trap",
+     "suppressing arrow",
+     "arrow scattershot"
+    ],
+    "targets": {
+     "deadshot": 20,
+     "drill dart": 20,
+     "tempest shot": 16,
+     "gale arrow": 16,
+     "snipe": 16,
+     "burst arrow": 16,
+     "marking shot": 12,
+     "snare shot": 12,
+     "defiance": 12,
+     "explosion trap": 8,
+     "suppressing arrow": 8,
+     "arrow scattershot": 1
+    }
+   },
+   "stigmas": {
+    "goals": {
+     "vaizel s authority": 20,
+     "bow of blessing": 20,
+     "supporting fire": 15,
+     "griffon arrow": 15,
+     "mother nature s breath": 15,
+     "arrow storm": 15,
+     "explosive arrow": 5
+    },
+    "plan": [
+     [
+      "vaizel s authority",
+      5,
+      false
+     ],
+     [
+      "bow of blessing",
+      5,
+      false
+     ],
+     [
+      "supporting fire",
+      5,
+      false
+     ],
+     [
+      "griffon arrow",
+      5,
+      false
+     ],
+     [
+      "supporting fire",
+      10,
+      false
+     ],
+     [
+      "vaizel s authority",
+      20,
+      true
+     ],
+     [
+      "griffon arrow",
+      15,
+      false
+     ],
+     [
+      "bow of blessing",
+      15,
+      false
+     ],
+     [
+      "supporting fire",
+      15,
+      false
+     ],
+     [
+      "bow of blessing",
+      20,
+      false
+     ]
+    ]
+   }
+  },
+  "templar": {
+   "name": "Templar",
+   "skills": {
+    "order": [
+     "judgment",
+     "pummel",
+     "vicious strike",
+     "punishment",
+     "warding strike",
+     "annihilate",
+     "shield smite",
+     "shield rush",
+     "debilitating smash",
+     "poach",
+     "defiance",
+     "flash rampage"
+    ],
+    "targets": {
+     "judgment": 20,
+     "pummel": 20,
+     "vicious strike": 20,
+     "punishment": 20,
+     "warding strike": 16,
+     "annihilate": 15,
+     "shield smite": 14,
+     "shield rush": 12,
+     "debilitating smash": 12,
+     "poach": 12,
+     "defiance": 12,
+     "flash rampage": 1
+    }
+   },
+   "stigmas": {
+    "goals": {
+     "taunt": 20,
+     "battlefield banner": 20,
+     "shield of protection": 20,
+     "noble armor": 15,
+     "empyrean lord s punishment": 15,
+     "nezekan s shield": 15
+    },
+    "plan": [
+     [
+      "taunt",
+      5,
+      false
+     ],
+     [
+      "battlefield banner",
+      5,
+      false
+     ],
+     [
+      "noble armor",
+      5,
+      false
+     ],
+     [
+      "shield of protection",
+      5,
+      false
+     ],
+     [
+      "battlefield banner",
+      10,
+      false
+     ],
+     [
+      "battlefield banner",
+      15,
+      false
+     ],
+     [
+      "battlefield banner",
+      20,
+      false
+     ],
+     [
+      "noble armor",
+      15,
+      false
+     ],
+     [
+      "taunt",
+      15,
+      false
+     ],
+     [
+      "taunt",
+      20,
+      false
+     ],
+     [
+      "shield of protection",
+      20,
+      false
+     ]
+    ]
+   }
+  },
+  "assassin": {
+   "name": "Assassin",
+   "skills": {
+    "order": [
+     "heart gore",
+     "insignia explosion",
+     "quick slice",
+     "storm rampage",
+     "savage roar",
+     "ambush",
+     "shadowstrike",
+     "flash slice",
+     "infiltrate",
+     "defiance",
+     "shadow fall",
+     "whirlwind slice"
+    ],
+    "targets": {
+     "heart gore": 20,
+     "insignia explosion": 20,
+     "quick slice": 20,
+     "storm rampage": 16,
+     "savage roar": 16,
+     "ambush": 14,
+     "shadowstrike": 13,
+     "flash slice": 13,
+     "infiltrate": 12,
+     "defiance": 12,
+     "shadow fall": 10,
+     "whirlwind slice": 8
+    }
+   },
+   "stigmas": {
+    "goals": {
+     "illusive clone": 20,
+     "swift contract": 20,
+     "savage fang": 15,
+     "triniel s dagger": 10,
+     "evasion stance": 5,
+     "throw shadowblade": 15
+    },
+    "plan": [
+     [
+      "illusive clone",
+      5,
+      false
+     ],
+     [
+      "swift contract",
+      5,
+      false
+     ],
+     [
+      "triniel s dagger",
+      5,
+      false
+     ],
+     [
+      "savage fang",
+      5,
+      false
+     ],
+     [
+      "swift contract",
+      10,
+      false
+     ],
+     [
+      "illusive clone",
+      10,
+      false
+     ],
+     [
+      "triniel s dagger",
+      10,
+      false
+     ],
+     [
+      "illusive clone",
+      15,
+      false
+     ],
+     [
+      "swift contract",
+      20,
+      false
+     ],
+     [
+      "illusive clone",
+      20,
+      false
+     ],
+     [
+      "savage fang",
+      15,
+      false
+     ]
+    ]
+   }
+  },
+  "sorcerer": {
+   "name": "Sorcerer",
+   "skills": {
+    "order": [
+     "hellfire",
+     "wish of concentration",
+     "blaze",
+     "flame arrow",
+     "firestorm",
+     "bittercold wind",
+     "winter s shackles",
+     "frost",
+     "frost burst",
+     "flame scattershot",
+     "defiance",
+     "ice chain"
+    ],
+    "targets": {
+     "hellfire": 20,
+     "wish of concentration": 20,
+     "blaze": 16,
+     "flame arrow": 16,
+     "firestorm": 16,
+     "bittercold wind": 16,
+     "winter s shackles": 16,
+     "frost burst": 12,
+     "frost": 12,
+     "flame scattershot": 8,
+     "defiance": 8,
+     "ice chain": 8
+    }
+   },
+   "stigmas": {
+    "goals": {
+     "element enhancement": 20,
+     "fire wall": 15,
+     "cold storm": 15,
+     "delayed explosion": 10,
+     "steel barrier": 15,
+     "arctic armor": 20,
+     "glacial smite": 15
+    },
+    "plan": [
+     [
+      "element enhancement",
+      5,
+      false
+     ],
+     [
+      "fire wall",
+      5,
+      false
+     ],
+     [
+      "delayed explosion",
+      5,
+      false
+     ],
+     [
+      "cold storm",
+      5,
+      false
+     ],
+     [
+      "element enhancement",
+      15,
+      false
+     ],
+     [
+      "delayed explosion",
+      10,
+      false
+     ],
+     [
+      "element enhancement",
+      20,
+      false
+     ],
+     [
+      "fire wall",
+      15,
+      false
+     ],
+     [
+      "cold storm",
+      15,
+      false
+     ]
+    ]
+   }
+  },
+  "cleric": {
+   "name": "Cleric",
+   "skills": {
+    "order": [
+     "condemnation",
+     "judgment thunder",
+     "bolt",
+     "divine aura",
+     "radiant recovery",
+     "light of regeneration",
+     "healing light",
+     "earth s retribution",
+     "chain of torment",
+     "debilitating mark",
+     "defiance",
+     "lightning strike scattershot"
+    ],
+    "targets": {
+     "condemnation": 20,
+     "judgment thunder": 16,
+     "bolt": 16,
+     "divine aura": 16,
+     "radiant recovery": 16,
+     "light of regeneration": 16,
+     "healing light": 16,
+     "earth s retribution": 16,
+     "chain of torment": 14,
+     "debilitating mark": 14,
+     "defiance": 12,
+     "lightning strike scattershot": 1
+    }
+   },
+   "stigmas": {
+    "goals": {
+     "earth punishment": 20,
+     "prayer of amplification": 20,
+     "light of protection": 15,
+     "noble aura": 15,
+     "absolution": 15,
+     "summon resurrection": 15,
+     "yustiel s power": 20,
+     "benevolence": 20
+    },
+    "plan": [
+     [
+      "earth punishment",
+      5,
+      false
+     ],
+     [
+      "prayer of amplification",
+      5,
+      false
+     ],
+     [
+      "light of protection",
+      5,
+      false
+     ],
+     [
+      "noble aura",
+      5,
+      false
+     ],
+     [
+      "earth punishment",
+      20,
+      false
+     ],
+     [
+      "prayer of amplification",
+      15,
+      false
+     ],
+     [
+      "noble aura",
+      15,
+      false
+     ],
+     [
+      "light of protection",
+      15,
+      false
+     ],
+     [
+      "prayer of amplification",
+      20,
+      false
+     ]
+    ]
+   }
+  },
+  "chanter": {
+   "name": "Chanter",
+   "skills": {
+    "order": [
+     "dark crush",
+     "onslaught",
+     "spinning strike",
+     "incandescent blow",
+     "impactful crush",
+     "recuperation",
+     "rushing smash",
+     "wave blow",
+     "tremor crush",
+     "defiance",
+     "heat wave blow",
+     "gust rampage"
+    ],
+    "targets": {
+     "dark crush": 20,
+     "onslaught": 20,
+     "spinning strike": 20,
+     "incandescent blow": 16,
+     "impactful crush": 15,
+     "recuperation": 14,
+     "rushing smash": 15,
+     "wave blow": 12,
+     "tremor crush": 12,
+     "heat wave blow": 8,
+     "defiance": 12,
+     "gust rampage": 1
+    }
+   },
+   "stigmas": {
+    "goals": {
+     "undefeated mantra": 20,
+     "power of the storm": 20,
+     "guardian blessing": 15,
+     "marchutan s wrath": 10,
+     "sprint mantra": 15,
+     "focused defense": 15,
+     "healing touch": 15,
+     "impeding authority": 15
+    },
+    "plan": [
+     [
+      "undefeated mantra",
+      5,
+      false
+     ],
+     [
+      "power of the storm",
+      5,
+      false
+     ],
+     [
+      "guardian blessing",
+      5,
+      false
+     ],
+     [
+      "marchutan s wrath",
+      5,
+      false
+     ],
+     [
+      "undefeated mantra",
+      20,
+      false
+     ],
+     [
+      "guardian blessing",
+      15,
+      false
+     ],
+     [
+      "power of the storm",
+      20,
+      false
+     ],
+     [
+      "marchutan s wrath",
+      10,
+      false
+     ]
+    ]
+   }
+  },
+  "spiritmaster": {
+   "name": "Spiritmaster",
+   "skills": {
+    "order": [
+     "elemental fusion",
+     "combustion",
+     "summon fire spirit",
+     "summon water spirit",
+     "dimensional control",
+     "cold shock",
+     "summon earth spirit",
+     "jointstrike curse",
+     "defiance",
+     "summon wind spirit",
+     "soul s cry",
+     "rapid scattershot"
+    ],
+    "targets": {
+     "elemental fusion": 20,
+     "combustion": 20,
+     "summon fire spirit": 20,
+     "summon water spirit": 16,
+     "dimensional control": 16,
+     "cold shock": 16,
+     "summon earth spirit": 16,
+     "jointstrike curse": 14,
+     "defiance": 8,
+     "summon wind spirit": 1,
+     "soul s cry": 1,
+     "rapid scattershot": 1
+    }
+   },
+   "stigmas": {
+    "goals": {
+     "summon ancient spirit": 20,
+     "enhance spirit s benediction": 20,
+     "flame blessing": 15,
+     "jointstrike corrode": 5,
+     "jointstrike destructive attack": 15,
+     "siphon": 5
+    },
+    "plan": [
+     [
+      "summon ancient spirit",
+      5,
+      false
+     ],
+     [
+      "enhance spirit s benediction",
+      5,
+      false
+     ],
+     [
+      "flame blessing",
+      5,
+      false
+     ],
+     [
+      "jointstrike corrode",
+      5,
+      false
+     ],
+     [
+      "summon ancient spirit",
+      15,
+      false
+     ],
+     [
+      "enhance spirit s benediction",
+      10,
+      false
+     ],
+     [
+      "flame blessing",
+      15,
+      false
+     ],
+     [
+      "summon ancient spirit",
+      20,
+      false
+     ],
+     [
+      "enhance spirit s benediction",
+      20,
+      false
+     ]
+    ]
+   }
+  }
+ }
+}

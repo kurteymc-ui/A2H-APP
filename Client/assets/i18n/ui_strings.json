@@ -1189,10 +1189,25 @@
     "ko": "보스 처치 후 보스 전투를 자동으로 업로드"
   },
   "CpCalc.Value": {
-    "en": "Best value for your Kina"
+    "en": "Upgrades and their price",
+    "de": "Verbesserungen und ihr Preis"
+  },
+  "CpCalc.Value.SortCheap": {
+    "en": "Cheapest first",
+    "de": "Günstigste zuerst"
+  },
+  "CpCalc.Value.SortValue": {
+    "en": "Most CP per Kina",
+    "de": "Meiste KP pro Kina"
   },
   "CpCalc.Value.Lede": {
     "en": "Every step that costs something, priced at the market prices on {0} ({1} old) and ranked by CP per million Kina: the most Combat Power for your Kina first."
+  },
+  "CpCalc.Value.LedeCheap": {
+    "en": "Every step that costs something, priced at the market prices on {0} ({1} old), the cheapest first; the gold line is the most Combat Power for your Kina."
+  },
+  "CpCalc.Value.LedeCheapNoAge": {
+    "en": "Every step that costs something, priced at the market prices on {0}, the cheapest first; the gold line is the most Combat Power for your Kina."
   },
   "CpCalc.Value.LedeNoAge": {
     "en": "Every step that costs something, priced at the market prices on {0} and ranked by CP per million Kina: the most Combat Power for your Kina first."
@@ -19689,8 +19704,8 @@
     "zh-TW": "提升這一部分"
   },
   "CpCalc.Steps.Note": {
-    "en": "Grouped by what they raise, the most CP first. Every step with what it adds to your Combat Power on its own and what it costs: Kina and items, on average for a level that can fail. A swap to a crafted piece only shows once your piece is at its top or when you have the piece; a crafted piece is carried over into the next one by Transfer Crafting. Exact: a fixed gain. A chance: it can fail. Average: a roll. Range: the kind of stone decides.",
-    "de": "Nach dem gruppiert, was sie heben, das meiste zuerst. Jeder Schritt mit dem, was er allein zu deiner Kampfkraft beiträgt, und was er kostet: Kinah und Gegenstände, im Schnitt für eine Stufe, die fehlschlagen kann. Ein Wechsel zu einem hergestellten Teil erscheint erst, wenn dein Teil ganz oben ist oder du es schon hast; ein hergestelltes Teil wird per Vererbungs-Herstellung ins nächste übernommen. Genau: ein fester Gewinn. Chance: kann fehlschlagen. Schnitt: ein Wurf. Spanne: die Art des Steins entscheidet."
+    "en": "Grouped by what they raise. In each group the cheapest first (at your server's market prices when they are in); Stigmas and skills in your class build's order from the website, a lower rank (5, 10, 15, 20) before a higher one. Every step with what it adds to your Combat Power on its own and what it costs: Kina and items, on average for a level that can fail. A swap to a crafted piece only shows once your piece is at its top or when you have the piece; a crafted piece is carried over into the next one by Transfer Crafting. Exact: a fixed gain. A chance: it can fail. Average: a roll. Range: the kind of stone decides.",
+    "de": "Nach dem gruppiert, was sie verbessern. In jeder Gruppe das Günstigste zuerst (zu den Marktpreisen deines Servers, sobald sie da sind); Stigmen und Fertigkeiten in der Reihenfolge deines Klassen-Builds der Website, ein niedrigerer Rang (5, 10, 15, 20) vor einem höheren. Jeder Schritt mit dem, was er allein an Kampfkraft bringt, und was er kostet: Kinah und Gegenstände, im Schnitt bei einer Stufe, die fehlschlagen kann. Ein Wechsel auf ein hergestelltes Teil erscheint erst, wenn dein Teil ganz oben ist oder du das Teil hast; ein hergestelltes Teil wird per Transferherstellung übernommen. Genau: ein fester Gewinn. Chance: kann fehlschlagen. Schnitt: ein Wurf. Bereich: die Art des Steins entscheidet."
   },
   "CpCalc.Steps.None": {
     "en": "Nothing left to raise that the calculator knows of.",
@@ -19757,12 +19772,12 @@
     "de": "{0}: {1} neu binden"
   },
   "CpCalc.S.Stigma": {
-    "en": "Stigma {0} to level {1}",
-    "de": "Stigma {0} auf Stufe {1}"
+    "en": "Stigma {0} from level {1} to {2}",
+    "de": "Stigma {0} von Stufe {1} auf {2}"
   },
   "CpCalc.S.Skill": {
-    "en": "One more skill level ({0} counted skills under level {1})",
-    "de": "Eine Skillstufe mehr ({0} gezählte Skills unter Stufe {1})"
+    "en": "{0} from level {1} to {2}",
+    "de": "{0} von Stufe {1} auf {2}"
   },
   "CpCalc.S.Genus": {
     "en": "{0} Genus Insight: analyse slot {1} ({2}) again",
@@ -20387,6 +20402,22 @@
   "CpCalc.Cost.Kina": {
     "en": "{0} Kina",
     "de": "{0} Kinah"
+  },
+  "CpCalc.Cost.Shards": {
+    "en": "{0} Stigma Shards",
+    "de": "{0} Stigma-Splitter"
+  },
+  "CpCalc.Cost.ShardsTip": {
+    "en": "Stigma Shards a level takes: 1 up to level 5, 2 up to 10, 4 up to 15, 8 above.",
+    "de": "Stigma-Splitter je Stufe: 1 bis Stufe 5, 2 bis 10, 4 bis 15, 8 darüber."
+  },
+  "CpCalc.Cost.BuildOrder": {
+    "en": "in your class build's order",
+    "de": "in der Reihenfolge deines Klassen-Builds"
+  },
+  "CpCalc.Cost.SkillTip": {
+    "en": "Every skill level counts the same in Combat Power, so the order is your class build's on the website: its most important skills first, each to the next of 5, 10, 15 and 20 before any goes higher.",
+    "de": "Jede Fertigkeitsstufe zählt gleich viel Kampfkraft, deshalb gilt die Reihenfolge deines Klassen-Builds auf der Website: die wichtigsten Fertigkeiten zuerst, jede bis zur nächsten von 5, 10, 15 und 20, bevor eine höher geht."
   },
   "CpCalc.Cost.Item": {
     "en": "{0} {1}",

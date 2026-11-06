@@ -274,8 +274,10 @@ public static class SelfCheckCp
         bool levels = Near(k.Parts[CpSource.Skills], 38 * model.Weight("skill")) && Near(Aion2CpSources.StigmaPoints(20), 12_400) && Near(Aion2CpSources.StigmaPoints(5), 900)
             && Near(k.Parts[CpSource.Stigmas], (6_400 + 12_400) * model.Weight("stigma")) && k.Stigmas is [{ Equipped: true, Level: 20, NextLevel: 0 }, { Equipped: true, Level: 15 } st, { Equipped: false }]
             && Near(st.NextLevel, 1_200 * model.Weight("stigma")) && k.Skills.Count == 4 && k.Skills.Single(x => x.SkillId == 11010000) is { SpecOpen: 2, NextSpecAt: 20, Counted: true }
-            && k.Steps.FirstOrDefault() is { Kind: CpStepKind.Stigma, ToLevel: 16 } && k.Steps.Count(x => x.Kind == CpStepKind.Stigma) == 1 && k.Steps.Any(x => x is { Kind: CpStepKind.Skill, Count: 3 });
-        Console.WriteLine($"  -> skill levels {k.Parts[CpSource.Skills]:0} CP (38 levels: on the bar and passive), Stigmas 15 and 20 {k.Parts[CpSource.Stigmas]:0} CP, the next level first: {levels}");
+            && k.Steps.Count(x => x.Kind == CpStepKind.Stigma) == 1 && k.Steps.Any(x => x is { Kind: CpStepKind.Stigma, FromLevel: 15, ToLevel: 20, Shards: 40 })
+            && k.Steps.Count(x => x.Kind == CpStepKind.Skill) == 3 && k.Steps.Any(x => x is { Kind: CpStepKind.Skill, FromLevel: 10, ToLevel: 15 })
+            && Near(k.Steps.Single(x => x.Kind == CpStepKind.Stigma).Gain, 6_000 * model.Weight("stigma"));
+        Console.WriteLine($"  -> skill levels {k.Parts[CpSource.Skills]:0} CP (38 levels: on the bar and passive), Stigmas 15 and 20 {k.Parts[CpSource.Stigmas]:0} CP, each to its next rank: {levels}");
 
         // the sample character: pets by genus and level (a Cogni pet at 3 = 30 HP, 2 Critical Hit, 1 Might), owned titles, the wing, a board's lines with a new
         // Analysis on average, the parts all there, every step at least 1 CP and the biggest first, the fit to a game number 5 % under the calculator

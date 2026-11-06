@@ -9,7 +9,8 @@ namespace AionDPS.Ui;
 
 /// <summary>
 /// The upgrade advisor (6 November 2026, "an upgrade advisor with market prices"): the steps that cost something, each priced at the market of the character's
-/// server - its Kina, and every item it takes at what one sells for there - and ranked by CP per million Kina, the best value first.
+/// server - its Kina, and every item it takes at what one sells for there - the cheapest first (the owner, the same evening: "cheapest first"), or by CP per
+/// million Kina, the best value first.
 /// </summary>
 public sealed partial class CpCalcPage
 {
@@ -18,6 +19,9 @@ public sealed partial class CpCalcPage
 
     /// <summary>Whether the advisor's "more" is open (kept while the page rebuilds).</summary>
     private bool _valueOpen;
+
+    /// <summary>The advisor's order: the cheapest first (true, the default), or the most CP per million Kina first.</summary>
+    private bool _valueCheapest = true;
 
     /// <summary>One item of a priced step: how many, what one is worth on the market (0: no price, but the character holds enough), how many it holds.</summary>
     internal sealed record PricedPart(int ItemId, double Count, long Each, long Held);
@@ -98,41 +102,80 @@ public sealed partial class CpCalcPage
         }
 
         string age = book.Captured is DateTime at ? Ago(DateTime.UtcNow - (at.Kind == DateTimeKind.Local ? at.ToUniversalTime() : at)) : "";
-        stack.Children.Add(Label(age.Length > 0 ? F("CpCalc.Value.Lede", book.Name, age) : F("CpCalc.Value.LedeNoAge", book.Name), 12, brush: Res("Brush.TextMuted"),
-            margin: new Thickness(0, -6, 0, 10)));
+        var lede = Label("", 12, brush: Res("Brush.TextMuted"), margin: new Thickness(0, -6, 0, 8));
+        stack.Children.Add(lede);
         if (priced.Count == 0)
         {
+            lede.Text = age.Length > 0 ? F("CpCalc.Value.Lede", book.Name, age) : F("CpCalc.Value.LedeNoAge", book.Name);
             stack.Children.Add(Label(Loc("CpCalc.Value.NonePriced"), 12.5, brush: Res("Brush.TextMuted")));
             return Spaced(Card(stack));
         }
 
-        var ranked = priced.OrderByDescending(p => p.PerMillion).ToList();
-        double best = ranked[0].PerMillion;
-        for (int i = 0; i < ranked.Count && i < ValueShown; i++)
+        // the order: two small tabs, the cheapest first or the most CP per Kina first
+        var sort = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 10) };
+        stack.Children.Add(sort);
+        var rows = new StackPanel();
+        stack.Children.Add(rows);
+        double best = priced.Max(p => p.PerMillion);
+        void Fill()
         {
-            stack.Children.Add(ValueRow(i + 1, ranked[i], best));
-        }
-
-        if (ranked.Count > ValueShown)
-        {
-            var rest = new StackPanel { Visibility = _valueOpen ? Visibility.Visible : Visibility.Collapsed };
-            for (int i = ValueShown; i < ranked.Count; i++)
+            lede.Text = _valueCheapest
+                ? (age.Length > 0 ? F("CpCalc.Value.LedeCheap", book.Name, age) : F("CpCalc.Value.LedeCheapNoAge", book.Name))
+                : (age.Length > 0 ? F("CpCalc.Value.Lede", book.Name, age) : F("CpCalc.Value.LedeNoAge", book.Name));
+            sort.Children.Clear();
+            foreach ((bool cheapest, string label) in new[] { (true, Loc("CpCalc.Value.SortCheap")), (false, Loc("CpCalc.Value.SortValue")) })
             {
-                rest.Children.Add(ValueRow(i + 1, ranked[i], best));
+                bool on = cheapest == _valueCheapest;
+                var chip = new Border
+                {
+                    CornerRadius = new CornerRadius(6), BorderThickness = new Thickness(1), Padding = new Thickness(10, 3, 10, 4), Margin = new Thickness(0, 0, 6, 0),
+                    Cursor = System.Windows.Input.Cursors.Hand, Background = on ? Tint(Gold, 0x22) : Brushes.Transparent, BorderBrush = on ? Tint(Gold, 0x90) : Res("Brush.Border"),
+                    Child = new TextBlock { Text = label, FontSize = 11.5, FontWeight = on ? FontWeights.SemiBold : FontWeights.Normal, Foreground = on ? Solid(Gold) : Res("Brush.TextMuted") },
+                };
+                bool pick = cheapest;
+                chip.MouseLeftButtonUp += (_, _) =>
+                {
+                    if (_valueCheapest != pick)
+                    {
+                        _valueCheapest = pick;
+                        Fill();
+                    }
+                };
+                sort.Children.Add(chip);
             }
 
-            stack.Children.Add(rest);
-            int more = ranked.Count - ValueShown;
-            var link = new TextBlock { FontSize = 11.5, Foreground = Res("Brush.Accent"), Cursor = System.Windows.Input.Cursors.Hand, Margin = new Thickness(132, 2, 0, 0),
-                Text = _valueOpen ? Loc("CpCalc.Steps.Less") : F("CpCalc.Steps.More", more) };
-            link.MouseLeftButtonUp += (_, _) =>
+            rows.Children.Clear();
+            var ranked = _valueCheapest
+                ? priced.OrderBy(p => p.Total).ThenByDescending(p => p.PerMillion).ToList()
+                : priced.OrderByDescending(p => p.PerMillion).ToList();
+            for (int i = 0; i < ranked.Count && i < ValueShown; i++)
             {
-                _valueOpen = !_valueOpen;
-                rest.Visibility = _valueOpen ? Visibility.Visible : Visibility.Collapsed;
-                link.Text = _valueOpen ? Loc("CpCalc.Steps.Less") : F("CpCalc.Steps.More", more);
-            };
-            stack.Children.Add(link);
+                rows.Children.Add(ValueRow(i + 1, ranked[i], best));
+            }
+
+            if (ranked.Count > ValueShown)
+            {
+                var rest = new StackPanel { Visibility = _valueOpen ? Visibility.Visible : Visibility.Collapsed };
+                for (int i = ValueShown; i < ranked.Count; i++)
+                {
+                    rest.Children.Add(ValueRow(i + 1, ranked[i], best));
+                }
+
+                rows.Children.Add(rest);
+                int more = ranked.Count - ValueShown;
+                var link = new TextBlock { FontSize = 11.5, Foreground = Res("Brush.Accent"), Cursor = System.Windows.Input.Cursors.Hand, Margin = new Thickness(132, 2, 0, 0),
+                    Text = _valueOpen ? Loc("CpCalc.Steps.Less") : F("CpCalc.Steps.More", more) };
+                link.MouseLeftButtonUp += (_, _) =>
+                {
+                    _valueOpen = !_valueOpen;
+                    rest.Visibility = _valueOpen ? Visibility.Visible : Visibility.Collapsed;
+                    link.Text = _valueOpen ? Loc("CpCalc.Steps.Less") : F("CpCalc.Steps.More", more);
+                };
+                rows.Children.Add(link);
+            }
         }
+
+        Fill();
 
         string note = Loc("CpCalc.Value.Note") + (unpriced > 0 ? " " + F("CpCalc.Value.Unpriced", unpriced) : "");
         stack.Children.Add(Label(note, 11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 10, 0, 0)));
@@ -156,6 +199,7 @@ public sealed partial class CpCalcPage
     private UIElement ValueRow(int place, PricedStep p, double best)
     {
         CpStep s = p.Step;
+        bool top = p.PerMillion >= best * 0.9999; // the best value, wherever the order puts it
         var row = new Grid();
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(28) });
         row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(104) });
@@ -165,7 +209,7 @@ public sealed partial class CpCalcPage
         Add(row, 0, new TextBlock
         {
             Text = place.ToString(CultureInfo.CurrentCulture), FontSize = 13, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center,
-            Foreground = place == 1 ? Solid(Gold) : Res("Brush.TextSubtle"),
+            Foreground = top ? Solid(Gold) : Res("Brush.TextSubtle"),
         });
         string gain = s.Certainty == CpCertainty.Range ? Range(s.Gain, s.GainMax, signed: true) : Signed(s.Gain);
         Add(row, 1, new Border
@@ -201,13 +245,13 @@ public sealed partial class CpCalcPage
         value.Children.Add(new TextBlock
         {
             Text = F("CpCalc.Value.Per", Number(p.PerMillion)), FontSize = 12, FontWeight = FontWeights.SemiBold, HorizontalAlignment = HorizontalAlignment.Right,
-            Foreground = place == 1 ? Solid(Gold) : Res("Brush.Text"),
+            Foreground = top ? Solid(Gold) : Res("Brush.Text"),
         });
         var track = new Grid { Height = 4, Margin = new Thickness(0, 4, 0, 0) };
         track.Children.Add(new Border { CornerRadius = new CornerRadius(2), Background = Res("Brush.Control") });
         track.Children.Add(new Border
         {
-            CornerRadius = new CornerRadius(2), HorizontalAlignment = HorizontalAlignment.Left, Background = Solid(place == 1 ? Gold : Color.FromArgb(0xB0, Gold.R, Gold.G, Gold.B)),
+            CornerRadius = new CornerRadius(2), HorizontalAlignment = HorizontalAlignment.Left, Background = Solid(top ? Gold : Color.FromArgb(0xB0, Gold.R, Gold.G, Gold.B)),
             Width = Math.Max(3, 138 * (best > 0 ? Math.Clamp(p.PerMillion / best, 0, 1) : 0)),
         });
         value.Children.Add(track);

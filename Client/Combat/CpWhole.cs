@@ -146,9 +146,12 @@ public enum CpCertainty
 /// <param name="Cost">What it takes (null: the tables don't say, or it costs no Kina or items the calculator knows of).</param>
 /// <param name="Held">The piece it names is one the character already has (bag or storage).</param>
 /// <param name="ComboId">A transfer craft's "Splendent" piece, made instead of <see cref="OtherId"/> at <see cref="ComboChance"/> %.</param>
+/// <param name="FromLevel">A Stigma's or skill's level now (the step takes it to <see cref="ToLevel"/>).</param>
+/// <param name="Shards">The Stigma Shards a Stigma step takes.</param>
+/// <param name="Order">The step's place in the class build's order (Stigmas and skills, see <see cref="CpPlan"/>; 1 first, 0: none).</param>
 public sealed record CpStep(CpStepKind Kind, double Gain, double GainMax, CpCertainty Certainty, double? Chance = null, int Slot = 0, int ItemId = 0, int ToLevel = 0,
     string? FromStat = null, string? ToStat = null, int OtherId = 0, int Count = 1, string? Key = null, CpCost? Cost = null, bool Held = false, int ComboId = 0,
-    double? ComboChance = null)
+    double? ComboChance = null, int FromLevel = 0, int Shards = 0, int Order = 0)
 {
     /// <summary>What the list ranks by: the gain, for an average the average.</summary>
     public double Rank => Certainty == CpCertainty.Range ? (Gain + GainMax) / 2 : Gain;
@@ -704,18 +707,38 @@ public static class CpWhole
             }
         }
 
-        // Stigmas: the next level of each equipped one
-        foreach (CpStigmaRow s in r.Stigmas.Where(s => s.Equipped && s.NextLevel >= 1))
+        // Stigmas and skills: each one's next step along the class build's path (CpPlan: the build's order, the lower ranks first), in that order
+        CpClassPlan? plan = CpPlan.For(input.ClassName);
+        double stigmaWeight = model.Weight("stigma") * r.Scale * r.Totals.Factor("stigma");
+        var equipped = r.Stigmas.Where(s => s.Equipped && s.Level >= 1).ToList();
+        int order = 0;
+        var stigmaSeen = new HashSet<int>();
+        foreach (CpLevelStep p in CpPlan.StigmaPath(equipped.Select(s => CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId))).ToList(), equipped.Select(s => s.Level).ToList(), plan, StigmaTop))
         {
-            steps.Add(new CpStep(CpStepKind.Stigma, s.NextLevel, s.NextLevel, CpCertainty.Exact, OtherId: s.SkillId, ToLevel: s.Level + 1));
+            if (!stigmaSeen.Add(p.Index))
+            {
+                continue;
+            }
+
+            CpStigmaRow s = equipped[p.Index];
+            double gain = (Aion2CpSources.StigmaPoints(p.To) - Aion2CpSources.StigmaPoints(p.From)) * stigmaWeight;
+            steps.Add(new CpStep(CpStepKind.Stigma, gain, gain, CpCertainty.Exact, OtherId: s.SkillId, ToLevel: p.To, FromLevel: p.From, Shards: CpPlan.ShardsTo(p.From, p.To),
+                Order: ++order));
         }
 
-        // skill levels: every counted skill below the top gives the same, so one step for all of them
-        var lower = r.Skills.Where(s => s.Counted && s.Level < SkillTop).ToList();
-        if (lower.Count > 0 && lower[0].PerLevel >= 1)
+        // skill levels: every counted skill gives the same per level; the build says which first
+        var counted = r.Skills.Where(s => s.Counted && s.PerLevel > 0).ToList();
+        var skillSeen = new HashSet<int>();
+        foreach (CpLevelStep p in CpPlan.SkillPath(counted.Select(s => CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId))).ToList(), counted.Select(s => s.Level).ToList(), plan, SkillTop))
         {
-            CpSkillRow first = lower.OrderBy(s => s.Level).First();
-            steps.Add(new CpStep(CpStepKind.Skill, first.PerLevel, first.PerLevel, CpCertainty.Exact, OtherId: first.SkillId, ToLevel: first.Level + 1, Count: lower.Count));
+            if (!skillSeen.Add(p.Index))
+            {
+                continue;
+            }
+
+            CpSkillRow s = counted[p.Index];
+            double gain = (p.To - p.From) * s.PerLevel;
+            steps.Add(new CpStep(CpStepKind.Skill, gain, gain, CpCertainty.Exact, OtherId: s.SkillId, ToLevel: p.To, FromLevel: p.From, Order: ++order));
         }
 
         // Genus Insight: the line of each board a new Analysis beats on average by the most
