@@ -20,6 +20,25 @@ public static class Aion2BossCatalog
 
     public static BossInfo? Find(int npcId) => Load().GetValueOrDefault(npcId);
 
+    /// <summary>
+    /// The versions of a boss: this one first, then the others of the same name in the same dungeon, Conquest or not (Transcendent Bakarma is 2300471,
+    /// 2310471 and 2320471, all of Draupnir). They run the same attacks (the same skill ids), so the boss timers can learn from all of them while one
+    /// has few fights. An id the table doesn't know is its only version.
+    /// </summary>
+    public static IReadOnlyList<int> VersionsOf(int npcId)
+    {
+        if (Find(npcId) is not { } boss)
+        {
+            return new[] { npcId };
+        }
+
+        string place = Place(boss.Instance);
+        return new[] { npcId }.Concat(Load().Values.Where(b => b.NpcId != npcId && b.Name == boss.Name && Place(b.Instance) == place)
+            .Select(b => b.NpcId).OrderBy(id => id)).ToList();
+
+        static string Place(string instance) => instance.Replace("(Conquest)", "", StringComparison.OrdinalIgnoreCase).Trim();
+    }
+
     private static IReadOnlyDictionary<int, BossInfo> Load()
     {
         if (_cache is { } cached)

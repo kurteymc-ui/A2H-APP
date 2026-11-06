@@ -155,6 +155,10 @@ public sealed class FightReport
     /// <summary>The skill id of each of <see cref="CastBars"/> (the same order): the website learns the boss's timers from them, in any language.</summary>
     public IReadOnlyList<int> CastBarIds { get; init; } = Array.Empty<int>();
 
+    /// <summary>The boss's health share (0 to 1) when each of <see cref="CastBars"/> began, null where the fight can't tell: the boss timers learn its
+    /// phases from it (Combat/BossPattern.cs).</summary>
+    public IReadOnlyList<double?> CastBarHealth { get; init; } = Array.Empty<double?>();
+
     /// <summary>The players' deaths over the fight.</summary>
     public IReadOnlyList<(double At, int Player)> PartyDeaths { get; init; } = Array.Empty<(double, int)>();
 
@@ -409,6 +413,7 @@ public sealed class FightReport
         var bossCasts = new List<(double, string)>();
         var castBars = new List<(double, double, string)>();
         var castBarIds = new List<int>();
+        var castBarHealth = new List<double?>();
         var bossTargets = new List<(double, double, int)>();
         if (input.BossId is int bossId)
         {
@@ -423,11 +428,13 @@ public sealed class FightReport
                 bossCasts.Add(((u.At - start).TotalSeconds, Aion2SkillNames.NameOf(u.SkillId)));
             }
 
+            Func<DateTime, double?> healthOf = PatternFights.HealthOf(input, bossId);
             foreach (WindupRecord w in (input.Extras.Windups ?? Array.Empty<WindupRecord>()).Where(w => w.Actor == bossId && w.DurationMs > 0 && InWindow(w.At)))
             {
                 double s = (w.At - start).TotalSeconds;
                 castBars.Add((s, Math.Min(seconds, s + w.DurationMs / 1000.0), Aion2SkillNames.NameOf(w.SkillId)));
                 castBarIds.Add(w.SkillId);
+                castBarHealth.Add(healthOf(w.At));
             }
 
             var changes = (input.Extras.Targets ?? Array.Empty<TargetChange>()).Where(t => t.Actor == bossId && t.At <= end).OrderBy(t => t.At).ToList();
@@ -479,6 +486,7 @@ public sealed class FightReport
             BossCasts = bossCasts,
             CastBars = castBars,
             CastBarIds = castBarIds,
+            CastBarHealth = castBarHealth,
             PartyDeaths = deaths.Select(d => ((d.At - start).TotalSeconds, d.Entity)).ToList(),
             Stagger = stagger,
             PartyHits = damageBy.Values.SelectMany(l => l)

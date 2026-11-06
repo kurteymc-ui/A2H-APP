@@ -47,6 +47,7 @@ public static class SelfCheck
         ok &= SelfCheckProtocolHealth.Run();
         ok &= SelfCheckTickets.Run();
         ok &= SelfCheckBossTimers.Run();
+        ok &= SelfCheckBossPattern.Run();
         ok &= SelfCheckVerify.Run();
         ok &= SelfCheckPetRoute.Run();
         ok &= SelfCheckPositionTrack.Run();

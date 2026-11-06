@@ -396,6 +396,39 @@ public sealed class Aion2CombatState
         return last;
     }
 
+    /// <summary>The wind-ups of <paramref name="actor"/> since <paramref name="since"/> that took time (the ones a fight's upload keeps), in the order they
+    /// began: the boss's attacks of this fight so far, for its pattern (Combat/BossPattern.cs).</summary>
+    public List<WindupRecord> WindupsSince(int actor, DateTime since)
+    {
+        var found = new List<WindupRecord>();
+        lock (_gate)
+        {
+            int older = 0;
+            for (int i = _windupLog.Count - 1; i >= 0; i--)
+            {
+                WindupRecord w = _windupLog[i];
+                if (w.At < since)
+                {
+                    if (w.At < since.AddMinutes(-2) && ++older > 500)
+                    {
+                        break;
+                    }
+
+                    continue;
+                }
+
+                older = 0;
+                if (w.Actor == actor && w.DurationMs > 0)
+                {
+                    found.Add(w);
+                }
+            }
+        }
+
+        found.Sort((a, b) => a.At.CompareTo(b.At));
+        return found;
+    }
+
     /// <summary>A skill used by <paramref name="actor"/> on <paramref name="target"/> (a cast notice or a hit): remembered as what
     /// the actor is aiming at, which is what "the target of the target" reads.</summary>
     public void NoteAim(int actor, int target, DateTime at)
