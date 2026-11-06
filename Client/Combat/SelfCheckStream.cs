@@ -17,16 +17,22 @@ public static class SelfCheckStream
         // the state
         var rows = new List<StreamRowData>
         {
-            new(1, "Alice", "Cleric", 1.0, true, new[] { "8.3K", "916K", "40%" }),
-            new(2, "Bob", "Cleric", 0.5, false, new[] { "4.1K", "458K", "20%" }),
-            new(3, "Carol", "Gladiator", 0.4, false, new[] { "3.3K", "366K", "16%" }, "↓ 12K  + 3K"),
+            new(1, "Alice", "Cleric", 0.7, true, new[] { "8.3K", "40%", "916K" }, null, "#d9c777", 0.85, 1.0, "+1.4K", "+3.2K"),
+            new(2, "Bob", "Cleric", 0.5, false, new[] { "4.1K", "20%", "458K" }),
+            new(3, "Carol", "Gladiator", 0.4, false, new[] { "3.3K", "16%", "366K" }, "↓ 12K  + 3K"),
         };
         var hidden = StreamSnapshot.HideNames(rows);
         bool names = hidden[0].Name == "Cleric" && hidden[1].Name == "Cleric 2" && hidden[2].Name == "Gladiator";
-        using JsonDocument state = JsonDocument.Parse(StreamSnapshot.ToJson("DMG", new[] { "DPS", "DMG", "%" }, hidden, new StreamBoss("Boss", 61.2, "12K / 20K"), 2));
-        bool json = state.RootElement.GetProperty("rows").GetArrayLength() == 2 && state.RootElement.GetProperty("rows")[0].GetProperty("self").GetBoolean()
-            && state.RootElement.GetProperty("boss").GetProperty("percent").GetDouble() > 61 && state.RootElement.GetProperty("modeLabel").GetString() == "DMG";
-        Console.WriteLine($"  -> without names everyone is shown by class ({names}); the state is the JSON the page reads, cut to the rows asked for ({json})");
+        var me = new StreamMe("Alice", "Cleric", "#d9c777", 45, "Zikel", "Dawn", 2643, 182730, null, "1:02:03", 4, "94.1K", "on Thamon", 486);
+        using JsonDocument state = JsonDocument.Parse(StreamSnapshot.ToJson(new StreamMeter("DPS", "1:51", "15.7K", "DPS", new[] { "DPS", "%", "Total" }, hidden, 2),
+            new StreamBoss("Boss", 61.2, "12K / 20K", "1:10", false, "2:00", false), me));
+        JsonElement meter = state.RootElement.GetProperty("meter"), first = meter.GetProperty("rows")[0];
+        bool json = state.RootElement.GetProperty("v").GetInt32() == 2 && meter.GetProperty("rows").GetArrayLength() == 2 && first.GetProperty("self").GetBoolean()
+            && first.GetProperty("bar").GetDouble() <= first.GetProperty("given").GetDouble() && first.GetProperty("given").GetDouble() <= first.GetProperty("heal").GetDouble()
+            && first.GetProperty("color").GetString() == "#d9c777" && first.GetProperty("plusHeal").GetString() == "+3.2K"
+            && state.RootElement.GetProperty("boss").GetProperty("percent").GetDouble() > 61 && meter.GetProperty("mode").GetString() == "DPS"
+            && state.RootElement.GetProperty("me").GetProperty("cpGain").GetInt32() == 486;
+        Console.WriteLine($"  -> without names everyone is shown by class ({names}); the state is the JSON the widgets read: the meter cut to the lines asked for with its bar parts, the boss, the card ({json})");
         ok &= names && json;
 
         bool peers = StreamOverlayServer.IsLocalPeer(System.Net.IPAddress.Parse("192.168.1.20")) && StreamOverlayServer.IsLocalPeer(System.Net.IPAddress.Parse("10.0.0.5"))
@@ -60,6 +66,14 @@ public static class SelfCheckStream
                 && http.GetAsync(basePath + "overlay.css").GetAwaiter().GetResult().StatusCode == HttpStatusCode.OK;
             Console.WriteLine($"  -> a random 32-character key ({keyShape}); the page, its script and style are served with a strict policy ({served && script})");
             ok &= keyShape && served && script;
+            bool widgets = StreamOverlayPage.Widgets.All(w =>
+            {
+                HttpResponseMessage answer = http.GetAsync(basePath + w).GetAwaiter().GetResult();
+                return answer.StatusCode == HttpStatusCode.OK && answer.Content.ReadAsStringAsync().GetAwaiter().GetResult().Contains($"data-widget=\"{w}\"", StringComparison.Ordinal);
+            });
+            bool noPortrait = http.GetAsync(basePath + "p/me.png").GetAwaiter().GetResult().StatusCode == HttpStatusCode.NotFound;
+            Console.WriteLine($"  -> each widget (meter, card, boss) has its own page ({widgets}); no portrait is served when there is none ({noPortrait})");
+            ok &= widgets && noPortrait;
 
             HttpStatusCode Code(string url, HttpMethod? method = null, string? host = null)
             {

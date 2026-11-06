@@ -30,11 +30,21 @@ public partial class MainWindow
             return; // the pictures fill it themselves
         }
 
-        if (!_gateSettings.MeterBossLine || _pvpOnly || _historyMode || _source?.Entities is not Aion2.Aion2EntityDirectory dir
-            || CombatOverlayData.BossHp(dir, DateTime.Now) is not { } boss)
+        if (!_gateSettings.MeterBossLine || CurrentBoss() is not { } boss)
         {
             OverlayBossBar.Visibility = Visibility.Collapsed;
             return;
+        }
+
+        ShowBossBar(boss.Name, boss.Hp, boss.Max, boss.Kill, boss.Rage);
+    }
+
+    /// <summary>The boss being fought now with its name, health, when it dies and its enrage (the meter's line and the stream's boss widget); null when none.</summary>
+    private (string Name, long Hp, long Max, TimeSpan? Kill, TimeSpan? Rage)? CurrentBoss()
+    {
+        if (_pvpOnly || _historyMode || _source?.Entities is not Aion2.Aion2EntityDirectory dir || CombatOverlayData.BossHp(dir, DateTime.Now) is not { } boss)
+        {
+            return null;
         }
 
         // A boss the app's list does not have yet (a new raid's: the game's hit points make it one) is named from the game's monster names; its enrage is not
@@ -50,7 +60,7 @@ public partial class MainWindow
             kill = TimeSpan.FromSeconds(boss.Hp / groupDps);
         }
 
-        ShowBossBar(name, boss.Hp, boss.Max, kill, rage);
+        return (name, boss.Hp, boss.Max, kill, rage);
     }
 
     /// <summary>When the boss dies at the pace its health fell over the last <see cref="BossPaceOver"/> (its own readings: everybody's damage, heals of it

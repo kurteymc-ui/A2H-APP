@@ -3490,6 +3490,15 @@ public partial class MainWindow : Window
             return;
         }
 
+        // this stream began when the first browser source connected (a new one after half an hour without any)
+        if (_streamSince is null || DateTime.UtcNow - _streamLastClient > TimeSpan.FromMinutes(30))
+        {
+            _streamSince = DateTime.UtcNow;
+            _streamMeSlow = null;
+        }
+
+        _streamLastClient = DateTime.UtcNow;
+        _streamServer.PortraitFile ??= () => _streamPortrait;
         string json = BuildStreamState(_streamSettings.StreamShowNames);
         if (json != _streamLast)
         {
@@ -3498,70 +3507,87 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>What the browser source draws now: the rows as the current view shows them, and the boss's health.</summary>
-    private string BuildStreamState(bool showNames)
-    {
-        var ordered = _rows.OrderBy(r => r.Rank > 0 ? r.Rank : int.MaxValue).ThenByDescending(r => r.Damage).ToList();
-        string label;
-        string[] headers;
-        Func<PlayerRow, (string[] Cells, string? Sub)> cells;
-        switch (_mode)
-        {
-            case MeterMode.Heal:
-                (label, headers) = ("HEAL", new[] { "HPS", "HEAL", "%" });
-                cells = r => (new[] { r.DpsCompact, r.DamageCompact, r.ShareDisplay }, null);
-                break;
-            case MeterMode.Taken:
-                (label, headers) = ("TAKEN", new[] { "DTPS", "TAKEN", "%" });
-                cells = r => (new[] { r.DpsCompact, r.DamageCompact, r.ShareDisplay }, null);
-                break;
-            case MeterMode.All:
-                (label, headers) = ("ALL", new[] { "↓", "+", "DMG" });
-                cells = r => (new[] { r.TakenCompact, r.HealCompact, r.DamageCompact }, null);
-                break;
-            case MeterMode.AllCompact:
-                (label, headers) = ("ALL+", new[] { "DPS", "DMG" });
-                cells = r => (new[] { r.DpsCompact, r.DamageCompact }, $"↓ {r.TakenCompact}  + {r.HealCompact}");
-                break;
-            default:
-                (label, headers) = ("DMG", new[] { "DPS", "DMG", "%" });
-                cells = r => (new[] { r.DpsCompact, r.DamageCompact, r.ShareDisplay }, null);
-                break;
-        }
+    /// <summary>What the browser sources draw now: the meter's lines as the meter over the game shows them (the same ten, colours and bar parts), the boss, the
+    /// streamer's character for the card.</summary>
+    private string BuildStreamState(bool showNames) =>
+        Streaming.StreamSnapshot.ToJson(BuildStreamMeter(showNames), CurrentBoss() is { } b ? StreamBossOf(b.Name, b.Hp, b.Max, b.Kill, b.Rage) : null, BuildStreamMe());
 
-        var rows = ordered.Select(r =>
-        {
-            var (values, sub) = cells(r);
-            return new Streaming.StreamRowData(r.Rank, r.Name, r.ClassName, r.FillPercent / 100.0, _source?.Entities.IsLocalPlayer(r.ObjectId) == true, values, sub);
-        }).ToList();
-        return Streaming.StreamSnapshot.ToJson(label, headers, showNames ? rows : Streaming.StreamSnapshot.HideNames(rows), BuildStreamBoss(), 8);
+    private static string Hex(Color c) => $"#{c.R:x2}{c.G:x2}{c.B:x2}";
+
+    private Streaming.StreamMeter BuildStreamMeter(bool showNames)
+    {
+        var shown = _rows.Where(r => _overlayLines is null || _overlayLines.Contains(r)).OrderByDescending(r => r.SortKey).ToList();
+        IReadOnlyList<Streaming.StreamRowData> rows = shown.Select(r => new Streaming.StreamRowData(
+            r.Rank, r.Name, r.ClassName, r.FillPercent / 100.0, _source?.Entities.IsLocalPlayer(r.ObjectId) == true,
+            new[] { r.RateOrDamageCompact, r.ShareOrHealCompact, r.TotalOrTakenCompact }, _mode == MeterMode.AllCompact ? $"↓ {r.TakenCompact}  + {r.HealCompact}" : null,
+            Hex(ClassBrushes.ClassColor(r.ClassName)), r.GivenFillPercent / 100.0, r.HealFillPercent / 100.0,
+            r.BarGivenText.Length > 0 ? r.BarGivenText : null, r.BarHealText.Length > 0 ? r.BarHealText : null)).ToList();
+        MeterTitles titles = MeterTitles.Instance;
+        return new Streaming.StreamMeter(titles.Rate, OverlayTimeText.Text, OverlayTotalRateText.Text, OverlayTotalUnitText.Text,
+            new[] { titles.Rate, titles.Share, titles.Total }, showNames ? rows : Streaming.StreamSnapshot.HideNames(rows), MaxOverlayLines);
     }
 
-    private Streaming.StreamBoss? BuildStreamBoss()
+    private static Streaming.StreamBoss StreamBossOf(string name, long hp, long max, TimeSpan? kill, TimeSpan? rage)
     {
-        if (_pvpOnly || _selectedTargetId is not int targetId
-            || _source?.Entities is not Aion2.Aion2EntityDirectory directory || directory.IsKnownPlayer(targetId))
+        static string Clock(TimeSpan t) => t <= TimeSpan.Zero ? "0:00" : t.TotalHours >= 1 ? $"{(int)t.TotalHours}:{t.Minutes:00}:{t.Seconds:00}" : $"{(int)t.TotalMinutes}:{t.Seconds:00}";
+        bool rageFirst = kill is TimeSpan k && rage is TimeSpan r && r > TimeSpan.Zero && k > r;
+        double percent = max > 0 ? 100.0 * hp / max : 0;
+        return new Streaming.StreamBoss(name.Length > 0 ? name : LocalizationManager.Instance["Overlay.BossBar.Boss"], percent,
+            max > 0 ? $"{PlayerRow.Compact(hp)} / {PlayerRow.Compact(max)}" : PlayerRow.Compact(hp),
+            kill is TimeSpan dies ? Clock(dies) : null, rageFirst, rage is TimeSpan left ? Clock(left) : null, rage is TimeSpan soon && soon <= HpBarView.RageSoonBefore);
+    }
+
+    // the character card's: this stream since the first browser source connected (again after half an hour without one), the parts read from files every 10 s
+    private DateTime? _streamSince;
+    private DateTime _streamLastClient;
+    private DateTime _streamMeAt;
+    private (string Key, int Bosses, string? Best, string? BestBoss, int? CpGain, int? Cp, int? ItemLevel, string? Legion)? _streamMeSlow;
+    private string? _streamPortrait;
+    private string? _streamPortraitFor;
+
+    private Streaming.StreamMe? BuildStreamMe()
+    {
+        if (_source?.Entities is not Aion2.Aion2EntityDirectory dir || dir.LocalCharacter is not { } local || local.Name.Length == 0)
         {
             return null;
         }
 
-        var onTarget = _lastShownHits.Where(ev => ev.TargetObjectId == targetId).ToList();
-        long highest = directory.HitPoints.HighestSeen(targetId) ?? 0;
-        if (onTarget.Count == 0 || highest <= 0)
+        string cls = Aion2.Protocol.Aion2SkillNames.ClassFromCode(local.ClassCode) ?? "";
+        int server = local.ServerId;
+        string key = local.Name + "@" + server;
+        if (_streamMeSlow?.Key != key || (DateTime.UtcNow - _streamMeAt).TotalSeconds >= 10)
         {
-            return null;
+            _streamMeAt = DateTime.UtcNow;
+            DateTime since = (_streamSince ?? DateTime.UtcNow).ToLocalTime();
+            var fights = FightLog.Entries().Where(e => e.Start >= since && string.Equals(e.You, local.Name, StringComparison.OrdinalIgnoreCase)).ToList();
+            var kills = fights.Where(e => e.Kind == FightLogKind.Boss && e.Killed == true).ToList();
+            FightLogEntry? best = kills.Where(e => e.YourDps > 0).MaxBy(e => e.YourDps);
+            List<CpCheckPoint> points = CpChecks.State(local.Name, server)?.Points.Where(p => p.Cp > 0).ToList() ?? new List<CpCheckPoint>();
+            CpCheckPoint? last = points.LastOrDefault(), before = points.LastOrDefault(p => p.At <= (_streamSince ?? DateTime.UtcNow)) ?? points.FirstOrDefault(p => p.At > (_streamSince ?? DateTime.UtcNow));
+            AccountCharacter? account = Aion2.Aion2Moved.Find(dir.AccountCharacters(), c => c.Name, c => c.ServerId, local.Name, server);
+            _streamMeSlow = (key, kills.Count + fights.Where(e => e.Kind == FightLogKind.Run).Sum(e => e.BossFights), best is null ? null : PlayerRow.Compact((long)best.YourDps),
+                best is null ? null : "on " + best.Title, last is not null && before is not null && last.At > before.At ? last.Cp - before.Cp : null, last?.Cp,
+                last?.ItemLevel is int il and > 0 ? il : account?.ItemLevel is int own and > 0 ? own : null, account?.Legion ?? dir.GuildOf(local.CombatId));
+            if (_streamPortraitFor != key && MeterSettings.Load().AutoUploadProfile)
+            {
+                _streamPortraitFor = key;
+                _streamPortrait = null;
+                string fingerprint = "aion2:" + ServerSlug(Aion2.Protocol.Aion2Servers.NameOf(server));
+                _ = Task.Run(async () => _streamPortrait = await PortraitClient.GetAsync(local.Name, fingerprint));
+            }
         }
 
-        var samples = directory.HitPoints.SamplesAround(targetId, onTarget.Min(h => h.Timestamp), onTarget.Max(h => h.Timestamp));
-        if (samples.Count == 0)
+        var slow = _streamMeSlow!.Value;
+        string? live = null;
+        if (_streamSince is DateTime start)
         {
-            return null;
+            TimeSpan t = DateTime.UtcNow - start;
+            live = t.TotalHours >= 1 ? $"{(int)t.TotalHours}:{t.Minutes:00}:{t.Seconds:00}" : $"{t.Minutes}:{t.Seconds:00}";
         }
 
-        long hp = samples[^1].Hp;
-        double percent = 100.0 * hp / highest;
-        string name = _targetNames.TryGetValue(targetId, out string? known) ? known : ResolveDisplayName(targetId);
-        return new Streaming.StreamBoss(name, percent, $"{PlayerRow.Compact(hp)} / {PlayerRow.Compact(highest)} · {percent.ToString("0", CultureInfo.InvariantCulture)}%");
+        string? portrait = _streamPortrait is string file ? "p/me.png?v=" + Path.GetFileNameWithoutExtension(file) : null;
+        return new Streaming.StreamMe(local.Name, cls, Hex(cls.Length > 0 ? ClassBrushes.ClassColor(cls) : Color.FromRgb(0xE6, 0xC0, 0x68)), local.Level,
+            Aion2.Protocol.Aion2Servers.NameOf(server), slow.Legion, slow.ItemLevel, slow.Cp, portrait, live, slow.Bosses, slow.Best, slow.BestBoss, slow.CpGain);
     }
 
     /// <summary>The link for the browser source, on the clipboard.</summary>
@@ -7342,19 +7368,159 @@ public partial class MainWindow : Window
 
             case "stream":
             {
-                var status = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 10) };
-                status.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
-                var copy = new Button { Content = loc["Settings.Stream.Copy"], HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(10, 2, 10, 2) };
-                copy.Click += (_, _) => CopyStreamLink();
-                var stack = new StackPanel { Margin = new Thickness(0, 4, 0, 0) };
-                stack.Children.Add(status);
-                stack.Children.Add(copy);
+                // 6 November 2026, the owner: "fix obs overlay, its kinda shit rn": three widgets with a link each, how to add them, the link's options
+                var stack = new StackPanel { Margin = new Thickness(0, 4, 0, 0), MaxWidth = 900, HorizontalAlignment = HorizontalAlignment.Left };
+                TextBlock Words(string text, string brush, double size, bool bold = false)
+                {
+                    var t = new TextBlock { Text = text, FontSize = size, FontWeight = bold ? FontWeights.SemiBold : FontWeights.Normal, TextWrapping = TextWrapping.Wrap };
+                    t.SetResourceReference(TextBlock.ForegroundProperty, brush);
+                    return t;
+                }
+
+                Border Panel(UIElement child, Thickness? margin = null)
+                {
+                    var b = new Border { Child = child, Padding = new Thickness(16, 14, 16, 14), CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = margin ?? new Thickness(0, 0, 0, 12) };
+                    b.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+                    b.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+                    return b;
+                }
+
+                // the state: running where, how many browser sources; names on stream
+                var dot = new System.Windows.Shapes.Ellipse { Width = 9, Height = 9, Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
+                TextBlock status = Words("", "Brush.Text", 13, bold: true);
+                TextBlock where = Words("", "Brush.TextMuted", 12);
+                var head = new StackPanel();
+                var line = new StackPanel { Orientation = Orientation.Horizontal };
+                line.Children.Add(dot);
+                line.Children.Add(status);
+                head.Children.Add(line);
+                where.Margin = new Thickness(18, 2, 0, 10);
+                head.Children.Add(where);
+                var names = new CheckBox { Content = "Show the other players' names on the meter (else each by class: \"Cleric\", \"Cleric 2\" ...). The card always shows your own.", IsChecked = MeterSettings.Load().StreamShowNames };
+                names.Click += (_, _) =>
+                {
+                    var current = MeterSettings.Load();
+                    current.StreamShowNames = names.IsChecked == true;
+                    current.Save();
+                    _streamSettingsAt = DateTime.MinValue;
+                };
+                head.Children.Add(names);
+                stack.Children.Add(Panel(head));
+
+                // the widgets
+                var links = new List<(TextBox Box, string Widget, Button Copy, Button Look)>();
+                var cards = new UniformGrid { Columns = 1 };
+                foreach ((string widget, string title, string what, string size, string glyph) in new[]
+                         {
+                             ("meter", "Meter", "The meter as you see it over the game: ten lines in their class colours, the buffs and healing on the bars, the boss line with its kill and enrage times. The lines slide into their new places.", "400 × 420", "\uE9D2"),
+                             ("card", "Character card", "Your character: portrait (or class emblem) in your class colour, level, server, legion, Item Level and Combat Power, and this stream so far: how long, bosses killed, best DPS, Combat Power gained.", "680 × 160", "\uE77B"),
+                             ("boss", "Boss bar", "The boss you fight: its health as a wide bar with the percent, when it dies at your pace and its enrage. Shows itself on a boss and fades out after.", "900 × 110", "\uE7C1"),
+                         })
+                {
+                    var grid = new Grid();
+                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+                    grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                    var mark = new Border { Width = 38, Height = 38, CornerRadius = new CornerRadius(10), Margin = new Thickness(0, 0, 14, 0), VerticalAlignment = VerticalAlignment.Top,
+                        Background = new SolidColorBrush(Color.FromArgb(0x26, 0xE6, 0xC0, 0x68)),
+                        Child = new TextBlock { Text = glyph, FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 17, Foreground = new SolidColorBrush(Color.FromRgb(0xE6, 0xC0, 0x68)), HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center } };
+                    grid.Children.Add(mark);
+                    var body = new StackPanel();
+                    var top = new DockPanel();
+                    TextBlock sizeText = Words("Browser source " + size, "Brush.TextSubtle", 11.5);
+                    DockPanel.SetDock(sizeText, Dock.Right);
+                    top.Children.Add(sizeText);
+                    top.Children.Add(Words(title, "Brush.Text", 15, bold: true));
+                    body.Children.Add(top);
+                    TextBlock about = Words(what, "Brush.TextMuted", 12.5);
+                    about.Margin = new Thickness(0, 3, 0, 10);
+                    body.Children.Add(about);
+                    var row = new DockPanel();
+                    var copy = new Button { Content = "Copy link", Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(8, 0, 0, 0) };
+                    var look = new Button { Content = "Preview", Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(8, 0, 0, 0), ToolTip = "Opens it in your browser with made-up numbers" };
+                    DockPanel.SetDock(look, Dock.Right);
+                    DockPanel.SetDock(copy, Dock.Right);
+                    row.Children.Add(look);
+                    row.Children.Add(copy);
+                    var box = new TextBox { IsReadOnly = true, VerticalContentAlignment = VerticalAlignment.Center, Padding = new Thickness(6, 3, 6, 3), FontFamily = new FontFamily("Cascadia Mono, Consolas") };
+                    row.Children.Add(box);
+                    body.Children.Add(row);
+                    Grid.SetColumn(body, 1);
+                    grid.Children.Add(body);
+                    copy.Click += (_, _) =>
+                    {
+                        try
+                        {
+                            Clipboard.SetText(box.Text);
+                            ShowUploadStatus(loc["Stream.LinkCopied"]);
+                        }
+                        catch (COMException)
+                        {
+                            ShowUploadStatus(box.Text);
+                        }
+                    };
+                    look.Click += (_, _) =>
+                    {
+                        try
+                        {
+                            Process.Start(new ProcessStartInfo(box.Text + "?demo=1") { UseShellExecute = true });
+                        }
+                        catch (Exception ex) when (ex is System.ComponentModel.Win32Exception or InvalidOperationException)
+                        {
+                            ShowUploadStatus(box.Text);
+                        }
+                    };
+                    links.Add((box, widget, copy, look));
+                    cards.Children.Add(Panel(grid));
+                }
+
+                stack.Children.Add(cards);
+
+                // how to add one, and what the link can say
+                var how = new StackPanel();
+                how.Children.Add(Words("Adding a widget to OBS or Streamlabs", "Brush.Text", 14, bold: true));
+                foreach (string step in new[]
+                         {
+                             "1.  Sources  →  +  →  Browser (Streamlabs: Browser Source), and give it a name.",
+                             "2.  Paste the widget's link as the URL and set the width and height shown beside it.",
+                             "3.  That is all: the background is see-through, the widget fades in when there is something to show.",
+                         })
+                {
+                    TextBlock t = Words(step, "Brush.TextMuted", 12.5);
+                    t.Margin = new Thickness(0, 6, 0, 0);
+                    how.Children.Add(t);
+                }
+
+                TextBlock options = Words("Add to the end of a link:   ?scale=1.25  larger    ?rows=5  fewer lines    ?style=solid  no see-through    ?style=clear  no panel    ?always=1  stays between fights    ?demo=1  made-up numbers   (several: ?scale=1.2&rows=6)", "Brush.TextSubtle", 12);
+                options.Margin = new Thickness(0, 12, 0, 0);
+                how.Children.Add(options);
+                TextBlock twoPc = Words("Streaming from a second PC: the setting \"" + loc["Settings.Stream.Network"] + "\" (Settings) lets it reach this PC; the links carry this PC's address then.", "Brush.TextSubtle", 12);
+                twoPc.Margin = new Thickness(0, 8, 0, 0);
+                how.Children.Add(twoPc);
+                var renew = new Button { Content = "New links (the old ones stop working)", HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 4, 12, 4), Margin = new Thickness(0, 12, 0, 0) };
+                renew.Click += (_, _) =>
+                {
+                    var current = MeterSettings.Load();
+                    current.StreamOverlayKey = Streaming.StreamOverlayServer.NewKey();
+                    current.Save();
+                    _streamSettingsAt = DateTime.MinValue; // the server restarts with the new key at the next look
+                    StreamTick();
+                };
+                how.Children.Add(renew);
+                stack.Children.Add(Panel(how));
+
                 void Show()
                 {
-                    status.Text = _streamServer is { Running: true } server
-                        ? server.Url + "\n" + string.Format(loc["Stream.Clients"], server.ClientCount)
-                        : loc["Stream.NotRunning"];
-                    copy.IsEnabled = _streamServer is { Running: true };
+                    bool on = _streamServer is { Running: true };
+                    dot.Fill = new SolidColorBrush(on ? Color.FromRgb(0x6C, 0xD4, 0x8A) : Color.FromRgb(0x7A, 0x84, 0x90));
+                    status.Text = on ? "Running" : "Off: switch it on above";
+                    where.Text = _streamServer is { Running: true } server
+                        ? (server.Network ? "This PC and the others in your network" : "This PC only") + "  ·  " + string.Format(loc["Stream.Clients"], server.ClientCount)
+                        : "The widgets' links work once it is on.";
+                    foreach (var (box, widget, copy, look) in links)
+                    {
+                        box.Text = _streamServer?.Url is string url ? url + widget : "";
+                        copy.IsEnabled = look.IsEnabled = on;
+                    }
                 }
 
                 Show();

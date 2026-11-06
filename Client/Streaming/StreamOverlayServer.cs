@@ -17,7 +17,7 @@ namespace AionDPS.Streaming;
 public sealed class StreamOverlayServer : IDisposable
 {
     public const int DefaultPort = 8920;
-    private const int MaxClients = 8;
+    private const int MaxClients = 16; // three widgets in a few scenes each
     private const int PortTries = 10;
     private const int FallbackPort = 8920;
 
@@ -36,6 +36,9 @@ public sealed class StreamOverlayServer : IDisposable
     }
 
     public bool Running => _listener is not null;
+
+    /// <summary>The streamer's portrait (a PNG file on this PC) for the character card, or null; asked for each request of p/me.png.</summary>
+    public Func<string?>? PortraitFile { get; set; }
 
     public int Port { get; private set; }
 
@@ -335,6 +338,18 @@ public sealed class StreamOverlayServer : IDisposable
                     case "":
                         await Reply(output, 200, "text/html", Encoding.UTF8.GetBytes(StreamOverlayPage.Html), head);
                         return;
+                    case "meter" or "card" or "boss":
+                        await Reply(output, 200, "text/html", Encoding.UTF8.GetBytes(StreamOverlayPage.HtmlFor(tail)), head);
+                        return;
+                    case "p/me.png":
+                        if (PortraitFile?.Invoke() is string portrait && File.Exists(portrait))
+                        {
+                            await Reply(output, 200, "image/png", File.ReadAllBytes(portrait), head);
+                            return;
+                        }
+
+                        await Reply(output, 404);
+                        return;
                     case "overlay.js":
                         await Reply(output, 200, "text/javascript", Encoding.UTF8.GetBytes(StreamOverlayPage.Script), head);
                         return;
@@ -346,11 +361,17 @@ public sealed class StreamOverlayServer : IDisposable
                         return;
                 }
 
+                // a class's icon: the app's own (the game's emblem in the class colour) when there is one, else the game's emblem; only for a class the game has
                 if (parts.Length == 3 && parts[1] == "c" && parts[2].EndsWith(".png", StringComparison.Ordinal)
-                    && Aion2Artwork.ClassEmblemPath(parts[2][..^4]) is string icon && File.Exists(icon))
+                    && Aion2Artwork.ClassEmblemPath(parts[2][..^4]) is string emblem)
                 {
-                    await Reply(output, 200, "image/png", File.ReadAllBytes(icon), head);
-                    return;
+                    string own = Path.Combine(AppContext.BaseDirectory, "assets", "classes", "icons", parts[2][..^4] + ".png");
+                    string icon = File.Exists(own) ? own : emblem;
+                    if (File.Exists(icon))
+                    {
+                        await Reply(output, 200, "image/png", File.ReadAllBytes(icon), head);
+                        return;
+                    }
                 }
 
                 await Reply(output, 404);
