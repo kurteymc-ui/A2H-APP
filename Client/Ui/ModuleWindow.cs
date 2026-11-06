@@ -27,11 +27,11 @@ public sealed class ModulePage : DockPanel
         _getOn = getOn;
         _getKey = getKey;
         var loc = LocalizationManager.Instance;
-        Margin = new Thickness(14, 10, 14, 14);
+        Margin = new Thickness(22, 14, 22, 16);
 
-        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 10) };
+        // the head in the look of Journey and Legion (6 November 2026): the name large in the title face, the tool's controls together on a bar at the right
+        var header = new DockPanel { Margin = new Thickness(0, 0, 0, 16) };
         var right = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        DockPanel.SetDock(right, Dock.Right);
         var masterText = new TextBlock { Text = loc["Settings.Overlay.Master"], VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
         masterText.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextSubtle");
         _master.VerticalAlignment = VerticalAlignment.Center;
@@ -82,7 +82,7 @@ public sealed class ModulePage : DockPanel
         var popIcon = new TextBlock { Text = "\uE8A7", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 14, VerticalAlignment = VerticalAlignment.Center };
         popIcon.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Accent");
         _pop.Content = popIcon;
-        _pop.Margin = new Thickness(12, 0, 0, 0);
+        _pop.Margin = new Thickness(10, 0, 0, 0);
         _pop.Padding = new Thickness(8, 2, 8, 2);
         _pop.MinHeight = 26;
         _pop.ToolTip = loc["Tools.PopOut.Tip"];
@@ -90,9 +90,14 @@ public sealed class ModulePage : DockPanel
         _pop.SetResourceReference(Control.BorderBrushProperty, "Brush.Accent");
         _pop.Click += (_, _) => PopOut?.Invoke();
         right.Children.Add(_pop);
-        var name = new TextBlock { Text = title, FontSize = 18, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+        var bar = new Border { Child = right, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Padding = new Thickness(6, 5, 8, 5), VerticalAlignment = VerticalAlignment.Center };
+        bar.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+        bar.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        DockPanel.SetDock(bar, Dock.Right);
+        var name = new TextBlock { Text = title, FontSize = 26, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
+        name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
         name.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
-        header.Children.Add(right);
+        header.Children.Add(bar);
         header.Children.Add(left ?? name);
 
         SetDock(header, Dock.Top);
@@ -142,12 +147,25 @@ public sealed class ModulePage : DockPanel
         _key.Content = key.Length > 0 ? key : LocalizationManager.Instance["Settings.Hotkey.NoKey"];
     }
 
-    /// <summary>A small caption above one view of a tool that has several (the three overlays of the boss fight).</summary>
-    public static TextBlock Caption(string text)
+    /// <summary>A caption above one view of a tool that has several (the map and its list): a short gold stroke, then the text.</summary>
+    public static FrameworkElement Caption(string text)
     {
-        var block = new TextBlock { Text = text, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 10, 0, 4) };
-        block.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextSubtle");
-        return block;
+        FrameworkElement title = Stroked(text);
+        title.Margin = new Thickness(0, 14, 0, 8);
+        return title;
+    }
+
+    /// <summary>A section's title as the new pages have it: a short gold stroke, then the text in semibold.</summary>
+    public static FrameworkElement Stroked(string text)
+    {
+        var line = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+        var stroke = new Border { Width = 3, Height = 14, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center };
+        stroke.SetResourceReference(Border.BackgroundProperty, "Brush.Accent");
+        var block = new TextBlock { Text = text, FontSize = 14, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
+        block.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
+        line.Children.Add(stroke);
+        line.Children.Add(block);
+        return line;
     }
 
     /// <summary>A grey note under a tool's header.</summary>
@@ -161,7 +179,7 @@ public sealed class ModulePage : DockPanel
     /// <summary>A caption with a switch at its end ("show as overlay"): the choice is kept the moment it is flipped, no Save needed.</summary>
     public static (DockPanel Row, CheckBox Switch) SwitchCaption(string text, string switchText)
     {
-        var row = new DockPanel { Margin = new Thickness(0, 10, 0, 4) };
+        var row = new DockPanel { Margin = new Thickness(0, 14, 0, 8) };
         var box = new CheckBox { VerticalAlignment = VerticalAlignment.Center };
         if (Application.Current?.TryFindResource("SettingsSwitch") is Style style)
         {
@@ -174,10 +192,8 @@ public sealed class ModulePage : DockPanel
         right.Children.Add(label);
         right.Children.Add(box);
         DockPanel.SetDock(right, Dock.Right);
-        var caption = new TextBlock { Text = text, FontWeight = FontWeights.SemiBold, VerticalAlignment = VerticalAlignment.Center };
-        caption.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextSubtle");
         row.Children.Add(right);
-        row.Children.Add(caption);
+        row.Children.Add(Stroked(text));
         return (row, box);
     }
 }
