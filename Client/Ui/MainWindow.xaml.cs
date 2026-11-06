@@ -118,6 +118,9 @@ public partial class MainWindow : Window
     /// <summary>Mirror MeterSettings.ShowShareBars/ShowDamageTaken - cached here because
     /// RefreshRows runs every second and must not re-read the settings file each time.</summary>
     private bool _showShareBars = true;
+
+    /// <summary>Mirrors MeterSettings.ShowDeaths: deaths (and how long dead) after the names in the damage and healing modes.</summary>
+    private bool _showDeaths = true;
     private bool _compactOverlay;
     private bool _compactClickThrough;
     private bool _showBossHp;
@@ -717,6 +720,7 @@ public partial class MainWindow : Window
     {
         ApplyMeterLook(settings);
         _showShareBars = settings.ShowShareBars;
+        _showDeaths = settings.ShowDeaths;
         _showPartyBuffs = settings.ShowPartyBuffs;
         _showDamageTaken = settings.ShowDamageTaken;
         _showBossHp = settings.ShowBossHp;
@@ -2448,7 +2452,7 @@ public partial class MainWindow : Window
             row.HealOthersRate = healSeconds > 0 && row.HealOthers > 0 ? row.HealOthers / healSeconds : null;
             row.Absorbed = absorbedById.GetValueOrDefault(sourceId);
             row.DamageTaken = _allData ? hostileTakenById.GetValueOrDefault(sourceId) : TakenOf(sourceId);
-            row.Deaths = 0;
+            ShowDeaths(row, sourceId, filteredSpan);
             row.ShowShareBar = _showShareBars;
             row.ShowDamageTaken = _showDamageTaken;
 
@@ -2977,11 +2981,31 @@ public partial class MainWindow : Window
             row.Healing = 0;
             row.HealOthers = 0;
             row.HealOthersRate = null;
-            row.Deaths = 0;
+            ShowDeaths(row, sourceId, span);
             row.ShowShareBar = _showShareBars;
             row.ShowDamageTaken = false;
             row.Faction = directory?.FactionOf(sourceId) ?? "";
         }
+    }
+
+    /// <summary>
+    /// Deaths after a player's name in the damage and healing modes (MeterSettings.ShowDeaths): how often their hit points reached 0 in the fight shown
+    /// (Combat/Deaths.cs, the same as the damage-taken mode counts), and while they are still down how long - up to the fight's last hit, so a fight
+    /// looked at later shows how long they lay there.
+    /// </summary>
+    private void ShowDeaths(PlayerRow row, int playerId, (DateTime Start, DateTime End)? span)
+    {
+        if (!_showDeaths || span is not (DateTime from, DateTime to) || _source?.Entities is not Aion2.Aion2EntityDirectory directory)
+        {
+            row.Deaths = 0;
+            row.DeadFor = null;
+            return;
+        }
+
+        var readings = directory.HitPoints.SamplesAround(playerId, from, to + Deaths.BlowWindow).Select(s => (s.At, s.Hp)).ToList();
+        var deaths = Deaths.Find(playerId, readings, Array.Empty<DamageEvent>());
+        row.Deaths = deaths.Count;
+        row.DeadFor = deaths.Count > 0 && deaths[^1].RevivedAt is null ? deaths[^1].DeadFor(to) : null;
     }
 
     /// <summary>
@@ -3077,6 +3101,7 @@ public partial class MainWindow : Window
             var deaths = Deaths.Find(targetId, readings, mine, credits);
             _deathsById[targetId] = deaths;
             row.Deaths = deaths.Count;
+            row.DeadFor = deaths.Count > 0 && deaths[^1].RevivedAt is null && span is (DateTime _, DateTime deadUntil) ? deaths[^1].DeadFor(deadUntil) : null;
             row.DamageTaken = 0;
             row.Absorbed = 0;
             row.AllMode = false;

@@ -4,7 +4,7 @@ using AionDPS.Combat.Sources;
 namespace AionDPS.Ui;
 
 /// <summary>A made-up boss fight of 55 seconds for the report's pictures and checks: five players, a healer, party buffs, debuffs on the boss, shields,
-/// avoided attacks, casts with wind-ups, a stagger and one death. Seeded, so it is the same every time.</summary>
+/// avoided attacks, casts with wind-ups, the boss's stagger bar (a break at 14 s) and one death. Seeded, so it is the same every time.</summary>
 internal static class FightReportSample
 {
     public const int Boss = 9001;
@@ -54,7 +54,7 @@ internal static class FightReportSample
                 }
 
                 // the burst in the stagger window (14 to 20 s) and a quiet stretch while the boss casts (22 to 41 s)
-                double phase = t is > 14 and < 20 ? 1.8 : t is > 22 and < 41 ? 0.7 : 1.0;
+                double phase = t is > 14 and < 20 ? 1.8 : t is > 22 and < 41 ? 0.55 : 1.0;
                 long amount = (long)(rng.Next(6000, 14000) * power[p.Id] * phase * (t < 4 ? t / 4 : 1));
                 bool crit = rng.NextDouble() < 0.3;
                 var kinds = (rng.NextDouble() < 0.4 ? HitKinds.Back : HitKinds.Front) | (rng.NextDouble() < 0.12 ? HitKinds.Perfect : 0) | (rng.NextDouble() < 0.1 ? HitKinds.Double : 0);
@@ -114,10 +114,52 @@ internal static class FightReportSample
         }
 
         var targets = new List<TargetChange> { new(t0, Boss, 3), new(t0.AddSeconds(24), Boss, 1), new(t0.AddSeconds(31), Boss, 3) };
-        var staggers = new List<StaggerEvent> { new(t0.AddSeconds(14), Boss, 100, 100, true), new(t0.AddSeconds(20), Boss, 0, 100, false) };
+        List<StaggerEvent> staggers = StaggerBar(events, t0);
         var deaths = new List<DeathRecord> { new(t0.AddSeconds(46), 5, t0.AddSeconds(50)) };
         var extras = new FightExtras(uses, buffs, staggers, names, Windups: windups, Deaths: deaths, Targets: targets);
         return new ReportInput(names[Boss], t0, t0.AddSeconds(55), players, events, shields, avoids, extras, Boss, null, Killed: true,
             NameOf: id => names.GetValueOrDefault(id), Targets: new HashSet<int> { Boss });
+    }
+
+    /// <summary>What each skill of the sample takes off the boss's stagger bar (as in the game: the same amount each hit; none for basic attacks).</summary>
+    public static readonly IReadOnlyDictionary<int, int> StaggerOf = new Dictionary<int, int>
+    {
+        [11010000] = 10, [11780000] = 20, [11020000] = 5, [18250000] = 5, [12010000] = 7, [12020000] = 25, [13010000] = 2, [13020000] = 10, [13030000] = 5,
+        [13040000] = 15, [15010000] = 2, [15020000] = 7, [15030000] = 5,
+    };
+
+    /// <summary>The boss's stagger bar as the game sends it: a reading right after each hit that lowers it, sized so it breaks at 14 s; back up full
+    /// at 20 s (the stagger over), down again after.</summary>
+    public static List<StaggerEvent> StaggerBar(IReadOnlyList<DamageEvent> events, DateTime t0)
+    {
+        var hits = events.Where(e => !e.IsHeal && e.TargetObjectId == Boss && StaggerOf.ContainsKey(e.SkillId)).OrderBy(e => e.Timestamp).ToList();
+        int max = Math.Max(1, hits.Where(e => e.Timestamp < t0.AddSeconds(14)).Sum(e => StaggerOf[e.SkillId]));
+        var bar = new List<StaggerEvent> { new(t0.AddSeconds(0.1), Boss, max, max, false) };
+        int current = max;
+        bool broken = false;
+        foreach (DamageEvent e in hits)
+        {
+            if (broken && e.Timestamp >= t0.AddSeconds(20))
+            {
+                broken = false;
+                current = max;
+                bar.Add(new StaggerEvent(t0.AddSeconds(20), Boss, max, max, false));
+            }
+
+            if (broken)
+            {
+                continue;
+            }
+
+            current = Math.Max(0, current - StaggerOf[e.SkillId]);
+            bar.Add(new StaggerEvent(e.Timestamp, Boss, current, max, false));
+            if (current == 0)
+            {
+                bar.Add(new StaggerEvent(e.Timestamp.AddMilliseconds(50), Boss, 0, 0, true));
+                broken = true;
+            }
+        }
+
+        return bar;
     }
 }

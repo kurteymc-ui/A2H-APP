@@ -19,7 +19,7 @@ namespace AionDPS.Ui;
 /// </summary>
 public sealed class FightReportWindow : Window
 {
-    public static readonly string[] Tabs = { "Damage", "Healing", "Damage taken", "Shields", "Defense", "Buffs", "Buffs per skill", "Support", "Rotation", "Timeline" };
+    public static readonly string[] Tabs = { "Damage", "Healing", "Damage taken", "Shields", "Defense", "Buffs", "Buffs per skill", "Support", "Rotation", "Timeline", "Stagger" };
 
     private static readonly CultureInfo En = CultureInfo.InvariantCulture;
     private static readonly Brush GoodBrush = ReportPalette.Brush(ReportPalette.Good);
@@ -122,6 +122,7 @@ public sealed class FightReportWindow : Window
             "Support" => SupportTab(),
             "Rotation" => RotationTab(),
             "Timeline" => TimelineTab(),
+            "Stagger" => StaggerTab(),
             _ => DamageTab(),
         };
     }
@@ -890,11 +891,26 @@ public sealed class FightReportWindow : Window
         return root;
     }
 
+    private static readonly Color StaggerColor = Color.FromRgb(0x6F, 0x9F, 0xD8);
+
+    /// <summary>A stretch picked on the Stagger tab's chart: the timeline opens on it.</summary>
+    private (double From, double To)? _pick;
+
+    /// <summary>
+    /// The fight on one time axis, its moments (bursts, drops, stagger breaks, deaths) to click, and what happened in the stretch picked: each player's
+    /// damage against their usual, the skills they used there (and what each hit for and staggered), the boss's casts.
+    /// </summary>
     private FrameworkElement TimelineTab()
     {
         var root = new StackPanel();
-        var chart = new FightTimelineChart(_r, id => _r.PlayerOf(id)?.Player.ClassName ?? "") { Margin = new Thickness(6, 10, 12, 4) };
+        var chart = new FightTimelineChart(_r, id => _r.PlayerOf(id)?.Player.ClassName ?? "") { Margin = new Thickness(6, 6, 12, 4) };
         var card = new StackPanel();
+        var bar = new DockPanel { Margin = new Thickness(18, 12, 18, 0), LastChildFill = true };
+        var whole = new Button { Content = "Whole fight", Padding = new Thickness(10, 3, 10, 3), Cursor = Cursors.Hand };
+        DockPanel.SetDock(whole, Dock.Right);
+        bar.Children.Add(whole);
+        bar.Children.Add(Muted("Click the chart for the five seconds up to that moment, or drag across it for a stretch: what everyone did there shows below.", 12));
+        card.Children.Add(bar);
         card.Children.Add(chart);
         var legend = new WrapPanel { Margin = new Thickness(84, 4, 18, 14) };
         legend.Children.Add(LegendItem("Party", ReportPalette.Party, null));
@@ -913,8 +929,284 @@ public sealed class FightReportWindow : Window
         }
 
         legend.Children.Add(LegendItem("Damage taken", Color.FromRgb(0x9A, 0x92, 0x8A), null, dashed: true));
+        if (_r.Stagger.HasData)
+        {
+            legend.Children.Add(LegendItem("Stagger bar", StaggerColor, "How full the boss's stagger bar was; a diamond: it broke"));
+        }
+
         card.Children.Add(legend);
         root.Children.Add(Card(card));
+
+        // the moments, and the details of the stretch picked
+        var details = new ContentControl();
+        var chips = new WrapPanel { Margin = new Thickness(16, 12, 16, 8) };
+        var chipOf = new Dictionary<FightMoment, Border>();
+        void Show(double from, double to, FightMoment? moment)
+        {
+            chart.Select(from, to);
+            foreach ((FightMoment m, Border chip) in chipOf)
+            {
+                bool on = ReferenceEquals(m, moment);
+                chip.Background = on ? SelectedBrush : ReportPalette.Brush(Colors.White, 0x06);
+                chip.BorderBrush = on ? ReportPalette.Brush(Color.FromRgb(0xDC, 0xB8, 0x77), 0xB0) : ReportPalette.Brush(Colors.White, 0x18);
+            }
+
+            details.Content = WindowDetails(FightMoments.Window(_r, from, to), moment);
+        }
+
+        if (_r.Moments.Count > 0)
+        {
+            var moments = new StackPanel();
+            moments.Children.Add(new TextBlock { Text = "Moments", FontSize = 15, FontWeight = FontWeights.SemiBold, Margin = new Thickness(18, 14, 18, 0) });
+            moments.Children.Add(Muted("The bursts and drops of the party's damage, the boss's stagger breaks and the deaths. Click one to see that stretch.", 12, margin: new Thickness(18, 2, 18, 0)));
+            foreach (FightMoment m in _r.Moments)
+            {
+                var text = new StackPanel { Orientation = Orientation.Horizontal };
+                text.Children.Add(new Ellipse { Width = 8, Height = 8, Fill = ReportPalette.Brush(FightTimelineChart.MomentColor(m.Kind)), Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center });
+                text.Children.Add(Muted(ReportPalette.Clock(m.At) + "  ", 12));
+                text.Children.Add(new TextBlock { Text = m.Title, FontSize = 12.5 });
+                var chip = new Border
+                {
+                    CornerRadius = new CornerRadius(5), BorderThickness = new Thickness(1), Padding = new Thickness(9, 4, 11, 4), Margin = new Thickness(0, 0, 6, 6), Cursor = Cursors.Hand,
+                    Background = ReportPalette.Brush(Colors.White, 0x06), BorderBrush = ReportPalette.Brush(Colors.White, 0x18), Child = text,
+                    ToolTip = m.Why.Count > 0 ? string.Join("\n", m.Why) : null,
+                };
+                FightMoment picked = m;
+                chip.MouseLeftButtonUp += (_, _) => Show(picked.Start, picked.End, picked);
+                chipOf[m] = chip;
+                chips.Children.Add(chip);
+            }
+
+            moments.Children.Add(chips);
+            root.Children.Add(Card(moments));
+        }
+
+        root.Children.Add(Card(details));
+        chart.Picked += (from, to) => Show(from, to, _r.Moments.FirstOrDefault(m => Math.Abs(m.Start - from) < 0.01 && Math.Abs(m.End - to) < 0.01));
+        whole.Click += (_, _) => Show(0, _r.Seconds, null);
+
+        // the stretch picked on the Stagger tab, else the biggest burst, else the whole fight
+        FightMoment? first = _r.Moments.Where(m => m.Kind == MomentKind.Burst).OrderByDescending(m => m.Dps).FirstOrDefault();
+        if (_pick is (double pickFrom, double pickTo))
+        {
+            _pick = null;
+            Show(pickFrom, pickTo, null);
+        }
+        else if (first is not null)
+        {
+            Show(first.Start, first.End, first);
+        }
+        else
+        {
+            Show(0, _r.Seconds, null);
+        }
+
+        return root;
+    }
+
+    /// <summary>A stretch of the fight: when, the party's DPS there, why (for a moment), then a line per player with their skills there.</summary>
+    private FrameworkElement WindowDetails(FightWindow w, FightMoment? moment)
+    {
+        var root = new StackPanel { Margin = new Thickness(18, 14, 18, 12) };
+        var head = new TextBlock { FontSize = 15, TextWrapping = TextWrapping.Wrap };
+        head.Inlines.Add(new Run($"{ReportPalette.Clock(w.Start)} – {ReportPalette.Clock(w.End)}") { FontWeight = FontWeights.SemiBold });
+        if (moment is not null)
+        {
+            head.Inlines.Add(new Run("   " + moment.Title) { Foreground = ReportPalette.Brush(FightTimelineChart.MomentColor(moment.Kind)), FontWeight = FontWeights.SemiBold });
+        }
+        else if (w.Start <= 0.01 && w.End >= _r.Seconds - 0.01)
+        {
+            head.Inlines.Add(new Run("   The whole fight"));
+        }
+
+        root.Children.Add(head);
+        foreach (string why in moment?.Why ?? Array.Empty<string>())
+        {
+            root.Children.Add(Muted("• " + why, 12.5, margin: new Thickness(0, 3, 0, 0)));
+        }
+
+        double usual = _r.AverageDps > 0 ? _r.AverageDps : _r.PartyDps;
+        var stats = new WrapPanel { Margin = new Thickness(0, 10, 0, 4) };
+        void Stat(string label, string value, Brush? color = null)
+        {
+            var cell = new StackPanel { Margin = new Thickness(0, 0, 26, 6) };
+            cell.Children.Add(Muted(label, 11));
+            var v = new TextBlock { Text = value, FontSize = 15, FontWeight = FontWeights.SemiBold };
+            if (color is not null)
+            {
+                v.Foreground = color;
+            }
+
+            cell.Children.Add(v);
+            stats.Children.Add(cell);
+        }
+
+        Stat("Party DPS here", N(w.Dps), usual > 0 ? (w.Dps >= usual ? GoodBrush : BadBrush) : null);
+        Stat("Against the usual", usual > 0 ? Pct(100 * w.Dps / usual) : "–");
+        Stat("Damage", N(w.Damage));
+        if (_r.Stagger.HasData)
+        {
+            Stat("Stagger taken off", N(w.Players.Sum(p => p.Stagger)), ReportPalette.Brush(StaggerColor));
+            if (w.Breaks > 0)
+            {
+                Stat("Breaks", w.Breaks.ToString(En), ReportPalette.Brush(StaggerColor));
+            }
+        }
+
+        if (w.BossCasts.Count > 0)
+        {
+            Stat("Boss casts", string.Join(", ", w.BossCasts.Take(3).Select(Aion2SkillNames.Display)));
+        }
+
+        root.Children.Add(stats);
+        if (w.Players.Count == 0)
+        {
+            root.Children.Add(Muted("Nobody of the party hit anything that counts here.", 12.5));
+            return root;
+        }
+
+        // a line per player: name, damage, DPS against their usual, stagger, deaths, then their skills there
+        long top = Math.Max(1, w.Players.Max(p => p.Damage));
+        foreach (WindowPlayer wp in w.Players)
+        {
+            ReportPlayer? player = _r.PlayerOf(wp.Player)?.Player;
+            var line = new Grid { Margin = new Thickness(0, 8, 0, 0) };
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(200) });
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
+            line.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(_r.Stagger.HasData ? 90 : 0) });
+            AddAt(line, NameCell(player, 13.5), 0);
+            AddAt(line, Bar(100.0 * wp.Damage / top, ReportPalette.Brush(ClassBrushes.ClassColor(player?.ClassName ?? ""), 0xC0)), 1);
+            AddAt(line, Right(N(wp.Damage), bold: true), 2);
+            double change = wp.Usual > 0 ? wp.Dps / wp.Usual : 0;
+            TextBlock rate = Right(wp.Usual > 0 ? $"{N(wp.Dps)} · {(change >= 1 ? "+" : "−")}{Math.Abs(Math.Round(100 * (change - 1))):0}%" : N(wp.Dps), color: wp.Usual > 0 ? (change >= 1 ? GoodBrush : BadBrush) : null, size: 12.5);
+            rate.ToolTip = $"DPS here; their DPS over the whole fight is {N(wp.Usual)}";
+            AddAt(line, rate, 3);
+            if (_r.Stagger.HasData)
+            {
+                TextBlock st = Right(wp.Stagger > 0 ? N(wp.Stagger) : "–", color: ReportPalette.Brush(StaggerColor), size: 12.5);
+                st.ToolTip = "Stagger they took off the boss's bar here";
+                AddAt(line, st, 4);
+            }
+
+            root.Children.Add(line);
+            var skills = new WrapPanel { Margin = new Thickness(27, 4, 0, 2) };
+            foreach (WindowSkill sk in wp.Skills.Take(14))
+            {
+                var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 12, 4) };
+                item.Children.Add(IconBox(SkillIcon(sk.SkillId, sk.Name, player?.ClassName), 22));
+                var label = new TextBlock { FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(5, 0, 0, 0) };
+                label.Inlines.Add(new Run(sk.Uses > 1 ? $"×{sk.Uses}" : sk.Uses == 1 ? "" : "·") { FontWeight = FontWeights.SemiBold });
+                if (sk.Damage > 0)
+                {
+                    var dmg = new Run((sk.Uses > 0 ? " " : "") + ReportPalette.Short(sk.Damage));
+                    dmg.SetResourceReference(TextElement.ForegroundProperty, "Brush.TextMuted");
+                    label.Inlines.Add(dmg);
+                }
+
+                if (sk.Stagger > 0)
+                {
+                    label.Inlines.Add(new Run($" ◆{sk.Stagger}") { Foreground = ReportPalette.Brush(StaggerColor) });
+                }
+
+                item.Children.Add(label);
+                item.ToolTip = $"{Aion2SkillNames.Display(sk.Name)}\nUsed {sk.Uses} times here · {N(sk.Damage)} damage" + (sk.Stagger > 0 ? $" · {sk.Stagger} stagger" : "");
+                skills.Children.Add(item);
+            }
+
+            if (wp.Deaths > 0)
+            {
+                skills.Children.Add(new TextBlock { Text = wp.Deaths > 1 ? $"died {wp.Deaths} times" : "died", Foreground = BadBrush, FontSize = 12, VerticalAlignment = VerticalAlignment.Center });
+            }
+
+            root.Children.Add(skills);
+        }
+
+        return root;
+    }
+
+    /// <summary>
+    /// Who staggered the boss: the bar over the fight with its breaks, each player's part of it (and the breaks they finished), and the chosen player's
+    /// skills by the stagger they caused.
+    /// </summary>
+    private FrameworkElement StaggerTab()
+    {
+        var root = new StackPanel();
+        StaggerReport st = _r.Stagger;
+        if (!st.HasData)
+        {
+            return Empty(root, "The game sent no stagger bar for this fight's boss (not every boss has one, and a fight from before the meter read it has none).");
+        }
+
+        var head = new StackPanel();
+        head.Children.Add(Summary(("Stagger taken off", N(st.Total)), ("Breaks", st.Breaks.Count.ToString(En)),
+            ("Matched to a skill exactly", Pct(st.ExactPercent))));
+        head.Children.Add(Muted("Each drop of the boss's stagger bar goes to the hit just before it whose skill takes that amount off (a skill always takes the same amount, " +
+            "or half as much again). The rest go to the nearest likely hit, so a player's share can be a little off.", 12, margin: new Thickness(18, 0, 18, 12)));
+        var chart = new FightTimelineChart(_r, id => _r.PlayerOf(id)?.Player.ClassName ?? "") { Margin = new Thickness(6, 0, 12, 10) };
+        head.Children.Add(chart);
+        chart.Picked += (from, to) =>
+        {
+            _pick = (from, to);   // that stretch, on the timeline
+            ShowTab("Timeline");
+        };
+        if (st.Breaks.Count > 0)
+        {
+            var breaks = new WrapPanel { Margin = new Thickness(18, 0, 18, 14) };
+            int n = 0;
+            foreach (StaggerBreak b in st.Breaks)
+            {
+                n++;
+                ReportPlayer? by = _r.PlayerOf(b.Player)?.Player;
+                var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 22, 4) };
+                item.Children.Add(new TextBlock { Text = "◆ ", Foreground = ReportPalette.Brush(StaggerColor), VerticalAlignment = VerticalAlignment.Center });
+                item.Children.Add(Muted($"Break {n} at {ReportPalette.Clock(b.At)}: ", 12.5));
+                if (by is not null)
+                {
+                    item.Children.Add(NameCell(by, 12.5, small: true));
+                    if (b.SkillId != 0)
+                    {
+                        item.Children.Add(Muted("  " + Aion2SkillNames.DisplayOf(b.SkillId), 12.5));
+                    }
+                }
+                else
+                {
+                    item.Children.Add(Muted("last hit unknown", 12.5));
+                }
+
+                breaks.Children.Add(item);
+            }
+
+            head.Children.Add(breaks);
+        }
+
+        root.Children.Add(Card(head));
+        var players = _r.Players.Where(p => st.Of(p.Player.Id) is not null).OrderByDescending(p => st.Of(p.Player.Id)!.Amount).ToList();
+        if (players.Count == 0)
+        {
+            return root;
+        }
+
+        root.Children.Add(Section("Stagger by player", "the amount each took off the boss's bar"));
+        root.Children.Add(PlayersTable(players, p => st.Of(p.Player.Id)?.Amount ?? 0,
+            new Col("Stagger", 100, p => N(st.Of(p.Player.Id)?.Amount ?? 0), Bold: true, Color: _ => ReportPalette.Brush(StaggerColor)),
+            new Col("Share", 80, p => Pct(st.Of(p.Player.Id)?.Share ?? 0)),
+            new Col("Breaks", 80, p => (st.Of(p.Player.Id)?.Breaks ?? 0) is int b and > 0 ? b.ToString(En) : "–", Tip: _ => "Breaks they took the last of the bar for"),
+            new Col("Per minute", 100, p => (60.0 * (st.Of(p.Player.Id)?.Amount ?? 0) / Math.Max(1, _r.Seconds)).ToString("0", En))));
+        if (Selected(players) is { } sel && st.Of(sel.Player.Id) is { } line)
+        {
+            root.Children.Add(PlayerHeading("Stagger by skill", players));
+            var skills = line.Skills.Select(s => new ReportSkill(s.Name, s.SkillId, s.Amount, line.Amount > 0 ? 100.0 * s.Amount / line.Amount : 0, 0, s.Hits, s.Hits * 60 / Math.Max(1, _r.Seconds), 0,
+                null, null, null, null, null, null, null, null, s.Hits > 0 ? (double)s.Amount / s.Hits : 0, 0)).ToList();
+            var cols = new[]
+            {
+                new SCol("", "Stagger", 90, s => N(s.Total), Bold: true), new SCol("", "Share", 80, s => Pct(s.Share)),
+                new SCol("", "Hits that staggered", 140, s => N(s.Hits)), new SCol("", "Per hit", 80, s => s.Average.ToString("0.#", En)),
+            };
+            root.Children.Add(Card(SkillTable(skills, sel.Player.ClassName, ReportPalette.Brush(StaggerColor), cols, line.Amount, 0, total: false)));
+        }
+
         return root;
     }
 

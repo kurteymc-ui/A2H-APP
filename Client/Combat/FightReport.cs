@@ -158,6 +158,17 @@ public sealed class FightReport
     /// <summary>The players' deaths over the fight.</summary>
     public IReadOnlyList<(double At, int Player)> PartyDeaths { get; init; } = Array.Empty<(double, int)>();
 
+    /// <summary>The boss's stagger bar over the fight and who took it down (see <see cref="StaggerCredit"/>).</summary>
+    public StaggerReport Stagger { get; init; } = StaggerReport.Empty;
+
+    /// <summary>The party's hits that count, in time order: the timeline's details of any stretch of the fight (<see cref="FightMoments.Window"/>).</summary>
+    public IReadOnlyList<ReportHit> PartyHits { get; init; } = Array.Empty<ReportHit>();
+
+    private IReadOnlyList<FightMoment>? _moments;
+
+    /// <summary>The bursts, drops, stagger breaks and deaths of the fight, in time order (see <see cref="FightMoments"/>).</summary>
+    public IReadOnlyList<FightMoment> Moments => _moments ??= FightMoments.Find(this);
+
     public ReportPlayerLine? PlayerOf(int id) => Players.FirstOrDefault(p => p.Player.Id == id);
 
     /// <summary>The effects on one player over [from, to], the helpful ones first by uptime, harmful ones after; no passives, nothing unnamed (the in-game meter's buff view).</summary>
@@ -394,6 +405,7 @@ public sealed class FightReport
         // the boss: its effects, stagger, casts, wind-ups and whom it aimed at
         IReadOnlyList<ReportEffect> bossEffects = Array.Empty<ReportEffect>();
         IReadOnlyList<StaggerPhase> staggers = Array.Empty<StaggerPhase>();
+        StaggerReport stagger = StaggerReport.Empty;
         var bossCasts = new List<(double, string)>();
         var castBars = new List<(double, double, string)>();
         var castBarIds = new List<int>();
@@ -402,7 +414,10 @@ public sealed class FightReport
         {
             bossEffects = effects.Where(kv => kv.Key.Target == bossId && Named(kv.Key.Name)).Select(kv => kv.Value.ToEffect(kv.Key.Name, seconds, playerIds, onBoss: true))
                 .Where(e => !IsPassive(e.SkillId)).OrderByDescending(e => e.UptimePercent).ToList();
-            staggers = RotationAnalysis.Build(input.Extras, bossId, start, end, Array.Empty<DamageEvent>(), nameOf).Staggers;
+            // the boss's own stagger (the extras have every monster's)
+            var bossBar = input.Extras.Staggers.Where(st => st.Entity == bossId && InWindow(st.At)).ToList();
+            staggers = RotationAnalysis.Build(input.Extras with { Staggers = bossBar }, bossId, start, end, Array.Empty<DamageEvent>(), nameOf).Staggers;
+            stagger = StaggerCredit.Build(bossBar, input.Events.Where(e => InWindow(e.Timestamp) && e.TargetObjectId == bossId && Counts(e)).ToList(), start);
             foreach (SkillUse u in uses.Where(u => u.Actor == bossId))
             {
                 bossCasts.Add(((u.At - start).TotalSeconds, Aion2SkillNames.NameOf(u.SkillId)));
@@ -465,6 +480,10 @@ public sealed class FightReport
             CastBars = castBars,
             CastBarIds = castBarIds,
             PartyDeaths = deaths.Select(d => ((d.At - start).TotalSeconds, d.Entity)).ToList(),
+            Stagger = stagger,
+            PartyHits = damageBy.Values.SelectMany(l => l)
+                .Select(e => new ReportHit((e.Timestamp - start).TotalSeconds, e.SourceObjectId, e.SkillId, e.SkillId != 0 ? Aion2SkillNames.NameOf(e.SkillId) : e.Skill ?? "Attack", e.Amount))
+                .OrderBy(h => h.At).ToList(),
         };
     }
 

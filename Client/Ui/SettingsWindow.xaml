@@ -560,6 +560,7 @@
                             <StackPanel>
                                 <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Card.DisplayChips}"/>
                                 <CheckBox x:Name="ShowShareBarsBox" Content="{local:Loc Settings.ShowShareBars}"/>
+                                <CheckBox x:Name="ShowDeathsBox" Content="{local:Loc Settings.ShowDeaths}"/>
                                 <CheckBox x:Name="ShowPartyBuffsBox" Content="Show each player's party buffs live under their name (Mantra, Gale, Protective Light ...)"/>
                                 <CheckBox x:Name="ShowDamageTakenBox" Content="{local:Loc Settings.ShowDamageTaken}"/>
                                 <Grid Margin="0,6,0,0">

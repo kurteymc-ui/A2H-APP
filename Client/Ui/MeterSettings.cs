@@ -18,6 +18,9 @@ public sealed class MeterSettings
     /// <summary>Share-of-group bar under each row's Damage/DPS line (see PlayerRow.SharePercent).</summary>
     public bool ShowShareBars { get; set; } = true;
 
+    /// <summary>Deaths on the meter: a skull and the count after a player's name, and while they are dead how long (see PlayerRow.NameDisplay).</summary>
+    public bool ShowDeaths { get; set; } = true;
+
     /// <summary>Under each player's name in the meter: the party buffs on them right now (Mantra, Gale, Protective Light ...).</summary>
     public bool ShowPartyBuffs { get; set; } = true;
 

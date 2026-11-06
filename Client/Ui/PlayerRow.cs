@@ -56,7 +56,27 @@ public sealed class PlayerRow : INotifyPropertyChanged
         set { if (_combatPowerText == value) { return; } _combatPowerText = value; OnPropertyChanged(); }
     }
 
-    public string NameDisplay => Deaths > 0 ? $"{Name}  ☠{(Deaths > 1 ? Deaths.ToString() : "")}" : Name;
+    private TimeSpan? _deadFor;
+
+    /// <summary>How long the player has been dead, while they are (null: alive, or deaths not shown).</summary>
+    public TimeSpan? DeadFor
+    {
+        get => _deadFor;
+        set
+        {
+            // the name changes once a second at most
+            TimeSpan? whole = value is TimeSpan t ? TimeSpan.FromSeconds(Math.Floor(Math.Max(0, t.TotalSeconds))) : null;
+            if (_deadFor == whole) { return; }
+            _deadFor = whole;
+            OnPropertyChanged();
+            OnPropertyChanged(nameof(NameDisplay));
+        }
+    }
+
+    /// <summary>The name, then a skull and the count when the player died (☠, ☠2), and while they are dead how long (☠ 0:12).</summary>
+    public string NameDisplay => Deaths > 0
+        ? $"{Name}  ☠{(Deaths > 1 ? Deaths.ToString() : "")}{(DeadFor is TimeSpan dead ? " " + (int)dead.TotalMinutes + ":" + dead.Seconds.ToString("00") : "")}"
+        : Name;
 
     public string ClassName
     {

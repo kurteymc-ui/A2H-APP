@@ -150,6 +150,7 @@ public partial class SettingsWindow : Window
         // OnStartWithWindowsChanged's own remarks.
         StartWithWindowsBox.IsChecked = StartupRegistration.IsEnabled();
         ShowShareBarsBox.IsChecked = settings.ShowShareBars;
+        ShowDeathsBox.IsChecked = settings.ShowDeaths;
         ShowPartyBuffsBox.IsChecked = settings.ShowPartyBuffs;
         ShowDamageTakenBox.IsChecked = settings.ShowDamageTaken;
         AutoBossViewBox.IsChecked = settings.AutoBossView;
@@ -954,6 +955,7 @@ public partial class SettingsWindow : Window
         _settings.Language = LocalizationManager.Instance.Language;
         _settings.AlwaysOnTopOnStartup = AlwaysOnTopBox.IsChecked ?? false;
         _settings.ShowShareBars = ShowShareBarsBox.IsChecked ?? true;
+        _settings.ShowDeaths = ShowDeathsBox.IsChecked ?? true;
         _settings.ShowPartyBuffs = ShowPartyBuffsBox.IsChecked ?? true;
         _settings.ShowDamageTaken = ShowDamageTakenBox.IsChecked ?? false;
         _settings.AutoBossView = AutoBossViewBox.IsChecked ?? false;

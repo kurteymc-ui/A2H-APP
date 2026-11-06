@@ -611,6 +611,18 @@
     "ja": "ダメージ割合バーを表示",
     "ko": "대미지 비중 막대 표시"
   },
+  "Settings.ShowDeaths": {
+    "en": "Show deaths on the meter (a skull and the count after the name; while dead, how long)",
+    "de": "Tode im Meter anzeigen (Totenkopf und Anzahl hinter dem Namen; solange tot, wie lange)",
+    "fr": "Afficher les morts sur le compteur (un crâne et le nombre après le nom ; tant que mort, depuis combien de temps)",
+    "es": "Mostrar muertes en el medidor (una calavera y el número tras el nombre; mientras está muerto, cuánto tiempo)",
+    "ru": "Показывать смерти в счётчике (череп и число после имени; пока мёртв, сколько времени)",
+    "zh": "在统计中显示死亡（名字后显示骷髅和次数；死亡期间显示时长）",
+    "zh-TW": "在統計中顯示死亡（名字後顯示骷髏和次數；死亡期間顯示時長）",
+    "pt": "Mostrar mortes no medidor (uma caveira e a contagem após o nome; enquanto morto, há quanto tempo)",
+    "ja": "メーターに戦闘不能を表示（名前の後にドクロと回数、倒れている間はその時間）",
+    "ko": "미터에 사망 표시 (이름 뒤에 해골과 횟수, 사망 중에는 경과 시간)"
+  },
   "Settings.ShowDamageTaken": {
     "en": "Show damage taken per player",
     "de": "Erlittenen Schaden pro Spieler anzeigen",

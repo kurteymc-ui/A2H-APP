@@ -118,6 +118,7 @@ jobs:
             @('render-report', 'report-support.png', 'Support'),
             @('render-report', 'report-rotation.png', 'Rotation'),
             @('render-report', 'report-timeline.png', 'Timeline'),
+            @('render-report', 'report-stagger.png', 'Stagger'),
             @('render-report', 'report-defense.png', 'Defense'),
             @('render-history', 'history-nightmare.png', 'Nightmare'),
             @('render-history', 'history-bosses.png', 'Boss-fights'),
