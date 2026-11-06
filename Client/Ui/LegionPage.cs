@@ -537,7 +537,6 @@ internal sealed class LegionPage : Grid
     private UIElement Members(LegionSnapshot legion)
     {
         var stack = new StackPanel();
-        var tools = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         // the search box in the theme's colours, its hint inside while empty
         var search = new TextBox { Width = 190, Text = _search, VerticalContentAlignment = VerticalAlignment.Center, Padding = new Thickness(8, 4, 8, 4), BorderThickness = new Thickness(1) };
         search.SetResourceReference(Control.BackgroundProperty, "Brush.Control");
@@ -555,10 +554,17 @@ internal sealed class LegionPage : Grid
             hint.Visibility = search.Text.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
             FillList(legion);
         };
-        var box = new Grid { Margin = new Thickness(0, 0, 10, 0) };
+        var box = new Grid { VerticalAlignment = VerticalAlignment.Center };
         box.Children.Add(search);
         box.Children.Add(hint);
-        tools.Children.Add(box);
+        stack.Children.Add(Heading(string.Format(CultureInfo.CurrentCulture, Loc["Legion.MembersTitle"], legion.Members.Count), box));
+
+        // the order: chips under the title
+        var tools = new WrapPanel { Margin = new Thickness(0, -2, 0, 12) };
+        TextBlock by = Text(Loc["Legion.SortBy"], "Brush.TextSubtle", 11.5);
+        by.VerticalAlignment = VerticalAlignment.Center;
+        by.Margin = new Thickness(0, 0, 8, 0);
+        tools.Children.Add(by);
         foreach ((Sort sort, string key) in new[] { (Sort.Cp, "Cp"), (Sort.ItemLevel, "ItemLevel"), (Sort.Active, "Active"), (Sort.Rank, "Rank"), (Sort.Class, "Class"), (Sort.Name, "Name") })
         {
             bool on = _sort == sort;
@@ -577,7 +583,7 @@ internal sealed class LegionPage : Grid
             tools.Children.Add(chip);
         }
 
-        stack.Children.Add(Heading(Loc["Legion.Members"], tools));
+        stack.Children.Add(tools);
 
         // the titles over the columns
         var heads = Line();

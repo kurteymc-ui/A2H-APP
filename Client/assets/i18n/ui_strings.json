@@ -21944,6 +21944,12 @@
   "Legion.Members": {
     "en": "Members"
   },
+  "Legion.MembersTitle": {
+    "en": "Members ({0})"
+  },
+  "Legion.SortBy": {
+    "en": "Sort by"
+  },
   "Legion.Search": {
     "en": "Search a name or class"
   },
