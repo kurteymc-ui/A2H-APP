@@ -99,15 +99,24 @@ public sealed class WorldBossOverlayWindow : MovableOverlay
         s.Save();
     }
 
-    /// <summary>Rows: the boss, its state text, and whether it is there now.</summary>
-    public void Render(IReadOnlyList<(string Name, string Text, bool Now)> rows)
+    /// <summary>Rows: the boss, its state text, whether it is there now, and the boss with its state for its portrait (6 November 2026; none for the empty line).</summary>
+    public void Render(IReadOnlyList<(string Name, string Text, bool Now, FieldBoss? Boss, BossStatus? Status)> rows)
     {
         _rows.Children.Clear();
-        foreach (var (name, text, now) in rows)
+        DateTime clock = DateTime.Now;
+        foreach (var (name, text, now, boss, status) in rows)
         {
             var grid = new Grid { Margin = new Thickness(0, 2, 0, 2) };
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            if (boss is not null && status is not null)
+            {
+                FrameworkElement face = WorldBossPage.Portrait(boss, name, status, clock, 24);
+                face.Margin = new Thickness(0, 0, 8, 0);
+                grid.Children.Add(face);
+            }
+
             var n = new TextBlock { Text = name, FontWeight = FontWeights.Bold, FontSize = 12.5, Foreground = Brushes.White, Margin = new Thickness(0, 0, 16, 0), VerticalAlignment = VerticalAlignment.Center };
             var t = new TextBlock
             {
@@ -115,7 +124,8 @@ public sealed class WorldBossOverlayWindow : MovableOverlay
                 Foreground = new SolidColorBrush(now ? Color.FromRgb(0x5B, 0xD0, 0x7A) : Color.FromRgb(0xFF, 0xD2, 0x7A)),
                 FontWeight = now ? FontWeights.Bold : FontWeights.Normal,
             };
-            Grid.SetColumn(t, 1);
+            Grid.SetColumn(n, 1);
+            Grid.SetColumn(t, 2);
             grid.Children.Add(n);
             grid.Children.Add(t);
             _rows.Children.Add(grid);
@@ -150,7 +160,7 @@ public sealed class WorldBossController : IDisposable
     }
 
     /// <summary>The rows of the overlay: the bosses that are there first, then the next to come. With none chosen, a few bosses of the game as a sample - only while the overlay is positioned.</summary>
-    private static List<(string Name, string Text, bool Now)> Rows(MeterSettings settings, DateTime now)
+    private static List<(string Name, string Text, bool Now, FieldBoss? Boss, BossStatus? Status)> Rows(MeterSettings settings, DateTime now)
     {
         string language = LocalizationManager.Instance.Language;
         var watched = new List<(FieldBossMap Map, FieldBoss Boss, BossStatus Status)>();
@@ -185,11 +195,11 @@ public sealed class WorldBossController : IDisposable
         var rows = watched
             .OrderBy(w => w.Status.Phase == BossPhase.Now ? 0 : w.Status.Phase == BossPhase.Unknown ? 2 : 1)
             .ThenBy(w => w.Status.At ?? DateTime.MaxValue)
-            .Select(w => (Aion2FieldBosses.DisplayName(w.Map, w.Boss, language), WorldBossText.Of(w.Status, now), w.Status.Phase == BossPhase.Now))
+            .Select(w => (Aion2FieldBosses.DisplayName(w.Map, w.Boss, language), WorldBossText.Of(w.Status, now), w.Status.Phase == BossPhase.Now, (FieldBoss?)w.Boss, (BossStatus?)w.Status))
             .ToList();
         if (rows.Count == 0)
         {
-            rows.Add((LocalizationManager.Instance["Boss.OverlayEmpty"], "", false));
+            rows.Add((LocalizationManager.Instance["Boss.OverlayEmpty"], "", false, null, null));
         }
 
         return rows;

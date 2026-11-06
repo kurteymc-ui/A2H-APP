@@ -240,6 +240,43 @@ public static class Aion2Artwork
         return _bossThumbs.TryGetValue(npcId, out string? name) && Existing(Path.Combine(Root, "bosses", "thumbs", name)) is { } path ? path : null;
     }
 
+    private static IReadOnlyDictionary<int, string>? _fieldBossPortraits;
+
+    /// <summary>
+    /// A field boss's portrait (by its NPC id): the game's own 256 px portrait of its model, made small (assets/aion2/bosses/field, 6 November 2026, the
+    /// owner: "add boss icons as well, not just their name"); null when there is none.
+    /// </summary>
+    public static string? FieldBossPortraitPath(int npcId)
+    {
+        if (_fieldBossPortraits is null)
+        {
+            var map = new Dictionary<int, string>();
+            try
+            {
+                string index = Path.Combine(Root, "bosses", "field", "index.json");
+                if (File.Exists(index))
+                {
+                    using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(index));
+                    foreach (var entry in doc.RootElement.GetProperty("portraits").EnumerateObject())
+                    {
+                        if (int.TryParse(entry.Name, out int id) && entry.Value.GetString() is { Length: > 0 } file)
+                        {
+                            map[id] = file;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or KeyNotFoundException)
+            {
+                // no portraits: the page draws the boss's initial
+            }
+
+            _fieldBossPortraits = map;
+        }
+
+        return _fieldBossPortraits.TryGetValue(npcId, out string? name) && Existing(Path.Combine(Root, "bosses", "field", name)) is { } path ? path : null;
+    }
+
     public static string? ClassEmblemPath(string className) =>
         ClassFiles.TryGetValue(className, out string? file) && Existing(Path.Combine(Root, "classes", file + ".png")) is { } path ? path : null;
 

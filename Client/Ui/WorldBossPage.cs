@@ -242,7 +242,9 @@ internal sealed class WorldBossPage : Grid
 
         var columns = new Grid { Margin = new Thickness(8, 0, 8, 4) };
         Columns(columns);
-        AddCell(columns, Text("BOSS", "Brush.TextSubtle", 10.5, bold: true), 1);
+        TextBlock bossHead = Text("BOSS", "Brush.TextSubtle", 10.5, bold: true);
+        bossHead.Margin = new Thickness(50, 0, 0, 0);
+        AddCell(columns, bossHead, 1);
         AddCell(columns, Text("STATE", "Brush.TextSubtle", 10.5, bold: true), 2);
         TextBlock whenHead = Text("WHEN", "Brush.TextSubtle", 10.5, bold: true);
         whenHead.HorizontalAlignment = HorizontalAlignment.Right;
@@ -255,6 +257,52 @@ internal sealed class WorldBossPage : Grid
 
         return Card(stack, null, null, new Thickness(0, 0, 0, 12));
     }
+
+    /// <summary>
+    /// The boss's face: the game's portrait of it in a circle, its edge in the colour of its state (green up, amber soon, blue dead, purple scheduled, grey
+    /// unknown); the first letter of its name when the app has no portrait.
+    /// </summary>
+    internal static FrameworkElement Portrait(FieldBoss boss, string name, BossStatus status, DateTime now, double size)
+    {
+        Color edge = Edge(status, now);
+        var ring = new Border
+        {
+            Width = size, Height = size, CornerRadius = new CornerRadius(size / 2), BorderThickness = new Thickness(size >= 30 ? 2 : 1.5), VerticalAlignment = VerticalAlignment.Center,
+            BorderBrush = new SolidColorBrush(edge), Background = new SolidColorBrush(Color.FromRgb(0x14, 0x16, 0x1C)), ToolTip = name,
+        };
+        if (OverlayPictures.Load(Aion2.Protocol.Aion2Artwork.FieldBossPortraitPath(boss.Npc)) is { } picture)
+        {
+            double inner = size - (ring.BorderThickness.Left * 2);
+            ring.Child = new Border
+            {
+                Width = inner, Height = inner, CornerRadius = new CornerRadius(inner / 2),
+                Background = new ImageBrush(picture) { Stretch = Stretch.UniformToFill, AlignmentY = AlignmentY.Top },
+            };
+            if (status.Phase is BossPhase.Respawn or BossPhase.Unknown)
+            {
+                ring.Child.Opacity = 0.55;   // gone for now: the face dimmed
+            }
+        }
+        else
+        {
+            ring.Child = new TextBlock
+            {
+                Text = name.Length > 0 ? name[..1].ToUpperInvariant() : "?", FontSize = size * 0.42, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(edge),
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            };
+        }
+
+        return ring;
+    }
+
+    private static Color Edge(BossStatus s, DateTime now) => s.Phase switch
+    {
+        BossPhase.Now => Green,
+        BossPhase.Respawn or BossPhase.Fixed when s.At is DateTime at && at - now < TimeSpan.FromMinutes(15) => Amber,
+        BossPhase.Respawn => Blue,
+        BossPhase.Fixed => Purple,
+        _ => Grey,
+    };
 
     private static int Order(BossStatus s, DateTime now) => s.Phase switch
     {
@@ -283,7 +331,7 @@ internal sealed class WorldBossPage : Grid
         var grid = new Grid();
         Columns(grid);
         AddCell(grid, Watch(r, settings), 0);
-        var name = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 10, 0) };
+        var name = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         TextBlock title = Text(r.Name, "Brush.Text", 13.5, bold: true);
         title.TextTrimming = TextTrimming.CharacterEllipsis;
         name.Children.Add(title);
@@ -292,7 +340,13 @@ internal sealed class WorldBossPage : Grid
             name.Children.Add(Text(RuleText(rule), "Brush.TextSubtle", 11));
         }
 
-        AddCell(grid, name, 1);
+        var who = new DockPanel { Margin = new Thickness(0, 0, 10, 0) };
+        FrameworkElement face = Portrait(r.Boss, r.Name, r.Status, now, 38);
+        face.Margin = new Thickness(0, 0, 12, 0);
+        DockPanel.SetDock(face, Dock.Left);
+        who.Children.Add(face);
+        who.Children.Add(name);
+        AddCell(grid, who, 1);
         AddCell(grid, Pill(r.Status, now, read), 2);
         AddCell(grid, When(r.Status, now, read), 3);
         var line = new Border { Child = grid, Padding = new Thickness(8, 7, 8, 7), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent };
@@ -305,9 +359,13 @@ internal sealed class WorldBossPage : Grid
     private UIElement Line(Row r, MeterSettings settings, DateTime now, bool showRegion)
     {
         var grid = new Grid { Margin = new Thickness(0, 0, 0, 2) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        FrameworkElement face = Portrait(r.Boss, r.Name, r.Status, now, 34);
+        face.Margin = new Thickness(0, 0, 11, 0);
+        AddCell(grid, face, 0);
         var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         TextBlock title = Text(r.Name, "Brush.Text", 13, bold: true);
         title.TextTrimming = TextTrimming.CharacterEllipsis;
@@ -317,11 +375,11 @@ internal sealed class WorldBossPage : Grid
             words.Children.Add(Text(r.Map.NameIn(Language), "Brush.TextSubtle", 11));
         }
 
-        AddCell(grid, words, 0);
+        AddCell(grid, words, 1);
         UIElement when = When(r.Status, now, read: true);
         ((FrameworkElement)when).Margin = new Thickness(10, 0, 10, 0);
-        AddCell(grid, when, 1);
-        AddCell(grid, Watch(r, settings), 2);
+        AddCell(grid, when, 2);
+        AddCell(grid, Watch(r, settings), 3);
         var line = new Border { Child = grid, Padding = new Thickness(8, 5, 6, 5), Margin = new Thickness(-8, 0, -6, 0), CornerRadius = new CornerRadius(8), Background = Brushes.Transparent };
         line.MouseEnter += (_, _) => line.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
         line.MouseLeave += (_, _) => line.Background = Brushes.Transparent;

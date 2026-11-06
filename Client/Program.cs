@@ -2070,12 +2070,12 @@ internal static class Program
         Aion2.Aion2FieldBosses.EnablePersistence();
         var now = DateTime.Now;
         string language = Ui.LocalizationManager.Instance.Language;
-        var rows = new List<(string, string, bool)>();
+        var rows = new List<(string, string, bool, Aion2.FieldBoss?, Aion2.BossStatus?)>();
         var shown = Aion2.Aion2FieldBosses.Maps[mapIndex];
         foreach (var boss in shown.Bosses.Take(8))
         {
             var status = Aion2.Aion2FieldBosses.StatusOf(boss, now);
-            rows.Add((Aion2.Aion2FieldBosses.DisplayName(shown, boss, language), Ui.WorldBossText.Of(status, now), status.Phase == Aion2.BossPhase.Now));
+            rows.Add((Aion2.Aion2FieldBosses.DisplayName(shown, boss, language), Ui.WorldBossText.Of(status, now), status.Phase == Aion2.BossPhase.Now, boss, status));
         }
 
         var window = new Ui.WorldBossOverlayWindow();
