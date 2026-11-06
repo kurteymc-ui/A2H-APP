@@ -879,7 +879,6 @@ public partial class MainWindow
             new(loc["Shell.OvMeter"], new SamplePlace(new Rect(1480, 260, 380, 300))),
             new(loc["Timers.Title"], new SamplePlace(new Rect(1560, 40, 300, 170))),
             new(loc["Settings.Combat.CardBossCast"], new SamplePlace(new Rect(720, 170, 486, 152))),
-            new(loc["Settings.Combat.CardBossHp"], new SamplePlace(new Rect(820, 90, 286, 50))),
             new(loc["Main.MenuTools.Assist"], new SamplePlace(new Rect(60, 640, 320, 140))),
             new(loc["Shell.OvPetFarm"], new SamplePlace(new Rect(860, 860, 200, 60))),
         };

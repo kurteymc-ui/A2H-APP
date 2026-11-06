@@ -82,7 +82,6 @@ public sealed class MenuWatcher : IDisposable
         Check(s.NetworkOverlayLocked, "Settings.Menu.Name.Network");
         Check(s.CombatOverlayLocked, "Combat.Element.TargetOfTarget");
         Check(s.CombatCastOverlayLocked ?? true, "Settings.Combat.CardBossCast");
-        Check(s.CombatHpOverlayLocked ?? true, "Settings.Combat.CardBossHp");
         Check(s.HotkeyOverlayLocked ?? true, "Settings.HotkeyOverlay.Title");
         Check(s.AssistOverlayLocked, "Settings.Menu.Name.Assist");
         Check(s.LootOverlayLocked, "Settings.Menu.Name.Loot");
