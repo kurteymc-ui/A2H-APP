@@ -184,8 +184,8 @@ public sealed class AccountWindow : Window
         {
             null => loc["Legion.Hint"],
             { Kind: "sent" } => string.Format(loc["Legion.Sent"], last.Legion, last.Members, last.Known, last.Lookup),
-            { Kind: "refused" } => string.Format(loc["Legion.Refused"], last.Legion),
-            _ => string.Format(loc["Legion.Later"], last.Legion),
+            { Kind: "refused" } => last.Message is { Length: > 0 } refused ? last.Legion + ": " + refused : string.Format(loc["Legion.Refused"], last.Legion),
+            _ => last.Message is { Length: > 0 } later ? last.Legion + ": " + later : string.Format(loc["Legion.Later"], last.Legion),
         };
     }
 

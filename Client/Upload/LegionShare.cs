@@ -13,8 +13,9 @@ public sealed record LegionMemberUpload(string Name, int ServerId, string? Cls, 
 /// <summary>The character played (name and server number) and its legion's member list from the login.</summary>
 public sealed record LegionUpload(int V, string Legion, LegionMemberUpload Character, IReadOnlyList<LegionMemberUpload> Members);
 
-/// <summary>How the last send went, for the account window: "sent" (Known members updated on the site, Lookup to be looked up), "later" or "refused".</summary>
-public sealed record LegionShareResult(string Legion, int Members, string Kind, int Known = 0, int Lookup = 0);
+/// <summary>How the last send went, for the account window and the Legion page: "sent" (Known members updated on the site, Lookup to be looked up),
+/// "later" or "refused", with the site's own words when it said no.</summary>
+public sealed record LegionShareResult(string Legion, int Members, string Kind, int Known = 0, int Lookup = 0, string? Message = null);
 
 /// <summary>
 /// The legion's member list for the Discord servers that follow the legion (atreia.app, /guild legion): at a login the game sends the own legion's
@@ -58,9 +59,10 @@ public static class LegionShare
 
         try
         {
+            // the site decides who may send it (a member whose character is verified, or someone who runs a Discord server that follows the legion,
+            // 6 November 2026): one not verified yet is tried again later
             if (!Ui.MeterSettings.Load().ShareLegionList || !Ui.PrivacyConsent.CanUpload || UploadClient.IsBlocked
-                || Build(directory.LocalCharacter, directory.AccountCharacters(), directory.LegionRoster()) is not { } upload
-                || !CharacterVerify.IsVerified(upload.Character.Name, upload.Character.ServerId))
+                || Build(directory.LocalCharacter, directory.AccountCharacters(), directory.LegionRoster()) is not { } upload)
             {
                 return;
             }
@@ -120,6 +122,48 @@ public static class LegionShare
         return new LegionUpload(1, name, new LegionMemberUpload(played.Name, played.ServerId, null, null, null, null), members);
     }
 
+    /// <summary>
+    /// The list kept on this PC (the Legion page's "Send to the website", the game need not run): sent now, whatever was sent before in this run. Null
+    /// when it can't be sent (not signed in, uploads off, no list).
+    /// </summary>
+    public static async Task<LegionShareResult?> SendNowAsync(History.LegionSnapshot snapshot)
+    {
+        if (!Account.SignedIn || !Ui.PrivacyConsent.CanUpload || UploadClient.IsBlocked || FromSnapshot(snapshot) is not { } upload)
+        {
+            return null;
+        }
+
+        try
+        {
+            string key = upload.Legion + "|" + upload.Character.ServerId;
+            await SendAsync(key, upload);
+            return Last;
+        }
+        catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or JsonException or IOException or InvalidOperationException)
+        {
+            return new LegionShareResult(upload.Legion, upload.Members.Count, "later");
+        }
+    }
+
+    /// <summary>What is sent from a kept list: its legion and character, its members (on the legion's server already, see LegionStore).</summary>
+    public static LegionUpload? FromSnapshot(History.LegionSnapshot snapshot)
+    {
+        if (snapshot.Legion.Length == 0 || snapshot.Character.Length == 0 || snapshot.ServerId <= 0 || snapshot.Members.Count == 0)
+        {
+            return null;
+        }
+
+        var members = snapshot.Members
+            .Where(m => m.Name.Length > 0)
+            .GroupBy(m => m.Name)
+            .Select(g => g.First())
+            .Take(300)
+            .Select(m => new LegionMemberUpload(m.Name, snapshot.ServerId, Aion2SkillNames.ClassFromCode(m.ClassCode), m.Level > 0 ? m.Level : null,
+                m.ItemLevel is > 0 and < 10000 ? m.ItemLevel : null, m.CombatPower is > 0 and < 10_000_000 ? m.CombatPower : null))
+            .ToList();
+        return new LegionUpload(1, snapshot.Legion, new LegionMemberUpload(snapshot.Character, snapshot.ServerId, null, null, null, null), members);
+    }
+
     private static async Task SendAsync(string key, LegionUpload upload)
     {
         string? token = Account.Token;
@@ -153,19 +197,24 @@ public static class LegionShare
             return;
         }
 
-        (bool ok, int known, int lookup, string? code) = Read(body);
-        if (status == 200 && ok)
+        (bool ok, int known, int lookup, string? code, string? error, bool kept) = Read(body);
+        if (status == 200 && ok && !kept)
+        {
+            // sent a moment ago (the site takes one list every few minutes from a player)
+            PutOff(key, upload, error);
+        }
+        else if (status == 200 && ok)
         {
             Finish(key, new LegionShareResult(upload.Legion, upload.Members.Count, "sent", known, lookup));
         }
         else if (code is "INVALID_INPUT" or "LEGION_MISMATCH")
         {
             // the site's refusals stand for this run (a legion the site has under another name is read again there every day)
-            Finish(key, new LegionShareResult(upload.Legion, upload.Members.Count, "refused"));
+            Finish(key, new LegionShareResult(upload.Legion, upload.Members.Count, "refused", Message: error));
         }
         else
         {
-            PutOff(key, upload);
+            PutOff(key, upload, error);
         }
     }
 
@@ -182,7 +231,7 @@ public static class LegionShare
     }
 
     /// <summary>Tried again later: 5 minutes after the first failure, three times as long after each next one, at most 3 hours.</summary>
-    private static void PutOff(string key, LegionUpload upload)
+    private static void PutOff(string key, LegionUpload upload, string? message = null)
     {
         lock (Gate)
         {
@@ -191,12 +240,13 @@ public static class LegionShare
             Later[key] = (DateTime.UtcNow.AddMinutes(minutes), tries);
         }
 
-        Last = new LegionShareResult(upload.Legion, upload.Members.Count, "later");
+        Last = new LegionShareResult(upload.Legion, upload.Members.Count, "later", Message: message);
         Changed?.Invoke();
     }
 
-    /// <summary>The site's answer: {ok, kept, known, lookup} or {ok: false, code, error}; an answer that isn't the site's reads as nothing.</summary>
-    private static (bool Ok, int Known, int Lookup, string? Code) Read(string body)
+    /// <summary>The site's answer: {ok, kept, known, lookup} ({ok, kept: false, why} for one sent a moment ago) or {ok: false, code, error}; an answer that
+    /// isn't the site's reads as nothing.</summary>
+    private static (bool Ok, int Known, int Lookup, string? Code, string? Error, bool Kept) Read(string body)
     {
         try
         {
@@ -204,17 +254,18 @@ public static class LegionShare
             JsonElement root = doc.RootElement;
             if (root.ValueKind != JsonValueKind.Object)
             {
-                return (false, 0, 0, null);
+                return (false, 0, 0, null, null, false);
             }
 
             int Number(string property) => root.TryGetProperty(property, out JsonElement v) && v.ValueKind == JsonValueKind.Number && v.TryGetInt32(out int n) ? n : 0;
+            string? Text(string property) => root.TryGetProperty(property, out JsonElement v) && v.ValueKind == JsonValueKind.String ? v.GetString() : null;
             bool ok = root.TryGetProperty("ok", out JsonElement o) && o.ValueKind == JsonValueKind.True;
-            string? code = root.TryGetProperty("code", out JsonElement c) && c.ValueKind == JsonValueKind.String ? c.GetString() : null;
-            return (ok, Number("known"), Number("lookup"), code);
+            bool kept = !root.TryGetProperty("kept", out JsonElement k) || k.ValueKind != JsonValueKind.False;
+            return (ok, Number("known"), Number("lookup"), Text("code"), Text("error") ?? Text("why"), kept);
         }
         catch (JsonException)
         {
-            return (false, 0, 0, null);
+            return (false, 0, 0, null, null, false);
         }
     }
 }

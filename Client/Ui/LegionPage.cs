@@ -416,6 +416,21 @@ internal sealed class LegionPage : Grid
         }
         else
         {
+            // the list kept here, to the website now (the game need not run): the roster of every Discord server following the legion fills from it
+            TextBlock said = Wrapped(LegionShare.Last is { } last && last.Legion == legion.Legion ? AccountWindow.LegionText(last) : Loc["Legion.Send.What"], "Brush.TextSubtle", 11.5);
+            said.Margin = new Thickness(0, 4, 0, 8);
+            var send = new Button { Content = Loc["Legion.Send.Now"], Padding = new Thickness(12, 6, 12, 6), Margin = new Thickness(0, 0, 0, 8), HorizontalAlignment = HorizontalAlignment.Left };
+            send.SetResourceReference(Control.BorderBrushProperty, "Brush.Accent");
+            send.Click += async (_, _) =>
+            {
+                send.IsEnabled = false;
+                said.Text = Loc["Legion.Send.Sending"];
+                LegionShareResult? result = await LegionShare.SendNowAsync(legion);
+                said.Text = result is null ? Loc["Legion.Send.Cant"] : AccountWindow.LegionText(result);
+                send.IsEnabled = true;
+            };
+            stack.Children.Add(said);
+            stack.Children.Add(send);
             var share = new CheckBox { IsChecked = MeterSettings.Load().ShareLegionList, Margin = new Thickness(0, 6, 0, 6), Content = Wrapped(Loc["Legion.Share"], "Brush.Text", 12) };
             share.Click += (_, _) =>
             {
@@ -424,7 +439,6 @@ internal sealed class LegionPage : Grid
                 settings.Save();
             };
             stack.Children.Add(share);
-            stack.Children.Add(Wrapped(AccountWindow.LegionText(LegionShare.Last), "Brush.TextSubtle", 11.5));
         }
 
         return Panel(stack);

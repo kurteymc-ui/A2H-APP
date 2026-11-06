@@ -15802,9 +15802,7 @@
     "fr": "Envoyer la liste des membres de ma légion (noms, classes, niveau d'objet, puissance de combat), pour que les serveurs Discord qui suivent la légion aient tous les membres"
   },
   "Legion.Hint": {
-    "en": "The list goes once your character is verified, after the next login.",
-    "de": "Die Liste wird gesendet, sobald dein Charakter verifiziert ist, nach dem nächsten Login.",
-    "fr": "La liste part une fois ton personnage vérifié, après la prochaine connexion."
+    "en": "The list goes at a login once your character is verified; if you run a Discord server that follows the legion, it goes any time from the Legion page."
   },
   "Legion.Sent": {
     "en": "{0}: {1} members sent ({2} updated now, {3} being looked up).",
@@ -22056,9 +22054,21 @@
     "en": "Send the list to the bot"
   },
   "Legion.Send.SignIn": {
-    "en": "Sign in with Discord in the app and verify your character: the list then goes to the bot at a login, and the servers following the legion have every member on their roster with the game's numbers."
+    "en": "Sign in with Discord in the app: the list then goes to the website, and the Discord servers following the legion have every member on their roster with the game's numbers. It takes a verified character in the legion, or running a server that follows it."
   },
   "Legion.Send.SignInButton": {
     "en": "Sign in with Discord"
+  },
+  "Legion.Send.What": {
+    "en": "Every member as the game listed them goes to the website: the rosters of the Discord servers following the legion fill from it, links kept, and nobody in the list is marked as gone."
+  },
+  "Legion.Send.Now": {
+    "en": "Send this list to the website now"
+  },
+  "Legion.Send.Sending": {
+    "en": "Sending…"
+  },
+  "Legion.Send.Cant": {
+    "en": "It can't be sent from here: sign in with Discord and allow uploads first."
   }
 }
