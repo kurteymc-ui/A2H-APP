@@ -301,6 +301,7 @@ public sealed partial class ChecklistWindow
             sub.TextTrimming = TextTrimming.CharacterEllipsis;
             names.Children.Add(sub);
             who.Children.Add(names);
+            who.ToolTip = c.Name + "\n" + string.Join(" \u00b7 ", parts); // all of it where the line is too narrow
             Cell(row, who, 0);
 
             // the Odyle Energy and when it is full
