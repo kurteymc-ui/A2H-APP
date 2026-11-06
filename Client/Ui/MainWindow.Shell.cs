@@ -38,12 +38,13 @@ public partial class MainWindow
     private static readonly (string Hub, string[] Tabs)[] ShellHubs =
     {
         ("hub.fights", new[] { "history", "dummy", "combat", "assist" }),
-        ("hub.characters", new[] { "characters", "attributes", "cpcalc", "journey", "legion" }), // the CP calculator replaced the stat calculator (4 November 2026); Journey beside it (5 November), Legion (6 November)
+        ("hub.characters", new[] { "characters", "attributes", "cpcalc", "journey" }), // the CP calculator replaced the stat calculator (4 November 2026); Journey beside it (5 November)
         ("hub.map", new[] { "petmap", "petmap.pets", "petmap.gather", "cubes" }),
         ("hub.items", new[] { "loot", "craft" }),
         ("hub.timers", new[] { "timetable", "boss" }),
         // Overlays, Design and Streaming (OBS) as three entries of their own (the owner, 4 November 2026: not under Overlays)
         ("hub.overlays", new[] { "overlays" }),
+        ("hub.legion", new[] { "legion" }), // an entry of its own under Overlays (the owner, 6 November 2026)
         ("hub.design", new[] { "meterlook", "theme" }),
         ("hub.stream", new[] { "stream" }),
     };
@@ -94,7 +95,7 @@ public partial class MainWindow
         {
             ["hub.fights"] = loc["Shell.HubFights"], ["hub.characters"] = loc["Shell.Characters"], ["hub.map"] = loc["Shell.HubMap"], ["hub.items"] = loc["Shell.HubItems"],
             ["hub.timers"] = loc["Timers.Title"], ["hub.overlays"] = loc["Shell.Overlays"], ["hub.design"] = loc["Shell.HubDesign"],
-            ["hub.stream"] = loc["Main.MenuTools.Stream"],
+            ["hub.stream"] = loc["Main.MenuTools.Stream"], ["hub.legion"] = loc["Main.MenuTools.Legion"],
         };
         var main = new List<ShellItem> { pages["home"], pages["meter"] };
         foreach (var (hub, _) in ShellHubs)

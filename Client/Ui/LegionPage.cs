@@ -13,7 +13,7 @@ using static AionDPS.Ui.JourneyViews;
 namespace AionDPS.Ui;
 
 /// <summary>
-/// Legion (Characters, beside Journey; 6 November 2026, the owner: "a legion tab, which finds your legion via packets and lists all the members, we can use
+/// Legion (an entry of its own in the column, under Overlays; 6 November 2026, the owner: "a legion tab, which finds your legion via packets and lists all the members, we can use
 /// this for easy access to add guilds to the disc bot as well ... a nice page called legion similar to character/journey design"). The legion's member list
 /// the game sends at every login (frame 0x058a: each member's class, level, Item Level, Combat Power, when last active and where), kept on this PC
 /// (<see cref="LegionStore"/>), with what the Atreia bot has of the legion (<see cref="LegionInfoClient"/>: the Discord servers following it, who is linked
