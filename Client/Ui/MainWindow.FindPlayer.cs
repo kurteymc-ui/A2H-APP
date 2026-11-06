@@ -13,7 +13,7 @@ namespace AionDPS.Ui;
 
 /// <summary>
 /// The meter's own buttons and menus (5 November 2026, the owner, with pictures of another meter): Tools (the buff and cooldown timers, the pet tracker and
-/// its list, sound alerts, clearing the fight, the history, finding a player), the short "…" (where everything is, the Ko-fi page, exit), and Find a player:
+/// its list, sound alerts, clearing the fight, the history), the short "…" (where everything is, the Ko-fi page, exit), and Find a player:
 /// a name and a region, the characters the website's search finds, then a card of the one picked (class, server, Combat Power, Item Level, the best parse
 /// of a public fight) with its full page in Character Lookup one click away. The full page stays on the website, the one place it is kept up to date.
 /// </summary>
@@ -42,7 +42,7 @@ public partial class MainWindow
             new Separator(),
             OverlayItem("Clear current fight", ResetMeter),
             OverlayItem("Fight history", OpenHistory),
-            OverlayItem("Find a player", ShowFindPlayer),
+            // Find a player: the search button on the meter and "…" (6 November 2026, the owner: three were too many)
         };
     }
 

@@ -1326,7 +1326,7 @@
                         <TextBlock x:Name="OverlayLockGlyph" Text="&#xE785;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
                     <Border x:Name="OverlayToolsButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayToolsClicked"
-                            ToolTip="Tools: buff and cooldown timers, pet tracker, sound alerts, clear the fight, history, find a player">
+                            ToolTip="Tools: buff and cooldown timers, pet tracker, sound alerts, clear the fight, history">
                         <TextBlock Text="&#xE90F;" Style="{StaticResource OverlayIconGlyph}"/>
                     </Border>
                     <Border x:Name="OverlayPetMapButton" DockPanel.Dock="Right" Style="{StaticResource OverlayIconButton}" MouseLeftButtonUp="OnOverlayPetMapClicked"
