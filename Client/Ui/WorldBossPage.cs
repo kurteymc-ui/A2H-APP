@@ -360,12 +360,12 @@ internal sealed class WorldBossPage : Grid
         switch (s.Phase)
         {
             case BossPhase.Respawn or BossPhase.Fixed when s.At is DateTime at && at > now:
-                top.Text = WorldBossText.Clock(at, now);
+                top.Text = Clock(at, now);
                 under.Text = "in " + Left(at - now);
                 _clocks.Add(t => under.Text = at > t ? "in " + Left(at - t) : "now");
                 break;
             case BossPhase.Now:
-                top.Text = s.At is DateTime since && since <= now ? "since " + WorldBossText.Clock(since, now) : "up";
+                top.Text = s.At is DateTime since && since <= now ? "since " + Clock(since, now) : "up";
                 top.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Heal");
                 under.Text = s.SeenAt is DateTime seen ? "seen " + Ago(now - seen) : "";
                 break;
@@ -439,6 +439,9 @@ internal sealed class WorldBossPage : Grid
         string days = string.Join(", ", rule.Days.Select(d => (d + shift) % 7).OrderBy(d => d == 0 ? 7 : d).Select(d => names[d]));
         return $"{days} at {next.Start:HH:mm}";
     }
+
+    /// <summary>"14:05" today, "Fri 22:05" on another day (minutes are enough on this page).</summary>
+    private static string Clock(DateTime at, DateTime now) => at.Date == now.Date ? at.ToString("HH:mm", En) : at.ToString("ddd HH:mm", En);
 
     /// <summary>"1 h 12 min", "12:04", "45 s".</summary>
     private static string Left(TimeSpan t)
