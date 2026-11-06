@@ -4455,6 +4455,7 @@ public partial class MainWindow : Window
         DateTime? previousRunWindowStart = _selectedRunWindowStart;
         DateTime? previousRunWindowEnd = _selectedRunWindowEnd;
         var uploadedNames = new List<string>();
+        var justUploaded = new List<JustUploaded>();
         string? lastError = null;
         bool nothingRecorded = false;
         bool first = true;
@@ -4482,6 +4483,11 @@ public partial class MainWindow : Window
             {
                 await SendReplayAfterAsync(payload, result, fingerprint);
                 uploadedNames.Add(payload.BossNpcName);
+                if (UploadedFight(payload, result) is { } fight)
+                {
+                    justUploaded.Add(fight);
+                }
+
                 _bossUploadedUntil[targetId] = _aggregator.Events
                     .Where(ev => !ev.IsHeal && ev.TargetObjectId == targetId)
                     .Max(ev => ev.Timestamp);
@@ -4499,9 +4505,10 @@ public partial class MainWindow : Window
 
         if (uploadedNames.Count > 0)
         {
-            ShowUploadStatus(uploadedNames.Count == 1
-                ? "Uploaded."
-                : $"Uploaded {uploadedNames.Count} boss fights: {string.Join(", ", uploadedNames)}.", uploadedNames.Count == 1 ? UploadClient.LastFightUrl : null);
+            string said = uploadedNames.Count == 1 ? "Uploaded." : $"Uploaded {uploadedNames.Count} boss fights: {string.Join(", ", uploadedNames)}.";
+            string? page = uploadedNames.Count == 1 ? UploadClient.LastFightUrl : null;
+            ShowUploadStatus(said, page);
+            await ShowRanksAsync(justUploaded, said, page);
         }
         else
         {
@@ -4884,6 +4891,7 @@ public partial class MainWindow : Window
         DateTime? previousRunWindowStart = _selectedRunWindowStart;
         DateTime? previousRunWindowEnd = _selectedRunWindowEnd;
         int uploaded = 0;
+        var justUploaded = new List<JustUploaded>();
         string? lastError = null;
         foreach (int targetId in targetIds)
         {
@@ -4918,6 +4926,10 @@ public partial class MainWindow : Window
                 await SendReplayAfterAsync(payload, result, fingerprint);
                 _sentBossPayloads.Add(payloadHash);
                 uploaded++;
+                if (UploadedFight(payload, result) is { } fight)
+                {
+                    justUploaded.Add(fight);
+                }
             }
             else
             {
@@ -4932,7 +4944,10 @@ public partial class MainWindow : Window
 
         if (uploaded > 0)
         {
-            ShowUploadStatus(uploaded == 1 ? "Boss fight uploaded." : $"{uploaded} boss fights uploaded.", uploaded == 1 ? UploadClient.LastFightUrl : null);
+            string said = uploaded == 1 ? "Boss fight uploaded." : $"{uploaded} boss fights uploaded.";
+            string? page = uploaded == 1 ? UploadClient.LastFightUrl : null;
+            ShowUploadStatus(said, page);
+            await ShowRanksAsync(justUploaded, said, page);
         }
         else if (lastError is not null)
         {

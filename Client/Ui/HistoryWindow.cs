@@ -90,9 +90,27 @@ public sealed class HistoryWindow : Window
 
         Action onChanged = () => Dispatcher.BeginInvoke(new Action(Draw));
         FightLog.Changed += onChanged;
+        // ranks come from the website one fight at a time: the page is drawn again once they stop coming for a moment
+        var rankWait = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(700) };
+        rankWait.Tick += (_, _) =>
+        {
+            rankWait.Stop();
+            if (_reportView is null)
+            {
+                Draw();
+            }
+        };
+        Action onRank = () => Dispatcher.BeginInvoke(new Action(() =>
+        {
+            rankWait.Stop();
+            rankWait.Start();
+        }));
+        FightRanks.Changed += onRank;
         Closed += (_, _) =>
         {
             FightLog.Changed -= onChanged;
+            FightRanks.Changed -= onRank;
+            rankWait.Stop();
             CloseReport();
         };
         Draw();
@@ -432,7 +450,15 @@ public sealed class HistoryWindow : Window
         var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         string name = TitleOf(entry) + (entry.Kind == FightLogKind.Dummy && entry.Detail is { Length: > 0 } d ? " · " + d : "");
         words.Children.Add(new TextBlock { Text = name, FontSize = 13.5, FontWeight = FontWeights.SemiBold, TextTrimming = TextTrimming.CharacterEllipsis, ToolTip = name });
-        words.Children.Add(new TextBlock { Text = Short(entry.YourDps), FontSize = 22, FontWeight = FontWeights.SemiBold, Foreground = Gold, Margin = new Thickness(0, 1, 0, 0) });
+        var figure = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 1, 0, 0) };
+        figure.Children.Add(new TextBlock { Text = Short(entry.YourDps), FontSize = 22, FontWeight = FontWeights.SemiBold, Foreground = Gold, VerticalAlignment = VerticalAlignment.Center });
+        if (RankBadge(entry, 36, 22, 12.5) is { } badge)
+        {
+            badge.Margin = new Thickness(10, 2, 0, 0);
+            figure.Children.Add(badge);
+        }
+
+        words.Children.Add(figure);
         string line = entry.Start.ToString("MMM d", En) + " · " + ReportPalette.Clock(entry.Seconds)
             + (_character == AllCharacters && _characters.Visibility == Visibility.Visible && entry.You is { Length: > 0 } you ? " · " + you : "");
         TextBlock when = Muted(line, 11.5, new Thickness(0, 1, 0, 0));
@@ -471,6 +497,13 @@ public sealed class HistoryWindow : Window
         int newBests = bosses.Where(e => e.Killed == true && e.YourDps > 0).GroupBy(TitleOf).Count(g => _bests.TryGetValue(g.Key, out double b) && g.Max(e => e.YourDps) >= b);
         var dummies = week.Where(e => e.Kind == FightLogKind.Dummy).ToList();
         int online = bosses.Count(e => e.Url is not null);
+        foreach (FightLogEntry e in bosses)
+        {
+            FightRanks.Want(e);
+        }
+
+        var ranked = bosses.Select(FightRanks.Of).Where(r => r is { Ranked: true }).Select(r => r!.Percent).ToList();
+        double? average = ranked.Count > 0 ? ranked.Average() : null;
         string Duration(double s) => s >= 3600 ? $"{(int)(s / 3600)} h {(int)(s % 3600 / 60)} m" : $"{Math.Max(0, (int)(s / 60))} m";
         var cells = new (string Caption, string Value, Brush? ValueBrush, string Note, Color Dot)[]
         {
@@ -479,7 +512,10 @@ public sealed class HistoryWindow : Window
             ("Best DPS", top is null ? "–" : Short(top.YourDps), Gold, top is null ? "no boss fight" : TitleOf(top), Color.FromRgb(0xE6, 0xC0, 0x68)),
             ("New personal bests", newBests.ToString("N0", En), null, newBests == 1 ? "boss beaten better than ever" : "bosses beaten better than ever", Color.FromRgb(0xA4, 0x8C, 0xF4)),
             ("Dummy parses", dummies.Count.ToString("N0", En), null, dummies.Count == 0 ? "none this week" : "best " + Short(dummies.Max(e => e.YourDps)), Color.FromRgb(0xE2, 0x73, 0x5C)),
-            ("On the website", online.ToString("N0", En), null, bosses.Count == 0 ? "no boss fights" : "of " + Plural(bosses.Count, "boss fight"), Color.FromRgb(0x8C, 0x9E, 0xFF)),
+            ("Average percentile", average is double avg ? RankTier.Number(avg) : "–", average is double avgTier ? RankTier.Brush(avgTier) : null,
+                ranked.Count > 0 ? $"best {RankTier.Number(ranked.Max())} · {ranked.Count} ranked of {online} on the website"
+                : online > 0 ? $"{online} on the website, none ranked yet" : bosses.Count == 0 ? "no boss fights" : "upload a boss fight to see it",
+                Color.FromRgb(0x8C, 0x9E, 0xFF)),
         };
         _board.Children.Add(Muted("THE LAST 7 DAYS", 11.5, new Thickness(2, 0, 0, 8), semibold: true));
         var grid = new Grid();
@@ -526,7 +562,7 @@ public sealed class HistoryWindow : Window
     private FrameworkElement Row(FightLogEntry entry, bool first, bool best, bool inVisit = false)
     {
         var grid = new Grid { Margin = new Thickness(14, 9, 18, 9) };
-        foreach (GridLength w in new[] { new GridLength(52), new GridLength(1, GridUnitType.Star), new GridLength(90), new GridLength(110) })
+        foreach (GridLength w in new[] { new GridLength(52), new GridLength(1, GridUnitType.Star), new GridLength(64), new GridLength(90), new GridLength(110) })
         {
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = w });
         }
@@ -573,8 +609,13 @@ public sealed class HistoryWindow : Window
             Background = bad ? BadBack : GoodBack,
             Child = new TextBlock { Text = (entry.Kind == FightLogKind.Boss ? (bad ? "\u2715 " : "\u2713 ") : "") + ReportPalette.Clock(entry.Seconds), FontSize = 12.5, FontWeight = FontWeights.SemiBold, Foreground = bad ? BadText : GoodText },
         };
-        Grid.SetColumn(chip, 2);
+        Grid.SetColumn(chip, 3);
         grid.Children.Add(chip);
+        if (RankBadge(entry, 44, 30, 15) is { } badge)
+        {
+            Grid.SetColumn(badge, 2);
+            grid.Children.Add(badge);
+        }
 
         var dps = new StackPanel { HorizontalAlignment = HorizontalAlignment.Right, VerticalAlignment = VerticalAlignment.Center, MinWidth = 96 };
         double? bestOnBoss = !best && entry.Kind == FightLogKind.Boss && entry.YourDps > 0 && _bests.TryGetValue(TitleOf(entry), out double b) ? b : null;
@@ -611,7 +652,7 @@ public sealed class HistoryWindow : Window
             dps.Children.Add(track);
         }
 
-        Grid.SetColumn(dps, 3);
+        Grid.SetColumn(dps, 4);
         grid.Children.Add(dps);
 
         var row = new Border { Child = grid, Background = Brushes.Transparent, Cursor = Cursors.Hand, BorderThickness = new Thickness(0, first ? 0 : 1, 0, 0) };
@@ -658,6 +699,47 @@ public sealed class HistoryWindow : Window
         menu.Items.Add(delete);
         row.ContextMenu = menu;
         return row;
+    }
+
+    /// <summary>
+    /// Your rank in an uploaded, killed boss fight as the website ranks it (the percentile of your class on the boss, in the website's colour), asked of it in
+    /// the background the first time; a dash when there are too few logs of the class yet; null when there is none to show (not uploaded, a wipe, not asked yet).
+    /// </summary>
+    private FrameworkElement? RankBadge(FightLogEntry entry, double width, double height, double size)
+    {
+        if (entry.Kind != FightLogKind.Boss || entry.Killed != true || entry.Url is null)
+        {
+            return null;
+        }
+
+        FightRanks.Want(entry);
+        if (FightRanks.Of(entry) is not { } rank)
+        {
+            return null;
+        }
+
+        string boss = TitleOf(entry);
+        if (!rank.Ranked)
+        {
+            TextBlock dash = Muted("–", size, new Thickness(0), semibold: true);
+            dash.HorizontalAlignment = HorizontalAlignment.Center;
+            dash.VerticalAlignment = VerticalAlignment.Center;
+            dash.ToolTip = RankTier.Why(rank, entry.YourClass, boss);
+            dash.Background = Brushes.Transparent;
+            return dash;
+        }
+
+        return new Border
+        {
+            Width = width, Height = height, CornerRadius = new CornerRadius(height / 4), BorderThickness = new Thickness(1), HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center, Background = RankTier.Back(rank.Percent), BorderBrush = RankTier.Brush(rank.Percent),
+            ToolTip = RankTier.Describe(rank, entry.YourClass, boss) + "\nThe website's rank: it moves as more players log the boss.",
+            Child = new TextBlock
+            {
+                Text = RankTier.Number(rank.Percent), FontSize = size, FontWeight = FontWeights.Bold, Foreground = RankTier.Brush(rank.Percent),
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center,
+            },
+        };
     }
 
     /// <summary>The entry's title; a boss the game named only by its number ("0x00005C73") gets its name from the NPC list, else "Unknown boss".</summary>

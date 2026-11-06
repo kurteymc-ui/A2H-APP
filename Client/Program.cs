@@ -1084,6 +1084,7 @@ internal static class Program
                 History.FightLog.Save(History.FightLogKind.Dummy, Shift(played, TimeSpan.FromDays(-day) + TimeSpan.FromHours(-3)) with { Title = "Training Scarecrow" }, "2:00 parse");
             }
 
+            SampleRanks();
             var window = new Ui.HistoryWindow();
             window.ShowTab(tab.Replace('-', ' '));
             var page = window.PageContent;
@@ -1117,6 +1118,34 @@ internal static class Program
         Environment.Exit(0);
     }
 
+    /// <summary>
+    /// Made-up website ranks for the pictures' killed boss fights (nothing is asked of the website): most of them on the website with a percentile of every
+    /// colour, one with too few logs of the class yet, every fourth not uploaded.
+    /// </summary>
+    private static void SampleRanks()
+    {
+        History.FightRanks.Offline = true;
+        History.FightRanks.Reload();
+        double[] percents = { 96.4, 78.2, 54.9, 99.3, 31.0, 88.6, 63.1, 100, 12.5, 81.7 };
+        int i = 0;
+        foreach (History.FightLogEntry e in History.FightLog.Entries().Where(e => e.Kind == History.FightLogKind.Boss && e.Killed == true).ToList())
+        {
+            int n = i++;
+            if (n % 4 == 3)
+            {
+                continue;
+            }
+
+            string url = $"https://atreia.app/meter/logs/sample{n:0000}";
+            History.FightLog.SetUrl(e.Id, url);
+            int of = 180 + (n * 37 % 160);
+            double pct = percents[n % percents.Length];
+            History.FightRanks.Seed(url, n == 6
+                ? new History.FightRanks.Own(0, 0, 6, 10, null, null, DateTime.UtcNow)
+                : new History.FightRanks.Own(pct, (int)Math.Round((100 - pct) / 100 * (of - 1)) + 1, of, 10, 50_000, 60_000, DateTime.UtcNow));
+        }
+    }
+
     /// <summary>The sample fight moved in time (every event, effect and cast), for the history picture's other days.</summary>
     /// <summary>Draws the app window (its sections on the left, a section on the right: home, overlays, characters, history, meter) with made-up fights and
     /// characters into a picture; no window is ever shown.</summary>
@@ -1145,6 +1174,8 @@ internal static class Program
                 Combat.ReportInput moved = Shift(sample, TimeSpan.FromMinutes(-50 * k - 20));
                 History.FightLog.Save(k == 2 ? History.FightLogKind.Dummy : History.FightLogKind.Boss, k == 2 ? moved with { Title = "Training Scarecrow" } : moved with { Killed = k != 3 }, k == 2 ? "2:00 parse" : null);
             }
+
+            SampleRanks();
 
             // characters: the checklist's real login list, three characters, one of them full of Odyle Energy
             Aion2.Aion2Tickets.Reset();

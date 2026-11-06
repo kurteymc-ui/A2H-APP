@@ -1176,6 +1176,14 @@
     "ja": "ボスを倒した後、ボス戦を自動的にアップロードする",
     "ko": "보스 처치 후 보스 전투를 자동으로 업로드"
   },
+  "Settings.RankPopup": {
+    "en": "Show my rank on the boss over the game after an upload",
+    "de": "Nach einem Upload meinen Rang beim Boss über dem Spiel zeigen",
+    "fr": "Afficher mon rang sur le boss au-dessus du jeu après un envoi"
+  },
+  "Settings.RankPopup.Hint": {
+    "en": "A moment after a boss fight was uploaded, a small note over the game shows your percentile on that boss: how many players of your class (in your Combat Power bracket) you beat, in the website's colours. Bosses with fewer than 10 logs of your class show nothing yet."
+  },
   "Settings.UploadReplay": {
     "en": "Send the positions with each boss upload (the replay on the site)",
     "de": "Mit jedem Boss-Upload die Positionen senden (die Wiederholung auf der Website)"

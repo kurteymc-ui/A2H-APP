@@ -229,6 +229,23 @@ public static class FightLog
         }
     }
 
+    /// <summary>Gives an entry its page on the website straight away (the pictures' made-up fights).</summary>
+    internal static void SetUrl(string id, string url)
+    {
+        lock (Gate)
+        {
+            List<FightLogEntry> index = LoadIndex();
+            int at = index.FindIndex(e => e.Id == id);
+            if (at < 0)
+            {
+                return;
+            }
+
+            index[at] = index[at] with { Url = url };
+            SaveIndex(index);
+        }
+    }
+
     /// <summary>Removes an entry and its file.</summary>
     public static void Delete(FightLogEntry entry)
     {

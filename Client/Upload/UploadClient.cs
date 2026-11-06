@@ -159,8 +159,8 @@ public static class UploadClient
     }
 
     /// <summary>A player's rank in an uploaded fight, as its page shows it: better than <paramref name="Percent"/> of the <paramref name="Of"/> logs of the same class on
-    /// the boss (in the 10k Combat Power bracket when the site knows it).</summary>
-    public sealed record FightRank(double Percent, int Place, int Of);
+    /// the boss (in the 10k Combat Power bracket <paramref name="Low"/> to <paramref name="High"/> when the site knows it, else over all).</summary>
+    public sealed record FightRank(double Percent, int Place, int Of, int? Low = null, int? High = null);
 
     /// <summary>
     /// The ranks of an uploaded fight (its page's address), by player name, and how many logs of a class the site wants before a rank means something;
@@ -196,8 +196,11 @@ public static class UploadClient
                 if (r.TryGetProperty("name", out JsonElement n) && n.GetString() is { } name && r.TryGetProperty("rank", out JsonElement rank) && rank.ValueKind == JsonValueKind.Object)
                 {
                     // the 10k Combat Power bracket when the site has one, else over all (as the fight's page)
-                    JsonElement pick = rank.TryGetProperty("br", out JsonElement br) && br.ValueKind == JsonValueKind.Object ? br : rank.GetProperty("all");
-                    ranks[name] = new FightRank(pick.GetProperty("pct").GetDouble(), pick.GetProperty("rank").GetInt32(), pick.GetProperty("n").GetInt32());
+                    bool inBracket = rank.TryGetProperty("br", out JsonElement br) && br.ValueKind == JsonValueKind.Object;
+                    JsonElement pick = inBracket ? br : rank.GetProperty("all");
+                    int? low = inBracket && br.TryGetProperty("lo", out JsonElement lo) && lo.TryGetInt32(out int lv) ? lv : null;
+                    int? high = inBracket && br.TryGetProperty("hi", out JsonElement hi) && hi.TryGetInt32(out int hv) ? hv : null;
+                    ranks[name] = new FightRank(pick.GetProperty("pct").GetDouble(), pick.GetProperty("rank").GetInt32(), pick.GetProperty("n").GetInt32(), low, high);
                 }
             }
 

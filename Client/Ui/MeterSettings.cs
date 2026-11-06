@@ -108,6 +108,10 @@ public sealed class MeterSettings
     /// MainWindow.ScheduleBossUpload). Switched on when the privacy terms are accepted (they name it), off in Settings, Upload.</summary>
     public bool AutoUploadBoss { get; set; }
 
+    /// <summary>Whether your rank on the boss (the website's percentile for your class) shows over the game a moment after a boss fight was uploaded
+    /// (see RankToast). On by default.</summary>
+    public bool RankPopup { get; set; } = true;
+
     /// <summary>Whether the game-server traffic is also written to a file on this PC (see DebugRecording), so it can be sent
     /// to the developer by hand. Off by default; nothing is sent by the program.</summary>
     public bool DebugRecording { get; set; }

@@ -407,7 +407,7 @@ public sealed class FightReportWindow : Window
             return ("–", $"Not enough data yet: a rank shows once {_rankMin} or more {p.Player.ClassName}s have a log on {_r.Title} ({r.Of} so far).");
         }
 
-        return (Math.Floor(r.Percent).ToString("0", En), $"Better than {r.Percent.ToString("0.#", En)}% of {p.Player.ClassName}s on {_r.Title} by rDPS · rank {r.Place} of {r.Of}");
+        return (Math.Floor(r.Percent).ToString("0", En), $"Better than {r.Percent.ToString("0.#", En)}% of {RankTier.Bracket(r.Low, r.High)}{p.Player.ClassName}s on {_r.Title} by rDPS · rank {r.Place} of {r.Of}");
     }
 
     private FrameworkElement DamageTab()
@@ -418,7 +418,10 @@ public sealed class FightReportWindow : Window
         var cols = new List<Col> { new("Damage", 120, p => N(p.Damage), Bold: true), new("DPS", 100, p => N(p.Dps)) };
         if (_shareUrl is not null)
         {
-            cols.Insert(0, new Col("Rank", 70, p => RankOf(p).Text, Tip: p => RankOf(p).Tip));
+            // in the website's colour for the percentile, as on the fight's page
+            cols.Insert(0, new Col("Rank", 70, p => RankOf(p).Text, Bold: true,
+                Color: p => _ranks is not null && _ranks.TryGetValue(p.Player.Name, out UploadClient.FightRank? fr) && fr.Of >= _rankMin ? RankTier.Brush(fr.Percent) : null,
+                Tip: p => RankOf(p).Tip));
         }
 
         if (rdps)

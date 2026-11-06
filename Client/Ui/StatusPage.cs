@@ -269,7 +269,7 @@ internal sealed class StatusPage : Grid
         var (perSecond, average, longest, shared) = GameCapture.Stats(TimeSpan.FromSeconds(10));
         lines.Add(new Line(Loc["Status.Pictures"], perSecond > 4.5 || longest > 120 ? Mark.Wait : Mark.Good,
             perSecond <= 0 ? Loc["Status.PicturesNone"] : F("Status.PicturesRate", perSecond.ToString("0.0", CultureInfo.CurrentCulture), Math.Round(average), Math.Round(longest)),
-            F("Status.PicturesShared", shared)));
+            shared > 0 ? F("Status.PicturesShared", shared) : null));
 
         // the app itself
         var (cpu, memory) = AppPerf.ProcessUse();
