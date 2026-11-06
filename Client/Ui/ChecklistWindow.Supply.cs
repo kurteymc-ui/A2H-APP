@@ -78,7 +78,7 @@ public sealed partial class ChecklistWindow
         TextBlock resets = Label("↻  " + ResetText(1, true) + "  ·  " + ResetText(2, false), "Brush.TextMuted", 11.5);
         DockPanel.SetDock(resets, Dock.Right);
         head.Children.Add(resets);
-        head.Children.Add(Label(loc["Checklist.Supply"], "Brush.Text", 16, bold: true));
+        head.Children.Add(SectionTitle(loc["Checklist.Supply"]));
         stack.Children.Add(head);
 
         if (state is null || state.Groups.Count == 0)
@@ -411,7 +411,7 @@ public sealed partial class ChecklistWindow
         searchBox.Children.Add(hint);
         DockPanel.SetDock(searchBox, Dock.Right);
         head.Children.Add(searchBox);
-        head.Children.Add(Label(server.Length > 0 ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.InventoryOn"], server) : loc["Checklist.Inventory"], "Brush.Text", 16, bold: true));
+        head.Children.Add(SectionTitle(server.Length > 0 ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.InventoryOn"], server) : loc["Checklist.Inventory"]));
         stack.Children.Add(head);
 
         string who = string.Join(", ", new[] { me }.Concat(mates).Select(c => c.Name));

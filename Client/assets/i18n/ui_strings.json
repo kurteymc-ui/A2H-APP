@@ -18079,6 +18079,39 @@
     "ko": "아이템 +{0}",
     "zh-TW": "道具 +{0}"
   },
+  "Checklist.PageTitle": {
+    "en": "Characters"
+  },
+  "Checklist.PageLede": {
+    "en": "Every character as the meter last saw it: its Odyle Energy, the daily and weekly counters, season missions and what it holds."
+  },
+  "Checklist.TileOfAll": {
+    "en": "of all characters together"
+  },
+  "Checklist.TileClaims": {
+    "en": "Claims ready"
+  },
+  "Checklist.TilePerRun": {
+    "en": "a run"
+  },
+  "Checklist.TilePlayNext": {
+    "en": "Play next"
+  },
+  "Checklist.TileThen": {
+    "en": "then {0}"
+  },
+  "Checklist.TileTasksNote": {
+    "en": "characters with all daily tasks done"
+  },
+  "Checklist.TilesTitle": {
+    "en": "Your characters ({0})"
+  },
+  "Checklist.TileCharged": {
+    "en": "charged"
+  },
+  "Checklist.TileFullIn": {
+    "en": "full {0}"
+  },
   "Loot.ResetAll": {
     "en": "Reset loot",
     "de": "Beute zurücksetzen",
