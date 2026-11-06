@@ -1032,7 +1032,8 @@
                                 <TextBlock Style="{StaticResource CardHint}" Text="{local:Loc Settings.Combat.OverlaysIntro}"/>
                             </StackPanel>
                         </Border>
-<Border Style="{StaticResource SettingsCard}">
+<!-- the boss's health is the boss line on the meter (6 November 2026): its old card stays for the settings code, never shown -->
+<Border Style="{StaticResource SettingsCard}" Visibility="Collapsed">
                             <StackPanel>
                                 <TextBlock Style="{StaticResource CardTitle}" Text="{local:Loc Settings.Combat.CardBossHp}"/>
                                 <CheckBox x:Name="ShowBossHpBox" Content="{local:Loc Settings.Overlay.ShowAs}"/>

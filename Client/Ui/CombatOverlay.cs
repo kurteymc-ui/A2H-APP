@@ -590,14 +590,15 @@ public sealed class CombatOverlayController : IDisposable
     private DateTime _checkAt;
     private int _checkFor;
     private string _checkText = "";
-    private CombatOverlayWindow? _overlay, _castOverlay, _hpOverlay;
+    private CombatOverlayWindow? _overlay, _castOverlay;
     private readonly List<CombatOverlayWindow> _views = new();
 
     /// <summary>The three overlays as never shown copies whose content a tool window shows live, with sample values while nothing is going on.</summary>
     public IReadOnlyList<(string TitleKey, CombatOverlayWindow View)> CreateViews()
     {
         var made = new List<(string, CombatOverlayWindow)>();
-        foreach (var (key, part) in new[] { ("Settings.Combat.CardBossHp", CombatOverlayWindow.Part.Hp), ("Settings.Combat.CardBossCast", CombatOverlayWindow.Part.Cast), ("Combat.Element.TargetOfTarget", CombatOverlayWindow.Part.Target) })
+        // the boss's health is no longer here: it is the boss line on the meter (6 November 2026, the owner: "we dont need the boss fight ... since we have it on the meter")
+        foreach (var (key, part) in new[] { ("Settings.Combat.CardBossCast", CombatOverlayWindow.Part.Cast), ("Combat.Element.TargetOfTarget", CombatOverlayWindow.Part.Target) })
         {
             var view = new CombatOverlayWindow(part) { Preview = true };
             _views.Add(view);
@@ -633,7 +634,6 @@ public sealed class CombatOverlayController : IDisposable
     {
         _overlay?.RaiseToFront();
         _castOverlay?.RaiseToFront();
-        _hpOverlay?.RaiseToFront();
     }
 
     public void Dispose()
@@ -642,7 +642,6 @@ public sealed class CombatOverlayController : IDisposable
         _directory()?.Combat.SaveIfChanged();
         _overlay?.Close();
         _castOverlay?.Close();
-        _hpOverlay?.Close();
     }
 
     /// <summary>What the overlay shows now: the casts, the target of the target and the boss's health (with the check mark of its hit points).</summary>
@@ -713,16 +712,14 @@ public sealed class CombatOverlayController : IDisposable
         {
             _overlay?.ShowOverlay(false);
             _castOverlay?.ShowOverlay(false);
-            _hpOverlay?.ShowOverlay(false);
             return;
         }
 
         _overlay ??= new CombatOverlayWindow(CombatOverlayWindow.Part.Target);
         _castOverlay ??= new CombatOverlayWindow(CombatOverlayWindow.Part.Cast);
-        _hpOverlay ??= new CombatOverlayWindow(CombatOverlayWindow.Part.Hp);
-        // each of the three is positioned on its own; a window that is switched off is neither shown nor positioned
-        bool lockedTarget = settings.CombatOverlayLocked, lockedCast = settings.CombatCastOverlayLocked ?? settings.CombatOverlayLocked, lockedHp = settings.CombatHpOverlayLocked ?? settings.CombatOverlayLocked;
-        foreach (var (window, locked) in new[] { (_overlay, lockedTarget), (_castOverlay, lockedCast), (_hpOverlay, lockedHp) })
+        // each of the two is positioned on its own; a window that is switched off is neither shown nor positioned (the boss's health is on the meter)
+        bool lockedTarget = settings.CombatOverlayLocked, lockedCast = settings.CombatCastOverlayLocked ?? settings.CombatOverlayLocked;
+        foreach (var (window, locked) in new[] { (_overlay, lockedTarget), (_castOverlay, lockedCast) })
         {
             window.ApplyLockedIfChanged(locked);
             window.SetEditing(!locked);
@@ -733,7 +730,6 @@ public sealed class CombatOverlayController : IDisposable
         {
             _overlay.ShowOverlay(false);
             _castOverlay.ShowOverlay(false);
-            _hpOverlay.ShowOverlay(false);
             return;
         }
 
@@ -742,6 +738,5 @@ public sealed class CombatOverlayController : IDisposable
         // only over the game (never on the desktop), each with what it has to show
         _overlay.ShowOverlay(_overlay.Render(frame, settings) && inGame);
         _castOverlay.ShowOverlay(_castOverlay.Render(frame, settings) && inGame);
-        _hpOverlay.ShowOverlay(_hpOverlay.Render(frame, settings) && inGame);
     }
 }

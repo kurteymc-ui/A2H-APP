@@ -2721,7 +2721,7 @@ internal static class Program
         Ui.ThemeManager.Apply(app, settings);
         Ui.MainWindow.Headless = true;
         bool edit = mode == "edit";
-        var windows = new[] { new Ui.CombatOverlayWindow(Ui.CombatOverlayWindow.Part.Cast), new Ui.CombatOverlayWindow(Ui.CombatOverlayWindow.Part.Target), new Ui.CombatOverlayWindow(Ui.CombatOverlayWindow.Part.Hp) };
+        var windows = new[] { new Ui.CombatOverlayWindow(Ui.CombatOverlayWindow.Part.Cast), new Ui.CombatOverlayWindow(Ui.CombatOverlayWindow.Part.Target) };
         foreach (var window in windows)
         {
             window.ApplyLocked(!edit);

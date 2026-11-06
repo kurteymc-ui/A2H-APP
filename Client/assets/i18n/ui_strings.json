@@ -8861,16 +8861,16 @@
     "ko": "보스 시전"
   },
   "Settings.Combat.OverlaysIntro": {
-    "en": "Here you choose which of the three overlays you use. They are only shown while \"Overlay\" above is on. Your choice is kept.",
-    "de": "Welche der drei Overlays du nutzt, legst du hier fest. Angezeigt werden sie nur, wenn oben „Overlay“ eingeschaltet ist. Deine Auswahl bleibt dabei erhalten.",
-    "fr": "Choisissez ici lesquels des trois overlays vous utilisez. Ils ne s'affichent que si « Overlay » est activé en haut. Votre choix est conservé.",
-    "es": "Aquí eliges cuáles de los tres overlays usas. Solo se muestran si «Overlay» está activado arriba. Tu elección se conserva.",
-    "ru": "Здесь вы выбираете, какие из трёх оверлеев использовать. Они показываются, только если вверху включён «Оверлей». Ваш выбор сохраняется.",
-    "zh": "在此选择要使用三个悬浮窗中的哪些。仅当上方的“悬浮窗”开启时才会显示。你的选择会被保留。",
-    "zh-TW": "在此選擇要使用三個浮動層中的哪些。僅在上方的「浮動層」開啟時才會顯示。你的選擇會被保留。",
-    "pt": "Aqui você escolhe quais dos três overlays usa. Eles só aparecem quando \"Overlay\" acima está ativado. Sua escolha é mantida.",
-    "ja": "3つのオーバーレイのうち、どれを使うかをここで選びます。上の「オーバーレイ」がオンのときだけ表示されます。選択は保持されます。",
-    "ko": "세 개의 오버레이 중 사용할 것을 여기서 고릅니다. 위의 \"오버레이\"가 켜져 있을 때만 표시됩니다. 선택은 그대로 유지됩니다."
+    "en": "Here you choose which of the two overlays you use. They are only shown while \"Overlay\" above is on. Your choice is kept.",
+    "de": "Welche der zwei Overlays du nutzt, legst du hier fest. Angezeigt werden sie nur, wenn oben „Overlay“ eingeschaltet ist. Deine Auswahl bleibt dabei erhalten.",
+    "fr": "Choisissez ici lesquels des deux overlays vous utilisez. Ils ne s'affichent que si « Overlay » est activé en haut. Votre choix est conservé.",
+    "es": "Aquí eliges cuáles de los dos overlays usas. Solo se muestran si «Overlay» está activado arriba. Tu elección se conserva.",
+    "ru": "Здесь вы выбираете, какие из двух оверлеев использовать. Они показываются, только если вверху включён «Оверлей». Ваш выбор сохраняется.",
+    "zh": "在此选择要使用两个悬浮窗中的哪些。仅当上方的“悬浮窗”开启时才会显示。你的选择会被保留。",
+    "zh-TW": "在此選擇要使用兩個浮動層中的哪些。僅在上方的「浮動層」開啟時才會顯示。你的選擇會被保留。",
+    "pt": "Aqui você escolhe quais dos dois overlays usa. Eles só aparecem quando \"Overlay\" acima está ativado. Sua escolha é mantida.",
+    "ja": "2つのオーバーレイのうち、どれを使うかをここで選びます。上の「オーバーレイ」がオンのときだけ表示されます。選択は保持されます。",
+    "ko": "두 개의 오버레이 중 사용할 것을 여기서 고릅니다. 위의 \"오버레이\"가 켜져 있을 때만 표시됩니다. 선택은 그대로 유지됩니다."
   },
   "Settings.Combat.TargetAlways": {
     "en": "Always visible: icon and name of the target the boss aims at.",
