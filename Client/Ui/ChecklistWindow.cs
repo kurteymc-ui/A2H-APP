@@ -796,7 +796,7 @@ public sealed partial class ChecklistWindow : Window
         title.Children.Add(SectionTitle(string.Format(CultureInfo.CurrentCulture, loc["Checklist.TilesTitle"], all.Count)));
         title.Children.Add(InfoMark(loc["Checklist.RosterNote"]));
         _body.Children.Add(title);
-        _body.Children.Add(Tiles(all.Select(c => RosterTile(c, odyle[c.Name], inItems[c.Name], defs, c.Name == online, now, utcNow, language)).ToList()));
+        _body.Children.Add(RosterTable(all, odyle, inItems, defs, online, now, utcNow, language));
 
         // the season missions of every character: its box of characters (weekly points, missions done) picks whose missions show, the one online first
         if ((all.FirstOrDefault(c => c.Name == online) ?? all.FirstOrDefault()) is { } seasonFirst)

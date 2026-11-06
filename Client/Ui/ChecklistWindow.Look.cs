@@ -63,38 +63,28 @@ public sealed partial class ChecklistWindow
     /// <summary>One figure of a board: a coloured dot and a caption in capitals, the figure large, a note small under it.</summary>
     private sealed record Score(string Caption, UIElement Value, UIElement? Note, string Dot, string? Tip = null);
 
-    /// <summary>A board of figures in three columns (the roster's resets, energy, claims, whom to play next, the daily tasks), lines between the cells.</summary>
+    /// <summary>
+    /// A board of figures with lines between the cells: all of them in one line where the page is wide enough, else in lines of three (the roster's resets,
+    /// energy, claims, whom to play next, the daily tasks): kept low, so the characters under it are in sight.
+    /// </summary>
     private static UIElement Scoreboard(IReadOnlyList<Score> cells)
     {
         var grid = new Grid();
-        const int columns = 3;
-        int rows = (cells.Count + columns - 1) / columns;
-        for (int c = 0; c < columns; c++)
+        var borders = new List<Border>();
+        foreach (Score cell in cells)
         {
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        }
-
-        for (int r = 0; r < rows; r++)
-        {
-            grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-        }
-
-        for (int i = 0; i < cells.Count; i++)
-        {
-            Score cell = cells[i];
-            int column = i % columns, row = i / columns;
             var stack = new StackPanel();
             var top = new StackPanel { Orientation = Orientation.Horizontal };
-            var dot = new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Margin = new Thickness(0, 0, 7, 0), VerticalAlignment = VerticalAlignment.Center };
+            var dot = new System.Windows.Shapes.Ellipse { Width = 6, Height = 6, Margin = new Thickness(0, 0, 6, 0), VerticalAlignment = VerticalAlignment.Center };
             dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, cell.Dot);
             top.Children.Add(dot);
-            TextBlock caption = Label(cell.Caption.ToUpper(CultureInfo.CurrentCulture), "Brush.TextMuted", 10.5, bold: true);
+            TextBlock caption = Label(cell.Caption.ToUpper(CultureInfo.CurrentCulture), "Brush.TextMuted", 9.5, bold: true);
             caption.TextTrimming = TextTrimming.CharacterEllipsis;
             top.Children.Add(caption);
             stack.Children.Add(top);
             if (cell.Value is FrameworkElement value)
             {
-                value.Margin = new Thickness(0, 6, 0, 0);
+                value.Margin = new Thickness(0, 4, 0, 0);
             }
 
             stack.Children.Add(cell.Value);
@@ -103,17 +93,45 @@ public sealed partial class ChecklistWindow
                 stack.Children.Add(cell.Note);
             }
 
-            var border = new Border
-            {
-                Child = stack, Padding = new Thickness(18, 14, 18, 14), Background = Brushes.Transparent, ToolTip = cell.Tip,
-                BorderThickness = new Thickness(0, 0, column < columns - 1 ? 1 : 0, row < rows - 1 ? 1 : 0),
-            };
+            var border = new Border { Child = stack, Padding = new Thickness(14, 10, 12, 10), Background = Brushes.Transparent, ToolTip = cell.Tip };
             border.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
-            Grid.SetColumn(border, column);
-            Grid.SetRow(border, row);
+            borders.Add(border);
             grid.Children.Add(border);
         }
 
+        int placed = 0;
+        void Place(int columns)
+        {
+            if (placed == columns)
+            {
+                return;
+            }
+
+            placed = columns;
+            int rows = (borders.Count + columns - 1) / columns;
+            grid.ColumnDefinitions.Clear();
+            grid.RowDefinitions.Clear();
+            for (int c = 0; c < columns; c++)
+            {
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            }
+
+            for (int r = 0; r < rows; r++)
+            {
+                grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            }
+
+            for (int i = 0; i < borders.Count; i++)
+            {
+                int column = i % columns, row = i / columns;
+                Grid.SetColumn(borders[i], column);
+                Grid.SetRow(borders[i], row);
+                borders[i].BorderThickness = new Thickness(0, 0, column < columns - 1 && i < borders.Count - 1 ? 1 : 0, row < rows - 1 ? 1 : 0);
+            }
+        }
+
+        Place(Math.Min(3, Math.Max(1, borders.Count)));
+        grid.SizeChanged += (_, e) => Place(e.NewSize.Width >= 140 * borders.Count ? borders.Count : Math.Min(3, borders.Count));
         var panel = new Border { Child = grid, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = new Thickness(0, 0, 0, 12) };
         panel.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
         panel.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
@@ -123,7 +141,7 @@ public sealed partial class ChecklistWindow
     /// <summary>A figure of the board: large, in a brush of the theme.</summary>
     private static TextBlock Big(string text, string brush = "Brush.Text")
     {
-        TextBlock big = Label(text, brush, 24, bold: true);
+        TextBlock big = Label(text, brush, 19, bold: true);
         big.TextTrimming = TextTrimming.CharacterEllipsis;
         return big;
     }
@@ -137,233 +155,260 @@ public sealed partial class ChecklistWindow
         return small;
     }
 
-    /// <summary>Cards side by side, as many columns as the width takes (one under 620, two under 1100, else three).</summary>
-    private static UIElement Tiles(IReadOnlyList<UIElement> tiles)
+    /// <summary>The columns of the roster's table: the character (the rest of the width), the Odyle Energy, when it is full, then one per counter.</summary>
+    private static Grid RosterColumns(int counters)
     {
-        var grid = new UniformGrid { Columns = 2, Margin = new Thickness(-6, 0, -6, 6) };
-        foreach (UIElement tile in tiles)
+        var grid = new Grid();
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(128) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(92) });
+        for (int k = 0; k < counters; k++)
         {
-            grid.Children.Add(tile);
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });
         }
 
-        grid.SizeChanged += (_, e) =>
-        {
-            int columns = e.NewSize.Width < 620 ? 1 : e.NewSize.Width < 1100 ? 2 : 3;
-            if (grid.Columns != columns)
-            {
-                grid.Columns = columns;
-            }
-        };
         return grid;
     }
 
+    private static void Cell(Grid grid, UIElement element, int column)
+    {
+        Grid.SetColumn(element, column);
+        grid.Children.Add(element);
+    }
+
     /// <summary>
-    /// One character of the roster as a card: its emblem and name in the class colour (a dot when online), level, server and when the meter saw it; its Odyle
-    /// Energy with a bar, when it is full and what it holds besides; then its daily and weekly counters as small figures (a triangle where one is lost at the next
-    /// refill). A click opens the character.
+    /// Every character as one line of a table, as the roster was, in the page's new look (6 November 2026, the owner: "the characters like before but with nice
+    /// overlay boxes ... 8 character users can't see everything"): the emblem and the name in the class colour with a stripe of it at the left, the Odyle Energy
+    /// with its bar, when it is full, then each counter in a small box of its own (a triangle where some is lost at the next refill). A line opens the
+    /// character.
     /// </summary>
-    private UIElement RosterTile(TicketCharacter c, Aion2Tickets.OdyleState? o, long inItems, TicketDef?[] defs, bool online, DateTime now, DateTime utcNow, string language)
+    private UIElement RosterTable(IReadOnlyList<TicketCharacter> all, IReadOnlyDictionary<string, Aion2Tickets.OdyleState?> odyle, IReadOnlyDictionary<string, long> inItems,
+        TicketDef?[] defs, string? online, DateTime now, DateTime utcNow, string language)
     {
         LocalizationManager loc = LocalizationManager.Instance;
-        string? className = c.ClassCode > 0 ? Aion2.Protocol.Aion2SkillNames.ClassFromCode(c.ClassCode) : null;
-        Color accent = className is not null ? ClassBrushes.ClassColor(className) : Resource("Brush.Accent", Color.FromRgb(0xE0, 0xB6, 0x4A));
-        bool premium = Aion2Tickets.HasPremium(c, utcNow) != false;
-        DateTime seenAt = c.SavedAt.ToLocalTime();
-        var stack = new StackPanel();
+        var table = new StackPanel();
+        int counters = 1 + defs.Count(d => d is not null);
 
-        // who
-        var who = new DockPanel { Margin = new Thickness(0, 0, 0, 12) };
-        if (className is not null && new ClassIconConverter().Convert(className, typeof(ImageSource), null, CultureInfo.CurrentCulture) is ImageSource icon)
+        // the titles
+        Grid head = RosterColumns(counters);
+        head.Margin = new Thickness(12, 0, 6, 6);
+        void Title(string text, string? tip, int column, bool left = false)
         {
-            var image = new Image { Source = icon, Width = 30, Height = 30, Margin = new Thickness(0, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center };
-            DockPanel.SetDock(image, Dock.Left);
-            who.Children.Add(image);
+            TextBlock t = Label(text.ToUpper(CultureInfo.CurrentCulture), "Brush.TextSubtle", 9.5, bold: true);
+            t.TextWrapping = TextWrapping.Wrap;
+            t.TextAlignment = left ? TextAlignment.Left : TextAlignment.Center;
+            t.HorizontalAlignment = left ? HorizontalAlignment.Left : HorizontalAlignment.Center;
+            t.VerticalAlignment = VerticalAlignment.Bottom;
+            t.Margin = new Thickness(2, 0, 2, 0);
+            t.ToolTip = tip;
+            Cell(head, t, column);
         }
 
-        var names = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        var nameLine = new StackPanel { Orientation = Orientation.Horizontal };
-        TextBlock name = Label(c.Name, "Brush.Text", 15, bold: true);
-        if (className is not null)
+        Title(loc["Checklist.Character"], null, 0, left: true);
+        Title(loc["Checklist.RosterOdyleHead"], loc["Checklist.RosterOdyleTip"], 1);
+        Title(loc["Checklist.RosterFullHead"], loc["Checklist.RosterFullTip"], 2);
+        Title(loc["Checklist.RosterTasks"], loc["Checklist.RosterTasksTip"], 3);
+        int column = 4;
+        foreach (TicketDef? def in defs)
         {
-            name.Foreground = ClassBrushes.Text(className);
-        }
-
-        nameLine.Children.Add(name);
-        if (online)
-        {
-            var on = new Border { Margin = new Thickness(8, 0, 0, 0), Padding = new Thickness(6, 0, 7, 1), CornerRadius = new CornerRadius(6), VerticalAlignment = VerticalAlignment.Center };
-            on.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
-            on.Child = Label("● " + loc["Checklist.OnlineNow"], "Brush.Heal", 10.5, bold: true);
-            nameLine.Children.Add(on);
-        }
-
-        names.Children.Add(nameLine);
-        var parts = new List<string>();
-        if (c.Level > 0)
-        {
-            parts.Add(string.Format(CultureInfo.CurrentCulture, loc["Checklist.Level"], c.Level));
-        }
-
-        if (c.ServerId > 0)
-        {
-            parts.Add(Aion2.Protocol.Aion2Servers.NameOf(c.ServerId).Replace("Europe - ", "", StringComparison.Ordinal));
-        }
-
-        if (!online)
-        {
-            parts.Add(string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterSeen"], AgoText(now - seenAt)));
-        }
-
-        TextBlock sub = Label(string.Join("  ·  ", parts), "Brush.TextSubtle", 11);
-        sub.TextTrimming = TextTrimming.CharacterEllipsis;
-        names.Children.Add(sub);
-        who.Children.Add(names);
-        stack.Children.Add(who);
-
-        // the Odyle Energy
-        var energy = new DockPanel();
-        if (o is not null)
-        {
-            var figure = new StackPanel { Orientation = Orientation.Horizontal };
-            figure.Children.Add(Label((o.Estimated ? "~" : "") + o.Count.ToString("N0", CultureInfo.CurrentCulture), o.Full ? "Brush.Warning" : "Brush.Accent", 14, bold: true));
-            figure.Children.Add(Label(" / " + o.Cap.ToString("N0", CultureInfo.CurrentCulture), "Brush.TextSubtle", 11.5));
-            DockPanel.SetDock(figure, Dock.Right);
-            energy.Children.Add(figure);
-        }
-
-        energy.Children.Add(Label(loc["Checklist.RosterOdyleHead"], "Brush.TextMuted", 11.5));
-        stack.Children.Add(energy);
-        if (o is not null)
-        {
-            var track = new Grid { Height = 6, Margin = new Thickness(0, 5, 0, 5) };
-            var under = new Border { CornerRadius = new CornerRadius(3) };
-            under.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
-            track.Children.Add(under);
-            var fill = new Border { CornerRadius = new CornerRadius(3), HorizontalAlignment = HorizontalAlignment.Left };
-            fill.SetResourceReference(Border.BackgroundProperty, o.Full ? "Brush.Warning" : "Brush.Accent");
-            double share = o.Cap <= 0 ? 0 : Math.Clamp(o.Count / (double)o.Cap, 0, 1);
-            track.SizeChanged += (_, e) => fill.Width = e.NewSize.Width * share;
-            track.Children.Add(fill);
-            track.ToolTip = string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterOdyleLine"], o.Count, o.Cap, o.Bonus, o.PerTick);
-            stack.Children.Add(track);
-
-            var after = new DockPanel();
-            var extra = new List<string>();
-            if (o.Bonus > 0)
+            if (def is not null)
             {
-                extra.Add("+" + o.Bonus.ToString("N0", CultureInfo.CurrentCulture) + " " + loc["Checklist.TileCharged"]);
+                Title(def.ShortIn(language).Replace("\n", " ", StringComparison.Ordinal), def.NameIn(language), column++);
+            }
+        }
+
+        table.Children.Add(head);
+
+        // a number in its small box; "–" (not known, locked) without one
+        UIElement Box(string text, string brush, string? tip, bool warn = false)
+        {
+            if (text == "–")
+            {
+                TextBlock dash = Label("–", "Brush.TextSubtle", 13);
+                dash.HorizontalAlignment = HorizontalAlignment.Center;
+                dash.ToolTip = tip;
+                return dash;
             }
 
-            if (inItems > 0)
-            {
-                extra.Add(string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterOdyleItems"], inItems.ToString("N0", CultureInfo.CurrentCulture)));
-            }
-
-            if (extra.Count > 0)
-            {
-                TextBlock more = Label(string.Join("  ·  ", extra), "Brush.TextSubtle", 11);
-                DockPanel.SetDock(more, Dock.Right);
-                after.Children.Add(more);
-            }
-
-            bool soon = !o.Full && o.FullAt is { } f && f - utcNow < TimeSpan.FromHours(6);
-            string fullText = o.Full ? "▲ " + loc["Checklist.RosterFull"] : o.FullAt is { } at ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.TileFullIn"], string.Format(CultureInfo.CurrentCulture, loc["Checklist.In"], (o.NextTick is null ? "~" : "") + SpanText(at - utcNow))) : "–";
-            TextBlock full = Label(fullText, o.Full || soon ? "Brush.Warning" : "Brush.TextMuted", 11.5, bold: o.Full);
-            full.ToolTip = o.Full ? loc["Checklist.RosterFullWaste"]
-                : o.FullAt is { } when ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterFullAt"], when.ToLocalTime().ToString("g", CultureInfo.CurrentCulture))
-                  + (o.NextTick is { } tick ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterNextTick"], o.PerTick, tick.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)) : "")
-                : null;
-            after.Children.Add(full);
-            stack.Children.Add(after);
-        }
-        else
-        {
-            TextBlock unknown = Label(loc["Checklist.RosterUnknown"], "Brush.TextSubtle", 11.5);
-            unknown.Margin = new Thickness(0, 4, 0, 0);
-            stack.Children.Add(unknown);
-        }
-
-        // the counters: the daily tasks, then the roster's tickets, three a line
-        var counters = new UniformGrid { Columns = 3, Margin = new Thickness(0, 12, 0, 0) };
-        UIElement Counter(string caption, string value, string brush, string? tip, bool warn)
-        {
-            var box = new Border { Padding = new Thickness(9, 6, 9, 7), Margin = new Thickness(0, 0, 6, 6), CornerRadius = new CornerRadius(8), ToolTip = tip };
-            box.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
-            var lines = new StackPanel();
-            TextBlock top = Label(caption, "Brush.TextSubtle", 10.5);
-            top.TextTrimming = TextTrimming.CharacterEllipsis;
-            lines.Children.Add(top);
-            var figure = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 0) };
+            var line = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
             if (warn)
             {
-                var triangle = new System.Windows.Shapes.Polygon { Points = new PointCollection { new Point(5, 0), new Point(10, 9), new Point(0, 9) }, Margin = new Thickness(0, 0, 5, 0), VerticalAlignment = VerticalAlignment.Center };
+                var triangle = new System.Windows.Shapes.Polygon { Points = new PointCollection { new Point(4, 0), new Point(8, 7), new Point(0, 7) }, Margin = new Thickness(0, 0, 4, 0), VerticalAlignment = VerticalAlignment.Center };
                 triangle.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "Brush.Warning");
-                figure.Children.Add(triangle);
+                line.Children.Add(triangle);
             }
 
-            figure.Children.Add(Label(value, brush, 14, bold: brush != "Brush.TextSubtle"));
-            lines.Children.Add(figure);
-            box.Child = lines;
+            line.Children.Add(Label(text, brush, 12.5, bold: brush != "Brush.TextSubtle"));
+            var box = new Border { Child = line, MinWidth = 44, Height = 26, Padding = new Thickness(6, 0, 6, 0), CornerRadius = new CornerRadius(7), BorderThickness = new Thickness(1),
+                HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, ToolTip = tip };
+            box.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+            box.SetResourceReference(Border.BorderBrushProperty, warn ? "Brush.Warning" : "Brush.Border");
+            if (warn)
+            {
+                box.BorderBrush = Tint(Resource("Brush.Warning", Color.FromRgb(0xF0, 0xB7, 0x1C)), 0x80);
+            }
+
             return box;
         }
 
-        bool stale = c.Tickets.TryGetValue(Aion2Tickets.MissionsId, out TicketValue missions) && Aion2Tickets.MissionsStale(missions, now);
-        if (c.Tickets.ContainsKey(Aion2Tickets.MissionsId))
+        foreach (TicketCharacter c in all)
         {
-            int done = stale ? 0 : missions.Count;
-            counters.Children.Add(Counter(loc["Checklist.RosterTasks"], done >= Aion2Tickets.MissionsPerDay ? "✓" : $"{(stale ? "~" : "")}{done}/{Aion2Tickets.MissionsPerDay}",
-                done < Aion2Tickets.MissionsPerDay ? "Brush.Accent" : "Brush.Heal", loc["Checklist.RosterTasksTip"], false));
-        }
-        else
-        {
-            counters.Children.Add(Counter(loc["Checklist.RosterTasks"], "–", "Brush.TextSubtle", loc["Checklist.RosterUnknown"], false));
-        }
+            bool isOnline = c.Name == online;
+            string? className = c.ClassCode > 0 ? Aion2.Protocol.Aion2SkillNames.ClassFromCode(c.ClassCode) : null;
+            Color accent = className is not null ? ClassBrushes.ClassColor(className) : Resource("Brush.Accent", Color.FromRgb(0xE0, 0xB6, 0x4A));
+            bool premium = Aion2Tickets.HasPremium(c, utcNow) != false;
+            DateTime seenAt = c.SavedAt.ToLocalTime();
+            Grid row = RosterColumns(counters);
 
-        foreach (TicketDef? def in defs)
-        {
-            if (def is null)
+            // who
+            var who = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+            if (className is not null && new ClassIconConverter().Convert(className, typeof(ImageSource), null, CultureInfo.CurrentCulture) is ImageSource icon)
             {
-                continue;
+                who.Children.Add(new Image { Source = icon, Width = 24, Height = 24, Margin = new Thickness(0, 0, 9, 0), VerticalAlignment = VerticalAlignment.Center });
             }
 
-            string caption = def.ShortIn(language).Replace("\n", " ", StringComparison.Ordinal);
-            bool locked = Aion2Tickets.IsLocked(c, def.Id);
-            if (locked || !c.Tickets.TryGetValue(def.Id, out TicketValue value))
+            var names = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+            var top = new StackPanel { Orientation = Orientation.Horizontal };
+            TextBlock name = Label(c.Name, "Brush.Text", 13.5, bold: true);
+            if (className is not null)
             {
-                counters.Children.Add(Counter(caption, "–", "Brush.TextSubtle", locked ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterLocked"], Aion2Tickets.UnlockLevel(def.Id)) : loc["Checklist.RosterUnknown"], false));
-                continue;
+                name.Foreground = ClassBrushes.Text(className);
             }
 
-            int count = Aion2Tickets.Expected(def, value.Count, seenAt, now, premium);
-            int cap = premium && def.SubscribeMax > def.Max ? def.SubscribeMax : def.Max;
-            int lost = Aion2Tickets.LostAtNextRefill(def, count, premium);
-            string text = (count != value.Count ? "~" : "") + count.ToString(CultureInfo.CurrentCulture) + (value.Bonus > 0 ? $"+{value.Bonus}" : "");
-            string tip = $"{def.NameIn(language)}: {count} / {Math.Max(cap, count)}" + (lost > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[lost == 1 ? "Checklist.WarnLostOne" : "Checklist.WarnLostMany"], lost) : "");
-            counters.Children.Add(Counter(caption, text, lost > 0 ? "Brush.Warning" : count > 0 ? "Brush.Accent" : "Brush.TextSubtle", tip, lost > 0));
+            top.Children.Add(name);
+            if (isOnline)
+            {
+                var dot = new System.Windows.Shapes.Ellipse { Width = 7, Height = 7, Margin = new Thickness(7, 1, 0, 0), VerticalAlignment = VerticalAlignment.Center, ToolTip = loc["Checklist.OnlineNow"] };
+                dot.SetResourceReference(System.Windows.Shapes.Shape.FillProperty, "Brush.Heal");
+                top.Children.Add(dot);
+            }
+
+            names.Children.Add(top);
+            var parts = new List<string>();
+            if (c.Level > 0)
+            {
+                parts.Add(string.Format(CultureInfo.CurrentCulture, loc["Checklist.Level"], c.Level));
+            }
+
+            if (c.ServerId > 0)
+            {
+                parts.Add(Aion2.Protocol.Aion2Servers.NameOf(c.ServerId).Replace("Europe - ", "", StringComparison.Ordinal));
+            }
+
+            parts.Add(isOnline ? loc["Checklist.OnlineNow"] : string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterSeen"], AgoText(now - seenAt)));
+            TextBlock sub = Label(string.Join(" \u00b7 ", parts), "Brush.TextSubtle", 10.5);
+            sub.TextTrimming = TextTrimming.CharacterEllipsis;
+            names.Children.Add(sub);
+            who.Children.Add(names);
+            Cell(row, who, 0);
+
+            // the Odyle Energy and when it is full
+            Aion2Tickets.OdyleState? o = odyle.GetValueOrDefault(c.Name);
+            long items = inItems.GetValueOrDefault(c.Name);
+            if (o is not null)
+            {
+                var energy = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 10, 0),
+                    ToolTip = string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterOdyleLine"], o.Count, o.Cap, o.Bonus, o.PerTick)
+                        + (items > 0 ? "\n" + string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterOdyleItems"], items.ToString("N0", CultureInfo.CurrentCulture)) : "") };
+                var figure = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+                figure.Children.Add(Label((o.Estimated ? "~" : "") + o.Count.ToString("N0", CultureInfo.CurrentCulture), o.Full ? "Brush.Warning" : "Brush.Accent", 13, bold: true));
+                figure.Children.Add(Label(" / " + o.Cap.ToString("N0", CultureInfo.CurrentCulture), "Brush.TextSubtle", 11));
+                if (o.Bonus + items > 0)
+                {
+                    TextBlock bonus = Label("+" + (o.Bonus + items).ToString("N0", CultureInfo.CurrentCulture), "Brush.Text", 11.5, bold: true);
+                    bonus.Margin = new Thickness(6, 0, 0, 0);
+                    figure.Children.Add(bonus);
+                }
+
+                energy.Children.Add(figure);
+                var track = new Grid { Height = 4, Margin = new Thickness(0, 4, 0, 0) };
+                var under = new Border { CornerRadius = new CornerRadius(2) };
+                under.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+                track.Children.Add(under);
+                var fill = new Border { CornerRadius = new CornerRadius(2), HorizontalAlignment = HorizontalAlignment.Left };
+                fill.SetResourceReference(Border.BackgroundProperty, o.Full ? "Brush.Warning" : "Brush.Accent");
+                double share = o.Cap <= 0 ? 0 : Math.Clamp(o.Count / (double)o.Cap, 0, 1);
+                track.SizeChanged += (_, e) => fill.Width = e.NewSize.Width * share;
+                track.Children.Add(fill);
+                energy.Children.Add(track);
+                Cell(row, energy, 1);
+
+                bool soon = !o.Full && o.FullAt is { } f && f - utcNow < TimeSpan.FromHours(6);
+                string fullText = o.Full ? "\u25b2 " + loc["Checklist.RosterFull"] : o.FullAt is { } at ? (o.NextTick is null ? "~" : "") + SpanText(at - utcNow) : "–";
+                TextBlock full = Label(fullText, o.Full || soon ? "Brush.Warning" : "Brush.Text", 12.5, bold: true);
+                full.HorizontalAlignment = HorizontalAlignment.Center;
+                full.ToolTip = o.Full ? loc["Checklist.RosterFullWaste"]
+                    : o.FullAt is { } when ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterFullAt"], when.ToLocalTime().ToString("g", CultureInfo.CurrentCulture))
+                      + (o.NextTick is { } tick ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterNextTick"], o.PerTick, tick.ToLocalTime().ToString("t", CultureInfo.CurrentCulture)) : "")
+                    : null;
+                Cell(row, full, 2);
+            }
+            else
+            {
+                Cell(row, Box("–", "Brush.TextSubtle", loc["Checklist.RosterUnknown"]), 1);
+                Cell(row, Box("–", "Brush.TextSubtle", loc["Checklist.RosterUnknown"]), 2);
+            }
+
+            // the daily tasks, handed in of five (a reset since the reading makes it 0, shown as worked out)
+            bool stale = c.Tickets.TryGetValue(Aion2Tickets.MissionsId, out TicketValue missions) && Aion2Tickets.MissionsStale(missions, now);
+            if (c.Tickets.ContainsKey(Aion2Tickets.MissionsId))
+            {
+                int done = stale ? 0 : missions.Count;
+                Cell(row, Box(done >= Aion2Tickets.MissionsPerDay ? "\u2713" : $"{(stale ? "~" : "")}{done}/{Aion2Tickets.MissionsPerDay}", done < Aion2Tickets.MissionsPerDay ? "Brush.Accent" : "Brush.Heal",
+                    loc["Checklist.RosterTasksTip"]), 3);
+            }
+            else
+            {
+                Cell(row, Box("–", "Brush.TextSubtle", loc["Checklist.RosterUnknown"]), 3);
+            }
+
+            column = 4;
+            foreach (TicketDef? def in defs)
+            {
+                if (def is null)
+                {
+                    continue;
+                }
+
+                bool locked = Aion2Tickets.IsLocked(c, def.Id);
+                if (locked || !c.Tickets.TryGetValue(def.Id, out TicketValue value))
+                {
+                    Cell(row, Box("–", "Brush.TextSubtle", locked ? string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterLocked"], Aion2Tickets.UnlockLevel(def.Id)) : loc["Checklist.RosterUnknown"]), column++);
+                    continue;
+                }
+
+                int count = Aion2Tickets.Expected(def, value.Count, seenAt, now, premium);
+                int cap = premium && def.SubscribeMax > def.Max ? def.SubscribeMax : def.Max;
+                int lost = Aion2Tickets.LostAtNextRefill(def, count, premium);
+                string text = (count != value.Count ? "~" : "") + count.ToString(CultureInfo.CurrentCulture) + (value.Bonus > 0 ? $"+{value.Bonus}" : "");
+                string tip = $"{def.NameIn(language)}: {count} / {Math.Max(cap, count)}" + (lost > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[lost == 1 ? "Checklist.WarnLostOne" : "Checklist.WarnLostMany"], lost) : "");
+                Cell(row, Box(text, lost > 0 ? "Brush.Warning" : count > 0 ? "Brush.Accent" : "Brush.TextMuted", tip, lost > 0), column++);
+            }
+
+            // the line: a stripe of the class colour at the left, lit under the mouse; a click opens the character
+            var host = new Grid();
+            host.Children.Add(new Border { Width = 3, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(2), Margin = new Thickness(0, 6, 0, 6), Background = new SolidColorBrush(accent) });
+            row.Margin = new Thickness(12, 7, 6, 7);
+            host.Children.Add(row);
+            var line = new Border { Child = host, CornerRadius = new CornerRadius(9), Margin = new Thickness(0, 0, 0, 4), Cursor = Cursors.Hand, BorderThickness = new Thickness(1) };
+            line.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+            line.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+            line.MouseEnter += (_, _) => { line.BorderBrush = Tint(accent, 0x90); line.Background = Tint(accent, 0x14); };
+            line.MouseLeave += (_, _) =>
+            {
+                line.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+                line.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
+            };
+            string picked = c.Name;
+            line.MouseLeftButtonUp += (_, e) =>
+            {
+                e.Handled = true;
+                ShowCharacter(picked);
+            };
+            table.Children.Add(line);
         }
 
-        stack.Children.Add(counters);
-
-        // the card: a wash of the class colour from the top, its emblem faint in the corner; lit under the mouse, a click opens the character
-        var host = new Grid();
-        var wash = new LinearGradientBrush { StartPoint = new Point(0, 0), EndPoint = new Point(0, 1) };
-        wash.GradientStops.Add(new GradientStop(Color.FromArgb(0x2E, accent.R, accent.G, accent.B), 0));
-        wash.GradientStops.Add(new GradientStop(Color.FromArgb(0x00, accent.R, accent.G, accent.B), 0.55));
-        host.Children.Add(new Border { Background = wash, CornerRadius = new CornerRadius(11), IsHitTestVisible = false });
-        var inner = new Border { Child = stack, Padding = new Thickness(16, 14, 10, 8) };
-        host.Children.Add(inner);
-        var card = new Border { Child = host, CornerRadius = new CornerRadius(12), BorderThickness = new Thickness(1), Margin = new Thickness(6, 0, 6, 12), Cursor = Cursors.Hand,
-            BorderBrush = Tint(accent, 0x55) };
-        card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");
-        card.MouseEnter += (_, _) => card.BorderBrush = Tint(accent, 0xB0);
-        card.MouseLeave += (_, _) => card.BorderBrush = Tint(accent, 0x55);
-        string picked = c.Name;
-        card.MouseLeftButtonUp += (_, e) =>
-        {
-            e.Handled = true;
-            ShowCharacter(picked);
-        };
-        return card;
+        return table;
     }
 
     /// <summary>
