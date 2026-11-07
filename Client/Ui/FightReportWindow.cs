@@ -1237,11 +1237,16 @@ public sealed class FightReportWindow : Window
     /// </summary>
     private FrameworkElement StaggerPicked(double from, double to, StaggerCheck? check, IReadOnlyList<StaggerPerson> people, Func<int, StaggerPerson> nameOf)
     {
-        var stack = new StackPanel { Margin = new Thickness(18, 14, 18, 14), MaxWidth = 780, HorizontalAlignment = HorizontalAlignment.Left };
+        var stack = new StackPanel { Margin = new Thickness(18, 14, 18, 14) };
+        // as wide as the card, up to 900
+        var frame = new Grid();
+        frame.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MaxWidth = 900 });
+        frame.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        frame.Children.Add(stack);
         if (check is not null)
         {
             stack.Children.Add(StaggerCardView.Card(check, check.End ?? check.Start.AddSeconds(check.Limit ?? 0), people, nameOf, null, overlay: false));
-            return Card(stack);
+            return Card(frame);
         }
 
         StaggerReport st = _r.Stagger;
@@ -1269,7 +1274,7 @@ public sealed class FightReportWindow : Window
         stack.Children.Add(Muted($"{credit.Total:N0} taken off the boss's stagger bar" + (breaks > 0 ? $", {breaks} break{(breaks == 1 ? "" : "s")}" : "") +
             (whole ? " over the fight" : " in this stretch"), 13, semibold: true, margin: new Thickness(0, 0, 0, 8)));
         stack.Children.Add(StaggerCardView.Rows(credit, used, people, nameOf, overlay: false, compact: false, "seconds from the fight's start", whole ? "over the fight" : "in this stretch"));
-        return Card(stack);
+        return Card(frame);
     }
 
     // ---------- the building blocks ----------
@@ -1310,13 +1315,13 @@ public sealed class FightReportWindow : Window
             cols.Add(new SCol("COUNT", "Avg interval", 92, s => s.AvgInterval is double g ? g.ToString("0.0", En) + " s" : "–"));
         }
 
+        cols.Add(new SCol("HIT QUALITY", "Accuracy", 82, s => Acc(s.Accuracy), Tip: AccuracyHelp)); // first, so it shows without scrolling
         cols.Add(new SCol("HIT QUALITY", "Crit", 58, s => Pct0(s.Crit)));
         cols.Add(new SCol("HIT QUALITY", "Back", 58, s => Pct0(s.Back)));
         cols.Add(new SCol("HIT QUALITY", "Front", 58, s => Pct0(s.Front)));
         cols.Add(new SCol("HIT QUALITY", "Perfect", 64, s => Pct0(s.Perfect)));
         cols.Add(new SCol("HIT QUALITY", "Double hit", 80, s => Pct0(s.Double)));
         cols.Add(new SCol("HIT QUALITY", "Multi-hit", 74, s => Pct0(s.Multi)));
-        cols.Add(new SCol("HIT QUALITY", "Accuracy", 82, s => Acc(s.Accuracy), Tip: AccuracyHelp));
 
         cols.Add(new SCol("PER HIT", "Average", 86, s => N(s.Average)));
         cols.Add(new SCol("PER HIT", "Highest", 86, s => N(s.Highest)));

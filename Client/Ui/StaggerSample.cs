@@ -41,18 +41,19 @@ internal static class StaggerSample
         var windups = new List<WindupRecord>();
         var bar = new List<StaggerEvent>();
         var hits = new List<DamageEvent>();
-        Add(t0.AddSeconds(-90), How.Failed, windups, bar, hits, now);
-        Add(t0.AddSeconds(-45), How.Broken, windups, bar, hits, now);
-        Add(t0, failed ? How.Failed : How.Running, windups, bar, hits, now);
+        Add(t0.AddSeconds(-90), How.Failed, 0.3, windups, bar, hits, now);
+        Add(t0.AddSeconds(-45), How.Broken, 0.13, windups, bar, hits, now);
+        Add(t0, failed ? How.Failed : How.Running, failed ? 0.18 : 0.35, windups, bar, hits, now);
         List<StaggerCheck> checks = StaggerChecks.Find(Boss, bar, windups, hits, now).Where(c => c.Mechanic != 0).ToList();
         return (checks, now);
     }
 
-    private static void Add(DateTime t0, How how, List<WindupRecord> windups, List<StaggerEvent> bar, List<DamageEvent> hits, DateTime now)
+    /// <param name="step">The time between two hits that take something off (seconds).</param>
+    private static void Add(DateTime t0, How how, double step, List<WindupRecord> windups, List<StaggerEvent> bar, List<DamageEvent> hits, DateTime now)
     {
         windups.Add(new WindupRecord(t0, Boss, 1800141, 1, 8000, 0, 0, 0, false));
         bar.Add(new StaggerEvent(t0, Boss, Max, Max, false));
-        // who, skill, what it takes off; in turns (every 0.35 s, every 0.13 s for the check that broke)
+        // who, skill, what it takes off; in turns
         var turns = new (int Who, int Skill, int Drop)[]
         {
             (1, 11190340, 10), (2, 13070230, 10), (3, 14010250, 10), (4, 15050450, 7), (1, 11170350, 5), (2, 13220121, 10), (3, 14080140, 15), (1, 11390010, 20),
@@ -90,7 +91,7 @@ internal static class StaggerSample
             }
 
             bar.Add(new StaggerEvent(when, Boss, current, Max, false));
-            at += how == How.Broken ? 0.13 : 0.35;
+            at += step;
         }
 
         if (how == How.Failed)

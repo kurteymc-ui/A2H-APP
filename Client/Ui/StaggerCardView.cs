@@ -121,7 +121,7 @@ internal static class StaggerCardView
         }
         else
         {
-            root.Children.Add(new StaggerGauge(check, now, overlay) { Height = overlay ? 38 : 44, Margin = new Thickness(0, 5, 0, 4) });
+            root.Children.Add(new StaggerGauge(check, now, overlay) { Height = overlay ? 38 : 84, Margin = new Thickness(0, 6, 0, 6) });
         }
 
         // the players: the most first, the group's others with 0
@@ -543,7 +543,7 @@ internal sealed class StaggerGauge : FrameworkElement
         double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
         void Label(string text, double x, Brush brush, bool right = false)
         {
-            var ft = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, 9.5, brush, dpi);
+            var ft = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, typeface, _overlay ? 9.5 : 11, brush, dpi);
             dc.DrawText(ft, new Point(right ? Math.Max(0, x - ft.Width) : Math.Min(x, w - ft.Width), bottom + 0.5));
         }
 
@@ -588,7 +588,7 @@ internal sealed class StaggerGauge : FrameworkElement
 
         // what is left, on the bar
         var left = new FormattedText($"{_check.Left:N0} / {_check.Max:N0} left", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(typeface.FontFamily, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal),
-            _overlay ? 10.5 : 11.5, B(Colors.White, 0xF0), dpi);
+            _overlay ? 10.5 : 13, B(Colors.White, 0xF0), dpi);
         dc.DrawRectangle(B(Colors.Black, 0x70), null, new Rect(4, top + (height - left.Height) / 2 - 1, left.Width + 6, left.Height + 2));
         dc.DrawText(left, new Point(7, top + (height - left.Height) / 2));
     }
