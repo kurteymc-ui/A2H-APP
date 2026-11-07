@@ -7506,7 +7506,7 @@ public partial class MainWindow : Window
                         page.Stop();
                         statusTimer.Stop();
                         _petMapController?.RemoveViews(map, list);
-                        if (MeterSettings.Load() is { ShowPetMap: false, CubeSoundEnabled: false } && _petMapController is { HasViews: false, CubeMapOverride: false })
+                        if (MeterSettings.Load() is { ShowPetMap: false, CubeSoundEnabled: false, ShowMapOnPet: false } && _petMapController is { HasViews: false, CubeMapOverride: false, PetMapOverride: false })
                         {
                             _petMapController.Dispose();
                             _petMapController = null;
@@ -8192,7 +8192,7 @@ public partial class MainWindow : Window
 
         _petMapController?.ClearCubeOverride(); // the settings were applied: a map shown for a cube goes back to what they say
         // the pet map (with its list) has its own switch; the cube finder's sound runs in it too, with the map's switch off as well (nothing is shown then)
-        if (settings.ShowPetMap || settings.CubeArrivalSound || settings.CubeBeeps || settings.CubePopup)
+        if (settings.ShowPetMap || settings.CubeArrivalSound || settings.CubeBeeps || settings.CubePopup || settings.ShowMapOnPet)
         {
             _petMapController ??= new PetMapController(() => _source?.Entities as Aion2EntityDirectory);
             _petMapController.ApplyLocked(settings.PetFarmLocked);

@@ -27,6 +27,7 @@ public partial class SettingsWindow
         BlackCloudPopupBox.IsChecked = settings.BlackCloudPopup;
         BlackCloudRenewBox.IsChecked = settings.BlackCloudRenewNote;
         BlackCloudClockBox.IsChecked = settings.BlackCloudClock;
+        AddPetAlerts(settings);
         _blackCloudUnwatched.Clear();
         _blackCloudUnwatched.UnionWith(settings.BlackCloudUnwatched);
         FillBlackCloud();
@@ -48,6 +49,101 @@ public partial class SettingsWindow
         s.BlackCloudRenewNote = BlackCloudRenewBox.IsChecked ?? true;
         s.BlackCloudClock = BlackCloudClockBox.IsChecked ?? true;
         s.BlackCloudUnwatched = _blackCloudUnwatched.OrderBy(i => i).ToList();
+        s.BlackCloudMark = _blackCloudMarkBox?.IsChecked ?? true;
+        s.PetAlertSpecies = _petAlertSpecies.Count == 0 || Aion2Pets.Species.All(_petAlertSpecies.Contains) ? null : Aion2Pets.Species.Where(_petAlertSpecies.Contains).ToList();
+        s.ShowMapOnPet = _petNearBox?.IsChecked ?? false;
+        s.PetNearMetres = (_petNearRange?.SelectedItem as ComboBoxItem)?.Tag is int metres ? metres : s.PetNearMetres;
+    }
+
+    private readonly HashSet<string> _petAlertSpecies = new();
+    private CheckBox? _blackCloudMarkBox;
+    private CheckBox? _petNearBox;
+    private ComboBox? _petNearRange;
+
+    /// <summary>The ranges the map can come up at for a pet near (metres).</summary>
+    private static readonly int[] PetNearRanges = { 100, 200, 300, 500, 800, 1000 };
+
+    /// <summary>
+    /// The Pets page's alert card (7 November 2026): which genera the pet alerts are for (the Black Cloud pop-up, its renewal note and the map near a pet), and
+    /// the map that comes up when the character is near a pet it still needs, with how near; and in the Black Cloud card, marking the card on the shop's page.
+    /// Finished pets never alert.
+    /// </summary>
+    private void AddPetAlerts(MeterSettings settings)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        var stack = new StackPanel();
+        stack.Children.Add(new TextBlock { Style = (Style)FindResource("CardTitle"), Text = loc["PetAlerts.Title"] });
+        stack.Children.Add(new TextBlock { Style = (Style)FindResource("CardHint"), Text = loc["PetAlerts.Hint"], TextWrapping = TextWrapping.Wrap, MaxWidth = BlackCloudTextWidth,
+            HorizontalAlignment = HorizontalAlignment.Left });
+
+        // the genera, each with its colour (the pop-up's chip and the mark on the shop's card); the last one stays ticked
+        _petAlertSpecies.Clear();
+        _petAlertSpecies.UnionWith(settings.PetAlertSpecies is { Count: > 0 } picked ? picked : Aion2Pets.Species);
+        var genera = new WrapPanel { Margin = new Thickness(0, 4, 0, 10) };
+        var boxes = new List<CheckBox>();
+        foreach (string species in Aion2Pets.Species)
+        {
+            string id = species;
+            var label = new StackPanel { Orientation = Orientation.Horizontal };
+            label.Children.Add(new System.Windows.Shapes.Ellipse { Width = 9, Height = 9, Fill = new SolidColorBrush(BlackCloudToast.SpeciesColor(id)), VerticalAlignment = VerticalAlignment.Center,
+                Margin = new Thickness(0, 0, 6, 0) });
+            var name = new TextBlock { Text = id, VerticalAlignment = VerticalAlignment.Center };
+            name.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
+            label.Children.Add(name);
+            var box = new CheckBox { Content = label, IsChecked = _petAlertSpecies.Contains(id), Margin = new Thickness(0, 0, 18, 4), VerticalContentAlignment = VerticalAlignment.Center };
+            box.Click += (_, _) =>
+            {
+                if (box.IsChecked == true)
+                {
+                    _petAlertSpecies.Add(id);
+                }
+                else if (_petAlertSpecies.Count > 1)
+                {
+                    _petAlertSpecies.Remove(id);
+                }
+                else
+                {
+                    box.IsChecked = true; // none would mean no alert at all: the switches above do that
+                }
+            };
+            boxes.Add(box);
+            genera.Children.Add(box);
+        }
+
+        stack.Children.Add(genera);
+
+        // the map near a pet: the switch and how near
+        var near = new WrapPanel();
+        _petNearBox = new CheckBox { Content = loc["PetAlerts.Map"], IsChecked = settings.ShowMapOnPet, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0),
+            ToolTip = loc["PetAlerts.MapTip"] };
+        near.Children.Add(_petNearBox);
+        _petNearRange = new ComboBox { MinWidth = 90, VerticalAlignment = VerticalAlignment.Center };
+        int now = PetNearRanges.MinBy(r => Math.Abs(r - settings.PetNearMetres));
+        foreach (int metres in PetNearRanges)
+        {
+            var item = new ComboBoxItem { Content = string.Format(CultureInfo.CurrentCulture, loc["PetAlerts.Within"], metres), Tag = metres };
+            _petNearRange.Items.Add(item);
+            if (metres == now)
+            {
+                _petNearRange.SelectedItem = item;
+            }
+        }
+
+        near.Children.Add(_petNearRange);
+        stack.Children.Add(near);
+        var how = Small(loc["PetAlerts.MapHint"], "Brush.TextSubtle", 11.5);
+        how.Margin = new Thickness(0, 6, 0, 0);
+        stack.Children.Add(how);
+        var card = new Border { Style = (Style)FindResource("SettingsCard"), Child = stack };
+        PanelPets.Children.Insert(Math.Min(1, PanelPets.Children.Count), card);
+
+        // in the Black Cloud card, under its switches: the card marked on the shop's page
+        _blackCloudMarkBox = new CheckBox { Content = loc["BlackCloud.Mark"], ToolTip = loc["BlackCloud.Mark.Tip"], IsChecked = settings.BlackCloudMark, Margin = new Thickness(0, 4, 0, 10) };
+        if (BlackCloudClockBox.Parent is Panel holder)
+        {
+            BlackCloudClockBox.Margin = new Thickness(0, 4, 0, 0);
+            holder.Children.Insert(holder.Children.IndexOf(BlackCloudClockBox) + 1, _blackCloudMarkBox);
+        }
     }
 
     /// <summary>The ticked list and the offers, made again (a collection or an offer changed, or a tick).</summary>

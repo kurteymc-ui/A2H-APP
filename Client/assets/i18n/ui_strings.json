@@ -17855,7 +17855,7 @@
     "zh-TW": "商店出售已勾選的寵物時在遊戲中彈出提示"
   },
   "BlackCloud.Popup.Tip": {
-    "en": "When you open the shop on any character and it sells one of the ticked pets: a pop-up over the game, also while the shop is open, with each pet's picture, name, group and price. Every tab of the shop you open adds to it; it stays 20 seconds after the last one.",
+    "en": "When you open the shop on any character and it sells a ticked pet that character still needs (of the genera picked under Pet alerts; finished pets never come): a pop-up over the game, also while the shop is open, with each pet's picture, name, genus, group, level and price. Every tab of the shop you open adds to it; it stays 20 seconds after the last one.",
     "de": "Wenn du den Laden mit einem Charakter öffnest und er eines der angehakten Pets verkauft: ein Pop-up über dem Spiel, auch bei offenem Laden, mit Bild, Name, Gruppe und Preis jedes Pets. Jeder Reiter des Ladens, den du öffnest, kommt dazu; es bleibt 20 Sekunden nach dem letzten.",
     "fr": "Quand vous ouvrez la boutique avec un personnage et qu'elle vend un des familiers cochés : une fenêtre sur le jeu, même boutique ouverte, avec l'image, le nom, le groupe et le prix de chaque familier. Chaque onglet de la boutique que vous ouvrez s'y ajoute ; elle reste 20 secondes après le dernier.",
     "es": "Cuando abres la tienda con cualquier personaje y vende una de las mascotas marcadas: un aviso sobre el juego, también con la tienda abierta, con la imagen, el nombre, el grupo y el precio de cada mascota. Cada pestaña de la tienda que abras se suma; se queda 20 segundos tras la última.",
@@ -22611,5 +22611,117 @@
     "es": "Abrir la app",
     "pt": "Abrir o app",
     "ru": "Открыть приложение"
+  },
+  "PetNear.Note": {
+    "en": "{0} nearby · {1} m",
+    "de": "{0} in der Nähe · {1} m",
+    "fr": "{0} à proximité · {1} m",
+    "es": "{0} cerca · {1} m",
+    "pt": "{0} por perto · {1} m",
+    "ru": "{0} рядом · {1} м"
+  },
+  "PetAlerts.Title": {
+    "en": "Pet alerts",
+    "de": "Haustier-Hinweise",
+    "fr": "Alertes de familiers",
+    "es": "Avisos de mascotas",
+    "pt": "Alertas de mascotes",
+    "ru": "Оповещения о питомцах"
+  },
+  "PetAlerts.Hint": {
+    "en": "The genera you want alerts for: the Black Cloud pop-up and its note, and the map below. Pets you already have at the top level never alert you.",
+    "de": "Die Spezies, für die du Hinweise willst: das Black-Cloud-Pop-up und sein Hinweis sowie die Karte unten. Haustiere, die du schon auf der höchsten Stufe hast, melden sich nie.",
+    "fr": "Les genres pour lesquels vous voulez des alertes : la fenêtre du Marchand du Nuage noir et sa note, et la carte ci-dessous. Les familiers déjà au niveau maximal ne déclenchent jamais d'alerte.",
+    "es": "Los géneros de los que quieres avisos: la ventana del Mercader de la Nube Negra y su nota, y el mapa de abajo. Las mascotas que ya tienes al nivel máximo nunca avisan.",
+    "pt": "Os gêneros dos quais você quer alertas: a janela do Mercador da Nuvem Negra e seu aviso, e o mapa abaixo. Mascotes que você já tem no nível máximo nunca alertam.",
+    "ru": "Виды, о которых вы хотите оповещения: окно торговца Чёрного облака, его заметка и карта ниже. Питомцы, уже прокачанные до максимума, никогда не оповещают."
+  },
+  "PetAlerts.Map": {
+    "en": "Bring up the interactive map near a pet I still need,",
+    "de": "Interaktive Karte zeigen, wenn ein Haustier in der Nähe ist, das mir noch fehlt,",
+    "fr": "Afficher la carte interactive près d'un familier qui me manque encore,",
+    "es": "Mostrar el mapa interactivo cerca de una mascota que aún me falta,",
+    "pt": "Mostrar o mapa interativo perto de um mascote que ainda me falta,",
+    "ru": "Показывать интерактивную карту рядом с питомцем, который мне ещё нужен,"
+  },
+  "PetAlerts.Within": {
+    "en": "within {0} m",
+    "de": "innerhalb {0} m",
+    "fr": "à moins de {0} m",
+    "es": "a menos de {0} m",
+    "pt": "a menos de {0} m",
+    "ru": "в пределах {0} м"
+  },
+  "PetAlerts.MapTip": {
+    "en": "Like a Hidden Cube: when your character comes this near a monster of a pet you still need (of the genera ticked, among the pets the map tracks), the map comes up over the game with a note of which pet and how far. It goes 10 seconds after none is that near; the map's hotkey hides it sooner.",
+    "de": "Wie bei einem Verborgenen Würfel: Kommt dein Charakter so nah an ein Monster eines Haustiers, das dir noch fehlt (der angehakten Spezies, unter denen, die die Karte verfolgt), erscheint die Karte über dem Spiel mit einem Hinweis, welches Haustier und wie weit. Sie geht 10 Sekunden, nachdem keins mehr so nah ist; das Kürzel der Karte blendet sie früher aus.",
+    "fr": "Comme pour un Cube caché : quand votre personnage s'approche à cette distance d'un monstre d'un familier qui vous manque (des genres cochés, parmi ceux que suit la carte), la carte apparaît sur le jeu avec une note indiquant lequel et à quelle distance. Elle disparaît 10 secondes après qu'aucun n'est plus aussi proche ; le raccourci de la carte la cache plus tôt.",
+    "es": "Como con un Cubo oculto: cuando tu personaje se acerca a esta distancia de un monstruo de una mascota que aún te falta (de los géneros marcados, entre las que sigue el mapa), el mapa aparece sobre el juego con una nota de cuál y a qué distancia. Se va 10 segundos después de que ninguna esté tan cerca; el atajo del mapa lo oculta antes.",
+    "pt": "Como com um Cubo oculto: quando seu personagem chega a essa distância de um monstro de um mascote que ainda falta (dos gêneros marcados, entre os que o mapa acompanha), o mapa aparece sobre o jogo com um aviso de qual e a que distância. Ele some 10 segundos depois que nenhum estiver tão perto; o atalho do mapa o esconde antes.",
+    "ru": "Как со Скрытым кубом: когда персонаж подходит на это расстояние к монстру питомца, который ещё нужен (отмеченных видов, из тех, что отслеживает карта), карта появляется поверх игры с заметкой, какой питомец и как далеко. Она исчезает через 10 секунд после того, как рядом никого нет; горячая клавиша карты скрывает её раньше."
+  },
+  "PetAlerts.MapHint": {
+    "en": "It counts the map's spawn points and the monsters the game shows, and works with the map switched off: then it comes up only for the pet.",
+    "de": "Es zählen die Spawnpunkte der Karte und die Monster, die das Spiel zeigt; es geht auch mit ausgeschalteter Karte: Dann erscheint sie nur für das Haustier.",
+    "fr": "Comptent les points d'apparition de la carte et les monstres que le jeu affiche ; fonctionne aussi carte désactivée : elle n'apparaît alors que pour le familier.",
+    "es": "Cuenta los puntos de aparición del mapa y los monstruos que muestra el juego, y funciona con el mapa apagado: entonces solo aparece por la mascota.",
+    "pt": "Conta os pontos de surgimento do mapa e os monstros que o jogo mostra, e funciona com o mapa desligado: aí ele só aparece pelo mascote.",
+    "ru": "Учитываются точки появления на карте и монстры, которых показывает игра; работает и с выключенной картой: тогда она появляется только ради питомца."
+  },
+  "BlackCloud.Mark": {
+    "en": "Mark the pet's card on the shop's page",
+    "de": "Die Karte des Haustiers auf der Seite des Shops markieren",
+    "fr": "Marquer la carte du familier sur la page de la boutique",
+    "es": "Marcar la carta de la mascota en la página de la tienda",
+    "pt": "Marcar o card do mascote na página da loja",
+    "ru": "Отмечать карточку питомца на странице магазина"
+  },
+  "BlackCloud.Mark.Tip": {
+    "en": "A frame in the genus's colour around each pet of the pop-up on the shop's page, so you don't have to look for it. The card is found in the game window's own picture; nothing is read from the game.",
+    "de": "Ein Rahmen in der Farbe der Spezies um jedes Haustier des Pop-ups auf der Seite des Shops, damit du es nicht suchen musst. Die Karte wird im Bild des Spielfensters gefunden; aus dem Spiel wird nichts gelesen.",
+    "fr": "Un cadre de la couleur du genre autour de chaque familier de la fenêtre, sur la page de la boutique, pour ne pas avoir à le chercher. La carte est trouvée dans l'image de la fenêtre du jeu ; rien n'est lu dans le jeu.",
+    "es": "Un marco del color del género alrededor de cada mascota de la ventana en la página de la tienda, para que no tengas que buscarla. La carta se encuentra en la imagen de la ventana del juego; no se lee nada del juego.",
+    "pt": "Uma moldura na cor do gênero em volta de cada mascote da janela na página da loja, para você não precisar procurar. O card é encontrado na imagem da janela do jogo; nada é lido do jogo.",
+    "ru": "Рамка цвета вида вокруг каждого питомца из окна на странице магазина, чтобы не искать его. Карточка находится по изображению окна игры; из игры ничего не читается."
+  },
+  "BlackCloud.NotOwned": {
+    "en": "not owned",
+    "de": "fehlt",
+    "fr": "non possédé",
+    "es": "no lo tienes",
+    "pt": "não possui",
+    "ru": "нет"
+  },
+  "BlackCloud.LevelOf": {
+    "en": "level {0} of {1}",
+    "de": "Stufe {0} von {1}",
+    "fr": "niveau {0} sur {1}",
+    "es": "nivel {0} de {1}",
+    "pt": "nível {0} de {1}",
+    "ru": "уровень {0} из {1}"
+  },
+  "BlackCloud.ToastOne": {
+    "en": "A pet you still need is on offer",
+    "de": "Ein Haustier, das dir fehlt, ist im Angebot",
+    "fr": "Un familier qui vous manque est en vente",
+    "es": "Una mascota que te falta está a la venta",
+    "pt": "Um mascote que você ainda precisa está à venda",
+    "ru": "В продаже питомец, который вам нужен"
+  },
+  "BlackCloud.ToastMany": {
+    "en": "{0} pets you still need are on offer",
+    "de": "{0} Haustiere, die dir fehlen, sind im Angebot",
+    "fr": "{0} familiers qui vous manquent sont en vente",
+    "es": "{0} mascotas que te faltan están a la venta",
+    "pt": "{0} mascotes que você ainda precisa estão à venda",
+    "ru": "В продаже питомцы, которые вам нужны: {0}"
+  },
+  "BlackCloud.Wanted": {
+    "en": "Wanted",
+    "de": "Gesucht",
+    "fr": "Recherché",
+    "es": "Buscada",
+    "pt": "Procurado",
+    "ru": "Нужен"
   }
 }

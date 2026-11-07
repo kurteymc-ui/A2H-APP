@@ -515,11 +515,122 @@ public sealed class PetMapController : IDisposable
     /// <summary>A Hidden Cube came into range and the map was shown for it although it was hidden (<see cref="MeterSettings.ShowMapOnCube"/>): until the switches are applied again.</summary>
     internal bool CubeMapOverride => _cubeMapOverride;
 
-    /// <summary>The settings were applied (a hotkey, a switch, Save): a map shown for a cube goes back to what the settings say; the next cube brings it again.</summary>
+    /// <summary>The settings were applied (a hotkey, a switch, Save): a map shown for a cube or a pet near goes back to what the settings say; the next cube,
+    /// or the next pet that comes that near, brings it again.</summary>
     internal void ClearCubeOverride()
     {
         _cubeMapOverride = false;
         _cubesGoneAt = null;
+        _petMapOverride = false;
+        _petsGoneAt = null;
+    }
+
+    // ---- the map that comes up near a pet the player still needs (MeterSettings.ShowMapOnPet) ----
+
+    private bool _petMapOverride;
+    private DateTime? _petsGoneAt;
+    private DateTime _petsLookedAt = DateTime.MinValue;
+    private HashSet<int> _petsNear = new();
+
+    /// <summary>The pets whose monsters are that near now (the map shows them while it is up for them, whatever its own genus choice).</summary>
+    private HashSet<int> _petsNearShown = new();
+
+    /// <summary>The map was brought up for a pet near (<see cref="MeterSettings.ShowMapOnPet"/>): until the switches are applied again or none is near.</summary>
+    internal bool PetMapOverride => _petMapOverride;
+
+    /// <summary>
+    /// Once a second: which pets the player still needs (not at the top level; the ones the map tracks - all, or those picked -; of the genera picked for
+    /// alerts) have a monster within <see cref="MeterSettings.PetNearMetres"/>: a spawn point of the map, or a monster the game shows (close by, where only
+    /// those count: a spawn point without one is empty). A pet that was not near before brings the map up, as a Hidden Cube does (7 November 2026, the owner:
+    /// "when my character is 300 m close to an animal I don't have maxed and selected, it opens the interactive map"), with a short note of which and how far;
+    /// the map goes again 10 seconds after none is that near.
+    /// </summary>
+    private void LookForPetsNear(MeterSettings settings, Aion2EntityDirectory? directory)
+    {
+        if (!settings.ShowMapOnPet || directory is null)
+        {
+            if (_petMapOverride || _petsNear.Count > 0)
+            {
+                _petMapOverride = false;
+                _petsGoneAt = null;
+                _petsNear = new();
+                _petsNearShown = new();
+            }
+
+            return;
+        }
+
+        if (DateTime.UtcNow - _petsLookedAt < TimeSpan.FromSeconds(1))
+        {
+            return;
+        }
+
+        _petsLookedAt = DateTime.UtcNow;
+        bool inInstance = Aion2Zones.IsInstance(directory.ZoneId);
+        Aion2MapInfo? map = Aion2Maps.Choose(directory.ZoneId, inInstance, directory.RecentMobPositions(), out bool keep) ?? (keep ? _current : null);
+        var position = directory.BestPosition;
+        var near = new Dictionary<int, double>();
+        if (map is not null && position is { } me && !PositionIsStale(directory, me))
+        {
+            var states = directory.LocalPetStates;
+            var maxPets = states.Count > 0 ? states.Where(st => st.Level >= Aion2Pets.TopLevel).Select(st => st.PetId).ToHashSet() : _savedMax;
+            var wanted = (settings.PetMapAuto ? Aion2Pets.AllPetIds : settings.PetMapPets).Where(id => !maxPets.Contains(id) && settings.PetAlertFor(id)).ToHashSet();
+            double reach = Math.Clamp(settings.PetNearMetres, 50, 2000) * 100.0; // 100 world units to the metre
+            void Note(int pet, float x, float y)
+            {
+                double d = Math.Sqrt((x - me.X) * (double)(x - me.X) + (y - me.Y) * (double)(y - me.Y));
+                if (d <= reach && (!near.TryGetValue(pet, out double had) || d < had))
+                {
+                    near[pet] = d;
+                }
+            }
+
+            foreach (var mob in directory.LiveMobs())
+            {
+                foreach (int pet in Aion2Pets.PetsOfNpc(mob.NpcId).Where(wanted.Contains))
+                {
+                    Note(pet, mob.X, mob.Y);
+                }
+            }
+
+            foreach (var (pet, x, y) in Aion2Maps.PointsOf(map, wanted))
+            {
+                if ((x - me.X) * (double)(x - me.X) + (y - me.Y) * (double)(y - me.Y) >= MobRange * MobRange)
+                {
+                    Note(pet, x, y);
+                }
+            }
+        }
+
+        bool fresh = near.Keys.Any(pet => !_petsNear.Contains(pet));
+        _petsNear = near.Keys.ToHashSet();
+        if (near.Count > 0)
+        {
+            _petsNearShown = _petsNear;
+            _petsGoneAt = null;
+            if (fresh && !_petMapOverride)
+            {
+                _petMapOverride = true;
+                var (pet, distance) = near.MinBy(kv => kv.Value);
+                if (!settings.ShowPetMap && !CubeToast.Active)
+                {
+                    LocalizationManager loc = LocalizationManager.Instance;
+                    string genus = Aion2Pets.SpeciesOf(pet) is { } sp ? sp + " · " : "";
+                    CubeToast.Note(string.Format(System.Globalization.CultureInfo.CurrentCulture, loc["PetNear.Note"], genus + (Aion2Pets.PetName(pet, loc.Language) ?? "#" + pet),
+                        Math.Round(distance / 100)), 4);
+                }
+            }
+        }
+        else if (_petMapOverride)
+        {
+            _petsGoneAt ??= DateTime.UtcNow;
+            if (DateTime.UtcNow - _petsGoneAt >= CubeMapStays)
+            {
+                _petMapOverride = false;
+                _petsGoneAt = null;
+                _petsNearShown = new();
+            }
+        }
     }
 
     /// <summary>The map shown for a cube goes away again 10 seconds after the last cube is gone (picked up, or left behind).</summary>
@@ -690,8 +801,10 @@ public sealed class PetMapController : IDisposable
         _list.ApplyLockedIfChanged(listLocked);
         // over the game, and not while one of the game's windows is open (enchant, inventory ...) - unless the mouse rests on the map itself
         bool inGame = GameWindow.OverlayMayShow(ignoreMenu: _map.CursorOnMap());
-        // only over the game, locked or not (never on the desktop); with the module's switch off only the tool window's views are fed (a cube that came into range shows the map all the same)
-        _hideOverlays = !inGame || !(settings.ShowPetMap || _cubeMapOverride);
+        LookForPetsNear(settings, _directory());
+        // only over the game, locked or not (never on the desktop); with the module's switch off only the tool window's views are fed (a cube that came into
+        // range, or a pet still needed that came near, shows the map all the same)
+        _hideOverlays = !inGame || !(settings.ShowPetMap || _cubeMapOverride || _petMapOverride);
         if (_hideOverlays)
         {
             Hide();
@@ -738,6 +851,10 @@ public sealed class PetMapController : IDisposable
         HashSet<string>? genusPick = genusList is { Count: > 0 } && PetRoute.Genera.Any(genusName => !genusList.Contains(genusName)) ? genusList.ToHashSet() : null;
         var chosen = (auto ? Aion2Pets.AllPetIds : settings.PetMapPets)
             .Where(id => !maxPets.Contains(id) && (genusPick is null || PetRoute.GenusOf(id) is { } petGenus && genusPick.Contains(petGenus))).ToHashSet();
+        if (_petMapOverride)
+        {
+            chosen.UnionWith(_petsNearShown.Where(id => !maxPets.Contains(id))); // the map came up for these: it shows them, whatever genera it is set to
+        }
         // only what the player's own faction can use (an earlier pick of the other side's plants no longer counts)
         var gatherKinds = Aion2Gather.Items().Where(i => settings.PetMapGatherItems.Contains(i.Key) && i.IsFor(_faction)).Select(i => i.Key).ToHashSet();
         // the places cubes can appear at only when Hidden Cube is picked among the collectibles; the map that came for a cube shows that cube alone

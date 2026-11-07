@@ -790,13 +790,16 @@ public partial class MainWindow
         CubeToast.Note(string.Format(System.Globalization.CultureInfo.CurrentCulture, loc[movable ? "Overlays.MoveOn" : "Overlays.MoveOff"], keys));
     }
 
-    /// <summary>The pets only the Black Cloud Merchant sells that the player left ticked (all of them unless some were unticked on the Pets page).</summary>
-    internal static IReadOnlyCollection<int> WatchedShopPets(MeterSettings s) => Aion2.Protocol.Aion2MerchantPets.All.Select(p => p.PetId).Where(p => !s.BlackCloudUnwatched.Contains(p)).ToList();
+    /// <summary>The pets only the Black Cloud Merchant sells that the player left ticked (all of them unless some were unticked on the Pets page), of the genera
+    /// picked for the pet alerts.</summary>
+    internal static IReadOnlyCollection<int> WatchedShopPets(MeterSettings s) =>
+        Aion2.Protocol.Aion2MerchantPets.All.Select(p => p.PetId).Where(p => !s.BlackCloudUnwatched.Contains(p) && s.PetAlertFor(p)).ToList();
 
     /// <summary>
-    /// A page of the Black Cloud shop came (raised on the capturing thread, run on the UI thread): the pop-up with every ticked pet of the merchant's list the
-    /// shop offers the character now - all the pages read since the offers renewed, each pet once at its lowest price - with pictures, names, groups and
-    /// prices (<see cref="BlackCloudToast"/>). It stays up while the shop is open, so turning to another tab adds that tab's pets.
+    /// A page of the Black Cloud shop came (raised on the capturing thread, run on the UI thread): the pop-up with every pet of the merchant's list the shop
+    /// offers that the character still needs - ticked, of the genera picked for alerts, not at the top level (7 November 2026: "when they have it completed it
+    /// does not show notifications") - all the pages read since the offers renewed, each pet once at its lowest price, with pictures, names, genera, groups and
+    /// prices (<see cref="BlackCloudToast"/>), and their cards marked on the page. It stays up while the shop is open, so turning to another tab adds that tab's pets.
     /// </summary>
     private void OnBlackCloudOffered(string character, IReadOnlyList<Aion2.BlackCloudWanted> offered)
     {
@@ -806,16 +809,26 @@ public partial class MainWindow
             return;
         }
 
-        BlackCloudToast.Show(character, ToastPets(offered, WatchedShopPets(s)));
+        BlackCloudToast.Show(character, ToastPets(offered, WatchedShopPets(s), character));
     }
 
-    /// <summary>The pets of the pop-up: the ticked ones of the merchant's list among those on offer, by group (field boss, dungeon, chests, special), then name.</summary>
-    internal static IReadOnlyList<BlackCloudToastPet> ToastPets(IEnumerable<Aion2.BlackCloudWanted> offered, IReadOnlyCollection<int> watched)
+    /// <summary>
+    /// The pets of the pop-up: the ticked ones of the merchant's list among those on offer (<paramref name="watched"/> also holds only the genera picked), by
+    /// group (field boss, dungeon, chests, special), then name - without those the character has at the top level. A character whose collection is not known
+    /// (the meter started after its login) is spared only the pets every known character has finished.
+    /// </summary>
+    internal static IReadOnlyList<BlackCloudToastPet> ToastPets(IEnumerable<Aion2.BlackCloudWanted> offered, IReadOnlyCollection<int> watched, string character = "")
     {
         var ticked = watched.ToHashSet();
         string language = LocalizationManager.Instance.Language;
+        int? LevelOf(Aion2.BlackCloudWanted w) =>
+            character.Length == 0 ? null
+            : w.Needed.Where(n => n.Name == character).Select(n => (int?)n.Level).FirstOrDefault()
+              ?? (w.Done.Contains(character) ? Aion2.Protocol.Aion2Pets.TopLevel : (int?)null);
         return offered.Where(w => ticked.Contains(w.PetId) && Aion2.Protocol.Aion2MerchantPets.Is(w.PetId))
-            .GroupBy(w => w.PetId).Select(g => new BlackCloudToastPet(g.Key, g.Where(w => w.Price > 0).Select(w => w.Price).DefaultIfEmpty(0).Min(), Aion2.Protocol.Aion2MerchantPets.Of(g.Key)?.Kind))
+            .Where(w => LevelOf(w) is { } level ? level < Aion2.Protocol.Aion2Pets.TopLevel : !(w.Needed.Count == 0 && w.Done.Count > 0))
+            .GroupBy(w => w.PetId).Select(g => new BlackCloudToastPet(g.Key, g.Where(w => w.Price > 0).Select(w => w.Price).DefaultIfEmpty(0).Min(),
+                Aion2.Protocol.Aion2MerchantPets.Of(g.Key)?.Kind, Aion2.Protocol.Aion2Pets.SpeciesOf(g.Key), LevelOf(g.First())))
             .OrderBy(p => p.Kind).ThenBy(p => Aion2.Protocol.Aion2Pets.PetName(p.PetId, language) ?? "", StringComparer.CurrentCulture).ToList();
     }
 

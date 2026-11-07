@@ -104,19 +104,60 @@ public static class ToolRender
 
             case "blackcloud-toast":
             {
-                // the Black Cloud Merchants' pop-up as it stands over the game while the shop is open: ticked pets of every group, with their prices
+                // the Black Cloud Merchants' pop-up as it stands over the game while the shop is open: pets the character still needs, of every group, with
+                // their genus, how far the character has them and their prices
+                static BlackCloudToastPet P(int id, long price, int? level) =>
+                    new(id, price, Aion2.Protocol.Aion2MerchantPets.Of(id)?.Kind, Aion2.Protocol.Aion2Pets.SpeciesOf(id), level);
                 UIElement body = BlackCloudToast.Build("Ashveil", new[]
                 {
-                    new BlackCloudToastPet(1206, 70_000, Aion2.Protocol.MerchantPetKind.FieldBoss), new BlackCloudToastPet(1156, 70_000, Aion2.Protocol.MerchantPetKind.FieldBoss),
-                    new BlackCloudToastPet(1103, 50_000, Aion2.Protocol.MerchantPetKind.FieldBoss), new BlackCloudToastPet(1093, 70_000, Aion2.Protocol.MerchantPetKind.Dungeon),
-                    new BlackCloudToastPet(1146, 70_000, Aion2.Protocol.MerchantPetKind.Chests), new BlackCloudToastPet(1055, 80_000, Aion2.Protocol.MerchantPetKind.Chests),
-                    new BlackCloudToastPet(1111, 1_200_000, Aion2.Protocol.MerchantPetKind.Special),
+                    P(1206, 70_000, 0), P(1156, 70_000, 1), P(1103, 50_000, 0), P(1093, 70_000, 2), P(1146, 70_000, 0), P(1055, 80_000, 1), P(1111, 1_200_000, 0),
                 });
                 shown = new Border
                 {
                     Padding = new Thickness(24), Background = new LinearGradientBrush(Color.FromRgb(0x3a, 0x4a, 0x3a), Color.FromRgb(0x24, 0x30, 0x40), 45),
                     Child = new Border { Child = body, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Top },
                 };
+                width = 0;
+                height = 0;
+                break;
+            }
+
+            case "blackcloud-marks":
+            {
+                // a made-up shop page (ten cards) with the pop-up and the two wanted pets' cards marked, found on the picture as the live meter finds them
+                const int pw = 1600, ph = 900;
+                using System.Drawing.Bitmap page = ShopSample.Page(pw, ph);
+                var (coarse, fine) = ShopSample.Copies(page);
+                var found = ShopPetFinder.Find(coarse, fine, new[] { 1078, 1188 }, ShopPetFinder.Icon);
+                var pets = new[]
+                {
+                    new BlackCloudToastPet(1078, 90_000, Aion2.Protocol.Aion2MerchantPets.Of(1078)?.Kind, Aion2.Protocol.Aion2Pets.SpeciesOf(1078), 1),
+                    new BlackCloudToastPet(1188, 70_000, Aion2.Protocol.Aion2MerchantPets.Of(1188)?.Kind, Aion2.Protocol.Aion2Pets.SpeciesOf(1188), 0),
+                };
+                var stream = new MemoryStream();
+                page.Save(stream, System.Drawing.Imaging.ImageFormat.Png);
+                stream.Position = 0;
+                var picture = new BitmapImage();
+                picture.BeginInit();
+                picture.StreamSource = stream;
+                picture.CacheOption = BitmapCacheOption.OnLoad;
+                picture.EndInit();
+                var canvas = new Canvas { Width = pw, Height = ph };
+                canvas.Children.Add(new Image { Source = picture, Width = pw, Height = ph });
+                foreach (ShopPetFinder.Found f in found)
+                {
+                    foreach (UIElement part in ShopMarks.Mark(f, pets.FirstOrDefault(p => p.PetId == f.PetId), pw, ph))
+                    {
+                        canvas.Children.Add(part);
+                    }
+                }
+
+                FrameworkElement toast = BlackCloudToast.Build("Ashveil", pets);
+                toast.Measure(new Size(double.PositiveInfinity, double.PositiveInfinity));
+                Canvas.SetLeft(toast, (pw - toast.DesiredSize.Width) / 2);
+                Canvas.SetTop(toast, ph * 0.125);
+                canvas.Children.Add(toast);
+                shown = canvas;
                 width = 0;
                 height = 0;
                 break;

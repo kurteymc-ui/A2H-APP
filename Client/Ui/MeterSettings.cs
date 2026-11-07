@@ -758,6 +758,26 @@ public sealed class MeterSettings
     /// <summary>The pets only the merchant sells that the player unticked (finished, or not wanted): no note for them. Every other one is ticked, new ones too.</summary>
     public List<int> BlackCloudUnwatched { get; set; } = new();
 
+    /// <summary>The card of a pet of the pop-up is marked on the shop's page (found in the game window's picture, see ShopMarks). On by default.</summary>
+    public bool BlackCloudMark { get; set; } = true;
+
+    /// <summary>The genera the pet alerts are for (Cognia, Fera, Natura, Varia, Specia: <see cref="Aion2.Protocol.Aion2Pets.Species"/>); null or empty: every
+    /// one. The Black Cloud pop-up, its renewal note and the map that comes up near a pet follow it (7 November 2026: "if they don't want other types they don't
+    /// get notified").</summary>
+    public List<string>? PetAlertSpecies { get; set; }
+
+    /// <summary>Whether the alerts are for this pet's genus (<see cref="PetAlertSpecies"/>; a pet of no known genus always is).</summary>
+    public bool PetAlertFor(int petId) =>
+        PetAlertSpecies is not { Count: > 0 } picked || Aion2.Protocol.Aion2Pets.SpeciesOf(petId) is not { } species || picked.Contains(species);
+
+    /// <summary>The interactive map comes up by itself while the character is within <see cref="PetNearMetres"/> of a monster of a pet it still needs (not at
+    /// the top level, of the genera picked, among the pets the map tracks) - a spawn point or one the game shows -, as it does for a Hidden Cube; it goes again
+    /// 10 seconds after none is that near. Off until switched on.</summary>
+    public bool ShowMapOnPet { get; set; }
+
+    /// <summary>How near (metres) a pet's monster brings the map up (<see cref="ShowMapOnPet"/>).</summary>
+    public int PetNearMetres { get; set; } = 300;
+
     /// <summary>A line on the meter while a Hidden Cube is in range ("Hidden Cube nearby · 42 m"). On by default.</summary>
     public bool CubeOverlayAlert { get; set; } = true;
 

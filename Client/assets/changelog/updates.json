@@ -6,7 +6,42 @@
   ],
   "versions": [
     {
-      "version": "1.20.57",
+      "version": "1.20.59",
+      "date": "2026-11-07",
+      "headline": "The Black Cloud pop-up redone, its pets marked on the shop, and pet alerts your way",
+      "items": [
+        {
+          "kind": "improved",
+          "area": "Black Cloud",
+          "title": "A clearer pop-up, and the card marked on the shop",
+          "text": "The pop-up when the Black Cloud Merchant sells a pet you still need is redone: each pet's picture in a ring of its genus's colour, its genus (Cognia, Fera, Natura, Varia, Specia), where it comes from, how far your character has it and the price. On the shop's page the pet's card gets a frame in the same colour, with its genus and level on top, so you don't have to look for it. The card is found in the game window's own picture; nothing is read from the game.",
+          "example": "You open the shop on your alt: \"Urugugu Brawler, Cognia, level 1 of 3, 90,000 Kinah\", and its card on the page lights up blue."
+        },
+        {
+          "kind": "improved",
+          "area": "Black Cloud",
+          "title": "No pop-up for pets you've finished",
+          "text": "A pet the character already has at the top level never brings the pop-up or the renewal note any more. Only what that character still needs is shown.",
+          "example": "White Bunny is maxed on your main: opening the shop there stays quiet about it, on your alt it still tells you."
+        },
+        {
+          "kind": "new",
+          "area": "Pets",
+          "title": "Pick which genera you get alerts for",
+          "text": "A new Pet alerts card on the Pets page: tick the genera you care about. The Black Cloud pop-up, its renewal note and the map below follow it.",
+          "example": "You only farm Cognia and Natura: untick the others and the merchant's Fera pets stop popping up."
+        },
+        {
+          "kind": "new",
+          "area": "Map",
+          "title": "The map comes up when a pet you need is near",
+          "text": "Switch it on in Pet alerts and pick how near (100 m to 1 km). When your character comes that close to a monster of a pet you still need, of the genera you picked, the interactive map comes up over the game with a note of which pet and how far, like it does for a Hidden Cube. It goes again 10 seconds after none is that near, and works with the map switched off.",
+          "example": "Within 300 m of a Vivel spawn you still need: the map pops up with \"Fera · Vivel nearby · 240 m\"."
+        }
+      ]
+    },
+    {
+      "version": "1.20.58",
       "date": "2026-11-07",
       "headline": "An overlay menu in the game, hotkeys your way, and a sharper stagger split",
       "items": [
@@ -33,15 +68,8 @@
         {
           "kind": "improved",
           "area": "Stagger",
-          "title": "Who took what off the bar, far more precisely",
-          "text": "A skill takes the same off the stagger bar at every level, but the game gives each level its own id, so the app used to miss many skills and had to guess. It now knows each skill's amount at any level, for all eight classes, checked on 211 real boss fights against 21 bosses with a stagger bar (Krao Cave, Draupnir, Urugugu Canyon, Vakron Sky Island, Ferocious Horn Den, Shattered Arkanis, Nightmare and more). 94% of all the stagger in those fights now matches the exact skill that did it, up from about 70%.",
-          "example": "Judgment, Chain of Torment, the Spiritmaster's spirits: all counted by what they really take off, instead of the nearest hit."
-        },
-        {
-          "kind": "fixed",
-          "area": "Stagger",
-          "title": "No phantom 240 when Berk's bar changes size",
-          "text": "When a boss's stagger bar switches size (Berk goes from 720 to 480), the difference was counted as stagger nobody did. It isn't any more. Only the Gladiator's and Assassin's hits are marked as boosted now, as only they have the stagger buff."
+          "title": "The stagger split checked on 211 boss fights",
+          "text": "A skill takes the same off the stagger bar at every level, but the game gives each level its own id, so the app used to miss many skills and had to guess. It now knows each skill's amount at any level, for all eight classes, checked on 211 real boss fights against 21 bosses with a stagger bar (Krao Cave, Draupnir, Urugugu Canyon, Vakron Sky Island, Ferocious Horn Den, Shattered Arkanis, Nightmare and more). 94% of all the stagger in those fights now matches the exact skill that did it, up from about 70%."
         },
         {
           "kind": "fixed",
@@ -49,6 +77,26 @@
           "title": "Ludra: Rahu's long cast is no failed check",
           "text": "Isolation Specialist Rahu in Abyssal Forge: Ludra has a 15 second cast during which the bar can't be staggered at all. The app showed it as a check your group failed with nothing taken off. It doesn't any more; Rahu's real checks are still shown.",
           "example": "Two minutes in, Rahu starts the long cast with a full bar. Before, that read \"Failed, 0 of 4,500\". Now it isn't listed as a check."
+        }
+      ]
+    },
+    {
+      "version": "1.20.57",
+      "date": "2026-11-07",
+      "headline": "A sharper stagger split, and update notes",
+      "items": [
+        {
+          "kind": "improved",
+          "area": "Stagger",
+          "title": "Who took what off the bar, far more precisely",
+          "text": "A skill takes the same off the stagger bar at every level, but the game gives each level its own id, so the app used to miss many skills and had to guess. It now knows each skill's amount at any level, for all eight classes, worked out from real boss fights.",
+          "example": "Judgment, Chain of Torment, the Spiritmaster's spirits: all counted by what they really take off, instead of the nearest hit."
+        },
+        {
+          "kind": "fixed",
+          "area": "Stagger",
+          "title": "No phantom 240 when Berk's bar changes size",
+          "text": "When a boss's stagger bar switches size (Berk goes from 720 to 480), the difference was counted as stagger nobody did. It isn't any more. Only the Gladiator's and Assassin's hits are marked as boosted now, as only they have the stagger buff."
         },
         {
           "kind": "new",

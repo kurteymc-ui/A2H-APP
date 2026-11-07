@@ -74,6 +74,7 @@ jobs:
             @('render-app', 'app-timers-full.png', 'timetable', '2100'),
             @('render-tool', 'timers-overlay.png', 'timetable-overlay'),
             @('render-tool', 'blackcloud-toast.png', 'blackcloud-toast'),
+            @('render-tool', 'blackcloud-marks.png', 'blackcloud-marks'),
             @('render-tool', 'hotkeys.png', 'hotkeys'),
             @('render-tool', 'hotkeys-problems.png', 'hotkeys-problems'),
             @('render-tool', 'overlay-menu.png', 'overlay-menu'),

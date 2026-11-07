@@ -70,6 +70,43 @@ public static class SelfCheckBlackCloud
             && toast.Take(2).Select(p => p.PetId).OrderBy(p => p).SequenceEqual(new[] { 1103, 1156 }) && toast.Take(2).All(p => p.Kind == MerchantPetKind.FieldBoss);
         Console.WriteLine($"  -> a second tab adds its pets (Pretor Veil Administrator, Elite Guardite), a page before the character is known still pops up; the pop-up's pets: {tabs}");
 
+        // finished pets bring no pop-up (7 November 2026): White Bunny is at the top level for YIELD, so the shop opened on YIELD leaves it out; on Dead (who
+        // lacks it) it comes, with its level; with the character not known it comes while any known character still needs it. Swift Lugi: level 1 on Dead.
+        Aion2BlackCloud.NotePets("YIELD", 2302, new[] { new Aion2PetState(1179, 3, 0), new Aion2PetState(1240, 3, 0) });
+        var offeredBoth = new[] { Aion2BlackCloud.Wanted(1240, 80_000), Aion2BlackCloud.Wanted(1111, 1_200_000) };
+        var onYield = Ui.MainWindow.ToastPets(offeredBoth, new[] { 1240, 1111 }, "YIELD");
+        var onDead = Ui.MainWindow.ToastPets(offeredBoth, new[] { 1240, 1111 }, "Dead");
+        var onWho = Ui.MainWindow.ToastPets(offeredBoth, new[] { 1240, 1111 });
+        bool finished = onYield is [{ PetId: 1111, Level: 0, Species: "Specia" }] && onDead.Count == 2 && onDead.Single(p => p.PetId == 1111).Level == 1
+            && onDead.Single(p => p.PetId == 1240).Level == 0 && onWho.Count == 2 && onWho.All(p => p.Level is null);
+        // the genera picked for alerts: Cognia only leaves out the special pets and Elite Guardite (Varia), keeps Pretor Veil Administrator and Elite Klaw
+        var cogniaOnly = new Ui.MeterSettings { PetAlertSpecies = new() { "Cognia" } };
+        var watchedCognia = Ui.MainWindow.WatchedShopPets(cogniaOnly);
+        bool genera = watchedCognia.Contains(1103) && watchedCognia.Contains(1156) && !watchedCognia.Contains(1111) && !watchedCognia.Contains(1206)
+            && Ui.MainWindow.WatchedShopPets(new Ui.MeterSettings()).Count == all.Count && new Ui.MeterSettings().PetAlertFor(1111) && !cogniaOnly.PetAlertFor(1188);
+        Console.WriteLine($"  -> a pet the character has finished brings no pop-up, the others show its level ({finished}); alerts for Cognia only leave the other genera out ({genera})");
+        tabs = tabs && finished && genera;
+
+        // the cards on the shop's page (7 November 2026: "put another overlay over the Urugugu Brawler"): on a made-up page of ten cards, Urugugu Brawler and
+        // Vivel are found at their portraits, at the cards' size, by their icons; the place found still matches on a second look
+        bool cards;
+        using (System.Drawing.Bitmap shop = Ui.ShopSample.Page(1600, 900))
+        {
+            var (coarse, fine) = Ui.ShopSample.Copies(shop);
+            var found = Ui.ShopPetFinder.Find(coarse, fine, new[] { 1078, 1188 }, Ui.ShopPetFinder.Icon);
+            bool At(int pet)
+            {
+                var (x, y) = Ui.ShopSample.Portraits[Array.IndexOf(Ui.ShopSample.Pets, pet)];
+                return found.Any(f => f.PetId == pet && Math.Abs(f.X - x) < 0.01 && Math.Abs(f.Y - y) < 0.015 && Math.Abs(f.SizeY - Ui.ShopSample.PortraitShare) < 0.012);
+            }
+
+            double again = found.Count > 0 && Ui.ShopPetFinder.Icon(found[0].PetId) is { } icon ? Ui.ShopPetFinder.ScoreAt(fine, icon, found[0]) : 0;
+            cards = found.Count == 2 && At(1078) && At(1188) && again >= 0.8;
+            Console.WriteLine($"  -> the shop's cards: Urugugu Brawler and Vivel found on a page of ten ({string.Join(", ", found.Select(f => $"{f.PetId} at {f.X:0.000},{f.Y:0.000} size {f.SizeY:0.000} score {f.Score:0.00}"))}), still there on a second look ({again:0.00}): {cards}");
+        }
+
+        tabs = tabs && cards;
+
         var watched = new[] { 1111, 1240 };
         bool notYet = Aion2BlackCloud.DueRenewals(at.AddMinutes(5), watched).Count == 0;
         var due = Aion2BlackCloud.DueRenewals(at.AddMinutes(7), watched);

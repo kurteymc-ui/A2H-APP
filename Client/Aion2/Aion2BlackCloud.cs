@@ -52,6 +52,9 @@ public static class Aion2BlackCloud
     /// it yet) and every pet on offer on the pages read since the offers renewed, once each at its lowest price, the wanted ones first.</summary>
     public static event Action<string, IReadOnlyList<BlackCloudWanted>>? Offered;
 
+    /// <summary>The page of the shop that came last (the one the shop shows): the character, the page's byte, its pets and when it came. Null before any.</summary>
+    public static BlackCloudPage? LastPage { get; private set; }
+
     /// <summary>Raised when something changed (a collection or offers), for the pages that show it.</summary>
     public static event Action? Changed;
 
@@ -87,6 +90,7 @@ public static class Aion2BlackCloud
             _characters = new(StringComparer.Ordinal);
             Pages.Clear();
             _unknownRenewMs = 0;
+            LastPage = null;
         }
     }
 
@@ -135,6 +139,7 @@ public static class Aion2BlackCloud
             }
 
             pages[page] = (utc, pets.Select(p => new BlackCloudOffer { PetId = p.PetId, Price = p.Price, Page = page }).ToList());
+            LastPage = new BlackCloudPage(name, page, pets.Select(p => p.PetId).ToList(), utc);
             List<BlackCloudOffer> all = pages.OrderBy(p => p.Key).SelectMany(p => p.Value.Offers).ToList();
             if (c is not null)
             {
@@ -305,3 +310,6 @@ public static class Aion2BlackCloud
 /// <summary>A pet on offer (or in the list): its price, whether it is on the merchant's list (<see cref="Aion2MerchantPets"/>: can't be farmed out in the world),
 /// the characters that still need it with their level (0 = missing) and those that have it at the top level.</summary>
 public sealed record BlackCloudWanted(int PetId, long Price, bool Merchant, IReadOnlyList<(string Name, int Level)> Needed, IReadOnlyList<string> Done);
+
+/// <summary>One page of the shop as it came: the character, the page's byte, its pets, when (UTC).</summary>
+public sealed record BlackCloudPage(string Name, int Page, IReadOnlyList<int> Pets, DateTime At);
