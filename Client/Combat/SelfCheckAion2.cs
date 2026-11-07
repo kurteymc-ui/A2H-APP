@@ -2436,7 +2436,27 @@ public static class SelfCheckAion2
         Console.WriteLine($"  -> the default bindings read back as written: {roundTrip}");
         Console.WriteLine($"  -> a key without a modifier, or nothing, is no binding: {needsModifier}");
         Console.WriteLine($"  -> modifiers and keys parse whatever the case: {parsesModifiers}");
-        return roundTrip && needsModifier && parsesModifiers;
+        // the keys nobody types may be a hotkey on their own (7 Nov 2026: "allow users to change these to whatever they want"); a letter, a digit, the
+        // space bar and F12 (Windows keeps it) still need a modifier
+        bool alone = new[] { "F8", "F1", "F24", "NumPad5", "Add", "Insert", "Home", "End", "PageUp", "PageDown", "Pause", "Scroll" }
+                .All(t => Ui.HotkeyBinding.Parse(t) is { IsEmpty: false, Ctrl: false, Alt: false } k && k.ToString() == t)
+            && new[] { "A", "D5", "Space", "F12", "Tab", "Enter" }.All(t => Ui.HotkeyBinding.Parse(t).IsEmpty)
+            && !Ui.HotkeyBinding.Parse("Ctrl+F12").IsEmpty && !Ui.HotkeyBinding.Parse("Shift+A").IsEmpty;
+        Console.WriteLine($"  -> F keys, the number pad and Insert/Home/End/Page Up/Down work alone, letters, digits, space and F12 don't: {alone}");
+        // one list holds every hotkey once (the registration, the overlay, the settings page and the overlay menu read it); two alike: the second is "twice"
+        var actions = Enum.GetValues<Ui.HotkeyAction>();
+        bool table = Ui.HotkeyTable.All.Length == actions.Length && actions.All(a => Ui.HotkeyTable.All.Count(e => e.Action == a) == 1)
+            && Ui.HotkeyTable.All.Select(e => e.Id).Distinct().Count() == actions.Length
+            && Ui.HotkeyTable.All.All(e => !Ui.HotkeyBinding.Parse(e.Get(defaults)).IsEmpty);
+        var same = new MeterSettings { HotkeyLoot = "Ctrl+Alt+P" };
+        var twice = Ui.GlobalHotkeys.Twice(Ui.HotkeyTable.Bindings(same));
+        bool twiceFound = twice.Count == 1 && twice.ContainsKey(Ui.HotkeyAction.ToggleLootOverlay) && Ui.GlobalHotkeys.Twice(Ui.HotkeyTable.Bindings(defaults)).Count == 0;
+        Console.WriteLine($"  -> the table has each of the {actions.Length} hotkeys once, each with a default: {table}; a combination given twice is found (the later one): {twiceFound}");
+        // a hotkey that does nothing is marked in the overlay's list; the others are not
+        var rows = Ui.HotkeyOverlayWindow.RowsOf(defaults, new Dictionary<Ui.HotkeyAction, Ui.HotkeyProblem> { [Ui.HotkeyAction.TogglePause] = Ui.HotkeyProblem.Taken });
+        bool marked = rows.Count(r => r.Problem is not null) == 1 && rows.Single(r => r.Problem is not null).Keys == "Ctrl+Alt+P";
+        Console.WriteLine($"  -> the hotkey overlay marks the one taken by another program: {marked}");
+        return roundTrip && needsModifier && parsesModifiers && alone && table && twiceFound && marked;
     }
 
     private static bool RunSettingsMigrationScenario()

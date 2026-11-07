@@ -702,6 +702,15 @@ public sealed class MeterSettings
     public double? HotkeyOverlayWidth { get; set; }
     public double? HotkeyOverlayHeight { get; set; }
 
+    /// <summary>The overlay menu (see OverlayMenuWindow): a small Atreia button at the top of the screen over the game; a click opens every overlay's switch
+    /// with its hotkey. On by default; placed, scaled and locked like the other overlays ("move the overlays" unlocks it with them).</summary>
+    public bool ShowOverlayMenu { get; set; } = true;
+
+    public double? OverlayMenuLeft { get; set; }
+    public double? OverlayMenuTop { get; set; }
+    public double OverlayMenuScale { get; set; } = 1.0;
+    public bool OverlayMenuLocked { get; set; } = true;
+
     /// <summary>Shows or hides the timetable overlay (see TimetableWindow).</summary>
     public string HotkeyTimetable { get; set; } = "Ctrl+Alt+T";
 

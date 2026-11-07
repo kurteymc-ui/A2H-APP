@@ -182,7 +182,7 @@ internal sealed class StatusPage : Grid
         else if (net.Connected && net.SinceLastData is { } quiet && quiet < TimeSpan.FromSeconds(30))
         {
             string ping = net.PingAverageMs is double p ? F("Status.Ping", Math.Round(p)) : "";
-            lines.Add(new Line(Loc["Status.Game"], Mark.Good, F("Status.GameOn", net.Server ?? "?") + (ping.Length > 0 ? "  ·  " + ping : ""),
+            lines.Add(new Line(Loc["Status.Game"], Mark.Good, Loc["Status.GameOn"] + (ping.Length > 0 ? "  ·  " + ping : ""),
                 F("Status.GameDetail", net.Retransmissions, net.Gaps, net.Dropped)));
         }
         else if (running)

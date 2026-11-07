@@ -88,6 +88,7 @@ public sealed class MenuWatcher : IDisposable
         Check(s.GatherOverlayLocked, "Settings.Nav.Gather");
         Check(s.SeasonOverlayLocked, "Checklist.Season");
         Check(s.CraftOverlayLocked, "Settings.Menu.Name.Craft");
+        Check(s.OverlayMenuLocked, "Shell.OvMenu");
         return open;
     }
 

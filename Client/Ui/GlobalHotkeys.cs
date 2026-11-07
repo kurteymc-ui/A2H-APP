@@ -53,8 +53,18 @@ public readonly record struct HotkeyBinding(bool Ctrl, bool Alt, bool Shift, boo
         return string.Join('+', parts);
     }
 
-    /// <summary>Parses "Ctrl+Alt+H"; empty, unreadable or modifier-less text gives an empty binding
-    /// (a global hotkey without a modifier would swallow an ordinary key in every program).</summary>
+    /// <summary>
+    /// The keys that may be a hotkey on their own, without Ctrl, Alt, Shift or Win: the function keys, the number pad and the keys above the arrows
+    /// (Insert, Home, End, Page Up and Down, Pause, Scroll Lock) - none of them is typed in a chat or a text box. A letter, a digit or the space bar alone
+    /// would be taken from every program, the game's chat too, so those still need a modifier.
+    /// </summary>
+    /// <remarks>F12 alone stays out: Windows keeps it for debuggers and refuses it as a hotkey.</remarks>
+    public static bool StandsAlone(Key key) => key is >= Key.F1 and <= Key.F11 or >= Key.F13 and <= Key.F24 or >= Key.NumPad0 and <= Key.NumPad9
+        or Key.Multiply or Key.Add or Key.Subtract or Key.Divide or Key.Decimal
+        or Key.Insert or Key.Home or Key.End or Key.PageUp or Key.PageDown or Key.Pause or Key.Scroll;
+
+    /// <summary>Parses "Ctrl+Alt+H" or "F8"; empty or unreadable text, or a typing key without a modifier, gives an empty binding
+    /// (a global hotkey of a plain letter would swallow that letter in every program).</summary>
     public static HotkeyBinding Parse(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -82,8 +92,57 @@ public readonly record struct HotkeyBinding(bool Ctrl, bool Alt, bool Shift, boo
             }
         }
 
-        return key == Key.None || !(ctrl || alt || shift || win) ? default : new HotkeyBinding(ctrl, alt, shift, win, key);
+        return key == Key.None || !(ctrl || alt || shift || win || StandsAlone(key)) ? default : new HotkeyBinding(ctrl, alt, shift, win, key);
     }
+}
+
+/// <summary>Why a hotkey does nothing: another program has the combination, or another of the meter's hotkeys has it too (the first one keeps it).</summary>
+public enum HotkeyProblem
+{
+    Taken,
+    Twice,
+}
+
+/// <summary>
+/// Every hotkey of the meter: what it does, its id (the hotkey overlay's rows and <see cref="MeterSettings.HotkeyOverlayHidden"/>), its name and where the
+/// settings keep it. One list for the registration, the overlay, the settings page and the in-game overlay menu, so none of them can leave one out.
+/// </summary>
+public static class HotkeyTable
+{
+    public sealed record Entry(HotkeyAction Action, string Id, string NameKey, Func<MeterSettings, string> Get, Action<MeterSettings, string> Set);
+
+    public static readonly Entry[] All =
+    {
+        new(HotkeyAction.ToggleHideUi, "HideUi", "Settings.Hotkey.HideUi", s => s.HotkeyHideUi, (s, v) => s.HotkeyHideUi = v),
+        new(HotkeyAction.TogglePause, "Pause", "Settings.Hotkey.Pause", s => s.HotkeyPause, (s, v) => s.HotkeyPause = v),
+        new(HotkeyAction.CopyDamageRanking, "CopyDamage", "Settings.Hotkey.CopyDamage", s => s.HotkeyCopyDamage, (s, v) => s.HotkeyCopyDamage = v),
+        new(HotkeyAction.ClearDamage, "Clear", "Settings.Hotkey.Clear", s => s.HotkeyClear, (s, v) => s.HotkeyClear = v),
+        new(HotkeyAction.UploadBoss, "UploadBoss", "Settings.Hotkey.UploadBoss", s => s.HotkeyUploadBoss, (s, v) => s.HotkeyUploadBoss = v),
+        new(HotkeyAction.NextMode, "Mode", "Settings.Hotkey.Mode", s => s.HotkeyMode, (s, v) => s.HotkeyMode = v),
+        new(HotkeyAction.ToggleAllOverlays, "AllOverlays", "Settings.Hotkey.AllOverlays", s => s.HotkeyAllOverlays, (s, v) => s.HotkeyAllOverlays = v),
+        new(HotkeyAction.MoveOverlays, "MoveOverlays", "Settings.Hotkey.MoveOverlays", s => s.HotkeyMoveOverlays, (s, v) => s.HotkeyMoveOverlays = v),
+        new(HotkeyAction.ToggleHotkeyOverlay, "HotkeyOverlay", "Settings.Hotkey.HotkeyOverlay", s => s.HotkeyHotkeyOverlay, (s, v) => s.HotkeyHotkeyOverlay = v),
+        new(HotkeyAction.ToggleLootOverlay, "Loot", "Main.MenuTools.Loot", s => s.HotkeyLoot, (s, v) => s.HotkeyLoot = v),
+        new(HotkeyAction.ToggleCraftOverlay, "Craft", "Main.MenuTools.Craft", s => s.HotkeyCraft, (s, v) => s.HotkeyCraft = v),
+        new(HotkeyAction.TogglePetMap, "PetMap", "Settings.Hotkey.PetMap", s => s.HotkeyPetMap, (s, v) => s.HotkeyPetMap = v),
+        new(HotkeyAction.TogglePetArrows, "PetArrows", "Settings.Hotkey.PetArrows", s => s.HotkeyPetArrows, (s, v) => s.HotkeyPetArrows = v),
+        new(HotkeyAction.PetMapZoomIn, "PetMapZoomIn", "Settings.Hotkey.PetMapZoomIn", s => s.HotkeyPetMapZoomIn, (s, v) => s.HotkeyPetMapZoomIn = v),
+        new(HotkeyAction.PetMapZoomOut, "PetMapZoomOut", "Settings.Hotkey.PetMapZoomOut", s => s.HotkeyPetMapZoomOut, (s, v) => s.HotkeyPetMapZoomOut = v),
+        new(HotkeyAction.ToggleGatherArrows, "GatherArrows", "Settings.Hotkey.GatherArrows", s => s.HotkeyGatherArrows, (s, v) => s.HotkeyGatherArrows = v),
+        new(HotkeyAction.ToggleCombatOverlay, "Combat", "Settings.Hotkey.Combat", s => s.HotkeyCombatOverlay, (s, v) => s.HotkeyCombatOverlay = v),
+        new(HotkeyAction.ToggleAssistOverlay, "Assist", "Main.MenuTools.Assist", s => s.HotkeyAssist, (s, v) => s.HotkeyAssist = v),
+        new(HotkeyAction.ToggleTimetable, "Timetable", "Settings.Hotkey.Timetable", s => s.HotkeyTimetable, (s, v) => s.HotkeyTimetable = v),
+        new(HotkeyAction.ToggleWorldBossOverlay, "WorldBoss", "Settings.Hotkey.WorldBoss", s => s.HotkeyWorldBoss, (s, v) => s.HotkeyWorldBoss = v),
+        new(HotkeyAction.ToggleNetworkOverlay, "Network", "Settings.Hotkey.Network", s => s.HotkeyNetwork, (s, v) => s.HotkeyNetwork = v),
+    };
+
+    public static Entry Of(HotkeyAction action) => All.First(e => e.Action == action);
+
+    public static Entry? OfId(string id) => All.FirstOrDefault(e => e.Id == id);
+
+    /// <summary>The bindings to register, in the table's order (of two alike, the first keeps the combination).</summary>
+    public static List<KeyValuePair<HotkeyAction, HotkeyBinding>> Bindings(MeterSettings s) =>
+        All.Select(e => new KeyValuePair<HotkeyAction, HotkeyBinding>(e.Action, HotkeyBinding.Parse(e.Get(s)))).ToList();
 }
 
 /// <summary>
@@ -119,17 +178,24 @@ internal sealed class GlobalHotkeys : IDisposable
         _source.AddHook(WndProc);
     }
 
-    /// <summary>Registers the bindings, dropping the previous set first. Returns the actions whose
-    /// combination could not be registered (another program already owns it).</summary>
-    public IReadOnlyList<HotkeyAction> Apply(IReadOnlyDictionary<HotkeyAction, HotkeyBinding> bindings)
+    /// <summary>Registers the bindings in their order, dropping the previous set first. Returns the actions that got no combination: another program
+    /// already owns it (<see cref="HotkeyProblem.Taken"/>), or an earlier action of the list has the same one (<see cref="HotkeyProblem.Twice"/>).</summary>
+    public IReadOnlyDictionary<HotkeyAction, HotkeyProblem> Apply(IEnumerable<KeyValuePair<HotkeyAction, HotkeyBinding>> bindings)
     {
         Clear();
-        var failed = new List<HotkeyAction>();
+        var failed = new Dictionary<HotkeyAction, HotkeyProblem>();
+        var used = new HashSet<HotkeyBinding>();
         int id = FirstId;
         foreach (var (action, binding) in bindings)
         {
             if (binding.IsEmpty)
             {
+                continue;
+            }
+
+            if (!used.Add(binding))
+            {
+                failed[action] = HotkeyProblem.Twice; // Windows would refuse it as "taken": it is, by the meter itself
                 continue;
             }
 
@@ -141,11 +207,18 @@ internal sealed class GlobalHotkeys : IDisposable
             }
             else
             {
-                failed.Add(action);
+                failed[action] = HotkeyProblem.Taken;
             }
         }
 
         return failed;
+    }
+
+    /// <summary>Which of <paramref name="bindings"/> share a combination with an earlier one (the check of <see cref="Apply"/> without Windows).</summary>
+    public static IReadOnlyDictionary<HotkeyAction, HotkeyProblem> Twice(IEnumerable<KeyValuePair<HotkeyAction, HotkeyBinding>> bindings)
+    {
+        var used = new HashSet<HotkeyBinding>();
+        return bindings.Where(b => !b.Value.IsEmpty && !used.Add(b.Value)).ToDictionary(b => b.Key, _ => HotkeyProblem.Twice);
     }
 
     private void Clear()

@@ -901,12 +901,15 @@ public partial class MainWindow : Window
                 break;
             case HotkeyAction.ToggleTimetable:
                 ToggleTimetable();
+                SayToggled("Timers.Title", MeterSettings.Load().ShowTimetable);
                 break;
             case HotkeyAction.TogglePetMap:
                 TogglePetMap();
+                SayToggled("Settings.Nav.PetMap", MeterSettings.Load().ShowPetMap);
                 break;
             case HotkeyAction.ToggleHotkeyOverlay:
                 ToggleHotkeyOverlay();
+                SayToggled("Shell.OvHotkeys", MeterSettings.Load().ShowHotkeyOverlay);
                 break;
             case HotkeyAction.ToggleAllOverlays:
                 ToggleAllOverlays();
@@ -916,24 +919,31 @@ public partial class MainWindow : Window
                 break;
             case HotkeyAction.ToggleNetworkOverlay:
                 ToggleNetworkOverlay();
+                SayToggled("Hotkeys.Name.Network", MeterSettings.Load().ShowNetworkOverlay);
                 break;
             case HotkeyAction.ToggleCombatOverlay:
                 ToggleCombatOverlay();
+                SayToggled("Settings.Nav.Combat", MeterSettings.Load().ShowCombatOverlay);
                 break;
             case HotkeyAction.ToggleAssistOverlay:
                 ToggleAssistOverlay();
+                SayToggled("Main.MenuTools.Assist", MeterSettings.Load().ShowAssistOverlay);
                 break;
             case HotkeyAction.ToggleLootOverlay:
                 ToggleLootOverlay();
+                SayToggled("Main.MenuTools.Loot", MeterSettings.Load().ShowLootOverlay);
                 break;
             case HotkeyAction.ToggleCraftOverlay:
                 ToggleCraftOverlay();
+                SayToggled("Main.MenuTools.Craft", MeterSettings.Load().ShowCraftOverlay);
                 break;
             case HotkeyAction.ToggleWorldBossOverlay:
                 ToggleWorldBossOverlay();
+                SayToggled("Settings.Nav.Boss", MeterSettings.Load().ShowBossOverlay);
                 break;
             case HotkeyAction.TogglePetArrows:
                 TogglePetArrows();
+                SayToggled("Hotkeys.Name.PetArrows", MeterSettings.Load().ShowPetArrows);
                 break;
             case HotkeyAction.PetMapZoomIn:
                 _petMapController?.Zoom(-PetMapWindow.ZoomStep);
@@ -943,6 +953,7 @@ public partial class MainWindow : Window
                 break;
             case HotkeyAction.ToggleGatherArrows:
                 ToggleGatherArrows();
+                SayToggled("Hotkeys.Name.GatherArrows", MeterSettings.Load().ShowGatherArrows);
                 break;
             case HotkeyAction.NextMode:
                 NextMode();
@@ -953,8 +964,14 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>(Re-)registers the hotkeys from the settings; a combination another program already
-    /// owns is reported on the status line.</summary>
+    /// <summary>The hotkeys that do nothing since the last registration, and why: the hotkey overlay, Settings > Hotkeys and the overlay menu show them.</summary>
+    internal static IReadOnlyDictionary<HotkeyAction, HotkeyProblem> HotkeyProblems { get; private set; } = new Dictionary<HotkeyAction, HotkeyProblem>();
+
+    /// <summary>The problems last reported, so the same note does not come again each time the settings are applied.</summary>
+    private string _hotkeyProblemsSaid = "";
+
+    /// <summary>(Re-)registers the hotkeys from the settings. One that gets nothing - another program owns the combination, or another of the meter's
+    /// hotkeys has it too - is marked red in the hotkey overlay and in Settings > Hotkeys, and said once on the status line and over the game.</summary>
     private void ApplyHotkeys(MeterSettings settings)
     {
         if (_hotkeys is null)
@@ -962,34 +979,33 @@ public partial class MainWindow : Window
             return;
         }
 
-        var failed = _hotkeys.Apply(new Dictionary<HotkeyAction, HotkeyBinding>
+        HotkeyProblems = _hotkeys.Apply(HotkeyTable.Bindings(settings));
+        _settingsWindow?.ShowHotkeyProblems(HotkeyProblems);
+        var loc = LocalizationManager.Instance;
+        string said = string.Join(",", HotkeyProblems.OrderBy(p => p.Key).Select(p => p.Key + ":" + p.Value + ":" + HotkeyTable.Of(p.Key).Get(settings)));
+        if (said == _hotkeyProblemsSaid)
         {
-            [HotkeyAction.ToggleHideUi] = HotkeyBinding.Parse(settings.HotkeyHideUi),
-            [HotkeyAction.TogglePause] = HotkeyBinding.Parse(settings.HotkeyPause),
-            [HotkeyAction.CopyDamageRanking] = HotkeyBinding.Parse(settings.HotkeyCopyDamage),
-            [HotkeyAction.ClearDamage] = HotkeyBinding.Parse(settings.HotkeyClear),
-            [HotkeyAction.UploadBoss] = HotkeyBinding.Parse(settings.HotkeyUploadBoss),
-            [HotkeyAction.NextMode] = HotkeyBinding.Parse(settings.HotkeyMode),
-            [HotkeyAction.ToggleTimetable] = HotkeyBinding.Parse(settings.HotkeyTimetable),
-            [HotkeyAction.TogglePetMap] = HotkeyBinding.Parse(settings.HotkeyPetMap),
-            [HotkeyAction.ToggleHotkeyOverlay] = HotkeyBinding.Parse(settings.HotkeyHotkeyOverlay),
-            [HotkeyAction.ToggleAllOverlays] = HotkeyBinding.Parse(settings.HotkeyAllOverlays),
-            [HotkeyAction.MoveOverlays] = HotkeyBinding.Parse(settings.HotkeyMoveOverlays),
-            [HotkeyAction.ToggleWorldBossOverlay] = HotkeyBinding.Parse(settings.HotkeyWorldBoss),
-            [HotkeyAction.ToggleNetworkOverlay] = HotkeyBinding.Parse(settings.HotkeyNetwork),
-            [HotkeyAction.ToggleCombatOverlay] = HotkeyBinding.Parse(settings.HotkeyCombatOverlay),
-            [HotkeyAction.ToggleAssistOverlay] = HotkeyBinding.Parse(settings.HotkeyAssist),
-            [HotkeyAction.ToggleLootOverlay] = HotkeyBinding.Parse(settings.HotkeyLoot),
-            [HotkeyAction.ToggleCraftOverlay] = HotkeyBinding.Parse(settings.HotkeyCraft),
-            [HotkeyAction.TogglePetArrows] = HotkeyBinding.Parse(settings.HotkeyPetArrows),
-            [HotkeyAction.PetMapZoomIn] = HotkeyBinding.Parse(settings.HotkeyPetMapZoomIn),
-            [HotkeyAction.PetMapZoomOut] = HotkeyBinding.Parse(settings.HotkeyPetMapZoomOut),
-            [HotkeyAction.ToggleGatherArrows] = HotkeyBinding.Parse(settings.HotkeyGatherArrows),
-        });
-        if (failed.Count > 0)
-        {
-            ShowUploadStatus("Hotkey already in use by another program: " + string.Join(", ", failed));
+            return;
         }
+
+        _hotkeyProblemsSaid = said;
+        if (HotkeyProblems.Count == 0)
+        {
+            return;
+        }
+
+        string list = string.Join(", ", HotkeyProblems.Select(p => $"{loc[HotkeyTable.Of(p.Key).NameKey]} ({HotkeyBinding.Parse(HotkeyTable.Of(p.Key).Get(settings))})"));
+        string text = string.Format(loc[HotkeyProblems.Values.All(v => v == HotkeyProblem.Twice) ? "Hotkeys.Problem.StatusTwice" : "Hotkeys.Problem.Status"], list);
+        ShowUploadStatus(text);
+        CubeToast.Note(text, 6);
+    }
+
+    /// <summary>A hotkey switched something on or off: a short note over the game says which, so a press is never met by nothing (an overlay that has
+    /// nothing to show yet - no loot, no tracked recipe - looked as if the key did not work).</summary>
+    private static void SayToggled(string nameKey, bool on)
+    {
+        var loc = LocalizationManager.Instance;
+        CubeToast.Note(string.Format(System.Globalization.CultureInfo.CurrentCulture, loc[on ? "Hotkeys.Toggled.On" : "Hotkeys.Toggled.Off"], loc[nameKey]), 1.6);
     }
 
     private DateTime _lastPreviewInvalidate = DateTime.MinValue;
@@ -1203,6 +1219,7 @@ public partial class MainWindow : Window
         _dummy?.RaiseToFront();
         _petFarm?.RaiseToFront();
         _petMapController?.RaiseToFront();
+        _overlayMenu?.RaiseAll(); // the menu's button and the open menu above every other overlay
     }
 
     private void TickHistory()
@@ -2253,6 +2270,7 @@ public partial class MainWindow : Window
         _gateTimer.Stop();
         _timetable?.Close();
         _hotkeyOverlay?.Close();
+        _overlayMenu?.Close();
         _worldBoss?.Dispose();
         _assist?.Dispose();
         _loot?.Dispose();
@@ -8081,7 +8099,7 @@ public partial class MainWindow : Window
 
         _hotkeyOverlay ??= new HotkeyOverlayWindow();
         _hotkeyOverlay.ApplyLocked(settings.HotkeyOverlayLocked ?? settings.PetFarmLocked);
-        _hotkeyOverlay.Render(HotkeyOverlayWindow.RowsOf(settings));
+        _hotkeyOverlay.Render(HotkeyOverlayWindow.RowsOf(settings, HotkeyProblems));
         OnGateTick();
     }
 
@@ -8122,6 +8140,7 @@ public partial class MainWindow : Window
         // locked, the timetable steps aside like the other overlays: not while the game is behind another program or a game menu is open
         _timetable?.ApplyGate(GameWindow.OverlayMayShow());
         _petFarm?.ApplyGate(GameWindow.OverlayMayShow()); // like every overlay: not while one of the game's windows is open
+        GateOverlayMenu(s);
         if (_hotkeyOverlay is null)
         {
             return;
@@ -8210,7 +8229,7 @@ public partial class MainWindow : Window
     private void ToggleTimetable()
     {
         var settings = MeterSettings.Load();
-        settings.ShowTimetable = !(_timetable?.IsVisible ?? false);
+        settings.ShowTimetable = !settings.ShowTimetable; // the switch, not whether it is on screen: it steps aside while a game menu is open
         settings.Save();
         ApplyTimetable(settings);
         _settingsWindow?.SyncOverlaySwitches(settings);

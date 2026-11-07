@@ -8,8 +8,28 @@
     {
       "version": "1.20.57",
       "date": "2026-11-07",
-      "headline": "A sharper stagger split, and update notes",
+      "headline": "An overlay menu in the game, hotkeys your way, and a sharper stagger split",
       "items": [
+        {
+          "kind": "new",
+          "area": "Overlays",
+          "title": "An overlay menu at the top of the game's screen",
+          "text": "A small Atreia button now sits at the top of the screen while you play. Click it for every overlay with its switch and its hotkey, and to move or hide them all, change the hotkeys or open the app, without leaving the game. If it is in the way, move it with the other overlays (Move overlays), or switch it off on the Overlays page.",
+          "example": "Halfway through a dungeon you want the loot overlay but forgot its key: show the cursor, click Atreia, click Loot."
+        },
+        {
+          "kind": "improved",
+          "area": "Hotkeys",
+          "title": "Hotkeys your way, and you can see the ones that don't work",
+          "text": "F keys, the number pad and Insert, Home, End, Page Up and Page Down now work on their own, without Ctrl or Alt. A hotkey another program already uses (graphics drivers and recording tools like to take Ctrl+Alt keys) is shown in red in the hotkey overlay and in Settings > Hotkeys, with what to do about it. Giving a combination another hotkey had moves it over instead of quietly breaking one of them, and \"Back to the default keys\" sets them all back. Each press now says at the top of the screen what it switched. Your keys are kept in your own settings, so an update never changes them.",
+          "example": "Ctrl+Alt+C did nothing because your graphics driver had it. The hotkey list shows it in red, and you give the Boss fight overlay F7 instead."
+        },
+        {
+          "kind": "fixed",
+          "area": "Network",
+          "title": "No addresses on the network overlay",
+          "text": "The Server line showed the game server's address and the Local network line your router's. Neither is shown any more, so nothing on stream gives an address away: the Server line just says you're connected."
+        },
         {
           "kind": "improved",
           "area": "Stagger",

@@ -17,8 +17,8 @@ public static class NetworkOverlayRows
     private static readonly Color Neutral = Color.FromRgb(0xDD, 0xE6, 0xEC);
 
     /// <summary>Values as they look in a game session (the measurements of a real session: a ping around 40 ms on the EU server, no loss), for a view or a frame to place without a connection.</summary>
-    public static NetworkSnapshot Sample() => new(true, "193.202.112.97:13328", TimeSpan.FromMinutes(47), 1, 0, 38, 41, 33, 62, 4.2, 12.4, 1.8, 41, 160, 0, 0, TimeSpan.FromMilliseconds(120),
-        0, 0, 0, 0, null, null, null, new NetworkProbeSnapshot(true, "192.168.160.253", 1, 0, 60, 14, 0, 60));
+    public static NetworkSnapshot Sample() => new(true, "203.0.113.10:13328", TimeSpan.FromMinutes(47), 1, 0, 38, 41, 33, 62, 4.2, 12.4, 1.8, 41, 160, 0, 0, TimeSpan.FromMilliseconds(120),
+        0, 0, 0, 0, null, null, null, new NetworkProbeSnapshot(true, "192.168.1.1", 1, 0, 60, 14, 0, 60));
 
     private static string Num(double value, string format = "0.#") => value.ToString(format, CultureInfo.CurrentCulture);
 
@@ -34,7 +34,8 @@ public static class NetworkOverlayRows
 
         if (Shown("server"))
         {
-            rows.Add((Label("server"), s.Server ?? loc["Network.Waiting"], Neutral));
+            // never the address: the overlay is on stream, and an address on screen is an invitation to flood it
+            rows.Add(s.Server is null ? (Label("server"), loc["Network.Waiting"], Neutral) : (Label("server"), loc["Network.Server.Hidden"], Good));
         }
 
         if (!s.Connected)
@@ -88,12 +89,12 @@ public static class NetworkOverlayRows
 
         if (Shown("gateway"))
         {
-            rows.Add(ProbeRow(Label("gateway"), s.Probe.Running && s.Probe.Gateway is not null, s.Probe.GatewayMs, s.Probe.GatewayLost, s.Probe.GatewayProbes, s.Probe.Gateway));
+            rows.Add(ProbeRow(Label("gateway"), s.Probe.Running && s.Probe.Gateway is not null, s.Probe.GatewayMs, s.Probe.GatewayLost, s.Probe.GatewayProbes));
         }
 
         if (Shown("internet"))
         {
-            rows.Add(ProbeRow(Label("internet"), s.Probe.Running, s.Probe.InternetMs, s.Probe.InternetLost, s.Probe.InternetProbes, null));
+            rows.Add(ProbeRow(Label("internet"), s.Probe.Running, s.Probe.InternetMs, s.Probe.InternetLost, s.Probe.InternetProbes));
         }
 
         if (Shown("connection"))
@@ -127,14 +128,14 @@ public static class NetworkOverlayRows
 
         return rows;
 
-        (string, string, Color) ProbeRow(string label, bool measured, double? ms, int lost, int probes, string? host)
+        (string, string, Color) ProbeRow(string label, bool measured, double? ms, int lost, int probes)
         {
             if (!measured || probes == 0)
             {
                 return (label, "…", Neutral);
             }
 
-            string text = string.Format(loc["Network.Probe.Value"], ms is { } m ? Num(m, "0") : "–", lost, probes) + (host is null ? "" : " · " + host);
+            string text = string.Format(loc["Network.Probe.Value"], ms is { } m ? Num(m, "0") : "–", lost, probes);
             return (label, text, lost == 0 && (ms ?? 0) < 30 ? Good : lost <= 2 ? Warn : Bad);
         }
     }

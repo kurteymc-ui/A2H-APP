@@ -550,7 +550,8 @@ public partial class MainWindow
 
     // ---- Overlays ----
 
-    private sealed record OverlayDef(string Name, string What, Func<MeterSettings, bool> Get, Action<MeterSettings, bool> Set, string? Page, Action? Reset = null);
+    private sealed record OverlayDef(string Name, string What, Func<MeterSettings, bool> Get, Action<MeterSettings, bool> Set, string? Page, Action? Reset = null,
+        Func<MeterSettings, string>? Keys = null, string Id = "");
 
     /// <summary>Every overlay over the game, the main ones first: its switch, what it shows and where its settings are.</summary>
     private List<OverlayDef> OverlayDefs()
@@ -558,20 +559,22 @@ public partial class MainWindow
         LocalizationManager loc = LocalizationManager.Instance;
         return new()
         {
-            new(loc["Shell.OvMeter"], loc["Shell.OvMeterWhat"], s => s.MeterOverlayOn, (s, v) => s.MeterOverlayOn = v, "meter", ResetMeterOverlayPlace),
-            new(loc["Settings.Nav.Combat"], loc["Shell.OvCombatWhat"], s => s.ShowCombatOverlay, (s, v) => s.ShowCombatOverlay = v, "combat"),
-            new(loc["Shell.OvCooldowns"], loc["Shell.OvAssistWhat"], s => s.ShowAssistOverlay, (s, v) => s.ShowAssistOverlay = v, "assist." + AssistWindow.CooldownsTab),
-            new(loc["Shell.OvEffects"], loc["Shell.OvEffectsWhat"], s => s.EffectsOverlayOn, (s, v) => s.ShowEffectsOverlay = v, "assist." + AssistWindow.BuffsTab),
-            new(loc["Timers.Title"], loc["Shell.OvTimetableWhat"], s => s.ShowTimetable, (s, v) => s.ShowTimetable = v, "timetable"),
-            new(loc["Settings.Nav.Boss"], loc["Shell.OvBossWhat"], s => s.ShowBossOverlay, (s, v) => s.ShowBossOverlay = v, "boss"),
-            new(loc["Settings.Nav.PetMap"], loc["Shell.OvPetMapWhat"], s => s.ShowPetMap, (s, v) => s.ShowPetMap = v, "petmap"),
-            new(loc["Shell.OvPetFarm"], loc["Shell.OvPetFarmWhat"], s => s.ShowPetFarm, (s, v) => s.ShowPetFarm = v, "petmap.pets"),
-            new(loc["Main.MenuTools.Loot"], loc["Shell.OvLootWhat"], s => s.ShowLootOverlay, (s, v) => s.ShowLootOverlay = v, "loot"),
-            new(loc["Settings.Nav.Gather"], loc["Shell.OvGatherWhat"], s => s.ShowGatherOverlay, (s, v) => s.ShowGatherOverlay = v, "petmap.gather"),
-            new(loc["Checklist.Season"], loc["Shell.OvSeasonWhat"], s => s.ShowSeasonOverlay, (s, v) => s.ShowSeasonOverlay = v, "checklist"),
-            new(loc["Main.MenuTools.Craft"], loc["Shell.OvCraftWhat"], s => s.ShowCraftOverlay, (s, v) => s.ShowCraftOverlay = v, "craft"),
-            new(loc["Settings.Nav.Network"], loc["Shell.OvNetworkWhat"], s => s.ShowNetworkOverlay, (s, v) => s.ShowNetworkOverlay = v, "network"),
-            new(loc["Shell.OvHotkeys"], loc["Shell.OvHotkeysWhat"], s => s.ShowHotkeyOverlay, (s, v) => s.ShowHotkeyOverlay = v, null),
+            new(loc["Shell.OvMeter"], loc["Shell.OvMeterWhat"], s => s.MeterOverlayOn, (s, v) => s.MeterOverlayOn = v, "meter", ResetMeterOverlayPlace, s => s.HotkeyHideUi, "meter"),
+            new(loc["Settings.Nav.Combat"], loc["Shell.OvCombatWhat"], s => s.ShowCombatOverlay, (s, v) => s.ShowCombatOverlay = v, "combat", null, s => s.HotkeyCombatOverlay, "combat"),
+            new(loc["Shell.OvCooldowns"], loc["Shell.OvAssistWhat"], s => s.ShowAssistOverlay, (s, v) => s.ShowAssistOverlay = v, "assist." + AssistWindow.CooldownsTab, null, s => s.HotkeyAssist, "cooldowns"),
+            new(loc["Shell.OvEffects"], loc["Shell.OvEffectsWhat"], s => s.EffectsOverlayOn, (s, v) => s.ShowEffectsOverlay = v, "assist." + AssistWindow.BuffsTab, null, null, "effects"),
+            new(loc["Timers.Title"], loc["Shell.OvTimetableWhat"], s => s.ShowTimetable, (s, v) => s.ShowTimetable = v, "timetable", null, s => s.HotkeyTimetable, "timetable"),
+            new(loc["Settings.Nav.Boss"], loc["Shell.OvBossWhat"], s => s.ShowBossOverlay, (s, v) => s.ShowBossOverlay = v, "boss", null, s => s.HotkeyWorldBoss, "boss"),
+            new(loc["Settings.Nav.PetMap"], loc["Shell.OvPetMapWhat"], s => s.ShowPetMap, (s, v) => s.ShowPetMap = v, "petmap", null, s => s.HotkeyPetMap, "petmap"),
+            new(loc["Shell.OvPetFarm"], loc["Shell.OvPetFarmWhat"], s => s.ShowPetFarm, (s, v) => s.ShowPetFarm = v, "petmap.pets", null, null, "petfarm"),
+            new(loc["Main.MenuTools.Loot"], loc["Shell.OvLootWhat"], s => s.ShowLootOverlay, (s, v) => s.ShowLootOverlay = v, "loot", null, s => s.HotkeyLoot, "loot"),
+            new(loc["Settings.Nav.Gather"], loc["Shell.OvGatherWhat"], s => s.ShowGatherOverlay, (s, v) => s.ShowGatherOverlay = v, "petmap.gather", null, null, "gather"),
+            new(loc["Checklist.Season"], loc["Shell.OvSeasonWhat"], s => s.ShowSeasonOverlay, (s, v) => s.ShowSeasonOverlay = v, "checklist", null, null, "season"),
+            new(loc["Main.MenuTools.Craft"], loc["Shell.OvCraftWhat"], s => s.ShowCraftOverlay, (s, v) => s.ShowCraftOverlay = v, "craft", null, s => s.HotkeyCraft, "craft"),
+            new(loc["Settings.Nav.Network"], loc["Shell.OvNetworkWhat"], s => s.ShowNetworkOverlay, (s, v) => s.ShowNetworkOverlay = v, "network", null, s => s.HotkeyNetwork, "network"),
+            new(loc["Shell.OvHotkeys"], loc["Shell.OvHotkeysWhat"], s => s.ShowHotkeyOverlay, (s, v) => s.ShowHotkeyOverlay = v, null, null, s => s.HotkeyHotkeyOverlay, "hotkeys"),
+            // the button at the top of the screen that opens the overlay menu (with its switch here, the way back once it is switched off)
+            new(loc["Shell.OvMenu"], loc["Shell.OvMenuWhat"], s => s.ShowOverlayMenu, (s, v) => s.ShowOverlayMenu = v, null, () => OverlayPlaces.Reset(OverlayPlaces.Menu), null, "menu"),
             // the stream overlays for OBS are not here: Streaming (OBS) is an entry of the column of its own, with its switch (the owner, 4 November 2026)
         };
     }
@@ -736,6 +739,7 @@ public partial class MainWindow
             OverlayPlaces.Network => s.ShowNetworkOverlay ? loc["Settings.Nav.Network"] : null,
             OverlayPlaces.Hotkeys => s.ShowHotkeyOverlay ? loc["Shell.OvHotkeys"] : null,
             OverlayPlaces.Dummy => s.ShowDummyOverlay ? loc["Shell.Dummy"] : null,
+            OverlayPlaces.Menu => s.ShowOverlayMenu ? loc["Shell.OvMenu"] : null,
             _ => null,
         };
     }
@@ -750,7 +754,7 @@ public partial class MainWindow
         (s => s.LootOverlayLocked, (s, v) => s.LootOverlayLocked = v), (s => s.CraftOverlayLocked, (s, v) => s.CraftOverlayLocked = v),
         (s => s.GatherOverlayLocked, (s, v) => s.GatherOverlayLocked = v), (s => s.SeasonOverlayLocked, (s, v) => s.SeasonOverlayLocked = v),
         (s => s.NetworkOverlayLocked, (s, v) => s.NetworkOverlayLocked = v), (s => s.DummyOverlayLocked, (s, v) => s.DummyOverlayLocked = v),
-        (s => s.HotkeyOverlayLocked ?? s.PetFarmLocked, (s, v) => s.HotkeyOverlayLocked = v),
+        (s => s.HotkeyOverlayLocked ?? s.PetFarmLocked, (s, v) => s.HotkeyOverlayLocked = v), (s => s.OverlayMenuLocked, (s, v) => s.OverlayMenuLocked = v),
     };
 
     private static bool OverlaysMovable(MeterSettings s) => OverlayLocks.All(l => !l.Get(s));

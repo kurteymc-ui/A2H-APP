@@ -1009,16 +1009,16 @@
     "ko": "단축키"
   },
   "Settings.Hotkeys.Hint": {
-    "en": "Work everywhere, also while the game has the focus. Click a field, then press the combination you want (it needs Ctrl, Alt, Shift or Win). ✕ removes it.",
-    "de": "Funktionieren überall, auch wenn das Spiel den Fokus hat. Feld anklicken und die gewünschte Kombination drücken (mit Strg, Alt, Umschalt oder Win). ✕ entfernt sie.",
-    "fr": "Fonctionnent partout, même quand le jeu a le focus. Cliquez dans un champ, puis appuyez sur la combinaison voulue (avec Ctrl, Alt, Maj ou Win). ✕ la supprime.",
-    "es": "Funcionan en todas partes, también con el juego en primer plano. Haz clic en un campo y pulsa la combinación que quieras (con Ctrl, Alt, Mayús o Win). ✕ la quita.",
-    "ru": "Работают везде, в том числе когда активна игра. Щёлкните поле и нажмите нужное сочетание (с Ctrl, Alt, Shift или Win). ✕ удаляет.",
-    "zh": "在任何位置都有效，包括游戏处于焦点时。点击输入框并按下想要的组合键（需包含 Ctrl、Alt、Shift 或 Win）。✕ 移除。",
-    "zh-TW": "在任何地方都有效，包括遊戲在前景時。點擊欄位後，按下您想要的組合鍵（必須包含 Ctrl、Alt、Shift 或 Win）。✕ 可移除。",
-    "pt": "Funcionam em qualquer lugar, inclusive com o jogo em foco. Clique em um campo e pressione a combinação desejada (precisa de Ctrl, Alt, Shift ou Win). ✕ a remove.",
-    "ja": "ゲームにフォーカスがあるときも含め、どこでも動作します。入力欄をクリックし、使いたい組み合わせを押してください（Ctrl、Alt、Shift、Win のいずれかが必要です）。✕ で削除します。",
-    "ko": "게임에 포커스가 있을 때도 어디서나 작동합니다. 입력란을 클릭한 다음 원하는 조합을 누르세요 (Ctrl, Alt, Shift 또는 Win이 필요합니다). ✕를 누르면 삭제됩니다."
+    "en": "Work everywhere, also while the game has the focus. Click a field, then press the combination you want: with Ctrl, Alt, Shift or Win, or an F key, a number pad key or Insert, Home, End, Page Up / Down on their own. ✕ removes it; a combination another hotkey had moves here.",
+    "de": "Funktionieren überall, auch wenn das Spiel den Fokus hat. Feld anklicken und die gewünschte Kombination drücken: mit Strg, Alt, Umschalt oder Win, oder eine F-Taste, eine Ziffernblock-Taste oder Einfg, Pos1, Ende, Bild auf / ab allein. ✕ entfernt sie; eine Kombination, die ein anderes Kürzel hatte, wandert hierher.",
+    "fr": "Fonctionnent partout, même quand le jeu a le focus. Cliquez dans un champ, puis appuyez sur la combinaison voulue : avec Ctrl, Alt, Maj ou Win, ou une touche F, une touche du pavé numérique ou Inser, Début, Fin, Page préc. / suiv. seules. ✕ la supprime ; une combinaison d'un autre raccourci vient ici.",
+    "es": "Funcionan en todas partes, también con el juego en primer plano. Haz clic en un campo y pulsa la combinación que quieras: con Ctrl, Alt, Mayús o Win, o una tecla F, una del teclado numérico o Insert, Inicio, Fin, Re Pág / Av Pág solas. ✕ la quita; una combinación de otro atajo pasa a este.",
+    "ru": "Работают везде, в том числе когда активна игра. Щёлкните поле и нажмите нужное сочетание: с Ctrl, Alt, Shift или Win, либо F-клавишу, клавишу цифрового блока или Insert, Home, End, Page Up / Down отдельно. ✕ удаляет; сочетание другой клавиши переходит сюда.",
+    "zh": "在任何位置都有效，包括游戏处于焦点时。点击输入框并按下想要的组合键：带 Ctrl、Alt、Shift 或 Win，或单独的 F 键、小键盘键或 Insert、Home、End、Page Up / Down。✕ 移除；其他快捷键已用的组合会移到这里。",
+    "zh-TW": "在任何地方都有效，包括遊戲在前景時。點擊欄位後按下想要的組合鍵：搭配 Ctrl、Alt、Shift 或 Win，或單獨的 F 鍵、數字鍵盤鍵或 Insert、Home、End、Page Up / Down。✕ 可移除；其他快捷鍵已用的組合會移到這裡。",
+    "pt": "Funcionam em qualquer lugar, inclusive com o jogo em foco. Clique em um campo e pressione a combinação desejada: com Ctrl, Alt, Shift ou Win, ou uma tecla F, uma do teclado numérico ou Insert, Home, End, Page Up / Down sozinhas. ✕ a remove; uma combinação de outro atalho passa para este.",
+    "ja": "ゲームにフォーカスがあるときも含め、どこでも動作します。入力欄をクリックし、使いたい組み合わせを押してください：Ctrl、Alt、Shift、Win との組み合わせ、または F キー、テンキー、Insert・Home・End・Page Up / Down の単独押し。✕ で削除。ほかのホットキーで使っていた組み合わせはこちらに移ります。",
+    "ko": "게임에 포커스가 있을 때도 어디서나 작동합니다. 입력란을 클릭한 다음 원하는 조합을 누르세요: Ctrl, Alt, Shift 또는 Win과 함께, 또는 F 키, 숫자 키패드 키, Insert, Home, End, Page Up / Down 단독. ✕를 누르면 삭제되고, 다른 단축키가 쓰던 조합은 이쪽으로 옮겨집니다."
   },
   "Settings.Hotkey.HideUi": {
     "en": "DPS overlay",
@@ -1081,16 +1081,16 @@
     "ko": "지금 조합을 누르세요 – Esc로 취소"
   },
   "Settings.Hotkey.NeedsModifier": {
-    "en": "Needs Ctrl, Alt, Shift or Win",
-    "de": "Braucht Strg, Alt, Umschalt oder Win",
-    "fr": "Il faut Ctrl, Alt, Maj ou Win",
-    "es": "Necesita Ctrl, Alt, Mayús o Win",
-    "ru": "Нужен Ctrl, Alt, Shift или Win",
-    "zh": "需包含 Ctrl、Alt、Shift 或 Win",
-    "zh-TW": "必須包含 Ctrl、Alt、Shift 或 Win",
-    "pt": "Precisa de Ctrl, Alt, Shift ou Win",
-    "ja": "Ctrl、Alt、Shift、Win のいずれかが必要です",
-    "ko": "Ctrl, Alt, Shift 또는 Win이 필요합니다"
+    "en": "Needs Ctrl, Alt, Shift or Win (F keys, the number pad and Insert, Home, End, Page Up / Down work alone)",
+    "de": "Braucht Strg, Alt, Umschalt oder Win (F-Tasten, Ziffernblock und Einfg, Pos1, Ende, Bild auf / ab gehen allein)",
+    "fr": "Il faut Ctrl, Alt, Maj ou Win (les touches F, le pavé numérique et Inser, Début, Fin, Page préc. / suiv. marchent seules)",
+    "es": "Necesita Ctrl, Alt, Mayús o Win (las teclas F, el teclado numérico e Insert, Inicio, Fin, Re Pág / Av Pág funcionan solas)",
+    "ru": "Нужен Ctrl, Alt, Shift или Win (F-клавиши, цифровой блок и Insert, Home, End, Page Up / Down работают отдельно)",
+    "zh": "需包含 Ctrl、Alt、Shift 或 Win（F 键、小键盘和 Insert、Home、End、Page Up / Down 可单独使用）",
+    "zh-TW": "必須包含 Ctrl、Alt、Shift 或 Win（F 鍵、數字鍵盤和 Insert、Home、End、Page Up / Down 可單獨使用）",
+    "pt": "Precisa de Ctrl, Alt, Shift ou Win (teclas F, teclado numérico e Insert, Home, End, Page Up / Down funcionam sozinhas)",
+    "ja": "Ctrl、Alt、Shift、Win のいずれかが必要です（F キー、テンキー、Insert・Home・End・Page Up / Down は単独で使えます）",
+    "ko": "Ctrl, Alt, Shift 또는 Win이 필요합니다 (F 키, 숫자 키패드, Insert, Home, End, Page Up / Down은 단독으로 됩니다)"
   },
   "Settings.Hotkey.Clear.Tip": {
     "en": "Remove this hotkey",
@@ -4909,6 +4909,11 @@
     "en": "unacknowledged for {0} s",
     "de": "unbestätigt seit {0} s",
     "fr": "sans accusé de réception depuis {0} s"
+  },
+  "Network.Server.Hidden": {
+    "en": "Connected (address hidden)",
+    "de": "Verbunden (Adresse verborgen)",
+    "fr": "Connecté (adresse masquée)"
   },
   "Network.Waiting": {
     "en": "Waiting for game traffic …",
@@ -22245,7 +22250,7 @@
     "en": "Game connection"
   },
   "Status.GameOn": {
-    "en": "Reading the game ({0})"
+    "en": "Reading the game"
   },
   "Status.Ping": {
     "en": "ping {0} ms"
@@ -22374,5 +22379,237 @@
   "CpCalc.Steps.Runes": {
     "en": "Show Clash Rune upgrades (last of all: they are rarely worth it for Combat Power)",
     "de": "Kampfrunen-Verbesserungen zeigen (ganz zuletzt: sie lohnen sich für die Kampfkraft selten)"
+  },
+  "Hotkeys.Problem.TakenShort": {
+    "en": "in use elsewhere",
+    "de": "anderswo belegt",
+    "fr": "déjà utilisé ailleurs",
+    "es": "en uso en otro programa",
+    "pt": "em uso em outro programa",
+    "ru": "занято другой программой"
+  },
+  "Hotkeys.Problem.TwiceShort": {
+    "en": "set twice",
+    "de": "doppelt belegt",
+    "fr": "attribué deux fois",
+    "es": "asignado dos veces",
+    "pt": "atribuído duas vezes",
+    "ru": "назначено дважды"
+  },
+  "Hotkeys.Problem.Taken": {
+    "en": "Another program already uses this combination, so it does nothing here. Click the field and press another one.",
+    "de": "Ein anderes Programm nutzt diese Kombination schon, hier tut sie daher nichts. Feld anklicken und eine andere drücken.",
+    "fr": "Un autre programme utilise déjà cette combinaison : ici, elle ne fait rien. Cliquez dans le champ et appuyez sur une autre.",
+    "es": "Otro programa ya usa esta combinación, así que aquí no hace nada. Haz clic en el campo y pulsa otra.",
+    "pt": "Outro programa já usa esta combinação, então aqui ela não faz nada. Clique no campo e pressione outra.",
+    "ru": "Это сочетание уже занято другой программой, поэтому здесь оно не работает. Щёлкните поле и нажмите другое."
+  },
+  "Hotkeys.Problem.Twice": {
+    "en": "Another of the app's hotkeys has the same combination, and only the first one works. Give one of them another.",
+    "de": "Ein anderes Tastenkürzel der App hat dieselbe Kombination, nur das erste funktioniert. Einem davon eine andere geben.",
+    "fr": "Un autre raccourci de l'application a la même combinaison et seul le premier fonctionne. Donnez-en une autre à l'un d'eux.",
+    "es": "Otro atajo de la app tiene la misma combinación y solo funciona el primero. Asigna otra a uno de ellos.",
+    "pt": "Outro atalho do app tem a mesma combinação e só o primeiro funciona. Dê outra a um deles.",
+    "ru": "У другой горячей клавиши приложения то же сочетание, работает только первая. Назначьте одной из них другое."
+  },
+  "Hotkeys.Problem.Status": {
+    "en": "These hotkeys do nothing, another program uses them: {0}. Pick others in Settings > Hotkeys.",
+    "de": "Diese Tastenkürzel tun nichts, ein anderes Programm nutzt sie: {0}. Andere unter Einstellungen > Tastenkürzel wählen.",
+    "fr": "Ces raccourcis ne font rien, un autre programme les utilise : {0}. Choisissez-en d'autres dans Paramètres > Raccourcis.",
+    "es": "Estos atajos no hacen nada, otro programa los usa: {0}. Elige otros en Ajustes > Atajos.",
+    "pt": "Estes atalhos não fazem nada, outro programa os usa: {0}. Escolha outros em Configurações > Atalhos.",
+    "ru": "Эти горячие клавиши не работают, их использует другая программа: {0}. Выберите другие в Настройки > Горячие клавиши."
+  },
+  "Hotkeys.Problem.StatusTwice": {
+    "en": "Two hotkeys share a combination, so one does nothing: {0}. Pick another in Settings > Hotkeys.",
+    "de": "Zwei Tastenkürzel teilen sich eine Kombination, eins tut daher nichts: {0}. Ein anderes unter Einstellungen > Tastenkürzel wählen.",
+    "fr": "Deux raccourcis partagent une combinaison, l'un ne fait donc rien : {0}. Choisissez-en un autre dans Paramètres > Raccourcis.",
+    "es": "Dos atajos comparten combinación, así que uno no hace nada: {0}. Elige otro en Ajustes > Atajos.",
+    "pt": "Dois atalhos compartilham uma combinação, então um não faz nada: {0}. Escolha outro em Configurações > Atalhos.",
+    "ru": "Две горячие клавиши делят одно сочетание, одна из них не работает: {0}. Выберите другое в Настройки > Горячие клавиши."
+  },
+  "Hotkeys.Problem.Title": {
+    "en": "These hotkeys don't work right now",
+    "de": "Diese Tastenkürzel funktionieren gerade nicht",
+    "fr": "Ces raccourcis ne fonctionnent pas pour l'instant",
+    "es": "Estos atajos no funcionan ahora mismo",
+    "pt": "Estes atalhos não estão funcionando agora",
+    "ru": "Эти горячие клавиши сейчас не работают"
+  },
+  "Hotkeys.Problem.Fix": {
+    "en": "Click the field, press another combination, then Save. Programs that often take Ctrl+Alt keys: graphics drivers, recording and overlay tools, keyboard and mouse software.",
+    "de": "Feld anklicken, eine andere Kombination drücken, dann Speichern. Programme, die oft Strg+Alt-Tasten belegen: Grafiktreiber, Aufnahme- und Overlay-Programme, Tastatur- und Maussoftware.",
+    "fr": "Cliquez dans le champ, appuyez sur une autre combinaison, puis Enregistrer. Programmes qui prennent souvent les touches Ctrl+Alt : pilotes graphiques, outils d'enregistrement et d'overlay, logiciels de clavier et de souris.",
+    "es": "Haz clic en el campo, pulsa otra combinación y luego Guardar. Programas que suelen ocupar teclas Ctrl+Alt: drivers gráficos, programas de grabación y overlays, software de teclado y ratón.",
+    "pt": "Clique no campo, pressione outra combinação e depois Salvar. Programas que costumam usar teclas Ctrl+Alt: drivers de vídeo, gravação e overlays, software de teclado e mouse.",
+    "ru": "Щёлкните поле, нажмите другое сочетание и затем Сохранить. Сочетания Ctrl+Alt часто занимают драйверы видеокарты, программы записи и оверлеи, ПО клавиатуры и мыши."
+  },
+  "Hotkeys.Defaults": {
+    "en": "Back to the default keys",
+    "de": "Zurück zu den Standardtasten",
+    "fr": "Revenir aux touches par défaut",
+    "es": "Volver a las teclas predeterminadas",
+    "pt": "Voltar às teclas padrão",
+    "ru": "Вернуть клавиши по умолчанию"
+  },
+  "Hotkeys.Defaults.Tip": {
+    "en": "Puts every hotkey back to its first combination. Save to keep it.",
+    "de": "Setzt jedes Tastenkürzel auf seine erste Kombination zurück. Zum Behalten Speichern.",
+    "fr": "Remet chaque raccourci sur sa première combinaison. Enregistrez pour la garder.",
+    "es": "Devuelve cada atajo a su primera combinación. Guarda para conservarlo.",
+    "pt": "Devolve cada atalho à sua primeira combinação. Salve para manter.",
+    "ru": "Возвращает каждой горячей клавише исходное сочетание. Нажмите Сохранить, чтобы оставить."
+  },
+  "Hotkeys.Moved": {
+    "en": "{0} was on \"{1}\": it is here now, and \"{1}\" has none until you give it one.",
+    "de": "{0} lag auf „{1}“: jetzt ist es hier, und „{1}“ hat keins, bis du eins vergibst.",
+    "fr": "{0} était sur « {1} » : il est ici maintenant, et « {1} » n'en a plus tant que vous ne lui en donnez pas.",
+    "es": "{0} estaba en «{1}»: ahora está aquí, y «{1}» no tiene ninguno hasta que le des otro.",
+    "pt": "{0} estava em \"{1}\": agora está aqui, e \"{1}\" fica sem até você dar outro.",
+    "ru": "{0} было у «{1}»: теперь оно здесь, а у «{1}» пусто, пока вы не назначите новое."
+  },
+  "Hotkeys.Alone": {
+    "en": "{0} on its own works, but while the app runs the game no longer gets {0}.",
+    "de": "{0} allein funktioniert, aber solange die App läuft, bekommt das Spiel {0} nicht mehr.",
+    "fr": "{0} seul fonctionne, mais tant que l'application tourne, le jeu ne reçoit plus {0}.",
+    "es": "{0} solo funciona, pero mientras la app esté abierta el juego ya no recibe {0}.",
+    "pt": "{0} sozinho funciona, mas enquanto o app estiver aberto o jogo não recebe mais {0}.",
+    "ru": "{0} само по себе работает, но пока приложение запущено, игра больше не получает {0}."
+  },
+  "Hotkeys.Toggled.On": {
+    "en": "{0}: on",
+    "de": "{0}: an",
+    "fr": "{0} : activé",
+    "es": "{0}: activado",
+    "pt": "{0}: ligado",
+    "ru": "{0}: вкл.",
+    "zh": "{0}：开",
+    "zh-TW": "{0}：開",
+    "ja": "{0}：オン",
+    "ko": "{0}: 켬"
+  },
+  "Hotkeys.Toggled.Off": {
+    "en": "{0}: off",
+    "de": "{0}: aus",
+    "fr": "{0} : désactivé",
+    "es": "{0}: desactivado",
+    "pt": "{0}: desligado",
+    "ru": "{0}: выкл.",
+    "zh": "{0}：关",
+    "zh-TW": "{0}：關",
+    "ja": "{0}：オフ",
+    "ko": "{0}: 끔"
+  },
+  "Hotkeys.Name.Network": {
+    "en": "Network overlay",
+    "de": "Netzwerk-Overlay",
+    "fr": "Overlay réseau",
+    "es": "Overlay de red",
+    "pt": "Overlay de rede",
+    "ru": "Сетевой оверлей"
+  },
+  "Hotkeys.Name.PetArrows": {
+    "en": "Pet arrows on the map",
+    "de": "Haustier-Pfeile auf der Karte",
+    "fr": "Flèches des familiers sur la carte",
+    "es": "Flechas de mascotas en el mapa",
+    "pt": "Setas de mascotes no mapa",
+    "ru": "Стрелки питомцев на карте"
+  },
+  "Hotkeys.Name.GatherArrows": {
+    "en": "Gathering arrows on the map",
+    "de": "Sammel-Pfeile auf der Karte",
+    "fr": "Flèches de récolte sur la carte",
+    "es": "Flechas de recolección en el mapa",
+    "pt": "Setas de coleta no mapa",
+    "ru": "Стрелки сбора на карте"
+  },
+  "Shell.OvMenu": {
+    "en": "Overlay menu button",
+    "de": "Overlay-Menü-Knopf",
+    "fr": "Bouton du menu des overlays",
+    "es": "Botón del menú de overlays",
+    "pt": "Botão do menu de overlays",
+    "ru": "Кнопка меню оверлеев"
+  },
+  "Shell.OvMenuWhat": {
+    "en": "The small Atreia button at the top of the screen in the game. Click it for every overlay's switch, to move or hide them all, and to change the hotkeys, without leaving the game.",
+    "de": "Der kleine Atreia-Knopf oben am Bildschirm im Spiel. Ein Klick darauf zeigt jeden Overlay-Schalter, verschiebt oder versteckt alle und ändert die Tastenkürzel, ohne das Spiel zu verlassen.",
+    "fr": "Le petit bouton Atreia en haut de l'écran dans le jeu. Un clic donne l'interrupteur de chaque overlay, permet de tous les déplacer ou masquer et de changer les raccourcis, sans quitter le jeu.",
+    "es": "El pequeño botón de Atreia arriba en la pantalla del juego. Haz clic para ver el interruptor de cada overlay, moverlos u ocultarlos todos y cambiar los atajos sin salir del juego.",
+    "pt": "O pequeno botão do Atreia no topo da tela do jogo. Clique para ver o interruptor de cada overlay, mover ou esconder todos e mudar os atalhos sem sair do jogo.",
+    "ru": "Маленькая кнопка Atreia вверху экрана в игре. Нажмите её, чтобы включать и выключать оверлеи, двигать или прятать их все и менять горячие клавиши, не выходя из игры."
+  },
+  "OverlayMenu.Tip": {
+    "en": "Overlays: switch them on and off",
+    "de": "Overlays: an- und ausschalten",
+    "fr": "Overlays : les activer et désactiver",
+    "es": "Overlays: activarlos y desactivarlos",
+    "pt": "Overlays: ligar e desligar",
+    "ru": "Оверлеи: включить и выключить"
+  },
+  "OverlayMenu.Lede": {
+    "en": "Click a row to switch it on or off",
+    "de": "Eine Zeile anklicken schaltet sie an oder aus",
+    "fr": "Cliquez sur une ligne pour l'activer ou la désactiver",
+    "es": "Haz clic en una fila para activarla o desactivarla",
+    "pt": "Clique numa linha para ligar ou desligar",
+    "ru": "Нажмите строку, чтобы включить или выключить"
+  },
+  "OverlayMenu.Close": {
+    "en": "Close",
+    "de": "Schließen",
+    "fr": "Fermer",
+    "es": "Cerrar",
+    "pt": "Fechar",
+    "ru": "Закрыть"
+  },
+  "OverlayMenu.Move": {
+    "en": "Move overlays",
+    "de": "Overlays verschieben",
+    "fr": "Déplacer les overlays",
+    "es": "Mover overlays",
+    "pt": "Mover overlays",
+    "ru": "Двигать оверлеи"
+  },
+  "OverlayMenu.Lock": {
+    "en": "Lock overlays",
+    "de": "Overlays sperren",
+    "fr": "Verrouiller les overlays",
+    "es": "Bloquear overlays",
+    "pt": "Travar overlays",
+    "ru": "Закрепить оверлеи"
+  },
+  "OverlayMenu.HideAll": {
+    "en": "Hide all",
+    "de": "Alle verstecken",
+    "fr": "Tout masquer",
+    "es": "Ocultar todo",
+    "pt": "Esconder tudo",
+    "ru": "Скрыть все"
+  },
+  "OverlayMenu.ShowAll": {
+    "en": "Show them again",
+    "de": "Wieder zeigen",
+    "fr": "Les réafficher",
+    "es": "Mostrarlos otra vez",
+    "pt": "Mostrar de novo",
+    "ru": "Показать снова"
+  },
+  "OverlayMenu.Hotkeys": {
+    "en": "Change hotkeys",
+    "de": "Tastenkürzel ändern",
+    "fr": "Changer les raccourcis",
+    "es": "Cambiar atajos",
+    "pt": "Mudar atalhos",
+    "ru": "Изменить клавиши"
+  },
+  "OverlayMenu.OpenApp": {
+    "en": "Open the app",
+    "de": "App öffnen",
+    "fr": "Ouvrir l'application",
+    "es": "Abrir la app",
+    "pt": "Abrir o app",
+    "ru": "Открыть приложение"
   }
 }

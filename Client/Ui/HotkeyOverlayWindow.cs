@@ -51,55 +51,30 @@ public sealed class HotkeyOverlayWindow : MovableOverlay
         s.Save();
     }
 
-    /// <summary>The hotkeys the settings list, as (name, key combination); only the ones whose switch is on and that have a key.</summary>
-    public static List<(string Name, string Keys)> RowsOf(MeterSettings s)
+    /// <summary>The hotkeys the settings list, as (name, key combination, why it does nothing if it doesn't); only the ones whose switch is on and that
+    /// have a key. A heading is a row without keys.</summary>
+    public static List<(string Name, string Keys, HotkeyProblem? Problem)> RowsOf(MeterSettings s, IReadOnlyDictionary<HotkeyAction, HotkeyProblem>? problems = null)
     {
         var loc = LocalizationManager.Instance;
-        var sections = new (string TitleKey, (string Id, string NameKey, string Keys)[] Rows)[]
+        var sections = new (string TitleKey, string[] Ids)[]
         {
-            ("Settings.Hotkeys.Group.Dps", new[]
-            {
-                ("HideUi", "Settings.Hotkey.HideUi", s.HotkeyHideUi),
-                ("Pause", "Settings.Hotkey.Pause", s.HotkeyPause),
-                ("CopyDamage", "Settings.Hotkey.CopyDamage", s.HotkeyCopyDamage),
-                ("Clear", "Settings.Hotkey.Clear", s.HotkeyClear),
-                ("UploadBoss", "Settings.Hotkey.UploadBoss", s.HotkeyUploadBoss),
-                ("Mode", "Settings.Hotkey.Mode", s.HotkeyMode),
-            }),
-            ("Settings.Hotkeys.Group.Overlays", new[]
-            {
-                ("AllOverlays", "Settings.Hotkey.AllOverlays", s.HotkeyAllOverlays),
-                ("MoveOverlays", "Settings.Hotkey.MoveOverlays", s.HotkeyMoveOverlays),
-                ("HotkeyOverlay", "Settings.Hotkey.HotkeyOverlay", s.HotkeyHotkeyOverlay),
-            }),
-            ("Settings.Hotkeys.Group.Modules", new[]
-            {
-                ("Loot", "Main.MenuTools.Loot", s.HotkeyLoot),
-                ("Craft", "Main.MenuTools.Craft", s.HotkeyCraft),
-                ("PetMap", "Settings.Hotkey.PetMap", s.HotkeyPetMap),
-                ("PetArrows", "Settings.Hotkey.PetArrows", s.HotkeyPetArrows),
-                ("PetMapZoomIn", "Settings.Hotkey.PetMapZoomIn", s.HotkeyPetMapZoomIn),
-                ("PetMapZoomOut", "Settings.Hotkey.PetMapZoomOut", s.HotkeyPetMapZoomOut),
-                ("GatherArrows", "Settings.Hotkey.GatherArrows", s.HotkeyGatherArrows),
-                ("Combat", "Settings.Hotkey.Combat", s.HotkeyCombatOverlay),
-                ("Assist", "Main.MenuTools.Assist", s.HotkeyAssist),
-                ("Timetable", "Settings.Hotkey.Timetable", s.HotkeyTimetable),
-                ("WorldBoss", "Settings.Hotkey.WorldBoss", s.HotkeyWorldBoss),
-                ("Network", "Settings.Hotkey.Network", s.HotkeyNetwork),
-            }),
+            ("Settings.Hotkeys.Group.Dps", new[] { "HideUi", "Pause", "CopyDamage", "Clear", "UploadBoss", "Mode" }),
+            ("Settings.Hotkeys.Group.Overlays", new[] { "AllOverlays", "MoveOverlays", "HotkeyOverlay" }),
+            ("Settings.Hotkeys.Group.Modules", new[] { "Loot", "Craft", "PetMap", "PetArrows", "PetMapZoomIn", "PetMapZoomOut", "GatherArrows", "Combat", "Assist", "Timetable", "WorldBoss", "Network" }),
         };
 
         // three alike sections, each a heading (a row without keys) and one flat row per hotkey; a section without a hotkey is left out
-        var result = new List<(string Name, string Keys)>();
-        foreach (var (titleKey, rows) in sections)
+        var result = new List<(string Name, string Keys, HotkeyProblem? Problem)>();
+        foreach (var (titleKey, ids) in sections)
         {
-            var shown = rows.Where(h => !s.HotkeyOverlayHidden.Contains(h.Id))
-                .Select(h => (Name: loc[h.NameKey], Keys: HotkeyBinding.Parse(h.Keys).ToString()))
+            var shown = ids.Where(id => !s.HotkeyOverlayHidden.Contains(id)).Select(HotkeyTable.OfId).OfType<HotkeyTable.Entry>()
+                .Select(h => (Name: loc[h.NameKey], Keys: HotkeyBinding.Parse(h.Get(s)).ToString(),
+                    Problem: problems is not null && problems.TryGetValue(h.Action, out HotkeyProblem p) ? p : (HotkeyProblem?)null))
                 .Where(h => h.Keys.Length > 0)
                 .ToList();
             if (shown.Count > 0)
             {
-                result.Add((loc[titleKey], ""));
+                result.Add((loc[titleKey], "", null));
                 result.AddRange(shown);
             }
         }
@@ -107,9 +82,9 @@ public sealed class HotkeyOverlayWindow : MovableOverlay
         return result;
     }
 
-    public void Render(IReadOnlyList<(string Name, string Keys)> rows)
+    public void Render(IReadOnlyList<(string Name, string Keys, HotkeyProblem? Problem)> rows)
     {
-        string key = string.Join("\n", rows.Select(r => r.Name + "|" + r.Keys));
+        string key = string.Join("\n", rows.Select(r => r.Name + "|" + r.Keys + "|" + r.Problem));
         if (key == _shown)
         {
             return;
@@ -117,7 +92,8 @@ public sealed class HotkeyOverlayWindow : MovableOverlay
 
         _shown = key;
         _rows.Children.Clear();
-        foreach (var (name, keys) in rows)
+        var loc = LocalizationManager.Instance;
+        foreach (var (name, keys, problem) in rows)
         {
             if (keys.Length == 0)
             {
@@ -133,7 +109,13 @@ public sealed class HotkeyOverlayWindow : MovableOverlay
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
             var n = new TextBlock { Text = name, FontWeight = FontWeights.Bold, FontSize = 12.5, Foreground = Brushes.White, Margin = new Thickness(0, 0, 18, 0), VerticalAlignment = VerticalAlignment.Center };
-            var k = new TextBlock { Text = keys, FontSize = 11.5, Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0xD2, 0x7A)), VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right };
+            // a hotkey that does nothing says so in red: another program has it, or another of the meter's hotkeys (Settings > Hotkeys to pick another)
+            var k = new TextBlock
+            {
+                Text = problem is { } why ? keys + " · " + loc[why == HotkeyProblem.Twice ? "Hotkeys.Problem.TwiceShort" : "Hotkeys.Problem.TakenShort"] : keys,
+                FontSize = 11.5, VerticalAlignment = VerticalAlignment.Center, TextAlignment = TextAlignment.Right,
+                Foreground = new SolidColorBrush(problem is null ? Color.FromRgb(0xFF, 0xD2, 0x7A) : Color.FromRgb(0xFF, 0x7A, 0x6E)),
+            };
             Grid.SetColumn(k, 1);
             grid.Children.Add(n);
             grid.Children.Add(k);

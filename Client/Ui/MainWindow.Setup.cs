@@ -478,6 +478,7 @@ public partial class MainWindow
         // ---- step 3: the overlays
 
         private IEnumerable<OverlayDef> Overlays() => _main.OverlayDefs()
+            .Where(d => d.Id != "menu") // the overlay menu's button is on by default and has no place of its own on the setup's picture
             .Where(d => !_restricted || d.Page is null || d.Page == "meter" || PrivacyConsent.RestrictedTools.Contains(d.Page));
 
         private string? _picked;

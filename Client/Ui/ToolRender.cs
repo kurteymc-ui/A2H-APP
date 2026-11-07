@@ -57,6 +57,51 @@ public static class ToolRender
                 break;
             }
 
+            case "hotkeys-problems":
+            {
+                // the hotkey overlay with one combination another program has and one given twice: those two in red
+                var overlay = new HotkeyOverlayWindow();
+                var twice = new MeterSettings { HotkeyLoot = "Ctrl+Alt+C" };
+                overlay.Render(HotkeyOverlayWindow.RowsOf(twice, new Dictionary<HotkeyAction, HotkeyProblem>
+                {
+                    [HotkeyAction.TogglePause] = HotkeyProblem.Taken, [HotkeyAction.ToggleCombatOverlay] = HotkeyProblem.Twice,
+                }));
+                var body = overlay.DetachBody()!;
+                shown = new Border
+                {
+                    Padding = new Thickness(24), Background = new LinearGradientBrush(Color.FromRgb(0x3a, 0x4a, 0x3a), Color.FromRgb(0x24, 0x30, 0x40), 45),
+                    Child = new Border { Child = body, HorizontalAlignment = HorizontalAlignment.Left },
+                };
+                width = 0;
+                height = 0;
+                break;
+            }
+
+            case "overlay-menu":
+            case "overlay-button":
+            {
+                // the overlay menu at the top of the game's screen: the button alone, or open with a few overlays on (the menu is built as the game shows it)
+                var button = new OverlayMenuWindow(_ => new Border());
+                var pill = button.DetachBody()!;
+                var column = new StackPanel { HorizontalAlignment = HorizontalAlignment.Center };
+                column.Children.Add(new Border { Child = pill, HorizontalAlignment = HorizontalAlignment.Center });
+                if (what == "overlay-menu")
+                {
+                    var on = new MeterSettings { ShowCombatOverlay = true, ShowTimetable = true, ShowPetMap = true, ShowLootOverlay = true, ShowNetworkOverlay = true };
+                    column.Children.Add(hostWindow.BuildOverlayMenu(none, on));
+                }
+
+                shown = new Border
+                {
+                    Padding = new Thickness(60, 14, 60, 24), Width = what == "overlay-menu" ? 560 : 320,
+                    Background = new LinearGradientBrush(Color.FromRgb(0x3a, 0x4a, 0x3a), Color.FromRgb(0x24, 0x30, 0x40), 45),
+                    Child = column,
+                };
+                width = 0;
+                height = 0;
+                break;
+            }
+
             case "blackcloud-toast":
             {
                 // the Black Cloud Merchants' pop-up as it stands over the game while the shop is open: ticked pets of every group, with their prices

@@ -127,6 +127,8 @@ public partial class SettingsWindow : Window
         {
             box.IsChecked = !settings.HotkeyOverlayHidden.Contains((string)box.Tag);
         }
+        AddHotkeyTools();
+        ShowHotkeyProblems(MainWindow.HotkeyProblems);
         AutoResetBox.IsChecked = settings.AutoResetEnabled;
         AutoResetSecondsBox.Text = Math.Clamp(settings.AutoResetSeconds, 1, 600).ToString();
         PopulateThemes(settings.Theme);
@@ -582,6 +584,123 @@ public partial class SettingsWindow : Window
         SetHotkeyBox(HotkeyBoxOf(sender), "");
     }
 
+    /// <summary>Every hotkey field with the hotkey it holds (the same order as <see cref="HotkeyTable.All"/>).</summary>
+    private (TextBox Box, HotkeyAction Action)[] HotkeyBoxes() => new[]
+    {
+        (HotkeyHideUiBox, HotkeyAction.ToggleHideUi), (HotkeyPauseBox, HotkeyAction.TogglePause), (HotkeyCopyDamageBox, HotkeyAction.CopyDamageRanking),
+        (HotkeyClearBox, HotkeyAction.ClearDamage), (HotkeyUploadBossBox, HotkeyAction.UploadBoss), (HotkeyModeBox, HotkeyAction.NextMode),
+        (HotkeyAllOverlaysBox, HotkeyAction.ToggleAllOverlays), (HotkeyMoveOverlaysBox, HotkeyAction.MoveOverlays), (HotkeyHotkeyOverlayBox, HotkeyAction.ToggleHotkeyOverlay),
+        (HotkeyLootBox, HotkeyAction.ToggleLootOverlay), (HotkeyCraftBox, HotkeyAction.ToggleCraftOverlay), (HotkeyPetMapBox, HotkeyAction.TogglePetMap),
+        (HotkeyPetArrowsBox, HotkeyAction.TogglePetArrows), (HotkeyPetMapZoomInBox, HotkeyAction.PetMapZoomIn), (HotkeyPetMapZoomOutBox, HotkeyAction.PetMapZoomOut),
+        (HotkeyGatherArrowsBox, HotkeyAction.ToggleGatherArrows), (HotkeyCombatBox, HotkeyAction.ToggleCombatOverlay), (HotkeyAssistBox, HotkeyAction.ToggleAssistOverlay),
+        (HotkeyTimetableBox, HotkeyAction.ToggleTimetable), (HotkeyWorldBossBox, HotkeyAction.ToggleWorldBossOverlay), (HotkeyNetworkBox, HotkeyAction.ToggleNetworkOverlay),
+    };
+
+    /// <summary>The name of the hotkey a field holds (the table's: a row of a module card only says "on / off").</summary>
+    private string HotkeyNameOf(TextBox box) =>
+        HotkeyBoxes().FirstOrDefault(b => ReferenceEquals(b.Box, box)) is { Box: not null } found ? LocalizationManager.Instance[HotkeyTable.Of(found.Action).NameKey] : "";
+
+    private Border? _hotkeyProblemsCard;
+    private TextBlock? _hotkeyProblemsText;
+
+    /// <summary>
+    /// The hotkeys page's own additions: at the top a red card listing the hotkeys that do nothing right now (another program has the combination, or
+    /// two of the meter's hotkeys share one), shown only then; at the bottom "back to the default keys".
+    /// </summary>
+    private void AddHotkeyTools()
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        var stack = new StackPanel();
+        var title = new TextBlock { Text = loc["Hotkeys.Problem.Title"], FontWeight = FontWeights.SemiBold, FontSize = 14, Foreground = new SolidColorBrush(Color.FromRgb(0xFF, 0x7A, 0x6E)) };
+        stack.Children.Add(title);
+        _hotkeyProblemsText = new TextBlock { TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) };
+        _hotkeyProblemsText.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
+        stack.Children.Add(_hotkeyProblemsText);
+        _hotkeyProblemsCard = new Border
+        {
+            Child = stack, Padding = new Thickness(14, 10, 14, 12), Margin = new Thickness(0, 0, 0, 12), CornerRadius = new CornerRadius(8), BorderThickness = new Thickness(1),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(0xB0, 0xE0, 0x5A, 0x4E)), Background = new SolidColorBrush(Color.FromArgb(0x1C, 0xE0, 0x5A, 0x4E)),
+            Visibility = Visibility.Collapsed,
+        };
+        PanelHotkeys.Children.Insert(0, _hotkeyProblemsCard);
+
+        var reset = new Button { Content = loc["Hotkeys.Defaults"], HorizontalAlignment = HorizontalAlignment.Left, Padding = new Thickness(12, 3, 12, 3), Margin = new Thickness(0, 4, 0, 0),
+            ToolTip = loc["Hotkeys.Defaults.Tip"] };
+        reset.Click += (_, _) =>
+        {
+            StopCapture(restore: true);
+            var defaults = new MeterSettings();
+            foreach (var (box, action) in HotkeyBoxes())
+            {
+                SetHotkeyBox(box, HotkeyBinding.Parse(HotkeyTable.Of(action).Get(defaults)).ToString());
+                MarkHotkeyBox(box, null);
+            }
+
+            ShowHotkeyProblems(new Dictionary<HotkeyAction, HotkeyProblem>());
+        };
+        PanelHotkeys.Children.Add(reset);
+    }
+
+    /// <summary>Marks the hotkeys that do nothing (red edge and a tip saying why) and lists them at the top of the page.</summary>
+    public void ShowHotkeyProblems(IReadOnlyDictionary<HotkeyAction, HotkeyProblem> problems)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        var lines = new List<string>();
+        foreach (var (box, action) in HotkeyBoxes())
+        {
+            // only while the field still holds the combination that failed (one changed since is not marked)
+            HotkeyProblem? problem = problems.TryGetValue(action, out HotkeyProblem p) && (string?)box.Tag == HotkeyBinding.Parse(HotkeyTable.Of(action).Get(MeterSettings.Load())).ToString() ? p : null;
+            MarkHotkeyBox(box, problem);
+            if (problem is { } why)
+            {
+                lines.Add("• " + HotkeyNameOf(box) + " (" + box.Tag + "): " + loc[why == HotkeyProblem.Twice ? "Hotkeys.Problem.Twice" : "Hotkeys.Problem.Taken"]);
+            }
+        }
+
+        if (_hotkeyProblemsCard is null || _hotkeyProblemsText is null)
+        {
+            return;
+        }
+
+        _hotkeyProblemsCard.Visibility = lines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        _hotkeyProblemsText.Text = string.Join("\n", lines) + "\n\n" + loc["Hotkeys.Problem.Fix"];
+    }
+
+    private static void MarkHotkeyBox(TextBox box, HotkeyProblem? problem)
+    {
+        if (problem is { } why)
+        {
+            box.BorderBrush = new SolidColorBrush(Color.FromRgb(0xE0, 0x5A, 0x4E));
+            box.BorderThickness = new Thickness(2);
+            box.ToolTip = LocalizationManager.Instance[why == HotkeyProblem.Twice ? "Hotkeys.Problem.Twice" : "Hotkeys.Problem.Taken"];
+        }
+        else
+        {
+            box.SetResourceReference(Control.BorderBrushProperty, "Brush.Border");
+            box.BorderThickness = new Thickness(1);
+            box.ClearValue(ToolTipProperty);
+        }
+    }
+
+    private System.Windows.Threading.DispatcherTimer? _hotkeyNoteTimer;
+
+    /// <summary>A note under a field for a few seconds, after the combination was taken (it moved from another hotkey, or it is a key on its own).</summary>
+    private void ShowHotkeyNote(TextBox box, string text)
+    {
+        ShowHotkeyPopup(box, text);
+        _hotkeyNoteTimer?.Stop();
+        _hotkeyNoteTimer = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
+        _hotkeyNoteTimer.Tick += (_, _) =>
+        {
+            _hotkeyNoteTimer?.Stop();
+            if (_capturingBox is null && _hotkeyPopup is not null)
+            {
+                _hotkeyPopup.IsOpen = false;
+            }
+        };
+        _hotkeyNoteTimer.Start();
+    }
+
     protected override void OnPreviewKeyDown(KeyEventArgs e)
     {
         if (_capturingBox is not { } box)
@@ -609,16 +728,40 @@ public partial class SettingsWindow : Window
         ModifierKeys mods = Keyboard.Modifiers;
         var binding = new HotkeyBinding(mods.HasFlag(ModifierKeys.Control), mods.HasFlag(ModifierKeys.Alt),
             mods.HasFlag(ModifierKeys.Shift), mods.HasFlag(ModifierKeys.Windows), key);
-        if (!(binding.Ctrl || binding.Alt || binding.Shift || binding.Win))
+        bool alone = !(binding.Ctrl || binding.Alt || binding.Shift || binding.Win);
+        if (alone && !HotkeyBinding.StandsAlone(key))
         {
-            // A global hotkey without Ctrl, Alt, Shift or Win would swallow that key in every program.
+            // A letter, a digit or the space bar without Ctrl, Alt, Shift or Win would be swallowed in every program, the game's chat too.
             ShowHotkeyPopup(box, LocalizationManager.Instance["Settings.Hotkey.NeedsModifier"]);
             return;
         }
 
-        SetHotkeyBox(box, binding.ToString());
+        // two hotkeys can't share a combination: it moves to this one, and the other is left without until it gets a new one
+        LocalizationManager loc = LocalizationManager.Instance;
+        string text = binding.ToString();
+        string? movedFrom = null;
+        foreach (var (other, _) in HotkeyBoxes())
+        {
+            if (!ReferenceEquals(other, box) && (string?)other.Tag == text)
+            {
+                SetHotkeyBox(other, "");
+                MarkHotkeyBox(other, null);
+                movedFrom = HotkeyNameOf(other);
+            }
+        }
+
+        SetHotkeyBox(box, text);
+        MarkHotkeyBox(box, null);
         StopCapture(restore: false);
         Focus();
+        if (movedFrom is not null)
+        {
+            ShowHotkeyNote(box, string.Format(System.Globalization.CultureInfo.CurrentCulture, loc["Hotkeys.Moved"], text, movedFrom));
+        }
+        else if (alone)
+        {
+            ShowHotkeyNote(box, string.Format(System.Globalization.CultureInfo.CurrentCulture, loc["Hotkeys.Alone"], text));
+        }
     }
 
     /// <summary>
