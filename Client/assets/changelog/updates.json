@@ -14,7 +14,7 @@
           "kind": "improved",
           "area": "Stagger",
           "title": "Who took what off the bar, far more precisely",
-          "text": "A skill takes the same off the stagger bar at every level, but the game gives each level its own id, so the app used to miss many skills and had to guess. It now knows each skill's amount at any level, for all eight classes, checked on 25 real boss fights. On fights it had never seen, exact matches went from 70% of the stagger to 88%, and on Ultimate Berk from 31% to 69%.",
+          "text": "A skill takes the same off the stagger bar at every level, but the game gives each level its own id, so the app used to miss many skills and had to guess. It now knows each skill's amount at any level, for all eight classes, checked on 211 real boss fights against 21 bosses with a stagger bar (Krao Cave, Draupnir, Urugugu Canyon, Vakron Sky Island, Ferocious Horn Den, Shattered Arkanis, Nightmare and more). 94% of all the stagger in those fights now matches the exact skill that did it, up from about 70%.",
           "example": "Judgment, Chain of Torment, the Spiritmaster's spirits: all counted by what they really take off, instead of the nearest hit."
         },
         {

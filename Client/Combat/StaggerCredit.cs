@@ -73,19 +73,21 @@ public static class StaggerCredit
 
     /// <summary>
     /// What each skill takes off the bar whatever its level or form: a skill's id changes with its level and form (Judgment is 12240347 and 12243450,
-    /// Chain of Torment 17070240 and 17070250), its stagger doesn't. Read off 25 boss fights of 3 and 4 November 2026 (Bakarma, Berk, Saraswati,
-    /// Lakshmi, Harcon, Gadioton; eight classes): the moments whose hits were all of one skill, and in every family the drops agreed (Judgment 5 in 61
-    /// of 61). A skill id the fight or <see cref="Known"/> doesn't know goes by its family (the id without its last four digits). A family whose forms
+    /// Chain of Torment 17070240 and 17070250), its stagger doesn't. Read off the moments whose hits were all of one skill in 211 boss fights of 31 October
+    /// to 6 November 2026 (21 bosses with a stagger bar, eight classes); in every family the drops agreed (Judgment 5 in 61 of 61 on the first 25 alone).
+    /// With it, 94% of 306,884 points of stagger in those fights matched a skill exactly (half of the fights checked against a table from the other half:
+    /// 94 to 95%). A skill id the fight or <see cref="Known"/> doesn't know goes by its family (the id without its last four digits). A family whose forms
     /// take different amounts (the Ranger's charged shot: 10 to 16) is left out.
     /// </summary>
     internal static readonly IReadOnlyDictionary<int, int> KnownFamilies = new Dictionary<int, int>
     {
-        [1101] = 2, [1117] = 5, [1119] = 10, [1120] = 10, [1129] = 15, [1136] = 10, [1139] = 20, [1142] = 2, [1144] = 5, [1204] = 3, [1206] = 5, [1209] = 35,
-        [1210] = 10, [1212] = 20, [1213] = 10, [1224] = 5, [1227] = 10, [1230] = 10, [1235] = 5, [1301] = 2, [1305] = 7, [1306] = 7, [1307] = 10, [1310] = 2,
-        [1311] = 2, [1312] = 2, [1313] = 7, [1321] = 7, [1322] = 10, [1327] = 100, [1335] = 5, [1336] = 5, [1405] = 5, [1406] = 20, [1408] = 15, [1409] = 7,
-        [1411] = 10, [1413] = 10, [1434] = 1, [1504] = 5, [1505] = 7, [1506] = 35, [1509] = 2, [1510] = 2, [1515] = 10, [1520] = 20, [1522] = 7, [1604] = 3,
-        [1610] = 7, [1613] = 7, [1614] = 10, [1630] = 10, [1633] = 5, [1704] = 2, [1705] = 2, [1706] = 20, [1707] = 10, [1708] = 10, [1735] = 7, [1740] = 20,
-        [1804] = 2, [1805] = 2, [1806] = 10, [1808] = 10, [1809] = 10, [1810] = 5, [1829] = 15, [1840] = 5,
+        [1101] = 2, [1117] = 5, [1119] = 10, [1120] = 10, [1129] = 15, [1136] = 10, [1139] = 20, [1142] = 2, [1144] = 5, [1204] = 3, [1206] = 5, [1207] = 20, [1209] = 35,
+        [1210] = 10, [1212] = 20, [1213] = 10, [1224] = 5, [1227] = 10, [1230] = 10, [1235] = 5, [1243] = 10, [1301] = 2, [1305] = 7, [1306] = 7, [1307] = 10,
+        [1310] = 2, [1311] = 2, [1312] = 2, [1313] = 7, [1321] = 7, [1322] = 10, [1327] = 100, [1330] = 20, [1331] = 5, [1335] = 5, [1336] = 5, [1405] = 5,
+        [1406] = 20, [1407] = 10, [1408] = 15, [1409] = 7, [1411] = 10, [1413] = 10, [1417] = 10, [1434] = 1, [1472] = 5, [1504] = 5, [1505] = 7, [1506] = 35,
+        [1509] = 2, [1510] = 2, [1515] = 10, [1520] = 20, [1522] = 7, [1536] = 50, [1604] = 3, [1610] = 7, [1611] = 7, [1612] = 7, [1613] = 7, [1614] = 10,
+        [1615] = 10, [1625] = 20, [1630] = 10, [1633] = 5, [1704] = 2, [1705] = 2, [1706] = 20, [1707] = 10, [1708] = 10, [1735] = 7, [1740] = 20, [1804] = 2,
+        [1805] = 2, [1806] = 10, [1808] = 10, [1809] = 10, [1810] = 5, [1815] = 10, [1821] = 10, [1822] = 50, [1829] = 15, [1840] = 5,
     };
 
     /// <summary>A skill's family: its id without the level and form (the last four digits).</summary>
