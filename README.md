@@ -1,67 +1,102 @@
-# Atreia App
-
-A damage and healing meter for **AION 2**, made for [atreia.app](https://atreia.app) and its Discord.
-
-<p>
-  <img src="docs/screenshots/window.png" alt="The meter" width="360">
-  <img src="docs/screenshots/compact.png" alt="The in-game overlay" width="300">
+<p align="center">
+  <img src="docs/landing/hero.webp" alt="Atreia App: the live combat meter and toolkit for AION 2" width="100%">
 </p>
 
-## What it does
-
-**Meter**
-- Live DPS, healing and damage taken for you, your group, your corps or everyone around, in PvE and PvP
-- rDPS: each player's damage with what their buffs added to the others
-- Filter by target, group and class; one click shows a player's skills
-- Boss fights count the boss and its adds, not the monsters around it; the fight clock shows the boss's enrage time, and a wipe never counts into the next pull
-
-**Overlays** (click-through, shown only while the game is in front)
-- A compact meter, boss health and casts, event timers, skill cooldowns and the effects on you, the pet farm
-- Each one placed, scaled and locked on its own; several looks to choose from
-
-**Fight reports**
-- Damage, healing, damage taken, shields, defense, buffs, support and a rotation timeline for every player
-- Per skill: hits, crits, back and front attacks, perfect, double and multi hits
-- A summary to copy into chat, and the History of every boss fight, Nightmare run and training-dummy parse on this PC with your bests
-- Upload a boss fight to atreia.app, public or private, and share it in Discord (only when you choose to)
-
-**CP calculator**
-- Your whole Combat Power by source: gear line by line, Stigmas, skills, Daevanion, Genus Insight, pets, titles, wings, Arcana
-- The best next steps, grouped and ranked, each with its Kina and material cost
-- For every piece: its soul-binding lines (skill lines too), the six ideal lines for your class on that slot, and the best piece of its kind for your race
-
-**Skill Assist**
-- Your cooldowns where you want them: every skill of your skill bar as a bar or a square of its own, dragged anywhere on the screen, one by one or all together; while you place them a small bar at the top switches the look and the size; basic attacks are left out
-- A voice that tells you a skill is back, for the skills you pick
-- The effects on you, each with its time left
-
-**Your characters and the world**
-- Every character's Odyle energy, daily and weekly counters, season missions, supply requests and inventory
-- The event timetable and field bosses in your own time, with a sound before they start
-- An interactive map with your pet collection route, gathering spots and Hidden Cubes
-- Loot: what dropped where, drop rates per monster and what your cubes gave
-- An OBS source for streaming, a check of your connection to the game, and hotkeys to open its pages and overlays
-
-<p>
-  <img src="docs/screenshots/report-damage.png" alt="Fight report: damage" width="49%">
-  <img src="docs/screenshots/report-rotation.png" alt="Fight report: rotation" width="49%">
-</p>
-<p>
-  <img src="docs/screenshots/cpcalc.png" alt="CP calculator" width="49%">
-  <img src="docs/screenshots/cpcalc-gear.png" alt="CP calculator: gear and ideal lines" width="49%">
-</p>
-<p>
-  <img src="docs/screenshots/assist-overlays.png" alt="Skill Assist: cooldowns as bars and as squares, and the effects on you" width="664">
-</p>
-<p>
-  <img src="docs/screenshots/app-home.png" alt="Home" width="49%">
-  <img src="docs/screenshots/app-timers.png" alt="Timers" width="49%">
-</p>
-<p>
-  <img src="docs/screenshots/loot.png" alt="Loot" width="49%">
+<p align="center">
+  <a href="../../releases/latest"><img src="docs/landing/download.webp" alt="Download for Windows" width="300"></a>
 </p>
 
-The pictures are made by the app's own checks with made-up players and fights.
+<p align="center">
+  <a href="https://atreia.app"><b>atreia.app</b></a>
+  &nbsp;·&nbsp;
+  <a href="#install">Install</a>
+  &nbsp;·&nbsp;
+  <a href="#how-it-works">How it works</a>
+  &nbsp;·&nbsp;
+  <a href="../../releases">What's new</a>
+</p>
+
+<br>
+
+<table>
+  <tr>
+    <td width="33%" valign="top"><b>Live meter</b><br><sub>DPS, rDPS, healing and damage taken for you, your group, your corps or everyone, in PvE and PvP</sub></td>
+    <td width="33%" valign="top"><b>Stagger checks</b><br><sub>Who took how much off the boss's stagger bar, with which skills, the moment a mechanic starts</sub></td>
+    <td width="33%" valign="top"><b>Fight reports</b><br><sub>Every player and skill taken apart, a timeline, rotation, buffs, accuracy, and one-click sharing</sub></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>Boss timers</b><br><sub>The boss's next casts and its enrage on your meter, field bosses and events in your own time</sub></td>
+    <td valign="top"><b>CP calculator</b><br><sub>Your Combat Power by source, and the cheapest upgrades ranked</sub></td>
+    <td valign="top"><b>Overlays</b><br><sub>Cooldowns, effects, timers, season missions and gathering, placed anywhere, click-through</sub></td>
+  </tr>
+  <tr>
+    <td valign="top"><b>History and bests</b><br><sub>Every boss pull, Nightmare run and dummy parse kept on your PC, with your personal bests</sub></td>
+    <td valign="top"><b>Characters</b><br><sub>Odyle energy, dailies, weeklies, season missions, supply requests and inventory for all of them</sub></td>
+    <td valign="top"><b>Map and loot</b><br><sub>Pet routes, gathering spots, Hidden Cubes and what dropped where</sub></td>
+  </tr>
+</table>
+
+<br>
+
+<img src="docs/landing/meter.webp" alt="The meter in six designs" width="100%">
+
+- Your group, your corps or everyone around, with one click to a player's skills
+- **rDPS**: each player's damage with what their buffs added to the others
+- The boss's health, the time to kill it at your pace and its enrage, over the lines; a wipe never counts into the next pull
+- Six designs to start from, then every column, colour and size your own
+
+<br>
+
+<img src="docs/landing/stagger.webp" alt="Stagger checks on the meter and in the fight report" width="100%">
+
+- **Stagger** on the meter's switch shows the boss's check live: the mechanic, the time left, every player's exact amount, 0 for the ones who did nothing
+- Hover a skill for each hit, the stagger-buff hits and when they landed
+- The fight report draws the bar over the whole fight with each mechanic's start and end; click a check or drag over any stretch
+
+<br>
+
+<img src="docs/landing/reports.webp" alt="Fight reports" width="100%">
+
+- Damage, healing, damage taken, shields, defense, buffs, buffs per skill, support, rotation, timeline and stagger, for every player
+- Per skill: hits, uses, crits, back and front attacks, perfect, double and multi hits, and **accuracy**
+- A summary to copy into chat; upload a boss fight to atreia.app, public or private, only when you choose to
+
+<br>
+
+<img src="docs/landing/bosses.webp" alt="Boss timers and world bosses" width="100%">
+
+<br>
+
+<img src="docs/landing/history.webp" alt="History and personal bests" width="100%">
+
+<br>
+
+<img src="docs/landing/cp.webp" alt="CP calculator" width="100%">
+
+- Gear line by line, Stigmas, skills, Daevanion, Genus Insight, pets, titles, wings and Arcana
+- For every piece: its soul-binding lines, the six ideal lines for your class on that slot, and the best piece of its kind
+
+<br>
+
+<img src="docs/landing/overlays.webp" alt="Overlays over the game" width="100%">
+
+- **Skill Assist**: every skill of your bar as a bar or a square, dragged anywhere; a voice that tells you a skill is back
+- Each overlay placed, scaled and locked on its own; all of them hide while a game menu is open
+
+<br>
+
+<img src="docs/landing/characters.webp" alt="Characters, legion and journey" width="100%">
+
+<br>
+
+<img src="docs/landing/map.webp" alt="Pet route map and Find a player" width="100%">
+
+- Find any player and open their page: gear, stats and best parses
+- An OBS source for streaming, a check of your connection to the game, and hotkeys for every page and overlay
+
+<p align="center"><sub>The pictures are drawn by the app's own checks with made-up players and fights.</sub></p>
+
+<br>
 
 ## How it works
 
@@ -78,7 +113,7 @@ NCSOFT has not approved this or any other damage meter. Use it at your own respo
 1. Install [Npcap](https://npcap.com) (keep its default options).
 2. Download the installer from the [latest release](../../releases/latest) and run it.
 
-Updates install themselves from this repository's full releases.
+Updates install themselves from this repository's releases.
 
 ## License
 
