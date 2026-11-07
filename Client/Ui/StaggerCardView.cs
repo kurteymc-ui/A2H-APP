@@ -122,7 +122,7 @@ internal static class StaggerCardView
         root.Children.Add(head);
 
         // the bar over the check's time: the cast's start on the left, its end on the right
-        root.Children.Add(new StaggerGauge(check, now, overlay) { Height = overlay ? 30 : 38, Margin = new Thickness(0, 4, 0, 4) });
+        root.Children.Add(new StaggerGauge(check, now, overlay) { Height = overlay ? 38 : 44, Margin = new Thickness(0, 5, 0, 4) });
 
         // the players: the most first, the group's others with 0
         var lines = check.Credit.Players.ToDictionary(p => p.Player);
@@ -346,7 +346,27 @@ internal sealed class StaggerGauge : FrameworkElement
             }
 
             area.Freeze();
-            dc.DrawGeometry(B(blue, 0xB0), null, area);
+            dc.DrawGeometry(B(blue, 0x70), null, area);
+
+            // its top edge, brighter: how the bar fell
+            var edge = new StreamGeometry();
+            using (StreamGeometryContext g = edge.Open())
+            {
+                double last = 1;
+                g.BeginFigure(new Point(0, bottom - height * last), false, false);
+                foreach ((double at, double fill) in bar)
+                {
+                    g.LineTo(new Point(X(at), bottom - height * last), true, false);
+                    g.LineTo(new Point(X(at), bottom - height * fill), true, false);
+                    last = fill;
+                }
+
+                double end = _check.End is DateTime e ? (e - _check.Start).TotalSeconds : _check.Seconds(_now);
+                g.LineTo(new Point(X(end), bottom - height * last), true, false);
+            }
+
+            edge.Freeze();
+            dc.DrawGeometry(null, new Pen(B(Color.FromRgb(0xA8, 0xC8, 0xF0), 0xF0), 1.4), edge);
         }
 
         var typeface = new Typeface("Segoe UI");
@@ -358,7 +378,7 @@ internal sealed class StaggerGauge : FrameworkElement
         }
 
         Brush muted = OverlayPictures.Muted;
-        Label(_check.Mechanic != 0 ? "cast starts" : "0 s", 0, muted);
+        Label(_check.Mechanic != 0 ? "▶ cast starts" : "0 s", 0, muted);
 
         // the end of the cast: the time to break it
         if (_check.Limit is double limit)
@@ -397,8 +417,9 @@ internal sealed class StaggerGauge : FrameworkElement
         }
 
         // what is left, on the bar
-        var left = new FormattedText($"{_check.Left:N0} / {_check.Max:N0}", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(typeface.FontFamily, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal),
+        var left = new FormattedText($"{_check.Left:N0} / {_check.Max:N0} left", CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface(typeface.FontFamily, FontStyles.Normal, FontWeights.SemiBold, FontStretches.Normal),
             _overlay ? 10.5 : 11.5, B(Colors.White, 0xF0), dpi);
-        dc.DrawText(left, new Point(6, top + (height - left.Height) / 2));
+        dc.DrawRectangle(B(Colors.Black, 0x70), null, new Rect(4, top + (height - left.Height) / 2 - 1, left.Width + 6, left.Height + 2));
+        dc.DrawText(left, new Point(7, top + (height - left.Height) / 2));
     }
 }

@@ -143,7 +143,8 @@ internal static class FightReportSample
             {
                 broken = false;
                 current = max;
-                bar.Add(new StaggerEvent(t0.AddSeconds(20), Boss, max, max, false));
+                DateTime refill = t0.AddSeconds(20) > e.Timestamp ? t0.AddSeconds(20) : e.Timestamp.AddMilliseconds(-1); // back up at 20 s, a later one just before its hit
+                bar.Add(new StaggerEvent(refill, Boss, max, max, false));
             }
 
             if (broken)

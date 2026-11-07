@@ -140,6 +140,12 @@ public static class StaggerChecks
                 Learn(learnt.SkillId);
             }
 
+            // a check that ended well after the cast had: not that cast's (the game fills the bar again when the cast ends)
+            if (cast is { } late && x.End is DateTime ended && ended > late.At.AddMilliseconds(late.DurationMs).AddSeconds(1))
+            {
+                cast = null;
+            }
+
             DateTime start = cast is { } c && c.At > x.Start ? c.At : x.Start;
             DateTime? deadline = cast is { } cc ? cc.At.AddMilliseconds(cc.DurationMs) : null;
             if (firstDrop is null && cast is null && x.Outcome != StaggerOutcome.Broken)
