@@ -1510,6 +1510,10 @@
                     </Border>
                     <!-- The boss's health over the lines (MainWindow.BossBar.cs): its name, what is left, and when it dies at the group's pace against its enrage. -->
                     <Border x:Name="OverlayBossBar" Visibility="Collapsed" Margin="10,0,10,6"/>
+                    <!-- The boss's stagger check (MainWindow.Stagger.cs, StaggerCardView.cs): its mechanic and time left, the bar over the cast's time, who took
+                         how much off it and with which skills (hover them). Stays after the check until the next one. -->
+                    <Border x:Name="OverlayStaggerCard" Visibility="Collapsed" Margin="10,0,10,6" Padding="9,6,9,7" CornerRadius="7"
+                            Background="#0E6F9FD8" BorderBrush="#336F9FD8" BorderThickness="1"/>
                     <Grid Visibility="Collapsed">
                         <TextBlock x:Name="OverlayRateHeader" Text="DPS"/>
                         <TextBlock x:Name="OverlayShareHeader" Text="%"/>

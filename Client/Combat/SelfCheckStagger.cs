@@ -85,6 +85,88 @@ public static class SelfCheckStagger
         bool meter = dead == "Tsubasa  ☠2 1:12" && back == "Tsubasa  ☠2" && row.NameDisplay == "Tsubasa";
         Console.WriteLine($"  -> the meter shows deaths after the name, and how long while dead: {meter} ({dead} / {back})");
         ok &= meter;
+        ok &= Checks();
         return ok;
+    }
+
+    /// <summary>
+    /// Stagger checks (Combat/StaggerChecks.cs), on a made-up boss like the recordings' Ultimate Berk: an 8 s cast shows its bar full and the bar breaks in
+    /// time (two players, one hit with a stagger buff: half as much again); late readings after the break; the bar back up and waiting until the next cast
+    /// (the check starts with the cast), which runs out with the bar still up (it fills again: failed); a third cast seen live before anybody hit (running,
+    /// nothing taken), then past its end (failed); a bar that is always up, broken without a cast.
+    /// </summary>
+    private static bool Checks()
+    {
+        DateTime c0 = new(2026, 11, 7, 21, 0, 0);
+        const int boss = 4243, mechanic = 1800141;
+        var hits = new List<DamageEvent>();
+        var windups = new List<WindupRecord> { new(c0, boss, mechanic, 1, 8000, 0, 0, 0, false) };
+        var plan = new List<(double At, int Who, int Skill, int Drop)>();
+        for (int i = 0; i <= 32; i++)
+        {
+            if (i < 30)
+            {
+                plan.Add((0.4 + i * 0.2, 1, 501, 10));
+            }
+
+            plan.Add((0.5 + i * 0.2, 2, 602, i == 16 ? 7 : 5));
+        }
+
+        int max = plan.Sum(x => x.Drop), current = max;
+        var bar = new List<StaggerEvent> { new(c0, boss, max, max, false) };
+        foreach ((double at, int who, int skill, int drop) in plan)
+        {
+            hits.Add(new DamageEvent(c0.AddSeconds(at), who, boss, 1000, false, "Skill", SkillId: skill));
+            current -= drop;
+            bar.Add(new StaggerEvent(c0.AddSeconds(at), boss, current, max, false));
+        }
+
+        double broke = plan[^1].At + 0.05;
+        bar.Add(new StaggerEvent(c0.AddSeconds(broke), boss, 0, 0, true));
+        bar.Add(new StaggerEvent(c0.AddSeconds(broke + 0.02), boss, 3, max, false)); // late readings after the break, low on the bar: no check
+        bar.Add(new StaggerEvent(c0.AddSeconds(broke + 0.1), boss, 0, 0, true));
+        bar.Add(new StaggerEvent(c0.AddSeconds(15), boss, max, max, false));       // back up, waiting for the next cast
+        windups.Add(new WindupRecord(c0.AddSeconds(22), boss, 1800190, 1, 1500, 0, 0, 0, false)); // a short cast between: no mechanic
+        windups.Add(new WindupRecord(c0.AddSeconds(30), boss, mechanic, 1, 8000, 0, 0, 0, false));
+        current = max;
+        for (int i = 0; i < 20; i++)
+        {
+            hits.Add(new DamageEvent(c0.AddSeconds(30.5 + i * 0.3), 1, boss, 1000, false, "Skill", SkillId: 501));
+            current -= 10;
+            bar.Add(new StaggerEvent(c0.AddSeconds(30.5 + i * 0.3), boss, current, max, false));
+        }
+
+        bar.Add(new StaggerEvent(c0.AddSeconds(38), boss, max, max, false));       // the cast ended: the bar fills again
+        windups.Add(new WindupRecord(c0.AddSeconds(50), boss, mechanic, 1, 8000, 0, 0, 0, false));
+
+        List<StaggerCheck> at52 = StaggerChecks.Find(boss, bar, windups, hits, c0.AddSeconds(52));
+        StaggerCheck? first = at52.ElementAtOrDefault(0), second = at52.ElementAtOrDefault(1), third = at52.ElementAtOrDefault(2);
+        bool broken = at52.Count == 3 && first is { Outcome: StaggerOutcome.Broken, Mechanic: mechanic, Left: 0 } && Math.Abs(first.Seconds(c0) - broke) < 0.01
+            && first.Limit == 8 && first.Credit.Of(1)?.Amount == 300 && first.Credit.Of(2)?.Amount == 167 && first.Credit.Hits.Count(h => h.Boosted) == 1
+            && first.Credit.Hits.Single(h => h.Boosted) is { Player: 2, Amount: 7 } && first.Credit.Breaks.Count >= 1;
+        bool failed = second is { Outcome: StaggerOutcome.Failed, Mechanic: mechanic } && second.Start == c0.AddSeconds(30) && second.Deadline == c0.AddSeconds(38)
+            && second.Left == max - 200 && second.Taken == 200 && second.Credit.Of(1)?.Amount == 200 && second.Credit.Of(2) is null;
+        bool running = third is { Outcome: StaggerOutcome.Running, Taken: 0 } && third.Start == c0.AddSeconds(50) && third.TimeLeft(c0.AddSeconds(52)) is double left && Math.Abs(left - 6) < 0.01
+            && StaggerChecks.Latest(at52) == third;
+        List<StaggerCheck> later = StaggerChecks.Find(boss, bar, windups, hits, c0.AddSeconds(58.8));
+        bool ranOut = later.Count == 3 && later[2] is { Outcome: StaggerOutcome.Failed, Left: var all } && all == max && later[2].End == c0.AddSeconds(58);
+        Console.WriteLine($"  -> stagger checks: broken in time by two players (one hit with a stagger buff)={broken}; the next cast's check, not broken={failed}; " +
+            $"a cast seen live before anybody hit={running}; past its end={ranOut} ({string.Join("; ", at52.Select(c => $"{(c.Start - c0).TotalSeconds:0.#} s {c.Outcome} {c.Taken}/{c.Max}"))})");
+
+        // a bar that is always up: broken without a cast, a check of its own; the bar sitting full after it is none
+        var plain = new List<StaggerEvent> { new(c0, boss, 1790, 1800, false) };
+        var plainHits = new List<DamageEvent>();
+        for (int i = 1; i <= 179; i++)
+        {
+            plainHits.Add(new DamageEvent(c0.AddSeconds(i * 0.2), 3, boss, 1000, false, "Skill", SkillId: 501));
+            plain.Add(new StaggerEvent(c0.AddSeconds(i * 0.2), boss, 1790 - i * 10, 1800, false));
+        }
+
+        plain.Add(new StaggerEvent(c0.AddSeconds(36), boss, 0, 0, true));
+        plain.Add(new StaggerEvent(c0.AddSeconds(41), boss, 1800, 1800, false));
+        List<StaggerCheck> always = StaggerChecks.Find(boss, plain, Array.Empty<WindupRecord>(), plainHits, c0.AddSeconds(45));
+        bool up = always.Count == 1 && always[0] is { Outcome: StaggerOutcome.Broken, Mechanic: 0, Deadline: null } && always[0].Credit.Of(3)?.Amount == 1790;
+        Console.WriteLine($"  -> a bar that is always up, broken without a cast: one check, the bar full again after it none: {up}");
+        return broken && failed && running && ranOut && up;
     }
 }

@@ -8086,6 +8086,7 @@ public partial class MainWindow : Window
         UpdateOverlayDummy();
         AnnounceBlackCloudRenewal();
         UpdateOverlayBossCallout();
+        UpdateOverlayStagger();
         UpdateOverlayCubeCallout();
         UpdateOverlayBuffAlert();
         UpdateOverlayIdentity();
@@ -9156,6 +9157,7 @@ public partial class MainWindow : Window
     }
 
     private long _calloutAt;
+    private BossCalloutFrame? _calloutFrame;
     private (int Entity, DateTime? Since, DateTime? First, long At) _calloutStart = (-1, null, null, 0);
 
     /// <summary>When the boss was first hit in this pull (the fight's start as the uploads count it), null before; worked out again when the boss or its pull changes.</summary>
@@ -9202,6 +9204,7 @@ public partial class MainWindow : Window
         // the site is asked for the timers only with the privacy policy accepted; without, the line shows the enrage from the game's own data
         BossCalloutFrame? frame = _gateSettings.OverlayBossTimers && !_historyMode && !_pvpOnly && _source?.Entities is Aion2.Aion2EntityDirectory dir
             ? BossTimers.Now(dir, now, LocalizationManager.Instance.Language, id => BossFirstHit(id, dir), PrivacyConsent.IsAccepted(_gateSettings)) : null;
+        _calloutFrame = frame; // the stagger card's "next check" (MainWindow.Stagger.cs)
         if (frame is null || (frame.Next.Count == 0 && frame.Rage is null))
         {
             OverlayBossCallout.Visibility = Visibility.Collapsed;

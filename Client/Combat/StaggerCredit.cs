@@ -3,8 +3,9 @@ using AionDPS.Aion2.Protocol;
 namespace AionDPS.Combat;
 
 /// <summary>One drop of the boss's stagger bar, credited to the hit that took it off (<see cref="Player"/> 0: no hit of the party came just before it).
-/// <see cref="Exact"/>: the drop is the amount that skill takes off; otherwise the nearest likely hit.</summary>
-public sealed record StaggerHit(double At, int Player, int SkillId, int Amount, bool Exact);
+/// <see cref="Exact"/>: the drop is the amount that skill takes off; otherwise the nearest likely hit. <see cref="Boosted"/>: half as much again as the
+/// skill's own amount (a stagger damage buff, such as the Assassin's and Gladiator's).</summary>
+public sealed record StaggerHit(double At, int Player, int SkillId, int Amount, bool Exact, bool Boosted = false);
 
 /// <summary>The boss's stagger bar broke: when, and the hit that took the last of it off (<see cref="Player"/> 0 when unknown).</summary>
 public sealed record StaggerBreak(double At, int Player, int SkillId);
@@ -130,7 +131,8 @@ public static class StaggerCredit
             }
 
             DamageEvent? hit = c.Hit is int k ? ordered[k] : null;
-            last = new StaggerHit(Secs(c.At), hit?.SourceObjectId ?? 0, hit?.SkillId ?? 0, c.Drop, c.Exact);
+            bool boosted = c.Exact && hit is { } h && table.TryGetValue(h.SkillId, out int own) && own > 0 && c.Drop != own && c.Drop == own * 3 / 2;
+            last = new StaggerHit(Secs(c.At), hit?.SourceObjectId ?? 0, hit?.SkillId ?? 0, c.Drop, c.Exact, boosted);
             stagger.Add(last);
         }
 

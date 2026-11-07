@@ -756,6 +756,7 @@ public partial class MainWindow
             Check("Fold to the bar until a boss fight or a training dummy", null, now.MeterFoldIdle, on => Change(s => s.MeterFoldIdle = on)),
             Check("Odyle Energy, Shugo and the other counters at the bottom", null, now.MeterShowTickets, on => Change(s => s.MeterShowTickets = on)),
             Check("Boss health over the lines: what is left, time to kill, enrage", null, now.MeterBossLine, on => Change(s => s.MeterBossLine = on)),
+            Check("Stagger checks over the lines: who took how much off the boss's stagger bar, with which skills (hover them)", null, now.MeterStaggerCard, on => Change(s => s.MeterStaggerCard = on)),
             Check("Boss timers: the next casts and the enrage", null, now.OverlayBossTimers, on => Change(s => s.OverlayBossTimers = on)),
             Check("Everyone in dungeons, only me at training dummies", null, now.AutoScope, on => Change(s => s.AutoScope = on))));
 

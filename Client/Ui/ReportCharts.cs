@@ -454,6 +454,24 @@ internal sealed class FightTimelineChart : ReportChartBase
                 dc.DrawGeometry(ReportPalette.Brush(StaggerBlue), new Pen(Res("Brush.Panel", Brushes.Black), 1), Diamond(X(b.At), laneY + LaneHeight / 2, 4.5));
             }
 
+            // the stagger checks: a frame from the mechanic's start to the end of its cast (green: broken in time, red: not), a flag where it started
+            foreach (StaggerCheck c in _report.StaggerChecks)
+            {
+                double from = (c.Start - _report.StaggerCheckStart).TotalSeconds, to = from + (c.Limit ?? c.Seconds(c.End ?? c.Start));
+                Color tone = c.Outcome == StaggerOutcome.Broken ? Color.FromRgb(0x5B, 0xD0, 0x7A) : Color.FromRgb(0xFF, 0x5A, 0x5A);
+                dc.DrawRectangle(null, new Pen(ReportPalette.Brush(tone, 0xD0), 1.4), new Rect(new Point(X(from), laneY + 0.5), new Point(Math.Max(X(to), X(from) + 3), laneY + LaneHeight - 0.5)));
+                var flag = new StreamGeometry();
+                using (StreamGeometryContext g = flag.Open())
+                {
+                    g.BeginFigure(new Point(X(from), laneY - 7), true, true);
+                    g.LineTo(new Point(X(from) + 7, laneY - 3.5), true, false);
+                    g.LineTo(new Point(X(from), laneY), true, false);
+                }
+
+                flag.Freeze();
+                dc.DrawGeometry(ReportPalette.Brush(tone), null, flag);
+            }
+
             laneY += LaneHeight + LaneGap;
         }
 
@@ -517,6 +535,16 @@ internal sealed class FightTimelineChart : ReportChartBase
             if (reading >= 0)
             {
                 lines.Add(Text($"Stagger bar  {Math.Round(_report.Stagger.Bar[reading].Fill * 100)}%", 11, ReportPalette.Brush(StaggerBlue)));
+            }
+
+            foreach (StaggerCheck c in _report.StaggerChecks)
+            {
+                double from = (c.Start - _report.StaggerCheckStart).TotalSeconds, to = from + (c.Limit ?? c.Seconds(c.End ?? c.Start));
+                if (t >= from && t <= to + 0.5)
+                {
+                    (string status, Color tone) = StaggerCardView.Status(c, c.End ?? c.Start);
+                    lines.Add(Text($"Stagger check: {StaggerCardView.Title(c)} at {ReportPalette.Clock(from)} · {status}", 11, ReportPalette.Brush(tone), bold: true));
+                }
             }
 
             string? casting = _report.CastBars.Where(c => t >= c.Start && t <= c.End).Select(c => c.Name).FirstOrDefault();

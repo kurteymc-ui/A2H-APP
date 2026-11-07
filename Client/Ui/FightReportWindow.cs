@@ -1187,13 +1187,37 @@ public sealed class FightReportWindow : Window
         }
 
         root.Children.Add(Card(head));
+
+        // every stagger check: the mechanic that showed the bar, how it went, the exact amount each player took off it (0 for one who took nothing off) and
+        // the skills that did it (hover them)
+        if (_r.StaggerChecks.Count > 0)
+        {
+            root.Children.Add(Section("Stagger checks", "each time the boss's bar had to be broken: how it went, and who took how much off it with which skills (hover them)"));
+            var people = _r.Players.Select(p => new StaggerPerson(p.Player.Id, p.Player.Name, p.Player.ClassName)).ToList();
+            var checks = new WrapPanel();
+            int n = 0;
+            foreach (StaggerCheck c in _r.StaggerChecks)
+            {
+                n++;
+                var stack = new StackPanel { Width = 470 };
+                stack.Children.Add(Muted($"Check {n} at {ReportPalette.Clock((c.Start - _r.StaggerCheckStart).TotalSeconds)}", 11.5, margin: new Thickness(0, 0, 0, 4)));
+                stack.Children.Add(StaggerCardView.Card(c, c.End ?? c.Start, people, id => new StaggerPerson(id, _r.PlayerOf(id)?.Player.Name ?? "#" + id, _r.PlayerOf(id)?.Player.ClassName ?? ""),
+                    null, overlay: false));
+                Border card = Card(stack);
+                card.Margin = new Thickness(0, 0, 12, 12);
+                checks.Children.Add(card);
+            }
+
+            root.Children.Add(checks);
+        }
+
         var players = _r.Players.Where(p => st.Of(p.Player.Id) is not null).OrderByDescending(p => st.Of(p.Player.Id)!.Amount).ToList();
         if (players.Count == 0)
         {
             return root;
         }
 
-        root.Children.Add(Section("Stagger by player", "the amount each took off the boss's bar"));
+        root.Children.Add(Section("Stagger by player", "the amount each took off the boss's bar over the whole fight"));
         root.Children.Add(PlayersTable(players, p => st.Of(p.Player.Id)?.Amount ?? 0,
             new Col("Stagger", 100, p => N(st.Of(p.Player.Id)?.Amount ?? 0), Bold: true, Color: _ => ReportPalette.Brush(StaggerColor)),
             new Col("Share", 80, p => Pct(st.Of(p.Player.Id)?.Share ?? 0)),

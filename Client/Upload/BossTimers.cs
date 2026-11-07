@@ -12,7 +12,7 @@ namespace AionDPS.Upload;
 public sealed record BossTimerCast(int Id, string Name, int Fights, double First, double? Every, double Dur);
 
 /// <summary>A cast the callout names: the skill and the seconds until it comes (0 while it is being cast).</summary>
-public sealed record BossCallout(string Name, double In, bool Casting);
+public sealed record BossCallout(string Name, double In, bool Casting, int SkillId = 0);
 
 /// <summary>What the meter overlay's callout line shows: the next casts (soonest first) and the time left to the boss's rage, when the game data knows it.</summary>
 public sealed record BossCalloutFrame(string Boss, IReadOnlyList<BossCallout> Next, TimeSpan? Rage, int Fights);
@@ -330,7 +330,7 @@ public static class BossTimers
             var seen = dir.Combat.WindupsSince(boss.Id, start).Select(w => new PatternCast((w.At - start).TotalSeconds, w.SkillId, w.DurationMs / 1000.0, null)).ToList();
             double? health = boss.Max > 0 ? Math.Clamp((double)boss.Hp / boss.Max, 0, 1) : null;
             var next = pattern.Next(seen, (now - start).TotalSeconds, health, PaceNow(dir, boss.Id, boss.Max))
-                .Select(n => new BossCallout(Label(n.SkillId, known.Names), n.In, n.Casting)).ToList();
+                .Select(n => new BossCallout(Label(n.SkillId, known.Names), n.In, n.Casting, n.SkillId)).ToList();
             return new BossCalloutFrame(name, next, rage, known.Fights);
         }
 
@@ -379,7 +379,7 @@ public static class BossTimers
                 double began = (last - origin).TotalSeconds;
                 if (t - began < Math.Max(c.Dur, 0.5))
                 {
-                    due.Add(new BossCallout(label, 0, true)); // being cast now
+                    due.Add(new BossCallout(label, 0, true, c.Id)); // being cast now
                     continue;
                 }
 
@@ -392,7 +392,7 @@ public static class BossTimers
 
             if (at is double when && when - t <= Ahead && when - t >= -Late)
             {
-                due.Add(new BossCallout(label, Math.Max(0, when - t), false));
+                due.Add(new BossCallout(label, Math.Max(0, when - t), false, c.Id));
             }
         }
 

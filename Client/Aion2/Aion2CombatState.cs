@@ -692,6 +692,30 @@ public sealed class Aion2CombatState
         }
     }
 
+    /// <summary>The stagger readings of <paramref name="entity"/> since <paramref name="since"/>, in the order they came (the live stagger check, Combat/StaggerChecks.cs).</summary>
+    public List<StaggerEvent> StaggersSince(int entity, DateTime since)
+    {
+        lock (_gate)
+        {
+            int first = _staggerLog.Count;
+            while (first > 0 && _staggerLog[first - 1].At >= since.AddSeconds(-5))
+            {
+                first--;
+            }
+
+            return _staggerLog.Skip(first).Where(s => s.Entity == entity && s.At >= since).ToList();
+        }
+    }
+
+    /// <summary>The entity whose stagger bar the game sent last, and when (null before any).</summary>
+    public (int Entity, DateTime At)? LastStagger()
+    {
+        lock (_gate)
+        {
+            return _staggerLog.Count == 0 ? null : (_staggerLog[^1].Entity, _staggerLog[^1].At);
+        }
+    }
+
     private static void Append<T>(List<T> list, T item)
     {
         if (list.Count >= MaxLog)

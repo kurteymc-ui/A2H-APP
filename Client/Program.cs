@@ -1606,6 +1606,27 @@ internal static class Program
                 window.ShowFindResults(found);
                 window.PickFindResult(found[0]); // the one clicked: the others go, "All 2 results" brings them back
             }
+            else if (kind is "stagger" or "stagger-failed" or "stagger-tip")
+            {
+                // a stagger check over the lines: running 5.2 s into an 8 s cast, or failed with the next one expected; stagger-tip: the card with an icon's tooltip
+                // under it (a tooltip is a window of its own: drawn here as it looks)
+                window.ShowBossBar("Ultimate Berk", 2_460_000, 9_800_000, TimeSpan.FromSeconds(95), TimeSpan.FromSeconds(140));
+                var (check, now) = Ui.StaggerSample.Make(kind != "stagger");
+                window.ShowStaggerCard(check, now, Ui.StaggerSample.People, kind == "stagger" ? null : "Next stagger check: Extinction for Eternity in 41 s");
+                if (kind == "stagger-tip" && check.Credit.Players.FirstOrDefault(p => p.Player == 2) is { } goku)
+                {
+                    var tip = new System.Windows.Controls.Border
+                    {
+                        Margin = new System.Windows.Thickness(40, 0, 10, 8), Padding = new System.Windows.Thickness(9, 7, 9, 8), CornerRadius = new System.Windows.CornerRadius(5),
+                        Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x24, 0x22, 0x28)),
+                        BorderBrush = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x4A, 0x46, 0x50)), BorderThickness = new System.Windows.Thickness(1),
+                        Child = Ui.StaggerCardView.SkillTip(goku.Skills[0], Ui.StaggerSample.People[1], check),
+                    };
+                    System.Windows.Documents.TextElement.SetForeground(tip, System.Windows.Media.Brushes.WhiteSmoke);
+                    int at = window.OverlayBody.Children.IndexOf(window.OverlayStaggerCard);
+                    window.OverlayBody.Children.Insert(at + 1, tip);
+                }
+            }
             else if (kind == "bossbar")
             {
                 // the boss bar over the lines: a boss at 62 %, dying in 1:23 at the group's pace, its enrage in 2:10
