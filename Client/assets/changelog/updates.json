@@ -1,0 +1,309 @@
+{
+  "_readme": [
+    "What changed in each version of the app, written for players. The app shows the entries between the installed version and the update it offers (fetched from main, so a version that is already out can read the notes of the next one), and once after an update.",
+    "One entry per released version, newest first. Each item: kind (new, improved, fixed), area (a short word: Meter, Reports, History...), title (one line), text (what it does, in plain words) and, when it helps, example (a short real situation, with made-up player names).",
+    "The release workflow puts the same items in the GitHub release notes (Tools/changelog/release-notes.mjs)."
+  ],
+  "versions": [
+    {
+      "version": "1.20.57",
+      "date": "2026-11-07",
+      "headline": "See what an update brings before you install it",
+      "items": [
+        {
+          "kind": "new",
+          "area": "Updates",
+          "title": "What's new, right in the update prompt",
+          "text": "When a new version is ready, open \"What's new\" under the prompt to read every change since the version you have, with examples. After the update the app shows them once, so nothing slips by.",
+          "example": "You skipped a few days. The prompt lists everything since your version, newest first, so you can read it all in one place."
+        }
+      ]
+    },
+    {
+      "version": "1.20.56",
+      "date": "2026-11-07",
+      "headline": "Stagger on the meter, and accuracy in reports",
+      "items": [
+        {
+          "kind": "new",
+          "area": "Meter",
+          "title": "A Stagger button next to Group",
+          "text": "Click Stagger on the meter and the lines make room for the boss's stagger check: the mechanic, the time left, and exactly how much each player took off the bar, with the skills they used. Players who took nothing off show a red 0. Click Group (or any other scope) to get the lines back.",
+          "example": "Berk starts Extinction for Eternity. The meter shows 2.8 s left, 336 to go, and Kaivhan 50, Nyxelle 45, Seraphyne 35, Draegor 14, Lumiael 0."
+        },
+        {
+          "kind": "new",
+          "area": "Meter",
+          "title": "Earlier checks one click away",
+          "text": "Under the current check, every earlier check of the same boss sits as a small chip: green with the time it broke in, red with what was left. Click one to look at it again; a new check takes over as soon as it starts.",
+          "example": "Checks: 1 ✗ 222 left · 2 ✓ 6.4 s · 3 ✗ 66 left"
+        },
+        {
+          "kind": "new",
+          "area": "Reports",
+          "title": "A new Stagger tab",
+          "text": "The boss's stagger bar over the whole fight. Each check is a band from the cast that starts it to the end of that cast: green when the bar broke in time, red when it didn't, with what was left. Hover anywhere for the bar's exact value. Click a check, or drag across any stretch, to see who took how much off it.",
+          "example": "Drag from 0:30 to 0:41 and you see that Draegor took 49 off the bar in those eleven seconds and Lumiael none."
+        },
+        {
+          "kind": "new",
+          "area": "Reports",
+          "title": "Accuracy on the Damage tab",
+          "text": "Every skill, every player and the total now have an Accuracy figure. Against a boss, low accuracy doesn't show as a miss: the boss parries or blocks, and the hit lands for a third to half of its damage. Accuracy is the share of your hits that landed in full (a dodged attack counts as a miss too).",
+          "example": "Seraphyne 97.7%: about 2 hits in every 100 were parried or blocked."
+        },
+        {
+          "kind": "improved",
+          "area": "History",
+          "title": "Only the real bosses in the fights list",
+          "text": "In a dungeon whose bosses the app knows, side fights like Urugugu Patrol and Urugugu Shaman are no longer listed, and they no longer count in the day's kills and wipes or in your personal bests. They are still in the report of the whole run.",
+          "example": "Urugugu Canyon now lists Guardian Captain Raur, Judge Urahum and Divine Auldor, and nothing else."
+        }
+      ]
+    },
+    {
+      "version": "1.20.55",
+      "date": "2026-11-07",
+      "headline": "Stagger checks: who really used theirs",
+      "items": [
+        {
+          "kind": "new",
+          "area": "Stagger",
+          "title": "Every stagger check, player by player",
+          "text": "The app finds each stagger check of a boss (the bar fills when a mechanic starts and has to break before the cast ends) and works out exactly how much each player took off it. The Assassin's and Gladiator's stagger buff is counted: those hits take half as much again.",
+          "example": "Wave of Death, not broken: 245 of 736 left. Kaivhan 195, Seraphyne 146, Draegor 65, Lumiael 55, Nyxelle 30."
+        },
+        {
+          "kind": "new",
+          "area": "Stagger",
+          "title": "Hover a skill to see each hit",
+          "text": "Every player's line has the icons of the skills that took something off the bar. Hover one for what each hit did, which ones had the stagger buff, and when they landed. Skills that hit the boss but took nothing off show faded, so \"I used mine\" can be checked.",
+          "example": "Shadowstrike: 85 off the bar in 7 hits. Each hit 4 × 10, 3 × 15 (3 with a stagger buff)."
+        }
+      ]
+    },
+    {
+      "version": "1.20.54",
+      "date": "2026-11-07",
+      "headline": "CP calculator: the game's own level tables",
+      "items": [
+        {
+          "kind": "improved",
+          "area": "CP calculator",
+          "title": "Skill and Stigma levels as the game counts them",
+          "text": "Skills and Stigmas now go up by the game's own tables, so the CP of each next level is what you'll actually get. Daevanion steps stay within the points the game lets you spend.",
+          "example": "The suggested skill order is now levels 8, 12, 16 and 20: the levels where a skill gains the most CP."
+        }
+      ]
+    },
+    {
+      "version": "1.20.53",
+      "date": "2026-11-06",
+      "headline": "Boss timers that know the pattern",
+      "items": [
+        {
+          "kind": "improved",
+          "area": "Boss timers",
+          "title": "Next casts from the boss's pattern",
+          "text": "The boss timers now learn when a cast comes from what happened before it: the attack before, the boss's health and the time into the fight. Every version of a boss counts, and so do the fights on your own PC. Hover a timer to see what it was learned from.",
+          "example": "Flame Breath 12 s, Enrage 0:48, right over your meter's lines."
+        },
+        {
+          "kind": "improved",
+          "area": "Ranks",
+          "title": "No rank pop-up over the game",
+          "text": "After an upload your rank shows in History and on the fight's page, but no longer pops up over the game in the middle of the next pull."
+        }
+      ]
+    },
+    {
+      "version": "1.20.51",
+      "date": "2026-11-06",
+      "items": [
+        {
+          "kind": "new",
+          "area": "Black Cloud",
+          "title": "The shop's clock on the pet list",
+          "text": "The Black Cloud Merchants' pet list shows when the shop changes next, and a reminder comes every hour, so a pet you still need never goes by unseen.",
+          "example": "Black Cloud Merchants · Ashveil: ticked pets on offer. Swift Lugi, 1,200,000 Kinah."
+        }
+      ]
+    },
+    {
+      "version": "1.20.50",
+      "date": "2026-11-06",
+      "items": [
+        {
+          "kind": "improved",
+          "area": "CP calculator",
+          "title": "Cheapest upgrades first, in your build's order",
+          "text": "The next steps are sorted by CP for the Kinah they cost, and Stigmas and skills follow your class build's order. Every Stigma or skill step says whether it's part of your build."
+        }
+      ]
+    },
+    {
+      "version": "1.20.49",
+      "date": "2026-11-06",
+      "items": [
+        {
+          "kind": "fixed",
+          "area": "Meter",
+          "title": "A wipe never leaks into the next pull",
+          "text": "The next attempt starts when the boss is pulled again, not on a stray hit after the wipe. Each attempt is saved in History the moment it ends, killed or wiped."
+        }
+      ]
+    },
+    {
+      "version": "1.20.48",
+      "date": "2026-11-06",
+      "items": [
+        {
+          "kind": "new",
+          "area": "Reports",
+          "title": "Bursts, drops and deaths",
+          "text": "The fight report points out the fight's best and worst moments: where the group's damage peaked, where it dropped and why (the boss staggered, the boss casting, a death). Deaths also show on the meter, after the player's name.",
+          "example": "0:14 to 0:20: burst, 1.9× the usual while the boss was staggered. Lumiael ☠ 1:12."
+        }
+      ]
+    },
+    {
+      "version": "1.20.47",
+      "date": "2026-11-06",
+      "items": [
+        {
+          "kind": "new",
+          "area": "World bosses",
+          "title": "A world boss page with faces",
+          "text": "Every region's field bosses on one page, at the game's times to the minute, each with its portrait, here and on the overlay.",
+          "example": "Sharp Shylok, Watcher Kaira, Advisor Resana... and when each one is up next."
+        }
+      ]
+    },
+    {
+      "version": "1.20.46",
+      "date": "2026-11-06",
+      "items": [
+        {
+          "kind": "improved",
+          "area": "Streaming",
+          "title": "OBS widgets with links that keep working",
+          "text": "The Streaming page has three widgets for OBS: the meter, your character card and the boss bar. Each has its own link to paste as a browser source, and the link stays the same after a restart."
+        }
+      ]
+    },
+    {
+      "version": "1.20.45",
+      "date": "2026-11-06",
+      "headline": "Ranks, smoother play and Kinah-smart upgrades",
+      "items": [
+        {
+          "kind": "new",
+          "area": "History",
+          "title": "Your rank on every uploaded boss",
+          "text": "Upload a boss fight and History shows where your DPS ranks among everyone's fights on that boss.",
+          "example": "Talisra of the Void, 96: better than 96% of the uploaded fights."
+        },
+        {
+          "kind": "new",
+          "area": "CP calculator",
+          "title": "Upgrades priced at your server's market",
+          "text": "Every suggested step shows what it costs at your own server's market prices, so \"best value\" means best value for you."
+        },
+        {
+          "kind": "improved",
+          "area": "Performance",
+          "title": "Less lag while you play",
+          "text": "The app now takes one picture of the game window for both the menu check and the minimap, and reads the minimap less often. A new Status page shows what the app is doing, with a report you can copy when asking for help."
+        },
+        {
+          "kind": "fixed",
+          "area": "Cube finder",
+          "title": "No more wrong cube arrow",
+          "text": "The beam over a Hidden Cube and the arrow at the screen's edge are gone for now: the camera direction they relied on was never right. The distance on the meter and the map are unchanged."
+        }
+      ]
+    },
+    {
+      "version": "1.20.44",
+      "date": "2026-11-06",
+      "items": [
+        {
+          "kind": "improved",
+          "area": "Characters",
+          "title": "Characters as a table again",
+          "text": "Each character is one line of a table with its counters in small boxes, and the totals sit in one low strip on top. A narrow window shows a character's whole line when you hover it."
+        }
+      ]
+    },
+    {
+      "version": "1.20.43",
+      "date": "2026-11-06",
+      "items": [
+        {
+          "kind": "new",
+          "area": "Legion",
+          "title": "Send your legion's member list to the website",
+          "text": "From the Legion page, send the member list to atreia.app in one click. The site tells you if it can't take it (only a verified member, or a leader of a following server, may send it)."
+        }
+      ]
+    },
+    {
+      "version": "1.20.42",
+      "date": "2026-11-06",
+      "items": [
+        {
+          "kind": "fixed",
+          "area": "Legion",
+          "title": "Names with accents no longer break the list",
+          "text": "One accented name used to throw the whole member list off. Every member now shows on the legion's own server."
+        }
+      ]
+    },
+    {
+      "version": "1.20.41",
+      "date": "2026-11-06",
+      "headline": "A cleaner look everywhere",
+      "items": [
+        {
+          "kind": "improved",
+          "area": "History",
+          "title": "Your last 7 days at a glance",
+          "text": "History opens on a board of your last week: each fight against your best on that boss, and your personal bests as cards."
+        },
+        {
+          "kind": "improved",
+          "area": "Design",
+          "title": "Characters, tools and maps in the new look",
+          "text": "Clearer titles, controls together on one bar, sections under a gold line. Characters shows when your Odyle energy will be full.",
+          "example": "Odyle energy 520 / 840: full in ~4 d."
+        },
+        {
+          "kind": "improved",
+          "area": "Meter",
+          "title": "Boss health lives on the meter",
+          "text": "The boss's health is now the boss line over the meter's lines, so the separate boss health overlay is gone. Find a player has its own button on the meter."
+        }
+      ]
+    },
+    {
+      "version": "1.20.39",
+      "date": "2026-11-06",
+      "headline": "Your legion, and OBS widgets",
+      "items": [
+        {
+          "kind": "new",
+          "area": "Legion",
+          "title": "A Legion page",
+          "text": "Your legion's members, read from the game when you log in, with search and sorting, and your legion on Discord through the Atreia bot.",
+          "example": "Dawnbreakers: 24 members, average combat power 196.0K."
+        },
+        {
+          "kind": "new",
+          "area": "Streaming",
+          "title": "Three OBS widgets",
+          "text": "The meter, your character card and the boss bar, each with its own link for OBS."
+        }
+      ]
+    }
+  ]
+}

@@ -10,6 +10,7 @@ public static class SelfCheckHistory
         bool ok = true;
         ok &= RunSegmenterScenario();
         ok &= SideFights();
+        ok &= UpdateNotesCheck();
         return ok;
     }
 
@@ -77,5 +78,24 @@ public static class SelfCheckHistory
         Console.WriteLine($"  -> the three bosses and the run stay: {bossesStay}");
         Console.WriteLine($"  -> the open world and a dungeon whose bosses the table doesn't know keep every fight: {restStays}");
         return sideGone && bossesStay && restStays;
+    }
+
+    /// <summary>The update notes shipped with the app: readable, newest first, every change with a known kind, a title and a text; the ones between two
+    /// versions are those after the first up to the second.</summary>
+    private static bool UpdateNotesCheck()
+    {
+        Console.WriteLine("[selftest] Update notes:");
+        var all = AionDPS.Update.UpdateNotes.Bundled();
+        var versions = all.Select(r => AionDPS.Update.AppVersion.Parse(r.Version)).ToList();
+        bool read = all.Count >= 10;
+        bool newestFirst = versions.Zip(versions.Skip(1)).All(p => p.First > p.Second);
+        bool items = all.SelectMany(r => r.Items).All(i => i.Kind is "new" or "improved" or "fixed" && i.Title.Length > 0 && i.Text.Length > 0 && i.Area.Length > 0);
+        var between = AionDPS.Update.UpdateNotes.Between(all, new Version(1, 20, 53), new Version(1, 20, 56)).Select(r => r.Version).ToList();
+        bool range = between.SequenceEqual(new[] { "1.20.56", "1.20.55", "1.20.54" });
+        Console.WriteLine($"  -> the notes are read: {read} ({all.Count} versions)");
+        Console.WriteLine($"  -> newest first, each version once: {newestFirst}");
+        Console.WriteLine($"  -> every change has a kind, an area, a title and a text: {items}");
+        Console.WriteLine($"  -> from 1.20.53 to 1.20.56: the three after it: {range} ({string.Join(", ", between)})");
+        return read && newestFirst && items && range;
     }
 }

@@ -27,16 +27,16 @@ const vt = /VirusTotal(?: scan of the installer)?: (\d+\/\d+) detections - (\S+)
 const vtResult = arg("vt-result") ?? vt?.[1];
 const vtLink = arg("vt-link") ?? vt?.[2];
 
-// A release without its own text ("Release v1.16.0", or empty) gets the entries of its version from the changelog.
+// A release without its own text ("Release v1.16.0", or empty) gets its version's update notes, the same ones the app shows (Client/assets/changelog/updates.json).
 if (!intro || /^Release v?\d+\.\d+\.\d+$/.test(intro)) {
-  const release = JSON.parse(readFileSync(new URL("../../Web-Frontend/changelog.json", import.meta.url), "utf8")).find((r) => r.version === version);
-  // The release is about the client: entries of the website and the server only count when there is nothing else.
-  const all = release?.items ?? [];
-  const items = (all.some((i) => i.areas?.includes("Client")) ? all.filter((i) => i.areas?.includes("Client")) : all).map((i) => i.text);
+  const notes = JSON.parse(readFileSync(new URL("../../Client/assets/changelog/updates.json", import.meta.url), "utf8"));
+  const release = (notes.versions ?? []).find((r) => r.version === version);
+  const items = release?.items ?? [];
   if (items.length > 0) {
-    const shown = items.slice(0, MAX_ITEMS).map((t) => `- ${t}`);
+    const label = { new: "New", improved: "Improved", fixed: "Fixed" };
+    const shown = items.slice(0, MAX_ITEMS).map((i) => `- **${label[i.kind] ?? "Improved"} · ${i.area}: ${i.title}.** ${i.text}` + (i.example ? `\n  *Example: ${i.example}*` : ""));
     if (items.length > MAX_ITEMS) shown.push(`- and ${items.length - MAX_ITEMS} more`);
-    intro = `### What's changed\n${shown.join("\n")}`;
+    intro = (release.headline ? `### ${release.headline}\n` : "### What's changed\n") + shown.join("\n");
   } else {
     intro = `Release v${version}`;
   }

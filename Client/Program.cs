@@ -1247,7 +1247,15 @@ internal static class Program
             Announcements.NewsClient.UseForPictures(Ui.MainWindow.SampleNews());
             var window = new Ui.MainWindow { Title = Brand.AppName };
             window.BuildShell();
-            window.ShowShellPage(page);
+            window.ShowShellPage(page.StartsWith("updates", StringComparison.Ordinal) ? "home" : page);
+            if (page.StartsWith("updates", StringComparison.Ordinal))
+            {
+                // the update question with its notes: shut (updates) or open (updates-open), the notes shipped with this build
+                var releases = Update.UpdateNotes.Bundled();
+                string newest = releases.Count > 0 ? releases[0].Version : "1.0.0";
+                window.ShowUpdatePromptSample(releases.Take(6).ToList(), newest, releases.Count > 6 ? releases[6].Version : "1.0.0", page == "updates-open");
+            }
+
             const int w = 1180;
             int h = Math.Clamp(height, 400, 4000);
             var content = (System.Windows.FrameworkElement)window.Content;

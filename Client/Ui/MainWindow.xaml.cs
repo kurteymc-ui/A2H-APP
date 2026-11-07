@@ -474,6 +474,9 @@ public partial class MainWindow : Window
                 Dispatcher.BeginInvoke(new Action(() => _ = RunUpdateCheck(announceResult: false, askBeforeInstall: true)), System.Windows.Threading.DispatcherPriority.Background);
             }
 
+            // once after an update: what the new version brought (MainWindow.UpdateNotes.cs)
+            Dispatcher.BeginInvoke(new Action(ShowNotesAfterUpdate), System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+
             // Only the current version may upload (the server refuses an old one). A meter that uploads by itself asks the community server at
             // once, so an old client learns it now and not with its first fight; one that only uploads on a click learns it from that upload.
             UploadClient.ClientOutdated += required => Dispatcher.BeginInvoke(new Action(() => OnClientOutdated(required)));
@@ -6558,7 +6561,9 @@ public partial class MainWindow : Window
         UpdateRestartLaterButton.Content = loc["Main.UpdateReady.Later"];
         UpdateRestartNowButton.Content = loc["Main.UpdateReady.RestartNow"];
         UpdateRestartText.Text = string.Format(loc["Main.UpdateReady.Message"], version, AppVersion.Text);
+        UpdateRestartLaterButton.Visibility = Visibility.Visible;
         UpdateRestartOverlay.Visibility = Visibility.Visible;
+        ShowUpdateNotes(update);
     }
 
     /// <summary>The same card as <see cref="OfferRestart"/>, asking before the download: "a new version, install it? No / Yes". Shown by the start-up check.</summary>
@@ -6573,7 +6578,9 @@ public partial class MainWindow : Window
         UpdateRestartLaterButton.Content = loc["Main.UpdateAvailable.No"];
         UpdateRestartNowButton.Content = loc["Main.UpdateAvailable.Yes"];
         UpdateRestartText.Text = string.Format(loc["Main.UpdateAvailable.Message"], version, AppVersion.Text);
+        UpdateRestartLaterButton.Visibility = Visibility.Visible;
         UpdateRestartOverlay.Visibility = Visibility.Visible;
+        ShowUpdateNotes(update);
     }
 
     /// <summary>"Yes" on the start-up question: fetch the update (the notice shows the progress) and restart into it.</summary>

@@ -75,6 +75,9 @@ public sealed class MeterSettings
     public double? SettingsWindowHeight { get; set; }
 
 
+    /// <summary>The version whose update notes were last shown (or that was installed first): a newer one at start shows its notes once.</summary>
+    public string? NotesSeenVersion { get; set; }
+
     /// <summary>Whether the meter asks GitHub for a newer release -- at startup and every five
     /// minutes while it runs (see MainWindow's update timer). Default on, but a real switch and
     /// not a decorative one: this is the program's only outbound network call, and the README
