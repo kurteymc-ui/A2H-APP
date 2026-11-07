@@ -1534,6 +1534,7 @@ public partial class MainWindow : Window
             Aion2Loot.EnablePersistence();
             Aion2BlackCloud.EnablePersistence(); // every character's pets and the Black Cloud Merchant's last offers (the notes, the Pets page)
             Aion2BlackCloud.Offered += (name, offered) => Dispatcher.BeginInvoke(new Action(() => OnBlackCloudOffered(name, offered)));
+            Aion2BlackCloud.Bought += (_, pet) => Dispatcher.BeginInvoke(new Action(() => ShopMarks.Drop(pet)));
             Aion2GatherLog.EnablePersistence();
             _loot ??= new LootOverlayController();
             _gatherOverlay ??= new GatherOverlayController();

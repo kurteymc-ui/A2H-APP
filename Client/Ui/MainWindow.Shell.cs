@@ -806,10 +806,11 @@ public partial class MainWindow
         MeterSettings s = MeterSettings.Load();
         if (!s.BlackCloudPopup)
         {
+            ShopMarks.Clear();
             return;
         }
 
-        BlackCloudToast.Show(character, ToastPets(offered, WatchedShopPets(s), character));
+        ShopMarks.Look(ToastPets(offered, WatchedShopPets(s), character));
     }
 
     /// <summary>
@@ -817,9 +818,11 @@ public partial class MainWindow
     /// group (field boss, dungeon, chests, special), then name - without those the character has at the top level. A character whose collection is not known
     /// (the meter started after its login) is spared only the pets every known character has finished.
     /// </summary>
-    internal static IReadOnlyList<BlackCloudToastPet> ToastPets(IEnumerable<Aion2.BlackCloudWanted> offered, IReadOnlyCollection<int> watched, string character = "")
+    internal static IReadOnlyList<BlackCloudToastPet> ToastPets(IEnumerable<Aion2.BlackCloudWanted> offered, IReadOnlyCollection<int> watched, string character = "",
+        DateTime? utcNow = null)
     {
         var ticked = watched.ToHashSet();
+        DateTime now = utcNow ?? DateTime.UtcNow;
         string language = LocalizationManager.Instance.Language;
         int? LevelOf(Aion2.BlackCloudWanted w) =>
             character.Length == 0 ? null
@@ -827,6 +830,7 @@ public partial class MainWindow
               ?? (w.Done.Contains(character) ? Aion2.Protocol.Aion2Pets.TopLevel : (int?)null);
         return offered.Where(w => ticked.Contains(w.PetId) && Aion2.Protocol.Aion2MerchantPets.Is(w.PetId))
             .Where(w => LevelOf(w) is { } level ? level < Aion2.Protocol.Aion2Pets.TopLevel : !(w.Needed.Count == 0 && w.Done.Count > 0))
+            .Where(w => !Aion2.Aion2BlackCloud.BoughtThisRound(character, w.PetId, now)) // bought from these offers: not marked again until they renew
             .GroupBy(w => w.PetId).Select(g => new BlackCloudToastPet(g.Key, g.Where(w => w.Price > 0).Select(w => w.Price).DefaultIfEmpty(0).Min(),
                 Aion2.Protocol.Aion2MerchantPets.Of(g.Key)?.Kind, Aion2.Protocol.Aion2Pets.SpeciesOf(g.Key), LevelOf(g.First())))
             .OrderBy(p => p.Kind).ThenBy(p => Aion2.Protocol.Aion2Pets.PetName(p.PetId, language) ?? "", StringComparer.CurrentCulture).ToList();

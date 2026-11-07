@@ -2614,6 +2614,13 @@ public sealed class Aion2FrameDecoder
 
         Aion2Loot.NoteInventory(frame, timestamp);
         int itemId = unchecked((int)BinaryPrimitives.ReadUInt32LittleEndian(frame[13..]));
+        if (Aion2Pets.PetOfShopItem(itemId) is int bought)
+        {
+            // the Black Cloud shop's item of a pet came into the bag: the pet was bought (its mark on the shop goes, Aion2BlackCloud.NoteBought)
+            Aion2CharacterInfo? me = _entities.LocalCharacter;
+            Aion2BlackCloud.NoteBought(me?.Name ?? "", me?.ServerId ?? 0, bought, timestamp);
+        }
+
         if (Aion2Pets.PetOfSoulItem(itemId) is int pet)
         {
             PetFarmLog.NoteSoul(itemId, pet, unchecked((int)BinaryPrimitives.ReadUInt32LittleEndian(frame[17..])), timestamp, BinaryPrimitives.ReadUInt32LittleEndian(frame[5..]));

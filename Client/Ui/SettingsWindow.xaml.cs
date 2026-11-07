@@ -1625,8 +1625,8 @@ public partial class SettingsWindow : Window
         // the game's own genus of each pet (as the Type tab below groups them), in the Type tab's order
         var genera = new (string Key, string Shown, Color Color)[]
         {
-            ("Cognia", "Cognia", Color.FromRgb(0xFF, 0xCF, 0x7A)), ("Fera", "Fera", Color.FromRgb(0xFF, 0x9F, 0x8A)),
-            ("Natura", "Natura", Color.FromRgb(0x7B, 0xE3, 0xA6)), ("Varia", "Varia", Color.FromRgb(0xB9, 0xA2, 0xFF)),
+            ("Cognia", Aion2Pets.SpeciesShown("Cognia", loc.Language), Color.FromRgb(0xFF, 0xCF, 0x7A)), ("Fera", Aion2Pets.SpeciesShown("Fera", loc.Language), Color.FromRgb(0xFF, 0x9F, 0x8A)),
+            ("Natura", Aion2Pets.SpeciesShown("Natura", loc.Language), Color.FromRgb(0x7B, 0xE3, 0xA6)), ("Varia", Aion2Pets.SpeciesShown("Varia", loc.Language), Color.FromRgb(0xB9, 0xA2, 0xFF)),
         };
         int row = 1;
         void Line(string name, Brush? brush, IReadOnlyCollection<int> ids, bool bold)
@@ -2205,7 +2205,7 @@ public partial class SettingsWindow : Window
         {
             var (on, all) = PetCounts(species);
             bool selected = species == _petSpecies;
-            var name = new TextBlock { Text = species, FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center };
+            var name = new TextBlock { Text = Aion2Pets.SpeciesShown(species, LocalizationManager.Instance.Language), FontWeight = FontWeights.Bold, VerticalAlignment = VerticalAlignment.Center };
             name.SetResourceReference(TextBlock.ForegroundProperty, selected ? "Brush.Accent" : "Brush.Text");
             // three numbers: pets on / pets in the species / pets at the top level (blue, "Max")
             int maxCount = PetsOfSpecies(species).Count(p => IsMax(p.PetId));

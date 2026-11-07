@@ -50,7 +50,7 @@ public partial class MainWindow
         foreach (string genus in PetRoute.Genera)
         {
             string id = genus;
-            string shown = genus switch { "Cogni" => "Cognia", "Varian" => "Varia", _ => genus }; // as the meter's pet pages name them
+            string shown = Aion2Pets.SpeciesShown(Aion2Pets.SpeciesOfGenus(genus), loc.Language); // as the game names it
             CheckBox box = Check(shown, picked.Contains(id), (s, v) =>
             {
                 var list = (s.PetRouteGenera is { Count: > 0 } had ? had : PetRoute.Genera.ToList()).Where(x => x != id).ToList();

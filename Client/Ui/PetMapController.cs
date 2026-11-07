@@ -615,7 +615,7 @@ public sealed class PetMapController : IDisposable
                 if (!settings.ShowPetMap && !CubeToast.Active)
                 {
                     LocalizationManager loc = LocalizationManager.Instance;
-                    string genus = Aion2Pets.SpeciesOf(pet) is { } sp ? sp + " · " : "";
+                    string genus = Aion2Pets.SpeciesOf(pet) is { } sp ? Aion2Pets.SpeciesShown(sp, loc.Language) + " · " : "";
                     CubeToast.Note(string.Format(System.Globalization.CultureInfo.CurrentCulture, loc["PetNear.Note"], genus + (Aion2Pets.PetName(pet, loc.Language) ?? "#" + pet),
                         Math.Round(distance / 100)), 4);
                 }

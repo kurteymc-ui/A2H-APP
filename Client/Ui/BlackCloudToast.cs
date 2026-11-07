@@ -9,31 +9,21 @@ using AionDPS.Aion2.Protocol;
 
 namespace AionDPS.Ui;
 
-/// <summary>One pet of the merchant's pop-up: the pet, its lowest price on the pages read, its group, its genus (Cognia, Fera, Natura, Varia, Specia) and the
-/// level the character the shop is open on has it at (0 = not owned; null = not known).</summary>
+/// <summary>One pet the Black Cloud shop offers that the character still needs: the pet, its lowest price on the pages read, its group, its genus (Cognia,
+/// Fera, Natura, Varia, Specia) and the level the character the shop is open on has it at (0 = not owned; null = not known).</summary>
 public sealed record BlackCloudToastPet(int PetId, long Price, MerchantPetKind? Kind, string? Species = null, int? Level = null);
 
 /// <summary>
-/// The Black Cloud Merchants' pop-up over the game: the pets the character still needs that the merchant offers now (ticked, of the genera the player wants
-/// alerts for, not at the top level), each with its picture, name, genus, group, how far the character has it and price - every page of the shop read since
-/// its offers renewed together, so turning to another tab of the shop adds to it instead of replacing it. It shows while the shop is open (the game's own
-/// window is over the game then, which hides the other overlays: this one stays), above the shop's cards, click-through, never taking the focus, and fades
-/// 20 s after the last page came. Players asked for it this way (4 November 2026: pictures and names), then for the genus and the card marked on the page
-/// (7 November 2026: "so you don't have to search your screen"; <see cref="ShopMarks"/>).
+/// The pets the Black Cloud shop offers that the character still needs, marked on the shop's page itself: a frame in the genus's colour around each one's
+/// card, with its genus and how far the character has it on a tag above (players, 7 November 2026: "put another overlay over the Urugugu Brawler so you
+/// don't have to search your screen"; the owner the same day: no pop-up at the top any more, only the frames, and none for a pet once bought). The cards
+/// are found in the game window's own picture (<see cref="ShopPetFinder"/>), only for the pets of the page the shop showed last, once the page has settled;
+/// then once a second each mark is checked against a new picture and taken away when its card is gone (another tab, the shop shut) or the pet was bought.
+/// Click-through, never taking the focus, only while the game is in front.
 /// </summary>
-public static class BlackCloudToast
+public static class ShopMarks
 {
-    private static Window? _window;
-    private static Border? _body;
-    private static System.Windows.Threading.DispatcherTimer? _timer;
-    private static NativeOverlay? _native;
-
-    /// <summary>How long it stays after the last page of the shop came.</summary>
-    public static readonly TimeSpan Stay = TimeSpan.FromSeconds(20);
-
-    private static readonly Color Gold = Color.FromRgb(0xE2, 0xBE, 0x78);
-
-    /// <summary>Each genus's colour (the pop-up's chip, the mark on the shop's card): Cognia blue, Fera red, Natura green, Varia violet, Specia gold.</summary>
+    /// <summary>Each genus's colour (the mark on the shop's card, the Pets page): Cognia blue, Fera red, Natura green, Varia violet, Specia gold.</summary>
     public static Color SpeciesColor(string? species) => species switch
     {
         "Cognia" => Color.FromRgb(0x6F, 0xA8, 0xFF),
@@ -52,74 +42,6 @@ public static class BlackCloudToast
         _ => string.Format(CultureInfo.CurrentCulture, LocalizationManager.Instance["BlackCloud.LevelOf"], level, Aion2Pets.TopLevel),
     };
 
-    private static SolidColorBrush Brush(Color c, byte alpha = 0xFF)
-    {
-        var b = new SolidColorBrush(Color.FromArgb(alpha, c.R, c.G, c.B));
-        b.Freeze();
-        return b;
-    }
-
-    /// <summary>Shows (or updates) the pop-up for <paramref name="character"/> (empty: not known yet), and marks the pets' cards on the shop's page;
-    /// nothing when <paramref name="pets"/> is empty.</summary>
-    public static void Show(string character, IReadOnlyList<BlackCloudToastPet> pets, bool mark = true)
-    {
-        if (pets.Count == 0 || MainWindow.Headless || !GameWindow.OverlayMayShow(ignoreMenu: true))
-        {
-            ShopMarks.Clear();
-            return;
-        }
-
-        if (_window is null)
-        {
-            _body = new Border();
-            _window = new Window
-            {
-                WindowStyle = WindowStyle.None, AllowsTransparency = true, Background = Brushes.Transparent, Topmost = true, ShowInTaskbar = false,
-                ShowActivated = false, SizeToContent = SizeToContent.WidthAndHeight, ResizeMode = ResizeMode.NoResize, Focusable = false, Content = _body,
-            };
-            AltTabHidden.Apply(_window);
-            _window.SourceInitialized += (_, _) =>
-            {
-                _native = new NativeOverlay(_window);
-                _native.SetClickThrough(true);
-            };
-            _timer = new System.Windows.Threading.DispatcherTimer { Interval = Stay };
-            _timer.Tick += (_, _) =>
-            {
-                _timer.Stop();
-                var fade = new DoubleAnimation(0, TimeSpan.FromMilliseconds(500));
-                fade.Completed += (_, _) =>
-                {
-                    if (!_timer.IsEnabled)
-                    {
-                        _window?.Hide();
-                    }
-                };
-                _window?.BeginAnimation(UIElement.OpacityProperty, fade);
-            };
-        }
-
-        _body!.Child = Build(character, pets);
-        _window.BeginAnimation(UIElement.OpacityProperty, null);
-        _window.Opacity = 1;
-        if (!_window.IsVisible)
-        {
-            _window.Show();
-        }
-
-        _window.UpdateLayout();
-        Rect area = GameArea(_window) ?? SystemParameters.WorkArea;
-        // above the shop's cards, under its "product list will refresh" bar: the cards stand in an arch, lowest in the middle, so the middle is free
-        _window.Left = area.Left + (area.Width - _window.ActualWidth) / 2;
-        _window.Top = area.Top + area.Height * 0.125;
-        _timer!.Stop();
-        _timer.Start();
-        if (mark)
-        {
-            ShopMarks.Look(pets);
-        }
-    }
-
     /// <summary>The game window's client area in the units of <paramref name="window"/> (null when the game is not in front).</summary>
     internal static Rect? GameArea(Visual window)
     {
@@ -131,175 +53,43 @@ public static class BlackCloudToast
         return null;
     }
 
-    /// <summary>
-    /// The pop-up itself (also the picture of it): a heading (the merchant, the character, how many pets), then a line per pet - its picture in a ring of its
-    /// genus's colour, name, genus, group and how far the character has it, and the price; at most eight.
-    /// </summary>
-    public static FrameworkElement Build(string character, IReadOnlyList<BlackCloudToastPet> pets)
+    /// <summary>A pet was bought (its item came into the bag): its mark goes at once, and it is not looked for again.</summary>
+    public static void Drop(int petId)
     {
-        LocalizationManager loc = LocalizationManager.Instance;
-        var text = Brush(Color.FromRgb(0xF4, 0xEE, 0xE2));
-        var muted = Brush(Color.FromRgb(0x9C, 0xA3, 0xAD));
-        var stack = new StackPanel { MinWidth = 340, MaxWidth = 460 };
-
-        // the heading: a gold bag, BLACK CLOUD MERCHANT, the character on the right; under it how many pets it offers that the character needs
-        var head = new DockPanel { Margin = new Thickness(0, 0, 0, 2), LastChildFill = true };
-        if (character.Length > 0)
-        {
-            var who = new TextBlock { Text = character, FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = muted, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(12, 0, 0, 0) };
-            DockPanel.SetDock(who, Dock.Right);
-            head.Children.Add(who);
-        }
-
-        var title = new StackPanel { Orientation = Orientation.Horizontal };
-        title.Children.Add(new TextBlock
-        {
-            Text = "", FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"), FontSize = 12, Foreground = Brush(Gold), VerticalAlignment = VerticalAlignment.Center,
-            Margin = new Thickness(0, 0, 7, 0),
-        });
-        title.Children.Add(new TextBlock { Text = loc["BlackCloud.Title"].ToUpper(CultureInfo.CurrentCulture), FontSize = 10.5, FontWeight = FontWeights.Bold, Foreground = Brush(Gold), VerticalAlignment = VerticalAlignment.Center });
-        head.Children.Add(title);
-        stack.Children.Add(head);
-        stack.Children.Add(new TextBlock
-        {
-            Text = string.Format(CultureInfo.CurrentCulture, loc[pets.Count == 1 ? "BlackCloud.ToastOne" : "BlackCloud.ToastMany"], pets.Count), FontSize = 14,
-            FontWeight = FontWeights.SemiBold, Foreground = text, Margin = new Thickness(0, 0, 0, 8),
-        });
-
-        const int most = 8;
-        bool first = true;
-        foreach (BlackCloudToastPet pet in pets.Take(most))
-        {
-            if (!first)
-            {
-                stack.Children.Add(new Border { Height = 1, Background = Brush(Colors.White, 0x12), Margin = new Thickness(56, 0, 0, 0) });
-            }
-
-            first = false;
-            stack.Children.Add(Row(pet, text, muted));
-        }
-
-        if (pets.Count > most)
-        {
-            stack.Children.Add(new TextBlock { Text = string.Format(CultureInfo.CurrentCulture, loc["BlackCloud.ToastMore"], pets.Count - most), FontSize = 11.5, Foreground = muted, Margin = new Thickness(56, 4, 0, 0) });
-        }
-
-        return new Border
-        {
-            Background = new LinearGradientBrush(Color.FromArgb(0xF4, 0x1C, 0x1D, 0x24), Color.FromArgb(0xF4, 0x11, 0x12, 0x17), 90),
-            BorderBrush = Brush(Gold, 0x8C), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(12), Padding = new Thickness(16, 12, 16, 10), Child = stack,
-            Effect = new DropShadowEffect { BlurRadius = 22, ShadowDepth = 4, Opacity = 0.6, Color = Colors.Black },
-            Margin = new Thickness(14, 6, 14, 20), // room for the shadow
-        };
+        _pets = _pets.Where(p => p.PetId != petId).ToList();
+        _marks = _marks.Where(m => m.PetId != petId).ToList();
+        _shown = _shown.Where(m => m.PetId != petId).ToList();
+        Draw();
     }
 
-    private static FrameworkElement Row(BlackCloudToastPet pet, Brush text, Brush muted)
-    {
-        LocalizationManager loc = LocalizationManager.Instance;
-        Color genus = SpeciesColor(pet.Species);
-        var row = new Grid { Margin = new Thickness(0, 6, 0, 6) };
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-        // the portrait in a ring of the genus's colour
-        var picture = new Border
-        {
-            Width = 44, Height = 44, CornerRadius = new CornerRadius(22), Margin = new Thickness(0, 0, 12, 0), BorderThickness = new Thickness(2), BorderBrush = Brush(genus),
-            Background = new RadialGradientBrush(Color.FromArgb(0x60, genus.R, genus.G, genus.B), Color.FromArgb(0x30, 0, 0, 0)), ClipToBounds = true,
-        };
-        if (Aion2Pets.PetIconPath(pet.PetId) is { } icon)
-        {
-            try
-            {
-                var image = new BitmapImage();
-                image.BeginInit();
-                image.UriSource = new Uri(icon);
-                image.DecodePixelWidth = 80;
-                image.CacheOption = BitmapCacheOption.OnLoad;
-                image.EndInit();
-                image.Freeze();
-                picture.Child = new Image { Source = image, Width = 38, Height = 38, Clip = new EllipseGeometry(new Point(19, 19), 19, 19) };
-            }
-            catch (Exception ex) when (ex is NotSupportedException or System.IO.IOException or UriFormatException)
-            {
-                // no picture then
-            }
-        }
-
-        row.Children.Add(picture);
-
-        // the name; under it the genus as a chip, the group and how far the character has it
-        var name = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
-        name.Children.Add(new TextBlock { Text = Aion2Pets.PetName(pet.PetId, loc.Language) ?? "#" + pet.PetId, FontSize = 14.5, FontWeight = FontWeights.SemiBold, Foreground = text, TextTrimming = TextTrimming.CharacterEllipsis });
-        var tags = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 3, 0, 0) };
-        if (pet.Species is { Length: > 0 } species)
-        {
-            tags.Children.Add(new Border
-            {
-                CornerRadius = new CornerRadius(4), Padding = new Thickness(6, 0, 6, 1), Margin = new Thickness(0, 0, 8, 0), Background = Brush(genus, 0x2E), BorderBrush = Brush(genus, 0x90),
-                BorderThickness = new Thickness(1), VerticalAlignment = VerticalAlignment.Center,
-                Child = new TextBlock { Text = species, FontSize = 10.5, FontWeight = FontWeights.SemiBold, Foreground = Brush(genus) },
-            });
-        }
-
-        var words = new List<string>();
-        if (pet.Kind is { } kind)
-        {
-            words.Add(loc["BlackCloud.KindShort." + kind]);
-        }
-
-        if (LevelText(pet.Level) is { Length: > 0 } level)
-        {
-            words.Add(level);
-        }
-
-        if (words.Count > 0)
-        {
-            tags.Children.Add(new TextBlock { Text = string.Join("  ·  ", words), FontSize = 11, Foreground = muted, VerticalAlignment = VerticalAlignment.Center });
-        }
-
-        name.Children.Add(tags);
-        Grid.SetColumn(name, 1);
-        row.Children.Add(name);
-        if (pet.Price > 0)
-        {
-            var price = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(18, 0, 0, 0) };
-            price.Children.Add(new TextBlock { Text = pet.Price.ToString("N0", CultureInfo.CurrentCulture), FontSize = 15, FontWeight = FontWeights.Bold, Foreground = Brush(Gold), HorizontalAlignment = HorizontalAlignment.Right });
-            price.Children.Add(new TextBlock { Text = "Kinah", FontSize = 10.5, Foreground = muted, HorizontalAlignment = HorizontalAlignment.Right });
-            Grid.SetColumn(price, 2);
-            row.Children.Add(price);
-        }
-
-        return row;
-    }
-}
-
-/// <summary>
-/// The pets of the pop-up marked on the shop's page itself: a frame in the genus's colour around each one's card, with its genus and how far the character
-/// has it on a tag above (players, 7 November 2026: "put another overlay over the Urugugu Brawler so you don't have to search your screen"). The cards are
-/// found in the game window's own picture (<see cref="ShopPetFinder"/>), only for the pets of the page the shop showed last, once the page has settled; then
-/// once a second each mark is checked against a new picture and taken away when its card is gone (another tab, the shop shut). Click-through, never
-/// taking the focus, only while the game is in front.
-/// </summary>
-public static class ShopMarks
-{
     private static Window? _window;
     private static Canvas? _canvas;
     private static System.Windows.Threading.DispatcherTimer? _check;
+    private static System.Windows.Threading.DispatcherTimer? _input;
     private static IReadOnlyList<BlackCloudToastPet> _pets = Array.Empty<BlackCloudToastPet>();
-    private static List<ShopPetFinder.Found> _marks = new();
+
+    /// <summary>Where the cards of the page are (found when the page came); <see cref="_shown"/>: the ones drawn now, whose card is still there.</summary>
+    private static List<ShopPetFinder.Found> _marks = new(), _shown = new();
+
     private static int _generation;
     private static bool _busy;
     private static DateTime _until;
 
+    /// <summary>A click or a key since the last look: the marks are away until the screen has settled and the cards are checked again.</summary>
+    private static bool _stale;
+    private static DateTime _lastInput;
+    private static bool _mouseWas, _keyWas;
+
     /// <summary>A mark stays while its card still matches at least this well.</summary>
     private const double Keep = 0.7;
+
+    /// <summary>How long after the last click or key the cards are checked again (the game's window opened or shut by then).</summary>
+    private static readonly TimeSpan Settle = TimeSpan.FromMilliseconds(400);
 
     /// <summary>Looks for the cards of <paramref name="pets"/> on the shop's page (a moment after the page came, and again a little later while it settles).</summary>
     public static void Look(IReadOnlyList<BlackCloudToastPet> pets)
     {
-        if (MainWindow.Headless || !MeterSettings.Load().BlackCloudMark)
+        if (MainWindow.Headless || !MeterSettings.Load().BlackCloudPopup || !GameWindow.OverlayMayShow(ignoreMenu: true))
         {
             Clear();
             return;
@@ -310,22 +100,26 @@ public static class ShopMarks
         _pets = pets.Where(p => onPage.Contains(p.PetId)).ToList();
         int generation = ++_generation;
         _until = DateTime.UtcNow.AddMinutes(3);
+        _marks = new();
+        _shown = new();
+        _stale = false;
+        Draw();
         if (_pets.Count == 0)
         {
             Clear();
             return;
         }
 
-        EnsureTimer();
+        EnsureTimers();
         foreach (int ms in new[] { 450, 1300, 2600 })
         {
             var once = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(ms) };
             once.Tick += (_, _) =>
             {
                 once.Stop();
-                if (generation == _generation && (_marks.Count < _pets.Count || ms == 1300))
+                if (generation == _generation && !_stale && (_marks.Count < _pets.Count || ms == 1300))
                 {
-                    Search(generation);
+                    Search(generation, anySize: true);
                 }
             };
             once.Start();
@@ -337,24 +131,68 @@ public static class ShopMarks
     {
         _generation++;
         _marks = new();
+        _shown = new();
         _check?.Stop();
+        _input?.Stop();
         _canvas?.Children.Clear();
         _window?.Hide();
     }
 
-    private static void EnsureTimer()
+    private static void EnsureTimers()
     {
         if (_check is null)
         {
             _check = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
             _check.Tick += (_, _) => Verify();
+            _input = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(40) };
+            _input.Tick += (_, _) => WatchInput();
         }
 
         _check.Start();
+        _input!.Start();
+    }
+
+    /// <summary>
+    /// 25 times a second: a click or a key (pressed now, not one held) takes the marks away at once - a click on a card opens the game's purchase question
+    /// over the page, Esc shuts the shop, a tab turns the page (7 November 2026, the owner: "when clicking the pet it bugs out to the side, it should
+    /// instantly just go away"). Once nothing was pressed for <see cref="Settle"/>, the cards are checked where they were and the marks come back only on
+    /// those still there and not dimmed by a window of the game.
+    /// </summary>
+    private static void WatchInput()
+    {
+        bool mouse = GameWindow.MouseButtonDown(), key = GameWindow.AnyKeyDown();
+        bool pressed = (mouse && !_mouseWas) || (key && !_keyWas) || mouse;
+        _mouseWas = mouse;
+        _keyWas = key;
+        if (pressed)
+        {
+            _lastInput = DateTime.UtcNow;
+            _stale = true;
+            if (_shown.Count > 0)
+            {
+                _shown = new();
+                Draw();
+            }
+
+            return;
+        }
+
+        if (_stale && !_busy && DateTime.UtcNow - _lastInput >= Settle)
+        {
+            _stale = false;
+            if (_marks.Count > 0)
+            {
+                Recheck();
+            }
+            else
+            {
+                Search(_generation, anySize: false);
+            }
+        }
     }
 
     /// <summary>A new picture of the game, its coarse and fine copies made on a worker (the picture is the game window's client area in real pixels).</summary>
-    private static bool Picture(out ColorPlanes? coarse, out ColorPlanes? fine)
+    private static bool Picture(out ColorPlanes? coarse, out ColorPlanes? fine, bool coarseToo = true)
     {
         coarse = fine = null;
         IntPtr game = GameWindow.ForegroundGame();
@@ -364,19 +202,25 @@ public static class ShopMarks
         }
 
         ColorPlanes? c = null, f = null;
-        bool ok = GameCapture.Use(game, size, TimeSpan.FromMilliseconds(250), bitmap =>
+        bool ok = GameCapture.Use(game, size, TimeSpan.FromMilliseconds(150), bitmap =>
         {
             int cw = (int)Math.Round(bitmap.Width * (double)ShopPetFinder.CoarseHeight / bitmap.Height);
             int fw = (int)Math.Round(bitmap.Width * (double)ShopPetFinder.FineHeight / bitmap.Height);
-            c = ColorPlanes.Of(bitmap, cw, ShopPetFinder.CoarseHeight);
+            if (coarseToo)
+            {
+                c = ColorPlanes.Of(bitmap, cw, ShopPetFinder.CoarseHeight);
+            }
+
             f = ColorPlanes.Of(bitmap, fw, ShopPetFinder.FineHeight);
         });
         coarse = c;
         fine = f;
-        return ok && c is not null && f is not null;
+        return ok && f is not null && (!coarseToo || c is not null);
     }
 
-    private static void Search(int generation)
+    /// <summary>The cards looked for on the whole page (a page that came; <paramref name="anySize"/> only then: later looks keep to the cards' size, so the
+    /// purchase question's bigger picture of the pet is never taken for its card).</summary>
+    private static void Search(int generation, bool anySize)
     {
         if (_busy || !GameWindow.OverlayMayShow(ignoreMenu: true))
         {
@@ -394,7 +238,7 @@ public static class ShopMarks
                     return null;
                 }
 
-                return ShopPetFinder.Find(coarse!, fine!, pets.Select(p => p.PetId), ShopPetFinder.Icon);
+                return ShopPetFinder.Find(coarse!, fine!, pets.Select(p => p.PetId), ShopPetFinder.Icon, anySize);
             }
             catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or OutOfMemoryException or System.Runtime.InteropServices.ExternalException)
             {
@@ -405,19 +249,21 @@ public static class ShopMarks
             Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
             {
                 _busy = false;
-                if (generation != _generation || !task.IsCompletedSuccessfully || task.Result is not { } found)
+                if (generation != _generation || _stale || !task.IsCompletedSuccessfully || task.Result is not { } found)
                 {
-                    return;
+                    return; // another page meanwhile, or a click since the picture: the next look decides
                 }
 
-                // a card found again keeps its place; one found now is added
-                _marks = found;
+                var still = _pets.Select(p => p.PetId).ToHashSet();
+                _marks = found.Where(f => still.Contains(f.PetId)).ToList();
+                _shown = _marks;
                 Draw();
             }));
         }, TaskScheduler.Default);
     }
 
-    /// <summary>Once a second: each mark is checked on a new picture (the card still there, matching); gone when not, or after a few minutes.</summary>
+    /// <summary>Once a second (and after a click has settled): each card is checked where it was found; a mark shows only while its card matches and is not
+    /// dimmed (the game's purchase question over the page); gone for good after a few minutes or with the game behind another window.</summary>
     private static void Verify()
     {
         if (DateTime.UtcNow > _until || !GameWindow.OverlayMayShow(ignoreMenu: true))
@@ -426,11 +272,14 @@ public static class ShopMarks
             return;
         }
 
-        if (_marks.Count == 0 || _busy)
+        if (_marks.Count > 0 && !_busy && !_stale)
         {
-            return;
+            Recheck();
         }
+    }
 
+    private static void Recheck()
+    {
         _busy = true;
         var marks = _marks;
         int generation = _generation;
@@ -438,12 +287,12 @@ public static class ShopMarks
         {
             try
             {
-                if (!Picture(out _, out ColorPlanes? fine))
+                if (!Picture(out _, out ColorPlanes? fine, coarseToo: false))
                 {
                     return null;
                 }
 
-                return marks.Where(m => ShopPetFinder.Icon(m.PetId) is { } icon && ScoreAndDispose(fine!, icon, m) >= Keep).ToList();
+                return marks.Where(m => ShopPetFinder.Icon(m.PetId) is { } icon && StillThere(fine!, icon, m)).ToList();
             }
             catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or OutOfMemoryException or System.Runtime.InteropServices.ExternalException)
             {
@@ -454,32 +303,35 @@ public static class ShopMarks
             Application.Current?.Dispatcher.BeginInvoke(new Action(() =>
             {
                 _busy = false;
-                if (generation != _generation || !task.IsCompletedSuccessfully || task.Result is not { } kept)
+                if (generation != _generation || _stale || !task.IsCompletedSuccessfully || task.Result is not { } kept)
                 {
                     return;
                 }
 
-                if (kept.Count != _marks.Count)
+                kept = kept.Where(m => _pets.Any(p => p.PetId == m.PetId)).ToList();
+                if (kept.Count != _shown.Count || kept.Any(k => !_shown.Contains(k)))
                 {
-                    _marks = kept;
+                    _shown = kept;
                     Draw();
                 }
             }));
         }, TaskScheduler.Default);
     }
 
-    private static double ScoreAndDispose(ColorPlanes fine, System.Drawing.Bitmap icon, ShopPetFinder.Found at)
+    /// <summary>The card still matches where it was found and is about as bright as then (a window of the game over the page dims it to well under that).</summary>
+    private static bool StillThere(ColorPlanes fine, System.Drawing.Bitmap icon, ShopPetFinder.Found at)
     {
         using (icon)
         {
-            return ShopPetFinder.ScoreAt(fine, icon, at);
+            var (score, light) = ShopPetFinder.ScoreAt(fine, icon, at);
+            return score >= Keep && (at.Light <= 0 || light >= 0.75 * at.Light);
         }
     }
 
     /// <summary>The frames over the game: one window as large as the game's client area, a frame and a tag for each card found.</summary>
     private static void Draw()
     {
-        if (_marks.Count == 0)
+        if (_shown.Count == 0)
         {
             _canvas?.Children.Clear();
             _window?.Hide();
@@ -503,7 +355,7 @@ public static class ShopMarks
             _window.Show();
         }
 
-        if (BlackCloudToast.GameArea(_window) is not { } area)
+        if (GameArea(_window) is not { } area)
         {
             _window.Hide();
             return;
@@ -519,7 +371,7 @@ public static class ShopMarks
         _window.Width = area.Width;
         _window.Height = area.Height;
         _canvas!.Children.Clear();
-        foreach (ShopPetFinder.Found found in _marks)
+        foreach (ShopPetFinder.Found found in _shown)
         {
             BlackCloudToastPet? pet = _pets.FirstOrDefault(p => p.PetId == found.PetId);
             foreach (UIElement part in Mark(found, pet, area.Width, area.Height))
@@ -535,7 +387,7 @@ public static class ShopMarks
     internal static IEnumerable<UIElement> Mark(ShopPetFinder.Found found, BlackCloudToastPet? pet, double width, double height)
     {
         var (x, y, w, h) = found.Card;
-        Color color = BlackCloudToast.SpeciesColor(pet?.Species);
+        Color color = SpeciesColor(pet?.Species);
         var frame = new Border
         {
             Width = w * width, Height = h * height, CornerRadius = new CornerRadius(10), BorderThickness = new Thickness(3),
@@ -549,10 +401,10 @@ public static class ShopMarks
         var words = new List<string>();
         if (pet?.Species is { Length: > 0 } species)
         {
-            words.Add(species);
+            words.Add(Aion2Pets.SpeciesShown(species, LocalizationManager.Instance.Language));
         }
 
-        if (BlackCloudToast.LevelText(pet?.Level) is { Length: > 0 } level)
+        if (LevelText(pet?.Level) is { Length: > 0 } level)
         {
             words.Add(level);
         }

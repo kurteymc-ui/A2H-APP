@@ -27,8 +27,15 @@ public static class Aion2Pets
     /// <summary>The species of a pet as the pet window groups them: Cognia (Intellect), Fera (Feral), Natura (Nature), Varia (Trans), Specia (Special).</summary>
     public static string? SpeciesOf(int petId) => Data.PetSpecies.TryGetValue(petId, out string? s) ? s : null;
 
-    /// <summary>The species in the order of the pet window.</summary>
+    /// <summary>The species in the order of the pet window (the meter's own keys, the German client's names; shown by <see cref="SpeciesShown"/>).</summary>
     public static readonly string[] Species = { "Cognia", "Fera", "Natura", "Varia", "Specia" };
+
+    /// <summary>A species as the game names it in a language (English: Cogni, Fera, Natura, Varian, Special), from the game's own table.</summary>
+    public static string SpeciesShown(string species, string language) =>
+        Array.IndexOf(Species, species) is int i and >= 0 ? Aion2Artwork.SpeciesName(i + 2, language) : species;
+
+    /// <summary>The meter's key of a genus the pet route names (Cogni, Natura, Fera, Varian, the website's).</summary>
+    public static string SpeciesOfGenus(string genus) => genus switch { "Cogni" => "Cognia", "Varian" => "Varia", "Special" => "Specia", _ => genus };
 
     /// <summary>The pets of one species whose monsters have spawn points on a map (the ones the pet map can show), by name in a language.</summary>
     public static IReadOnlyList<(int PetId, string Name)> MapPetsOf(string species, string language) =>

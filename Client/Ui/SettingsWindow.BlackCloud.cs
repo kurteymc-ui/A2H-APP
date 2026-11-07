@@ -49,14 +49,12 @@ public partial class SettingsWindow
         s.BlackCloudRenewNote = BlackCloudRenewBox.IsChecked ?? true;
         s.BlackCloudClock = BlackCloudClockBox.IsChecked ?? true;
         s.BlackCloudUnwatched = _blackCloudUnwatched.OrderBy(i => i).ToList();
-        s.BlackCloudMark = _blackCloudMarkBox?.IsChecked ?? true;
         s.PetAlertSpecies = _petAlertSpecies.Count == 0 || Aion2Pets.Species.All(_petAlertSpecies.Contains) ? null : Aion2Pets.Species.Where(_petAlertSpecies.Contains).ToList();
         s.ShowMapOnPet = _petNearBox?.IsChecked ?? false;
         s.PetNearMetres = (_petNearRange?.SelectedItem as ComboBoxItem)?.Tag is int metres ? metres : s.PetNearMetres;
     }
 
     private readonly HashSet<string> _petAlertSpecies = new();
-    private CheckBox? _blackCloudMarkBox;
     private CheckBox? _petNearBox;
     private ComboBox? _petNearRange;
 
@@ -85,9 +83,9 @@ public partial class SettingsWindow
         {
             string id = species;
             var label = new StackPanel { Orientation = Orientation.Horizontal };
-            label.Children.Add(new System.Windows.Shapes.Ellipse { Width = 9, Height = 9, Fill = new SolidColorBrush(BlackCloudToast.SpeciesColor(id)), VerticalAlignment = VerticalAlignment.Center,
+            label.Children.Add(new System.Windows.Shapes.Ellipse { Width = 9, Height = 9, Fill = new SolidColorBrush(ShopMarks.SpeciesColor(id)), VerticalAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 6, 0) });
-            var name = new TextBlock { Text = id, VerticalAlignment = VerticalAlignment.Center };
+            var name = new TextBlock { Text = Aion2Pets.SpeciesShown(id, loc.Language), VerticalAlignment = VerticalAlignment.Center };
             name.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
             label.Children.Add(name);
             var box = new CheckBox { Content = label, IsChecked = _petAlertSpecies.Contains(id), Margin = new Thickness(0, 0, 18, 4), VerticalContentAlignment = VerticalAlignment.Center };
@@ -136,14 +134,6 @@ public partial class SettingsWindow
         stack.Children.Add(how);
         var card = new Border { Style = (Style)FindResource("SettingsCard"), Child = stack };
         PanelPets.Children.Insert(Math.Min(1, PanelPets.Children.Count), card);
-
-        // in the Black Cloud card, under its switches: the card marked on the shop's page
-        _blackCloudMarkBox = new CheckBox { Content = loc["BlackCloud.Mark"], ToolTip = loc["BlackCloud.Mark.Tip"], IsChecked = settings.BlackCloudMark, Margin = new Thickness(0, 4, 0, 10) };
-        if (BlackCloudClockBox.Parent is Panel holder)
-        {
-            BlackCloudClockBox.Margin = new Thickness(0, 4, 0, 0);
-            holder.Children.Insert(holder.Children.IndexOf(BlackCloudClockBox) + 1, _blackCloudMarkBox);
-        }
     }
 
     /// <summary>The ticked list and the offers, made again (a collection or an offer changed, or a tick).</summary>
@@ -244,7 +234,7 @@ public partial class SettingsWindow
             }
         }
 
-        string species = Aion2Pets.SpeciesOf(w.PetId) ?? ""; // the game's own genus names (Cognia, Fera, Natura, Varia, Specia)
+        string species = Aion2Pets.SpeciesOf(w.PetId) is { } key ? Aion2Pets.SpeciesShown(key, language) : ""; // the game's own genus names (English: Cogni, Fera, Natura, Varian, Special)
         var text = new TextBlock { VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap, MaxWidth = BlackCloudTextWidth - 70 };
         var name = new Run(Aion2Pets.PetName(w.PetId, language) ?? "#" + w.PetId) { FontWeight = FontWeights.SemiBold };
         name.SetResourceReference(TextElement.ForegroundProperty, "Brush.Text");

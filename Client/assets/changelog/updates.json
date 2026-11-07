@@ -6,6 +6,40 @@
   ],
   "versions": [
     {
+      "version": "1.20.60",
+      "date": "2026-11-07",
+      "headline": "Just the frames on the Black Cloud shop, and updates straight to the newest",
+      "items": [
+        {
+          "kind": "improved",
+          "area": "Black Cloud",
+          "title": "Only the frames on the shop, no pop-up",
+          "text": "The pop-up at the top of the screen is gone: the pets you still need are just framed on the shop's page, with their genus and level. A pet you buy loses its frame at once and isn't marked again until the merchant's offers renew, and finished pets are never marked.",
+          "example": "You buy Furious Feruk: its frame goes away right there, and the next time you open the shop this hour it stays unmarked."
+        },
+        {
+          "kind": "fixed",
+          "area": "Black Cloud",
+          "title": "Frames that stayed when you clicked",
+          "text": "Clicking a card opened the purchase window, but the frame stayed where the card had been. Now any click or key takes the frames away at once, and they come back only on cards that are still there once the screen has settled.",
+          "example": "Click Furious Feruk, the purchase window opens: no frame floating over it. Cancel it, and the frame is back on the card."
+        },
+        {
+          "kind": "improved",
+          "area": "Pets",
+          "title": "The genera named as the game names them",
+          "text": "Cogni, Fera, Natura, Varian and Special, as in the game (in your game's language), on the Pets page, the shop frames, the map note and the pet route."
+        },
+        {
+          "kind": "improved",
+          "area": "Updates",
+          "title": "Straight to the newest version",
+          "text": "An update now always goes to the newest version, in one restart, however many you skipped. One that was downloaded earlier isn't put in on its own any more when a newer one is out, and \"What's new\" lists every change from all the versions you missed.",
+          "example": "You were on 1.20.55: one update takes you to the newest, and What's new shows 1.20.56 to today in one list."
+        }
+      ]
+    },
+    {
       "version": "1.20.59",
       "date": "2026-11-07",
       "headline": "The Black Cloud pop-up redone, its pets marked on the shop, and pet alerts your way",
@@ -37,13 +71,6 @@
           "title": "The map comes up when a pet you need is near",
           "text": "Switch it on in Pet alerts and pick how near (100 m to 1 km). When your character comes that close to a monster of a pet you still need, of the genera you picked, the interactive map comes up over the game with a note of which pet and how far, like it does for a Hidden Cube. It goes again 10 seconds after none is that near, and works with the map switched off.",
           "example": "Within 300 m of a Vivel spawn you still need: the map pops up with \"Fera · Vivel nearby · 240 m\"."
-        },
-        {
-          "kind": "improved",
-          "area": "Updates",
-          "title": "Straight to the newest version",
-          "text": "An update now always goes to the newest version, in one restart, however many you skipped. One that was downloaded earlier isn't put in on its own any more when a newer one is out, and \"What's new\" lists every change from all the versions you missed.",
-          "example": "You were on 1.20.55: one update takes you to the newest, and What's new shows 1.20.56 to today in one list."
         }
       ]
     },

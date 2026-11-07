@@ -17843,28 +17843,20 @@
     "zh-TW": "無法在開放世界刷到的商人寵物：只來自野外首領、只在副本中、只來自寶箱和商店，以及特殊寵物。遊戲只在你打開商店時（任何角色）發送商品；計量器會記住它們以及刷新時間。"
   },
   "BlackCloud.Popup": {
-    "en": "Pop-up in the game when it offers a ticked pet",
-    "de": "Hinweis im Spiel, wenn ein angehaktes Pet angeboten wird",
-    "fr": "Notification en jeu quand un familier coché est proposé",
-    "es": "Aviso en el juego cuando ofrece una mascota marcada",
-    "ru": "Уведомление в игре, когда предлагается отмеченный питомец",
-    "zh": "商店出售已勾选的宠物时在游戏中弹出提示",
-    "pt": "Aviso no jogo quando um mascote marcado estiver à venda",
-    "ja": "チェックしたペットが並んだらゲーム内に通知",
-    "ko": "체크한 펫이 나오면 게임 안에 알림",
-    "zh-TW": "商店出售已勾選的寵物時在遊戲中彈出提示"
+    "en": "Mark the pets I still need on the shop's page",
+    "de": "Haustiere, die mir fehlen, auf der Seite des Shops markieren",
+    "fr": "Marquer sur la page de la boutique les familiers qui me manquent",
+    "es": "Marcar en la página de la tienda las mascotas que me faltan",
+    "pt": "Marcar na página da loja os mascotes que ainda me faltam",
+    "ru": "Отмечать на странице магазина питомцев, которые мне нужны"
   },
   "BlackCloud.Popup.Tip": {
-    "en": "When you open the shop on any character and it sells a ticked pet that character still needs (of the genera picked under Pet alerts; finished pets never come): a pop-up over the game, also while the shop is open, with each pet's picture, name, genus, group, level and price. Every tab of the shop you open adds to it; it stays 20 seconds after the last one.",
-    "de": "Wenn du den Laden mit einem Charakter öffnest und er eines der angehakten Pets verkauft: ein Pop-up über dem Spiel, auch bei offenem Laden, mit Bild, Name, Gruppe und Preis jedes Pets. Jeder Reiter des Ladens, den du öffnest, kommt dazu; es bleibt 20 Sekunden nach dem letzten.",
-    "fr": "Quand vous ouvrez la boutique avec un personnage et qu'elle vend un des familiers cochés : une fenêtre sur le jeu, même boutique ouverte, avec l'image, le nom, le groupe et le prix de chaque familier. Chaque onglet de la boutique que vous ouvrez s'y ajoute ; elle reste 20 secondes après le dernier.",
-    "es": "Cuando abres la tienda con cualquier personaje y vende una de las mascotas marcadas: un aviso sobre el juego, también con la tienda abierta, con la imagen, el nombre, el grupo y el precio de cada mascota. Cada pestaña de la tienda que abras se suma; se queda 20 segundos tras la última.",
-    "ru": "Когда вы открываете магазин любым персонажем и в нем продается отмеченный питомец: окно поверх игры, в том числе при открытом магазине, с картинкой, именем, группой и ценой каждого питомца. Каждая открытая вкладка магазина добавляется; окно держится 20 секунд после последней.",
-    "zh": "在任一角色上打开商店且其出售已勾选的宠物时：在游戏上方弹出提示（商店打开时也会显示），列出每只宠物的图片、名称、分组和价格。打开的每个商店分页都会加入其中；最后一个分页后保留 20 秒。",
-    "pt": "Quando você abre a loja com qualquer personagem e ela vende um dos mascotes marcados: um aviso sobre o jogo, também com a loja aberta, com a imagem, o nome, o grupo e o preço de cada mascote. Cada aba da loja que você abre é somada; ele fica 20 segundos após a última.",
-    "ja": "どのキャラクターでもショップを開き、チェックしたペットが販売されているとき：ショップを開いたままでもゲーム上にポップアップを表示し、各ペットの画像・名前・グループ・価格を示します。開いたショップのタブはすべて追加され、最後のタブから20秒間表示されます。",
-    "ko": "어느 캐릭터로든 상점을 열었을 때 체크한 펫을 팔면: 상점이 열린 상태에서도 게임 위에 팝업이 뜨고, 각 펫의 그림, 이름, 그룹, 가격을 보여 줍니다. 연 상점 탭은 모두 더해지며, 마지막 탭 후 20초 동안 남습니다.",
-    "zh-TW": "在任一角色上打開商店且其出售已勾選的寵物時：在遊戲上方彈出提示（商店開著時也會顯示），列出每隻寵物的圖片、名稱、分組和價格。打開的每個商店分頁都會加入其中；最後一個分頁後保留 20 秒。"
+    "en": "When you open the shop and it sells a ticked pet that character still needs (of the genera picked under Pet alerts), its card gets a frame in the genus's colour with its genus and level. Pets the character has finished, and pets you just bought from these offers, are never marked. A click or a key takes the frames away until the page has settled.",
+    "de": "Wenn du den Laden öffnest und er ein angehaktes Haustier verkauft, das dem Charakter noch fehlt (der unter Haustier-Hinweise gewählten Spezies), bekommt seine Karte einen Rahmen in der Farbe der Spezies mit Spezies und Stufe. Fertige Haustiere und gerade aus diesen Angeboten gekaufte werden nie markiert. Ein Klick oder eine Taste nimmt die Rahmen weg, bis die Seite ruhig ist.",
+    "fr": "Quand vous ouvrez la boutique et qu'elle vend un familier coché qui manque encore au personnage (des genres choisis sous Alertes de familiers), sa carte reçoit un cadre de la couleur du genre avec son genre et son niveau. Les familiers terminés et ceux que vous venez d'acheter dans ces offres ne sont jamais marqués. Un clic ou une touche retire les cadres jusqu'à ce que la page soit stable.",
+    "es": "Cuando abres la tienda y vende una mascota marcada que al personaje aún le falta (de los géneros elegidos en Avisos de mascotas), su carta recibe un marco del color del género con su género y nivel. Las mascotas terminadas y las que acabas de comprar de estas ofertas nunca se marcan. Un clic o una tecla quita los marcos hasta que la página se asienta.",
+    "pt": "Quando você abre a loja e ela vende um mascote marcado que o personagem ainda precisa (dos gêneros escolhidos em Alertas de mascotes), o card dele ganha uma moldura na cor do gênero com gênero e nível. Mascotes já completos e os que você acabou de comprar dessas ofertas nunca são marcados. Um clique ou tecla tira as molduras até a página assentar.",
+    "ru": "Когда вы открываете магазин и он продаёт отмеченного питомца, который ещё нужен персонажу (выбранных в «Оповещениях о питомцах» видов), его карточка получает рамку цвета вида с видом и уровнем. Завершённые питомцы и только что купленные из этих предложений никогда не отмечаются. Щелчок или клавиша убирают рамки, пока страница не успокоится."
   },
   "BlackCloud.RenewNote": {
     "en": "Pop-up when its offers renew",
@@ -22629,12 +22621,12 @@
     "ru": "Оповещения о питомцах"
   },
   "PetAlerts.Hint": {
-    "en": "The genera you want alerts for: the Black Cloud pop-up and its note, and the map below. Pets you already have at the top level never alert you.",
-    "de": "Die Spezies, für die du Hinweise willst: das Black-Cloud-Pop-up und sein Hinweis sowie die Karte unten. Haustiere, die du schon auf der höchsten Stufe hast, melden sich nie.",
-    "fr": "Les genres pour lesquels vous voulez des alertes : la fenêtre du Marchand du Nuage noir et sa note, et la carte ci-dessous. Les familiers déjà au niveau maximal ne déclenchent jamais d'alerte.",
-    "es": "Los géneros de los que quieres avisos: la ventana del Mercader de la Nube Negra y su nota, y el mapa de abajo. Las mascotas que ya tienes al nivel máximo nunca avisan.",
-    "pt": "Os gêneros dos quais você quer alertas: a janela do Mercador da Nuvem Negra e seu aviso, e o mapa abaixo. Mascotes que você já tem no nível máximo nunca alertam.",
-    "ru": "Виды, о которых вы хотите оповещения: окно торговца Чёрного облака, его заметка и карта ниже. Питомцы, уже прокачанные до максимума, никогда не оповещают."
+    "en": "The genera you want alerts for: the pets marked on the Black Cloud shop, its note when the offers renew, and the map below. Pets you already have at the top level never alert you.",
+    "de": "Die Spezies, für die du Hinweise willst: die im Black-Cloud-Shop markierten Haustiere, der Hinweis bei neuen Angeboten und die Karte unten. Haustiere, die du schon auf der höchsten Stufe hast, melden sich nie.",
+    "fr": "Les genres pour lesquels vous voulez des alertes : les familiers marqués dans la boutique du Nuage noir, sa note au renouvellement des offres et la carte ci-dessous. Les familiers déjà au niveau maximal ne déclenchent jamais d'alerte.",
+    "es": "Los géneros de los que quieres avisos: las mascotas marcadas en la tienda de la Nube Negra, su nota cuando se renuevan las ofertas y el mapa de abajo. Las mascotas que ya tienes al nivel máximo nunca avisan.",
+    "pt": "Os gêneros dos quais você quer alertas: os mascotes marcados na loja da Nuvem Negra, o aviso quando as ofertas renovam e o mapa abaixo. Mascotes que você já tem no nível máximo nunca alertam.",
+    "ru": "Виды, о которых вы хотите оповещения: питомцы, отмеченные в магазине Чёрного облака, его заметка при обновлении предложений и карта ниже. Питомцы, уже прокачанные до максимума, никогда не оповещают."
   },
   "PetAlerts.Map": {
     "en": "Bring up the interactive map near a pet I still need,",

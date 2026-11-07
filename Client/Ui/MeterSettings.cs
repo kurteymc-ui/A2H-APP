@@ -745,7 +745,8 @@ public sealed class MeterSettings
     /// <summary>A Hidden Cube coming into range brings the pet map back when it is hidden (the hotkey, the module's switch or the map's own switch), until 10 seconds after the last cube is gone, without saving the switch (Stacy's idea, 17 October 2026). Only where the map shows cubes. Off by default.</summary>
     public bool ShowMapOnCube { get; set; }
 
-    /// <summary>A note over the game when the Black Cloud Merchant offers one of the ticked pets only it sells (on opening the shop, any character). On by default.</summary>
+    /// <summary>The cards of the ticked pets the Black Cloud Merchant offers that the character still needs are marked on the shop's page (ShopMarks; it was a
+    /// pop-up at the top until 7 November 2026). On by default.</summary>
     public bool BlackCloudPopup { get; set; } = true;
 
     /// <summary>A note over the game when the merchant's offers have renewed for a character that still needs a ticked pet (the shop then has to be opened to see
@@ -757,9 +758,6 @@ public sealed class MeterSettings
 
     /// <summary>The pets only the merchant sells that the player unticked (finished, or not wanted): no note for them. Every other one is ticked, new ones too.</summary>
     public List<int> BlackCloudUnwatched { get; set; } = new();
-
-    /// <summary>The card of a pet of the pop-up is marked on the shop's page (found in the game window's picture, see ShopMarks). On by default.</summary>
-    public bool BlackCloudMark { get; set; } = true;
 
     /// <summary>The genera the pet alerts are for (Cognia, Fera, Natura, Varia, Specia: <see cref="Aion2.Protocol.Aion2Pets.Species"/>); null or empty: every
     /// one. The Black Cloud pop-up, its renewal note and the map that comes up near a pet follow it (7 November 2026: "if they don't want other types they don't

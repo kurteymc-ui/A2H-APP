@@ -27,6 +27,9 @@ public sealed class BlackCloudCharacter
 
     /// <summary>The renewal the "new offers" note was shown for (each renewal once).</summary>
     public long AnnouncedMs { get; set; }
+
+    /// <summary>The pets bought from the merchant, with when (Unix ms): not marked on the shop again until its offers renew.</summary>
+    public Dictionary<int, long> Bought { get; set; } = new();
 }
 
 /// <summary>
@@ -45,6 +48,12 @@ public static class Aion2BlackCloud
 
     /// <summary>When the offers renew for the pages read while the character was not known yet.</summary>
     private static long _unknownRenewMs;
+
+    /// <summary>Pets bought while the meter did not know the character yet (kept in memory only).</summary>
+    private static readonly Dictionary<int, long> UnknownBought = new();
+
+    /// <summary>Raised (on the capturing thread) when a pet was bought from the merchant: the character (empty when not known) and the pet.</summary>
+    public static event Action<string, int>? Bought;
 
     public static string StorePath => Path.Combine(Path.GetDirectoryName(Aion2CharacterStore.DefaultPath)!, "aion2-blackcloud.json");
 
@@ -91,6 +100,7 @@ public static class Aion2BlackCloud
             Pages.Clear();
             _unknownRenewMs = 0;
             LastPage = null;
+            UnknownBought.Clear();
         }
     }
 
@@ -174,6 +184,43 @@ public static class Aion2BlackCloud
         }
     }
 
+    /// <summary>
+    /// A pet was bought from the merchant: the shop's item for it came into the bag (a recording of 4 November 2026: Sentinel K'nash bought 6 s after the
+    /// page came, the item, the pet's progress and its new level in the same tenth of a second; the shop sent no page again). It is not marked on the shop
+    /// again until the offers renew (every hour, on the hour).
+    /// </summary>
+    public static void NoteBought(string name, int serverId, int petId, DateTime at)
+    {
+        long ms = Ms(at);
+        lock (Gate)
+        {
+            if (name.Length > 0)
+            {
+                Of(name, serverId).Bought[petId] = ms;
+                Save();
+            }
+            else
+            {
+                UnknownBought[petId] = ms;
+            }
+        }
+
+        Bought?.Invoke(name, petId);
+        Changed?.Invoke();
+    }
+
+    /// <summary>Whether <paramref name="name"/> bought the pet since the offers last renewed (the hour began).</summary>
+    public static bool BoughtThisRound(string name, int petId, DateTime utcNow)
+    {
+        long now = Ms(utcNow), start = now - (now % RenewEveryMs);
+        lock (Gate)
+        {
+            long? at = name.Length > 0 && _characters.TryGetValue(name, out var c) && c.Bought.TryGetValue(petId, out long known) ? known
+                : UnknownBought.TryGetValue(petId, out long unknown) ? unknown : null;
+            return at >= start;
+        }
+    }
+
     /// <summary>Which known characters still need a pet: missing from their collection, or below the top level (their level then, 0 = missing).</summary>
     public static BlackCloudWanted Wanted(int petId, long price = 0)
     {
@@ -196,6 +243,7 @@ public static class Aion2BlackCloud
             {
                 Name = c.Name, ServerId = c.ServerId, PetsAt = c.PetsAt, Pets = new Dictionary<int, int>(c.Pets), OffersAt = c.OffersAt, RenewMs = c.RenewMs,
                 AnnouncedMs = c.AnnouncedMs, Offers = c.Offers.Select(o => new BlackCloudOffer { PetId = o.PetId, Price = o.Price, Page = o.Page }).ToList(),
+                Bought = new Dictionary<int, long>(c.Bought),
             }).ToList();
         }
     }

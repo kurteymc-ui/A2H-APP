@@ -85,7 +85,20 @@ public static class SelfCheckBlackCloud
         bool genera = watchedCognia.Contains(1103) && watchedCognia.Contains(1156) && !watchedCognia.Contains(1111) && !watchedCognia.Contains(1206)
             && Ui.MainWindow.WatchedShopPets(new Ui.MeterSettings()).Count == all.Count && new Ui.MeterSettings().PetAlertFor(1111) && !cogniaOnly.PetAlertFor(1188);
         Console.WriteLine($"  -> a pet the character has finished brings no pop-up, the others show its level ({finished}); alerts for Cognia only leave the other genera out ({genera})");
-        tabs = tabs && finished && genera;
+        // a pet bought from these offers is not marked again until they renew (the owner, 7 November 2026): the shop's item of Sentinel K'nash that came into
+        // YIELD's bag on 4 November 2026 names the pet; Swift Lugi bought by Dead at 15:58 UTC is left out at 15:59, back at 16:01 when the offers renewed
+        bool itemNamesPet = Aion2Pets.PetOfShopItem(0x1fdfca8f) == 1080;
+        DateTime boughtAt = new(2026, 11, 3, 15, 58, 0, DateTimeKind.Utc);
+        Aion2BlackCloud.NoteBought("Dead", 2302, 1111, boughtAt.ToLocalTime());
+        var thisHour = Ui.MainWindow.ToastPets(offeredBoth, new[] { 1240, 1111 }, "Dead", boughtAt.AddMinutes(1));
+        var nextHour = Ui.MainWindow.ToastPets(offeredBoth, new[] { 1240, 1111 }, "Dead", boughtAt.AddMinutes(3));
+        bool bought = itemNamesPet && thisHour.All(p => p.PetId != 1111) && thisHour.Any(p => p.PetId == 1240) && nextHour.Any(p => p.PetId == 1111)
+            && Aion2BlackCloud.BoughtThisRound("Dead", 1111, boughtAt.AddMinutes(1)) && !Aion2BlackCloud.BoughtThisRound("YIELD", 1111, boughtAt.AddMinutes(1));
+        // the genera as the game names them in English: Cogni, Fera, Natura, Varian, Special
+        bool names = string.Join(",", Aion2Pets.Species.Select(sp => Aion2Pets.SpeciesShown(sp, "en"))) == "Cogni,Fera,Natura,Varian,Special"
+            && Aion2Pets.SpeciesShown("Cognia", "de") == "Cognia" && Aion2Pets.SpeciesOfGenus("Varian") == "Varia";
+        Console.WriteLine($"  -> a pet bought from the offers is not marked again until they renew ({bought}); the genera in English: {string.Join(", ", Aion2Pets.Species.Select(sp => Aion2Pets.SpeciesShown(sp, "en")))} ({names})");
+        tabs = tabs && finished && genera && bought && names;
 
         // the cards on the shop's page (7 November 2026: "put another overlay over the Urugugu Brawler"): on a made-up page of ten cards, Urugugu Brawler and
         // Vivel are found at their portraits, at the cards' size, by their icons; the place found still matches on a second look
@@ -100,7 +113,7 @@ public static class SelfCheckBlackCloud
                 return found.Any(f => f.PetId == pet && Math.Abs(f.X - x) < 0.01 && Math.Abs(f.Y - y) < 0.015 && Math.Abs(f.SizeY - Ui.ShopSample.PortraitShare) < 0.012);
             }
 
-            double again = found.Count > 0 && Ui.ShopPetFinder.Icon(found[0].PetId) is { } icon ? Ui.ShopPetFinder.ScoreAt(fine, icon, found[0]) : 0;
+            double again = found.Count > 0 && Ui.ShopPetFinder.Icon(found[0].PetId) is { } icon ? Ui.ShopPetFinder.ScoreAt(fine, icon, found[0]).Score : 0;
             cards = found.Count == 2 && At(1078) && At(1188) && again >= 0.8;
             Console.WriteLine($"  -> the shop's cards: Urugugu Brawler and Vivel found on a page of ten ({string.Join(", ", found.Select(f => $"{f.PetId} at {f.X:0.000},{f.Y:0.000} size {f.SizeY:0.000} score {f.Score:0.00}"))}), still there on a second look ({again:0.00}): {cards}");
         }

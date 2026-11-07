@@ -73,7 +73,6 @@ jobs:
             @('render-app', 'app-timers.png', 'timetable'),
             @('render-app', 'app-timers-full.png', 'timetable', '2100'),
             @('render-tool', 'timers-overlay.png', 'timetable-overlay'),
-            @('render-tool', 'blackcloud-toast.png', 'blackcloud-toast'),
             @('render-tool', 'blackcloud-marks.png', 'blackcloud-marks'),
             @('render-tool', 'hotkeys.png', 'hotkeys'),
             @('render-tool', 'hotkeys-problems.png', 'hotkeys-problems'),
@@ -145,7 +144,7 @@ jobs:
             'stagger-tip.png', 'dummy.png', 'find.png', 'look-wide.png', 'look-thread.png', 'look-frame.png', 'look-raidlog.png', 'look-minimal.png',
             'look-oldschool.png', 'chips.png', 'app-home.png', 'app-timers.png', 'app-bosses.png', 'app-legion.png', 'app-journey.png', 'app-characters.png',
             'app-meterlook.png', 'app-petmap.png', 'app-gather.png', 'app-cubes.png', 'app-overlays.png', 'app-history.png', 'timers-overlay.png',
-            'blackcloud-toast.png', 'gather-overlay.png', 'season-overlay.png', 'assist-overlays.png', 'assist-buffs.png', 'petmap-route.png',
+            'gather-overlay.png', 'season-overlay.png', 'assist-overlays.png', 'assist-buffs.png', 'petmap-route.png',
             'petmap-route-whole-v.png', 'checklist-season.png', 'checklist-supply.png', 'details-skills.png', 'cpcalc.png', 'cpcalc-check.png',
             'report-damage.png', 'report-stagger.png', 'report-timeline.png', 'report-rotation.png', 'report-support.png', 'report-buffs.png',
             'report-healing.png', 'history-bosses.png', 'history-bests.png', 'setup-design.png', 'setup-overlays.png', 'loot.png', 'player.png')

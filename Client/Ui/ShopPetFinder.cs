@@ -97,7 +97,8 @@ internal static class ShopPetFinder
     public const double SmallestShare = 0.07, LargestShare = 0.17;
 
     /// <summary>A pet's portrait found: its square in the picture as shares of its width and height (0 to 1), and how well it matched.</summary>
-    public readonly record struct Found(int PetId, double X, double Y, double Size, double SizeY, double Score)
+    /// <summary><paramref name="Light"/>: how bright the portrait's square was (0 to 255) - a window of the game over the page dims it.</summary>
+    public readonly record struct Found(int PetId, double X, double Y, double Size, double SizeY, double Score, double Light = 0)
     {
         /// <summary>The whole card around the portrait (title above, price below), as shares of the picture: measured on the shop's Pets page.</summary>
         public (double X, double Y, double W, double H) Card => (X - 0.29 * Size, Y - 0.72 * SizeY, 1.52 * Size, 2.14 * SizeY);
@@ -107,7 +108,7 @@ internal static class ShopPetFinder
     private static double? _lastShare;
 
     /// <summary>Looks for each pet's portrait in the picture (given as its coarse and fine copies). Pets not found well enough are left out.</summary>
-    public static List<Found> Find(ColorPlanes coarse, ColorPlanes fine, IEnumerable<int> petIds, Func<int, Bitmap?> icon)
+    public static List<Found> Find(ColorPlanes coarse, ColorPlanes fine, IEnumerable<int> petIds, Func<int, Bitmap?> icon, bool anySize = true)
     {
         var found = new List<Found>();
         foreach (int petId in petIds)
@@ -122,7 +123,7 @@ internal static class ShopPetFinder
             {
                 found.Add(hit with { PetId = petId });
             }
-            else if (_lastShare is not null && FindOne(coarse, fine, picture, null) is { } wide && wide.Score >= Enough)
+            else if (anySize && _lastShare is not null && FindOne(coarse, fine, picture, null) is { } wide && wide.Score >= Enough)
             {
                 found.Add(wide with { PetId = petId }); // the UI was scaled meanwhile: every size again
             }
@@ -235,22 +236,43 @@ internal static class ShopPetFinder
             }
         }
 
-        return result;
+        return result is { } best ? best with { Light = LightAt(fine, best) } : null;
+    }
+
+    /// <summary>The mean brightness (0 to 255) of a found portrait's square.</summary>
+    private static double LightAt(ColorPlanes fine, Found at)
+    {
+        int t = (int)Math.Round(at.SizeY * fine.Height);
+        int x0 = (int)Math.Round(at.X * fine.Width), y0 = (int)Math.Round(at.Y * fine.Height);
+        double sum = 0;
+        int n = 0;
+        for (int y = Math.Max(0, y0); y < Math.Min(fine.Height, y0 + t); y++)
+        {
+            for (int x = Math.Max(0, x0); x < Math.Min(fine.Width, x0 + t); x++)
+            {
+                int i = y * fine.Width + x;
+                sum += fine.R[i] + fine.G[i] + fine.B[i];
+                n++;
+            }
+        }
+
+        return n == 0 ? 0 : sum / (3.0 * n);
     }
 
     /// <summary>How well the portrait still matches where it was found (a few pixels around it, the same size): the shop's page still shows that card.</summary>
-    internal static double ScoreAt(ColorPlanes fine, Bitmap icon, Found at)
+    /// <remarks>Also how bright its square is now: the game's own windows (the purchase question) dim the page under them, and the match alone is blind to that.</remarks>
+    internal static (double Score, double Light) ScoreAt(ColorPlanes fine, Bitmap icon, Found at)
     {
         int t = (int)Math.Round(at.SizeY * fine.Height);
         int x = (int)Math.Round(at.X * fine.Width), y = (int)Math.Round(at.Y * fine.Height);
         if (t < 8 || t >= fine.Width || t >= fine.Height)
         {
-            return 0;
+            return (0, 0);
         }
 
         int x0 = Math.Max(0, x - 2), y0 = Math.Max(0, y - 2), x1 = Math.Min(fine.Width - t + 1, x + 3), y1 = Math.Min(fine.Height - t + 1, y + 3);
         float[] map = Correlate(fine, Template.Of(icon, t), x0, y0, x1, y1, out _, out _);
-        return map.Length == 0 ? 0 : map.Max();
+        return map.Length == 0 ? (0, 0) : (map.Max(), LightAt(fine, at));
     }
 
     /// <summary>
