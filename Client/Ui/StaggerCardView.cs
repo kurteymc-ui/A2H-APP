@@ -42,6 +42,7 @@ internal static class StaggerCardView
         {
             StaggerOutcome.Broken => ("✓ Broken in " + S(check.Seconds(now)) + (check.Limit is double lim ? " of " + S(lim) : ""), GreenColor),
             StaggerOutcome.Failed => ("✗ Not broken: " + check.Left.ToString("N0", CultureInfo.CurrentCulture) + " of " + check.Max.ToString("N0", CultureInfo.CurrentCulture) + " left", RedColor),
+            StaggerOutcome.Ended => ("Ended: " + check.Left.ToString("N0", CultureInfo.CurrentCulture) + " of " + check.Max.ToString("N0", CultureInfo.CurrentCulture) + " left", Color.FromRgb(0x9D, 0xB3, 0xC2)),
             _ => check.TimeLeft(now) is double left
                 ? (S(left) + " left · " + check.Left.ToString("N0", CultureInfo.CurrentCulture) + " to go", left <= 3 ? RedColor : AmberColor)
                 : (check.Left.ToString("N0", CultureInfo.CurrentCulture) + " of " + check.Max.ToString("N0", CultureInfo.CurrentCulture) + " to go", AmberColor),

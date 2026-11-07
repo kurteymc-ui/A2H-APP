@@ -1,11 +1,13 @@
 namespace AionDPS.Combat;
 
-/// <summary>How a stagger check went: still going, the bar broke in time, or it didn't (the cast ran out, or the bar filled again).</summary>
+/// <summary>How a stagger check went: still going, the bar broke in time, it didn't (the cast ran out, or the bar filled again), or a bar without a cast
+/// stopped going down before it broke (the boss died, or the fight ended).</summary>
 public enum StaggerOutcome
 {
     Running,
     Broken,
     Failed,
+    Ended,
 }
 
 /// <summary>
@@ -155,15 +157,15 @@ public static class StaggerChecks
                 }
                 else if (deadline is null && now - last > Quiet)
                 {
-                    x.Outcome = StaggerOutcome.Failed; // nothing more came off it: not broken
+                    x.Outcome = StaggerOutcome.Ended; // nothing more came off it (the boss died, the fight ended): not broken, but no check was missed
                     x.End = last;
                 }
             }
 
             DateTime to = x.End ?? now;
             var mine = hits.Where(h => h.TargetObjectId == boss && !h.IsHeal && h.Timestamp >= start - StaggerCredit.Window && h.Timestamp <= to.AddSeconds(0.2)).ToList();
-            var readings = x.Readings.Where(r => r.At >= start || r.At == x.Start).ToList();
-            StaggerReport credit = StaggerCredit.Build(readings, mine, start);
+            var ofCheck = x.Readings.Where(r => r.At >= start || r.At == x.Start).ToList();
+            StaggerReport credit = StaggerCredit.Build(ofCheck, mine, start);
             checks.Add(new StaggerCheck(boss, start, deadline, cast?.SkillId ?? 0, x.Max, x.End, x.Outcome, x.Outcome == StaggerOutcome.Broken ? 0 : x.Left, credit));
         }
 

@@ -458,7 +458,7 @@ internal sealed class FightTimelineChart : ReportChartBase
             foreach (StaggerCheck c in _report.StaggerChecks)
             {
                 double from = (c.Start - _report.StaggerCheckStart).TotalSeconds, to = from + (c.Limit ?? c.Seconds(c.End ?? c.Start));
-                Color tone = c.Outcome == StaggerOutcome.Broken ? Color.FromRgb(0x5B, 0xD0, 0x7A) : Color.FromRgb(0xFF, 0x5A, 0x5A);
+                Color tone = c.Outcome == StaggerOutcome.Broken ? Color.FromRgb(0x5B, 0xD0, 0x7A) : c.Outcome == StaggerOutcome.Failed ? Color.FromRgb(0xFF, 0x5A, 0x5A) : Color.FromRgb(0x9D, 0xB3, 0xC2);
                 dc.DrawRectangle(null, new Pen(ReportPalette.Brush(tone, 0xD0), 1.4), new Rect(new Point(X(from), laneY + 0.5), new Point(Math.Max(X(to), X(from) + 3), laneY + LaneHeight - 0.5)));
                 var flag = new StreamGeometry();
                 using (StreamGeometryContext g = flag.Open())

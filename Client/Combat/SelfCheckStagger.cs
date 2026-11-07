@@ -166,7 +166,17 @@ public static class SelfCheckStagger
         plain.Add(new StaggerEvent(c0.AddSeconds(41), boss, 1800, 1800, false));
         List<StaggerCheck> always = StaggerChecks.Find(boss, plain, Array.Empty<WindupRecord>(), plainHits, c0.AddSeconds(45));
         bool up = always.Count == 1 && always[0] is { Outcome: StaggerOutcome.Broken, Mechanic: 0, Deadline: null } && always[0].Credit.Of(3)?.Amount == 1790;
-        Console.WriteLine($"  -> a bar that is always up, broken without a cast: one check, the bar full again after it none: {up}");
+        // then a few hits on it and the boss dies: it ended (not a missed check)
+        for (int i = 0; i < 3; i++)
+        {
+            plainHits.Add(new DamageEvent(c0.AddSeconds(42 + i), 3, boss, 1000, false, "Skill", SkillId: 501));
+            plain.Add(new StaggerEvent(c0.AddSeconds(42 + i), boss, 1790 - i * 10, 1800, false));
+        }
+
+        List<StaggerCheck> died = StaggerChecks.Find(boss, plain, Array.Empty<WindupRecord>(), plainHits, c0.AddSeconds(80));
+        bool ended = died.Count == 2 && died[1] is { Outcome: StaggerOutcome.Ended, Left: 1770, Taken: 30 };
+        Console.WriteLine($"  -> a bar that is always up, broken without a cast: one check, the bar full again after it none: {up}; going down again when the boss died: ended={ended}");
+        up &= ended;
         return broken && failed && running && ranOut && up;
     }
 }
