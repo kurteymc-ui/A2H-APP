@@ -77,12 +77,12 @@ public static class SelfCheckStagger
         ok &= window;
 
         // the live meter: a skull and the count after the name, and while dead how long
-        var row = new PlayerRow(5) { Name = "Tsubasa", Deaths = 2, DeadFor = TimeSpan.FromSeconds(72.8) };
+        var row = new PlayerRow(5) { Name = "Lumiael", Deaths = 2, DeadFor = TimeSpan.FromSeconds(72.8) };
         string dead = row.NameDisplay;
         row.DeadFor = null;
         string back = row.NameDisplay;
         row.Deaths = 0;
-        bool meter = dead == "Tsubasa  ☠2 1:12" && back == "Tsubasa  ☠2" && row.NameDisplay == "Tsubasa";
+        bool meter = dead == "Lumiael  ☠2 1:12" && back == "Lumiael  ☠2" && row.NameDisplay == "Lumiael";
         Console.WriteLine($"  -> the meter shows deaths after the name, and how long while dead: {meter} ({dead} / {back})");
         ok &= meter;
 

@@ -1007,7 +1007,7 @@ internal static class Program
 
         var extras = new Combat.FightExtras(uses.OrderBy(u => u.At).ToList(), effects,
             new[] { new Combat.StaggerEvent(start.AddSeconds(21), 1, 0, 0, true), new Combat.StaggerEvent(start.AddSeconds(52), 1, 0, 0, true) },
-            new Dictionary<int, string> { [5] = name, [6] = "Goku" });
+            new Dictionary<int, string> { [5] = name, [6] = "Nyxelle" });
         var window = new Ui.PlayerDetailsView(name, className, "", events, id => id == 1 ? "Training Scarecrow" : "Elite Guard", fightEvents: all,
             extras: extras, playerId: 5, fightStart: start, fightEnd: start.AddSeconds(75));
         window.TabRotationButton.IsChecked = tab == "rotation";
@@ -1065,7 +1065,7 @@ internal static class Program
             for (int day = 0; day < 2; day++)
             {
                 // day 2 is played on a second character of the roster, so the character chips show
-                Combat.ReportInput played = day == 0 ? sample : sample with { Players = sample.Players.Select(p => p with { IsSelf = p.Name == "Goku" }).ToList() };
+                Combat.ReportInput played = day == 0 ? sample : sample with { Players = sample.Players.Select(p => p with { IsSelf = p.Name == "Nyxelle" }).ToList() };
                 for (int k = 0; k < 3; k++)
                 {
                     TimeSpan shift = TimeSpan.FromDays(-day) + TimeSpan.FromMinutes(-40 * k);
@@ -1205,7 +1205,7 @@ internal static class Program
             Aion2.Aion2Tickets.Reset();
             Aion2.Aion2Tickets.TryParseList(Convert.FromHexString(Combat.SelfCheckTickets.SampleLogin), out var entries);
             var t0 = DateTime.Now;
-            foreach (var (name, odyle, charged, at) in new[] { ("Ichigo", 520, 640, 0), ("Goku", 840, 0, 10), ("Naruto", 300, 120, 20) })
+            foreach (var (name, odyle, charged, at) in new[] { ("Seraphyne", 520, 640, 0), ("Nyxelle", 840, 0, 10), ("Draegor", 300, 120, 20) })
             {
                 Aion2.Aion2Tickets.ReceiveList(entries, t0.AddSeconds(at));
                 Aion2.Aion2Tickets.NoteCharacter(name, 2302, t0.AddSeconds(at + 4), level: 45);
@@ -1217,18 +1217,18 @@ internal static class Program
             long seenMs = DateTimeOffset.UtcNow.AddMinutes(-1).ToUnixTimeMilliseconds();
             Aion2.Aion2Tickets.NoteListedCharacters(null, new[]
             {
-                new Aion2.AccountCharacter("Ichigo", 5, 1, 45, 2890, "Dawnbreakers", seenMs, seenMs, 2302, 101),
-                new Aion2.AccountCharacter("Goku", 29, 1, 45, 2760, "Dawnbreakers", seenMs, seenMs, 2302, 102),
-                new Aion2.AccountCharacter("Naruto", 17, 1, 45, 2655, "Dawnbreakers", seenMs, seenMs, 2302, 103),
+                new Aion2.AccountCharacter("Seraphyne", 5, 1, 45, 2890, "Dawnbreakers", seenMs, seenMs, 2302, 101),
+                new Aion2.AccountCharacter("Nyxelle", 29, 1, 45, 2760, "Dawnbreakers", seenMs, seenMs, 2302, 102),
+                new Aion2.AccountCharacter("Draegor", 17, 1, 45, 2655, "Dawnbreakers", seenMs, seenMs, 2302, 103),
             });
 
-            // the Black Cloud Merchants: the three characters' pets (Goku has Swift Lugi at the top level, Naruto at 1), the merchant's last offers to Ichigo
+            // the Black Cloud Merchants: the three characters' pets (Nyxelle has Swift Lugi at the top level, Draegor at 1), the merchant's last offers to Seraphyne
             Aion2.Aion2BlackCloud.Reset();
             var everyPet = Aion2.Protocol.Aion2Pets.AllPetIds.Where(p => !Aion2.Protocol.Aion2MerchantPets.Is(p)).Select(p => new Aion2.Protocol.Aion2PetState(p, 3, 0)).ToList();
-            Aion2.Aion2BlackCloud.NotePets("Ichigo", 2302, everyPet);
-            Aion2.Aion2BlackCloud.NotePets("Goku", 2302, everyPet.Append(new Aion2.Protocol.Aion2PetState(1111, 3, 0)).Append(new Aion2.Protocol.Aion2PetState(1240, 3, 0)).ToList());
-            Aion2.Aion2BlackCloud.NotePets("Naruto", 2302, everyPet.Append(new Aion2.Protocol.Aion2PetState(1111, 1, 2)).ToList());
-            Aion2.Aion2BlackCloud.NoteOffers("Ichigo", 2302, 0xc9, new[] { new Aion2.Protocol.Aion2ShopPet(1111, 0xc9, 1_200_000), new Aion2.Protocol.Aion2ShopPet(1103, 0xc9, 50_000),
+            Aion2.Aion2BlackCloud.NotePets("Seraphyne", 2302, everyPet);
+            Aion2.Aion2BlackCloud.NotePets("Nyxelle", 2302, everyPet.Append(new Aion2.Protocol.Aion2PetState(1111, 3, 0)).Append(new Aion2.Protocol.Aion2PetState(1240, 3, 0)).ToList());
+            Aion2.Aion2BlackCloud.NotePets("Draegor", 2302, everyPet.Append(new Aion2.Protocol.Aion2PetState(1111, 1, 2)).ToList());
+            Aion2.Aion2BlackCloud.NoteOffers("Seraphyne", 2302, 0xc9, new[] { new Aion2.Protocol.Aion2ShopPet(1111, 0xc9, 1_200_000), new Aion2.Protocol.Aion2ShopPet(1103, 0xc9, 50_000),
                     new Aion2.Protocol.Aion2ShopPet(1179, 0xc9, 90_000) },
                 new DateTimeOffset(DateTime.UtcNow.Date.AddHours(DateTime.UtcNow.Hour + 1)).ToUnixTimeMilliseconds(), DateTime.Now.AddMinutes(-12));
 
@@ -1341,7 +1341,7 @@ internal static class Program
         Ui.MainWindow.Headless = true;
         app.Resources.MergedDictionaries.Add(
             (System.Windows.ResourceDictionary)System.Windows.Application.LoadComponent(new Uri("/Ui/Styles/Shared.xaml", UriKind.Relative)));
-        var window = CreateSampleDetails(tab, "Ichigo", "Sorcerer");
+        var window = CreateSampleDetails(tab, "Seraphyne", "Sorcerer");
         const double width = 860, height = 680;
         var content = new System.Windows.Controls.Border { Child = window, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x0E, 0x18, 0x20)) };
         content.Measure(new System.Windows.Size(width, height));
@@ -1440,8 +1440,8 @@ internal static class Program
         var rows = (System.Collections.ObjectModel.ObservableCollection<Ui.PlayerRow>)type.GetField("_rows", flags)!.GetValue(window)!;
         (string Name, string Cls, long Dmg, double Dps)[] sample =
         {
-            ("Jinwoo", "Gladiator", 916_700, 8300), ("Goku", "Ranger", 790_800, 7100), ("Ichigo", "Sorcerer", 757_700, 6800),
-            ("Naruto", "Cleric", 434_200, 3900), ("Tsubasa", "Spiritmaster", 232_800, 2100),
+            ("Kaivhan", "Gladiator", 916_700, 8300), ("Nyxelle", "Ranger", 790_800, 7100), ("Seraphyne", "Sorcerer", 757_700, 6800),
+            ("Draegor", "Cleric", 434_200, 3900), ("Lumiael", "Spiritmaster", 232_800, 2100),
         };
         long total = sample.Sum(x => x.Dmg);
         int rank = 0;
@@ -1548,20 +1548,21 @@ internal static class Program
             window.CompactOverlayPanel.Visibility = System.Windows.Visibility.Visible;
             panel = window.CompactOverlayPanel;
             // the bar's own character and the counters at the foot, as on any meter in the game
-            window.ShowOverlayIdentity("Jinwoo", "Gladiator", 196_500);
+            window.ShowOverlayIdentity("Kaivhan", "Gladiator", 196_500);
             window.ShowOverlayTickets(Ui.MainWindow.SampleTickets());
             if (kind == "crowd")
             {
                 // a field boss with fourteen players on a meter the player made narrower (380), the analyst design's many columns: ten lines, fitted to the width
                 rows.Clear();
                 string[] classes = { "Gladiator", "Ranger", "Sorcerer", "Templar", "Assassin", "Spiritmaster", "Chanter", "Cleric" };
+                string[] crowd = { "Aethryn", "Brakkus", "Caelith", "Dravenna", "Eldrion", "Faelyx", "Gorvane", "Hyrelle", "Isveth", "Joruhn", "Kestrael", "Lorwyn", "Maelis", "Noctavian" };
                 for (int i = 0; i < 14; i++)
                 {
                     long dmg = 2_400_000 - i * 150_000;
                     string cls = classes[i % classes.Length];
                     rows.Add(new Ui.PlayerRow(100 + i)
                     {
-                        Name = "Daeva" + (char)('A' + i) + "lyth", ClassName = cls, Damage = dmg, Dps = dmg / 111.0, Rank = i + 1,
+                        Name = crowd[i], ClassName = cls, Damage = dmg, Dps = dmg / 111.0, Rank = i + 1,
                         CombatPowerText = Ui.PlayerRow.Compact(190_000 - i * 3_000),
                         Given = cls is "Chanter" or "Cleric" ? 1_400 : cls == "Gladiator" ? 180 : 0,
                         HealOthers = cls == "Cleric" ? 300_000 : cls == "Chanter" ? 120_000 : 0,
@@ -1596,12 +1597,12 @@ internal static class Program
                 window.OverlayBody.Visibility = System.Windows.Visibility.Collapsed;
                 window.OverlayTimeText.Visibility = System.Windows.Visibility.Collapsed;
                 window.OverlayFind.Visibility = System.Windows.Visibility.Visible;
-                window.OverlayFindBox.Text = "Arhimodon";
+                window.OverlayFindBox.Text = "Valtheris";
                 window.OverlayFindHint.Visibility = System.Windows.Visibility.Collapsed;
                 var found = new[]
                 {
-                    new Upload.FoundPlayer("Arhimodon", "Templar", 45, "Vaizel", 2302, "eu", 182_730, 2968, 21_480, "Thamon", "https://atreia.app/armory/?region=eu&server=Vaizel&name=Arhimodon", 92, 3, 31),
-                    new Upload.FoundPlayer("Arhimodon", "Cleric", 32, "Siel", 1101, "nae", null, null, null, null, "https://atreia.app/armory/?region=nae&server=Siel&name=Arhimodon"),
+                    new Upload.FoundPlayer("Valtheris", "Templar", 45, "Vaizel", 2302, "eu", 182_730, 2968, 21_480, "Thamon", "https://atreia.app/armory/?region=eu&server=Vaizel&name=Valtheris", 92, 3, 31),
+                    new Upload.FoundPlayer("Valtheris", "Cleric", 32, "Siel", 1101, "nae", null, null, null, null, "https://atreia.app/armory/?region=nae&server=Siel&name=Valtheris"),
                 };
                 window.ShowFindResults(found);
                 window.PickFindResult(found[0]); // the one clicked: the others go, "All 2 results" brings them back
@@ -1639,7 +1640,7 @@ internal static class Program
                 window.OverlayBody.Visibility = System.Windows.Visibility.Collapsed;
                 window.OverlayTimeText.Visibility = System.Windows.Visibility.Collapsed;
                 window.OverlayFind.Visibility = System.Windows.Visibility.Visible;
-                window.OverlayFindBox.Text = "Arhimodon";
+                window.OverlayFindBox.Text = "Valtheris";
                 window.OverlayFindHint.Visibility = System.Windows.Visibility.Collapsed;
                 window.OpenServerPicker("eu", 2302, asmodian: true);
             }
@@ -2189,7 +2190,7 @@ internal static class Program
             (System.Windows.ResourceDictionary)System.Windows.Application.LoadComponent(new Uri("/Ui/Styles/Shared.xaml", UriKind.Relative)));
         Ui.ThemeManager.Apply(app, Ui.MeterSettings.Load());
         Ui.MainWindow.Headless = true;
-        var who = new Upload.FoundPlayer("Arhimodon", "Templar", 45, "Vaizel", 2302, "eu", 182_730, 2968, 21_480, "Thamon", "https://atreia.app/armory/?region=eu&server=Vaizel&name=Arhimodon", 92, 3, 31);
+        var who = new Upload.FoundPlayer("Valtheris", "Templar", 45, "Vaizel", 2302, "eu", 182_730, 2968, 21_480, "Thamon", "https://atreia.app/armory/?region=eu&server=Vaizel&name=Valtheris", 92, 3, 31);
         static Upload.PlayerLine L(string name, string value, string? grade = null, string? desc = null) => new(name, value, grade, null, desc);
         var none = Array.Empty<Upload.PlayerLine>();
         // the game's site names its pictures by the client's icon names: the app's own copies are drawn (nothing is downloaded here)
@@ -2239,7 +2240,7 @@ internal static class Program
         }
 
         DateTime now = DateTime.UtcNow;
-        var page = new Upload.PlayerPage("Arhimodon", "Templar", 45, "Vaizel", 2302, "eu", "Asmodian", "Wanderers of the Pass", "Daeva of the Pass", 182_730, 2968, gear, stats, skills,
+        var page = new Upload.PlayerPage("Valtheris", "Templar", 45, "Vaizel", 2302, "eu", "Asmodian", "Wanderers of the Pass", "Daeva of the Pass", 182_730, 2968, gear, stats, skills,
             214, 380, ("Bolt", 3), ("Wings of the Pass", "Epic"), boards, parses, new Upload.PlayerAppData(genus, pets, now.AddMinutes(-42)), who.Page, now.AddMinutes(-3));
         Ui.PlayerView View(Upload.PlayerPage shown, string tab)
         {
@@ -2902,7 +2903,7 @@ internal static class Program
         const int boss = 100;
         var random = new Random(11);
         string[] classes = { "Gladiator", "Templar", "Cleric", "Chanter", "Sorcerer", "Ranger", "Assassin", "Spiritmaster" };
-        string[] names = { "Jinwoo", "Goku", "Ichigo", "Naruto", "Tsubasa", "Lyra", "Wendy", "Rin" };
+        string[] names = { "Kaivhan", "Nyxelle", "Seraphyne", "Draegor", "Lumiael", "Selvane", "Orrikai", "Miyune" };
         var tracks = new List<Combat.PositionTrack>();
         for (int i = 0; i < classes.Length; i++)
         {

@@ -15,8 +15,8 @@ internal static class StaggerSample
 
     public static readonly IReadOnlyList<StaggerPerson> People = new[]
     {
-        new StaggerPerson(1, "Jinwoo", "Gladiator"), new StaggerPerson(2, "Goku", "Assassin"), new StaggerPerson(3, "Ichigo", "Ranger"),
-        new StaggerPerson(4, "Naruto", "Sorcerer"), new StaggerPerson(5, "Tsubasa", "Chanter"),
+        new StaggerPerson(1, "Kaivhan", "Gladiator"), new StaggerPerson(2, "Nyxelle", "Assassin"), new StaggerPerson(3, "Seraphyne", "Ranger"),
+        new StaggerPerson(4, "Draegor", "Sorcerer"), new StaggerPerson(5, "Lumiael", "Chanter"),
     };
 
     private enum How

@@ -15,8 +15,8 @@ internal static class FightReportSample
         DateTime t0 = new(2026, 10, 30, 18, 7, 0);
         var players = new List<ReportPlayer>
         {
-            new(1, "Jinwoo", "Gladiator", 191_210), new(2, "Goku", "Chanter", 154_876), new(3, "Ichigo", "Templar", 158_758, IsSelf: true),
-            new(4, "Naruto", "Assassin", 189_896), new(5, "Tsubasa", "Sorcerer", 182_839),
+            new(1, "Kaivhan", "Gladiator", 191_210), new(2, "Nyxelle", "Chanter", 154_876), new(3, "Seraphyne", "Templar", 158_758, IsSelf: true),
+            new(4, "Draegor", "Assassin", 189_896), new(5, "Lumiael", "Sorcerer", 182_839),
         };
         var names = players.ToDictionary(p => p.Id, p => p.Name);
         names[Boss] = "Talisra of the Void";

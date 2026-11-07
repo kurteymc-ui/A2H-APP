@@ -52,7 +52,7 @@ public static class SelfCheckFightReport
             History.FightLogEntry? boss = History.FightLog.Save(History.FightLogKind.Boss, input);
             History.FightLogEntry? run = History.FightLog.Save(History.FightLogKind.Run, input with { Start = input.Start.AddMinutes(-1), Targets = null }, "Normal", 600001, 3);
             bool saved = boss is { Killed: true } && run is { BossFights: 3, Killed: null } && History.FightLog.Entries().Count == 2 && History.FightLog.Entries()[0].Id == boss.Id
-                && Math.Abs(boss.PartyDps - r.PartyDps) < 0.5 && boss.You == "Ichigo" && Math.Abs(boss.YourDps - r.PlayerOf(3)!.Dps) < 0.5;
+                && Math.Abs(boss.PartyDps - r.PartyDps) < 0.5 && boss.You == "Seraphyne" && Math.Abs(boss.YourDps - r.PlayerOf(3)!.Dps) < 0.5;
             ReportInput? back = History.FightLog.Open(boss!);
             FightReport again = FightReport.Build(back!);
             bool same = again.Damage == r.Damage && again.Players.Count == r.Players.Count && again.PlayerOf(3)!.Skills.Count == r.PlayerOf(3)!.Skills.Count
@@ -62,7 +62,7 @@ public static class SelfCheckFightReport
             History.FightLogEntry named = boss! with { BossNpcId = 2400001 };
             Upload.EncounterUploadRequest? sent = Upload.HistoryUpload.Build(named, back!, 2001, "glow");
             bool upload = sent is { ServerId: 2001, MeterBar: "glow", Report: not null } && sent.Participants.Count(p => p.IsSelf) == 1
-                && sent.Participants.Single(p => p.IsSelf) is { Name: "Ichigo", ServerId: 2001 } self && self.TotalDamage == r.PlayerOf(3)!.Damage
+                && sent.Participants.Single(p => p.IsSelf) is { Name: "Seraphyne", ServerId: 2001 } self && self.TotalDamage == r.PlayerOf(3)!.Damage
                 && sent.Participants.Count == 5 && sent.BossNpcId == 2400001
                 && Upload.HistoryUpload.Build(named, back! with { Killed = false }, 2001, null) is null
                 && !Upload.HistoryUpload.CanUpload(named with { Killed = false }) && Upload.HistoryUpload.CanUpload(named) && !Upload.HistoryUpload.CanUpload(boss!);
