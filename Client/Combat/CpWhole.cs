@@ -965,7 +965,11 @@ public static class CpWhole
                 }
 
                 left -= x.Points;
-                var t = taken.GetValueOrDefault(x.Node.Board, (0, 0, 0.0, new Dictionary<string, double>(StringComparer.Ordinal)));
+                if (!taken.TryGetValue(x.Node.Board, out var t))
+                {
+                    t = (0, 0, 0, new Dictionary<string, double>(StringComparer.Ordinal));
+                }
+
                 t.What[what] = t.What.GetValueOrDefault(what) + gain;
                 taken[x.Node.Board] = (t.Nodes + 1, t.Points + x.Points, t.Gain + gain, t.What);
             }
