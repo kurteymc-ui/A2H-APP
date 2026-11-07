@@ -6,9 +6,50 @@
   ],
   "versions": [
     {
-      "version": "1.20.60",
+      "version": "1.20.63",
       "date": "2026-11-07",
-      "headline": "Just the frames on the Black Cloud shop, and updates straight to the newest",
+      "headline": "Cooldowns no longer reset when a party member buffs you, and cube alerts only with a key",
+      "items": [
+        {
+          "kind": "fixed",
+          "area": "Skill Assist",
+          "title": "Cooldowns no longer reset at every buff",
+          "text": "Since 1.20.61 a buff from a party member of another class (a Chanter's or Cleric's) could make the Skill Assist think you had switched class, and every cooldown jumped back to ready. Buffs no longer touch your cooldowns; only your own skills switch the class.",
+          "example": "A Chanter buffs your Ranger in the middle of a fight: your cooldowns keep counting down."
+        },
+        {
+          "kind": "new",
+          "area": "Cubes",
+          "title": "Cube alerts only when you carry a key",
+          "text": "A new switch on the Cube finder page: the note, the sounds, the meter's line and the map coming up only while your character has a Hidden Cube key in its bag. The cube still shows on the map.",
+          "example": "Out of keys, you farm in peace; pick one up and the next cube calls you again."
+        }
+      ]
+    },
+    {
+      "version": "1.20.62",
+      "date": "2026-11-07",
+      "headline": "Abyss Corridors on the Characters page, and only your server",
+      "items": [
+        {
+          "kind": "new",
+          "area": "Characters",
+          "title": "Abyss Corridors on the Characters page",
+          "text": "A new column shows how many Abyss Corridors each character still has to enter since the last Artifact Siege. The game hands them out when a character first enters the Abyss after the siege; a character that has not been there yet shows the number your other character got, marked with ~.",
+          "example": "Your side holds two artifacts: Draegor shows 1 after one corridor, Nyxelle shows ~2 until she enters the Abyss."
+        },
+        {
+          "kind": "fixed",
+          "area": "Characters",
+          "title": "Only the server you play on",
+          "text": "Characters from a server you no longer play on no longer show on the Characters page and the home page. It follows the server of the character you are logged in with, or the one you played last."
+        }
+      ]
+    },
+    {
+      "version": "1.20.61",
+      "date": "2026-11-07",
+      "headline": "Each class its own Skill Assist, a compass that fades, one clean font",
       "items": [
         {
           "kind": "fixed",
@@ -26,17 +67,24 @@
         },
         {
           "kind": "new",
-          "area": "Characters",
-          "title": "Abyss Corridors on the Characters page",
-          "text": "A new column shows how many Abyss Corridors each character still has to enter since the last Artifact Siege. The game hands them out when a character first enters the Abyss after the siege; a character that has not been there yet shows the number your other character got, marked with ~.",
-          "example": "Your side holds two artifacts: Draegor shows 1 after one corridor, Nyxelle shows ~2 until she enters the Abyss."
+          "area": "Map",
+          "title": "The compass only for a moment",
+          "text": "A new switch next to Compass on the Interactive map page: the N, NE, E ... letters around the map show for 3 seconds when it comes up, zooms, changes map or your mouse rests on it, then fade, so they don't sit over the map the whole time. The Compass switch still turns them off completely.",
+          "example": "The map pops up for a Hidden Cube: the letters show you which way is north, then get out of the way."
         },
         {
-          "kind": "fixed",
-          "area": "Characters",
-          "title": "Only the server you play on",
-          "text": "Characters from a server you no longer play on no longer show on the Characters page and the home page. It follows the server of the character you are logged in with, or the one you played last."
-        },
+          "kind": "improved",
+          "area": "Look",
+          "title": "One clean font everywhere",
+          "text": "Titles, character names and the charts now use the same font as the buttons and the rest of the app, instead of the old decorative capitals and a second font in the charts."
+        }
+      ]
+    },
+    {
+      "version": "1.20.60",
+      "date": "2026-11-07",
+      "headline": "Just the frames on the Black Cloud shop, and updates straight to the newest",
+      "items": [
         {
           "kind": "improved",
           "area": "Black Cloud",
@@ -63,19 +111,6 @@
           "title": "Straight to the newest version",
           "text": "An update now always goes to the newest version, in one restart, however many you skipped. One that was downloaded earlier isn't put in on its own any more when a newer one is out, and \"What's new\" lists every change from all the versions you missed.",
           "example": "You were on 1.20.55: one update takes you to the newest, and What's new shows 1.20.56 to today in one list."
-        },
-        {
-          "kind": "new",
-          "area": "Map",
-          "title": "The compass only for a moment",
-          "text": "A new switch next to Compass on the Interactive map page: the N, NE, E ... letters around the map show for 3 seconds when it comes up, zooms, changes map or your mouse rests on it, then fade, so they don't sit over the map the whole time. The Compass switch still turns them off completely.",
-          "example": "The map pops up for a Hidden Cube: the letters show you which way is north, then get out of the way."
-        },
-        {
-          "kind": "improved",
-          "area": "Look",
-          "title": "One clean font everywhere",
-          "text": "Titles, character names and the charts now use the same font as the buttons and the rest of the app, instead of the old decorative capitals and a second font in the charts."
         }
       ]
     },

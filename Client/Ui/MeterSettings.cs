@@ -754,6 +754,13 @@ public sealed class MeterSettings
     /// <summary>A Hidden Cube coming into range brings the pet map back when it is hidden (the hotkey, the module's switch or the map's own switch), until 10 seconds after the last cube is gone, without saving the switch (Stacy's idea, 17 October 2026). Only where the map shows cubes. Off by default.</summary>
     public bool ShowMapOnCube { get; set; }
 
+    /// <summary>The cube alerts (the note, the chime and beeps, the meter's line, the map coming up) only while the character carries a Hidden Cube key in its
+    /// bag (a tester, 7 November 2026: "so it doesn't take you to a cube and you have no keys"); while the bag is not known they come as before. Off by default.</summary>
+    public bool CubeOnlyWithKey { get; set; }
+
+    /// <summary>Whether the cube alerts may come now (<see cref="CubeOnlyWithKey"/>).</summary>
+    public bool CubeAlertsNow() => !CubeOnlyWithKey || Aion2.Aion2Inventories.HoldsCubeKey(Aion2.Aion2Inventories.CurrentName()) != false;
+
     /// <summary>The cards of the ticked pets the Black Cloud Merchant offers that the character still needs are marked on the shop's page (ShopMarks; it was a
     /// pop-up at the top until 7 November 2026). On by default.</summary>
     public bool BlackCloudPopup { get; set; } = true;

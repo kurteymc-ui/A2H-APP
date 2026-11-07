@@ -35,7 +35,7 @@ public partial class MainWindow
         }
 
         _cubeCalloutAt = tick;
-        if (!_gateSettings.CubeOverlayAlert || PrivacyConsent.Restricted || _source?.Entities is not Aion2EntityDirectory directory
+        if (!_gateSettings.CubeOverlayAlert || !_gateSettings.CubeAlertsNow() || PrivacyConsent.Restricted || _source?.Entities is not Aion2EntityDirectory directory
             || directory.LiveCubes() is not { Count: > 0 } cubes)
         {
             OverlayCubeCallout.Visibility = Visibility.Collapsed;
@@ -170,6 +170,7 @@ public partial class MainWindow
         Switch(loc["Cubes.Popup"], loc["Cubes.PopupTip"], s0.CubePopup, (s, v) => s.CubePopup = v);
         CheckBox sound = Switch(loc["Cubes.Chime"], loc["Cubes.ChimeTip"], s0.CubeArrivalSound, (s, v) => s.CubeArrivalSound = v);
         Switch(loc["Cubes.Beeps"], loc["Cubes.BeepsTip"], s0.CubeBeeps, (s, v) => s.CubeBeeps = v);
+        Switch(loc["Cubes.OnlyKey"], loc["Cubes.OnlyKeyTip"], s0.CubeOnlyWithKey, (s, v) => s.CubeOnlyWithKey = v);
         var volumeRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(26, -4, 0, 14) };
         volumeRow.Children.Add(ShellText(loc["Cubes.Volume"], "Brush.TextMuted", 12));
         var volume = new Slider { Minimum = 0, Maximum = 100, Value = Math.Clamp(s0.CubeSoundVolume, 0, 100), Width = 180, Margin = new Thickness(10, 0, 10, 0), VerticalAlignment = VerticalAlignment.Center, IsSnapToTickEnabled = true, TickFrequency = 5 };

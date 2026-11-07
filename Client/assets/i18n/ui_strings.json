@@ -22811,5 +22811,13 @@
   "Checklist.CorridorFrom": {
     "en": "{0} open to your side (seen on {1}); this character has not been in the Abyss since the siege",
     "de": "{0} für deine Seite offen (gesehen bei {1}); dieser Charakter war seit der Eroberung nicht im Abyss"
+  },
+  "Cubes.OnlyKey": {
+    "en": "Only when I carry a key",
+    "de": "Nur wenn ich einen Schlüssel dabeihabe"
+  },
+  "Cubes.OnlyKeyTip": {
+    "en": "The note, the sounds, the meter's line and the map coming up only while your character has a Hidden Cube key in its bag. The cube still shows on the map. Until the app has seen your bag (at your login), the alerts come as usual.",
+    "de": "Hinweis, Töne, die Zeile des Meters und die aufklappende Karte nur, solange dein Charakter einen Schlüssel für Versteckte Kuben im Inventar hat. Der Kubus bleibt auf der Karte. Bis die App dein Inventar gesehen hat (beim Login), kommen die Hinweise wie gewohnt."
   }
 }

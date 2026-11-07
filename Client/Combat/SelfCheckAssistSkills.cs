@@ -102,8 +102,10 @@ public static class SelfCheckAssistSkills
         Check("a Templar's other skills", templar.Contains(12070000) && templar.Contains(12110000) && !templar.Contains(12010000) && !templar.Contains(12040000)
             && templar.All(id => id / 1_000_000 == 12 && id % 10000 == 0) && Aion2Cooldowns.ClassSkills(0).Count == 0, $"{templar.Count} skills");
 
-        // the class follows the character (7 November 2026: an Assassin's skills were offered on a Ranger): the record of a Ranger at the login sets it, a
-        // skill of another class used by the own character switches it, a shared skill does not; each change is raised once, with the class before
+        // the class follows the character (7 November 2026: an Assassin's skills were offered on a Ranger): the record of a Ranger at the login sets it; a
+        // party member's buff landing on the character (a Chanter's 18160032 in its own cast frames, the owner's recording of 5 November) changes nothing and
+        // keeps the running cooldowns (the same day: "insta resets the cd on every buff"); two different skills of another class used switch it; each change
+        // is raised once, with the class before
         Aion2Cooldowns.Reset();
         var changes = new List<(int, int)>();
         void Seen(int before, int after) => changes.Add((before, after));
@@ -111,13 +113,23 @@ public static class SelfCheckAssistSkills
         Aion2Cooldowns.SetClass(13);
         Aion2Cooldowns.SetClass(Aion2Cooldowns.DigitsOf(Aion2.Protocol.Aion2SkillNames.ClassFromCode(14)));
         int afterLogin = Aion2Cooldowns.CurrentClass();
-        Aion2Cooldowns.NoteOwnCast(14030000, DateTime.Now);
-        Aion2Cooldowns.NoteOwnCast(18010000, DateTime.Now.AddSeconds(5));
+        DateTime rangerAt = DateTime.Now;
+        int rangerSkill = Aion2Cooldowns.ClassSkills(14).FirstOrDefault();
+        Aion2Cooldowns.NoteOwnCast(rangerSkill + 10, rangerAt);
+        bool running = Aion2Cooldowns.View(rangerSkill, rangerAt.AddSeconds(1)).Running;
+        Aion2Cooldowns.NoteOwnCast(18160032, rangerAt.AddSeconds(2));  // the Chanter's buff, three times
+        Aion2Cooldowns.NoteOwnCast(18160032, rangerAt.AddSeconds(4));
+        Aion2Cooldowns.NoteOwnCast(18160002, rangerAt.AddSeconds(6));
+        bool buffKeeps = Aion2Cooldowns.CurrentClass() == 14 && running && Aion2Cooldowns.View(rangerSkill, rangerAt.AddSeconds(7)).Running;
+        Aion2Cooldowns.NoteOwnCast(18010000, rangerAt.AddSeconds(10)); // one Chanter skill used: not yet
+        int afterOne = Aion2Cooldowns.CurrentClass();
+        Aion2Cooldowns.NoteOwnCast(18020000, rangerAt.AddSeconds(12)); // a second one: the character is a Chanter
         Aion2Cooldowns.ClassChanged -= Seen;
-        Check("the class of the character: an Assassin, then a Ranger logs in (code 14), then a Chanter's skill",
-            afterLogin == 14 && Aion2Cooldowns.CurrentClass() == 18 && changes.SequenceEqual(new[] { (0, 13), (13, 14), (14, 18) })
+        Check("the class of the character: an Assassin, then a Ranger logs in (code 14); a Chanter's buff on it keeps its class and cooldowns; two Chanter skills used switch it",
+            afterLogin == 14 && rangerSkill != 0 && buffKeeps && afterOne == 14 && Aion2Cooldowns.CurrentClass() == 18
+            && changes.SequenceEqual(new[] { (0, 13), (13, 14), (14, 18) })
             && Aion2Cooldowns.DigitsOf("Spiritmaster") == 16 && Aion2Cooldowns.NameOfDigits(15) == "Sorcerer",
-            string.Join(" ", changes.Select(c => $"{c.Item1}>{c.Item2}")));
+            $"{string.Join(" ", changes.Select(c => $"{c.Item1}>{c.Item2}"))}, running {running}, kept {buffKeeps}");
         Aion2Cooldowns.Reset();
         return ok;
     }

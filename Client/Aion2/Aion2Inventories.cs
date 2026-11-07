@@ -96,6 +96,23 @@ public static class Aion2Inventories
         }
     }
 
+    /// <summary>A key that opens a Hidden Cube ("Key: Hidden Cube", bound or not, for some days or not).</summary>
+    public static bool IsCubeKey(int item) => Aion2ItemNames.NameOf(item, "en") is { } name && name.StartsWith("Key: Hidden Cube", StringComparison.Ordinal);
+
+    /// <summary>Whether the character carries a Hidden Cube key in its bag (where it opens a cube from); null while its bag is not known.</summary>
+    public static bool? HoldsCubeKey(string? name)
+    {
+        if (name is null)
+        {
+            return null;
+        }
+
+        lock (Gate)
+        {
+            return _characters.TryGetValue(name, out CharacterHoldings? held) ? held.Bag.Any(kv => kv.Value > 0 && IsCubeKey(kv.Key)) : null;
+        }
+    }
+
     /// <summary>A currency (Kinah, Abyss Points, coins): carried by the character, not a material to move around.</summary>
     public static bool IsCurrency(int item) => item / 1_000_000 == 930;
 

@@ -375,10 +375,22 @@ public static class Aion2Cooldowns
             {
                 if (ClassOf(id) is int own and not 0 && own != _class)
                 {
-                    // the own character used a skill of another class: that is its class (the one of the start, or picked, was another character's)
+                    // Another class's skill in the own cast frames is mostly a party member's buff landing on the character (a Chanter's 18160032 between a
+                    // Templar's skills, a Cleric's 17390003 on a Chanter): switching on it dropped every cooldown at each buff (7 November 2026, a tester:
+                    // "insta resets the cd on every buff"). Only two different skills of that class used (the id's last digit 0, as the own uses are) with
+                    // none of the class before in between make it the character's class (one of the start, or picked, was another character's).
+                    if (!OtherClassUsed(own, id, skillId, at))
+                    {
+                        return;
+                    }
+
                     switchedFrom = _class;
                     switchedTo = own;
                     SwitchClass(own);
+                }
+                else if (ClassOf(id) == _class)
+                {
+                    _otherUses.Clear();
                 }
 
                 if (LastCastFrame.TryGetValue(id, out DateTime frame) && at >= frame && at - frame <= SameUse)
@@ -415,6 +427,44 @@ public static class Aion2Cooldowns
                 ClassChanged?.Invoke(switchedFrom, switchedTo);
             }
         }
+    }
+
+    /// <summary>The uses of another class's skills since the last of the class in use (class, base ids, the first's time).</summary>
+    private static readonly HashSet<int> _otherUses = new();
+    private static int _otherClass;
+    private static DateTime _otherSince;
+
+    /// <summary>The span two uses of another class's skills must fall in to make it the character's class.</summary>
+    private static readonly TimeSpan OtherClassWithin = TimeSpan.FromSeconds(30);
+
+    // Under the lock: true when this use makes the other class the character's (no class yet: one use of a skill of its own; else two different ones).
+    private static bool OtherClassUsed(int cls, int id, int skillId, DateTime at)
+    {
+        if (skillId % 10 != 0)
+        {
+            return false; // an effect, not a use (a buff of another player's class comes with 1, 2 or 3 there)
+        }
+
+        if (_class == 0)
+        {
+            return true;
+        }
+
+        if (_otherClass != cls || at < _otherSince || at - _otherSince > OtherClassWithin)
+        {
+            _otherUses.Clear();
+            _otherClass = cls;
+            _otherSince = at;
+        }
+
+        _otherUses.Add(id);
+        if (_otherUses.Count < 2)
+        {
+            return false;
+        }
+
+        _otherUses.Clear();
+        return true;
     }
 
     private static void HasCooldownKnown(int id)
@@ -657,6 +707,8 @@ public static class Aion2Cooldowns
             LastCastFrame.Clear();
             _barSeen = null;
             LeftBar.Clear();
+            _otherUses.Clear();
+            _otherClass = 0;
             Framed.Clear();
             Variants.Clear();
             Gaps.Clear();

@@ -677,7 +677,7 @@ public sealed class PetMapController : IDisposable
 
         // a cube that leaves the range while the player walks away from it: the falling "out of sight" sound (the arrival chime rises), so he hears at once that he goes the wrong way
         int departures = _directory()?.CubeDepartures ?? -1;
-        if (_cubeDepartures >= 0 && departures > _cubeDepartures && settings.CubeArrivalSound)
+        if (_cubeDepartures >= 0 && departures > _cubeDepartures && settings.CubeArrivalSound && settings.CubeAlertsNow())
         {
             NotifySounds.PlayCubeLeft(settings.CubeSoundVolume);
             _lastCubeBeep = DateTime.UtcNow;
@@ -689,6 +689,11 @@ public sealed class PetMapController : IDisposable
     /// <summary>A cube has just come into range: the chime (with the cube sound's switch and volume), and the map where the switches say so and the map shows cubes.</summary>
     internal void OnCubeArrived(MeterSettings settings)
     {
+        if (!settings.CubeAlertsNow())
+        {
+            return; // no key on the character: nothing to open the cube with
+        }
+
         if (settings.CubeArrivalSound)
         {
             NotifySounds.PlayCubeArrival(settings.CubeSoundVolume);
@@ -735,7 +740,7 @@ public sealed class PetMapController : IDisposable
         }
 
         var directory = _directory();
-        if (!settings.CubePopup || directory is null || directory.LiveCubes().Count == 0)
+        if (!settings.CubePopup || !settings.CubeAlertsNow() || directory is null || directory.LiveCubes().Count == 0)
         {
             CubeToast.Release();
             return;
@@ -752,7 +757,7 @@ public sealed class PetMapController : IDisposable
     /// </summary>
     private void AnnounceCubes(MeterSettings settings)
     {
-        if (!settings.CubeBeeps)
+        if (!settings.CubeBeeps || !settings.CubeAlertsNow())
         {
             return;
         }

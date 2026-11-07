@@ -153,8 +153,13 @@ public static class SelfCheckBlackCloud
         bool items = held.Count == 3 && held[0] is { Name: "Odyle Energy (Bound)", Bag: 3, Storage: 1, Each: 40, Energy: 160 }
             && held.Any(l => l is { Each: 10, Expires: true, Count: 30, Energy: 300 }) && held.Any(l => l is { Each: 10, Expires: false, Storage: 2 })
             && Aion2OdyleItems.EnergyHeld("YIELD") == 480 && Aion2OdyleItems.Held("Nobody", "en").Count == 0;
+        // a Hidden Cube key in the bag (7 November 2026: cube alerts only with a key): one in the bag counts, one in the storage does not, an unknown bag is not "none"
+        Aion2Inventories.Put(new CharacterHoldings { Name = "Keyed", ServerId = 2302, SavedAt = DateTime.UtcNow, Bag = new() { [610900001] = 1 } });
+        Aion2Inventories.Put(new CharacterHoldings { Name = "Keyless", ServerId = 2302, SavedAt = DateTime.UtcNow, Bag = new() { [503700031] = 3 }, Storage = new() { [600900001] = 2 } });
+        bool keys = Aion2Inventories.IsCubeKey(630900003) && !Aion2Inventories.IsCubeKey(503700031) && Aion2Inventories.HoldsCubeKey("Keyed") == true
+            && Aion2Inventories.HoldsCubeKey("Keyless") == false && Aion2Inventories.HoldsCubeKey("Nobody") is null && Aion2Inventories.HoldsCubeKey(null) is null;
         Aion2Inventories.Reset();
-        Console.WriteLine($"  -> Odyle Energy 40 and Small Odyle Energy 10 each, the 7-day ones marked ({each}); a bag of 3 + 1 in storage, 30 small 7-day and 2 small: 3 kinds, 480 energy ({items})");
-        return read && onlyOk && needs && tabs && renewOk && each && items;
+        Console.WriteLine($"  -> Odyle Energy 40 and Small Odyle Energy 10 each, the 7-day ones marked ({each}); a bag of 3 + 1 in storage, 30 small 7-day and 2 small: 3 kinds, 480 energy ({items}); a Hidden Cube key in the bag ({keys})");
+        return read && onlyOk && needs && tabs && renewOk && each && items && keys;
     }
 }
