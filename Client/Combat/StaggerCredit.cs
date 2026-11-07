@@ -71,8 +71,42 @@ public static class StaggerCredit
         [18290130] = 15,
     };
 
-    /// <summary>A drop a skill of this amount makes: the amount, or half as much again (rounded down).</summary>
-    public static bool Fits(int amount, int drop) => amount > 0 && (drop == amount || drop == amount * 3 / 2);
+    /// <summary>
+    /// What each skill takes off the bar whatever its level or form: a skill's id changes with its level and form (Judgment is 12240347 and 12243450,
+    /// Chain of Torment 17070240 and 17070250), its stagger doesn't. Read off 25 boss fights of 3 and 4 November 2026 (Bakarma, Berk, Saraswati,
+    /// Lakshmi, Harcon, Gadioton; eight classes): the moments whose hits were all of one skill, and in every family the drops agreed (Judgment 5 in 61
+    /// of 61). A skill id the fight or <see cref="Known"/> doesn't know goes by its family (the id without its last four digits). A family whose forms
+    /// take different amounts (the Ranger's charged shot: 10 to 16) is left out.
+    /// </summary>
+    internal static readonly IReadOnlyDictionary<int, int> KnownFamilies = new Dictionary<int, int>
+    {
+        [1101] = 2, [1117] = 5, [1119] = 10, [1120] = 10, [1129] = 15, [1136] = 10, [1139] = 20, [1142] = 2, [1144] = 5, [1204] = 3, [1206] = 5, [1209] = 35,
+        [1210] = 10, [1212] = 20, [1213] = 10, [1224] = 5, [1227] = 10, [1230] = 10, [1235] = 5, [1301] = 2, [1305] = 7, [1306] = 7, [1307] = 10, [1310] = 2,
+        [1311] = 2, [1312] = 2, [1313] = 7, [1321] = 7, [1322] = 10, [1327] = 100, [1335] = 5, [1336] = 5, [1405] = 5, [1406] = 20, [1408] = 15, [1409] = 7,
+        [1411] = 10, [1413] = 10, [1434] = 1, [1504] = 5, [1505] = 7, [1506] = 35, [1509] = 2, [1510] = 2, [1515] = 10, [1520] = 20, [1522] = 7, [1604] = 3,
+        [1610] = 7, [1613] = 7, [1614] = 10, [1630] = 10, [1633] = 5, [1704] = 2, [1705] = 2, [1706] = 20, [1707] = 10, [1708] = 10, [1735] = 7, [1740] = 20,
+        [1804] = 2, [1805] = 2, [1806] = 10, [1808] = 10, [1809] = 10, [1810] = 5, [1829] = 15, [1840] = 5,
+    };
+
+    /// <summary>A skill's family: its id without the level and form (the last four digits).</summary>
+    public static int Family(int skillId) => skillId / 10000;
+
+    /// <summary>The stagger buff (half as much again) is the Gladiator's and the Assassin's (skill ids 11... and 13...): only their skills' drops can be boosted.</summary>
+    public static bool CanBoost(int skillId) => skillId / 1_000_000 is 11 or 13;
+
+    /// <summary>A drop a skill of this amount makes: the amount, or half as much again (rounded down) for a Gladiator's or Assassin's skill.</summary>
+    public static bool Fits(int amount, int drop, int skillId = 11_000_000) => amount > 0 && (drop == amount || (CanBoost(skillId) && drop == amount * 3 / 2));
+
+    /// <summary>The amounts a fight goes by: by skill id, and by family for an id it doesn't know.</summary>
+    private sealed class Table
+    {
+        public Dictionary<int, int> Ids { get; } = new(Known);
+        public Dictionary<int, int> Families { get; } = new(KnownFamilies);
+
+        public int Of(int skillId) => Ids.TryGetValue(skillId, out int a) ? a : Families.GetValueOrDefault(Family(skillId));
+
+        public bool Knows(int skillId) => Ids.ContainsKey(skillId) || Families.ContainsKey(Family(skillId));
+    }
 
     /// <param name="readings">The boss's stagger readings and breaks, in the order the game sent them.</param>
     /// <param name="hits">The party's hits on the boss, in the order the game sent them.</param>
@@ -101,17 +135,17 @@ public static class StaggerCredit
         // the hits by time, those of one moment in the order they came; the readings in groups of one moment
         List<DamageEvent> ordered = hits.Select((h, i) => (h, i)).OrderBy(x => x.h.Timestamp).ThenBy(x => x.i).Select(x => x.h).ToList();
         List<Group> groups = Groups(readings);
-        Dictionary<int, int> table = Learn(groups, ordered);
+        Table table = Learn(groups, ordered);
         List<Credit> credits = Assign(groups, ordered, table);
         for (int round = 0; round < 3; round++)
         {
             // the amount most of a skill's drops agree on (two at least), over what is known
             foreach ((int skill, Dictionary<int, int> counts) in Votes(credits.Where(c => c.Hit is not null).Select(c => (ordered[c.Hit!.Value].SkillId, c.Drop))))
             {
-                int best = Best(counts, out int agree);
+                int best = Best(counts, skill, out int agree);
                 if (agree >= 2)
                 {
-                    table[skill] = best;
+                    table.Ids[skill] = best;
                 }
             }
 
@@ -131,7 +165,7 @@ public static class StaggerCredit
             }
 
             DamageEvent? hit = c.Hit is int k ? ordered[k] : null;
-            bool boosted = c.Exact && hit is { } h && table.TryGetValue(h.SkillId, out int own) && own > 0 && c.Drop != own && c.Drop == own * 3 / 2;
+            bool boosted = c.Exact && hit is { } h && CanBoost(h.SkillId) && table.Of(h.SkillId) is int own and > 0 && c.Drop != own && c.Drop == own * 3 / 2;
             last = new StaggerHit(Secs(c.At), hit?.SourceObjectId ?? 0, hit?.SkillId ?? 0, c.Drop, c.Exact, boosted);
             stagger.Add(last);
         }
@@ -167,7 +201,7 @@ public static class StaggerCredit
     private static List<Group> Groups(IReadOnlyList<StaggerEvent> readings)
     {
         var groups = new List<Group>();
-        int? previous = null;
+        int? previous = null, previousMax = null;
         DateTime? before = null;
         foreach (StaggerEvent r in readings)
         {
@@ -184,6 +218,13 @@ public static class StaggerCredit
                 continue;
             }
 
+            // the bar changed its size (Berk's 720 after its 480): a new bar, not a drop
+            if (previousMax is int pm && pm != r.Max)
+            {
+                previous = null;
+            }
+
+            previousMax = r.Max;
             int drop = previous is int p && r.Current < p ? p - r.Current : 0;
             if (groups.Count > 0 && !groups[^1].Broke && groups[^1].At == r.At)
             {
@@ -240,9 +281,9 @@ public static class StaggerCredit
     /// The amounts to start from: <see cref="Known"/>, and what this fight shows plainly - the drops of a moment whose hits since the reading before are
     /// all of one skill go to that skill.
     /// </summary>
-    private static Dictionary<int, int> Learn(IReadOnlyList<Group> groups, IReadOnlyList<DamageEvent> hits)
+    private static Table Learn(IReadOnlyList<Group> groups, IReadOnlyList<DamageEvent> hits)
     {
-        var table = new Dictionary<int, int>(Known);
+        var table = new Table();
         var plain = new List<(int Skill, int Drop)>();
         foreach (Group g in groups.Where(g => !g.Broke && g.Drops.Count > 0))
         {
@@ -256,7 +297,17 @@ public static class StaggerCredit
 
         foreach ((int skill, Dictionary<int, int> counts) in Votes(plain))
         {
-            table[skill] = Best(counts, out _);
+            table.Ids[skill] = Best(counts, skill, out _);
+        }
+
+        // a family this fight shows plainly, for its other ids
+        foreach ((int family, Dictionary<int, int> counts) in Votes(plain.Select(x => (Family(x.Skill), x.Drop))))
+        {
+            int best = Best(counts, family * 10000, out int agree);
+            if (agree >= 2 && !table.Families.ContainsKey(family))
+            {
+                table.Families[family] = best;
+            }
         }
 
         return table;
@@ -278,17 +329,23 @@ public static class StaggerCredit
         return votes;
     }
 
-    /// <summary>The amount most of the drops fit (<see cref="Fits"/>), the smallest of equals; <paramref name="agree"/>: how many fit it.</summary>
-    private static int Best(Dictionary<int, int> counts, out int agree)
+    /// <summary>
+    /// The amount of a skill: the drop seen most often, the one more drops fit (<see cref="Fits"/>: a boosted drop is half as much again) when two are
+    /// seen as often, the smallest of equals; <paramref name="agree"/>: how many fit it. Seen most often comes first: a Cleric's 10 (seen 9 times) is
+    /// not a 7 that was boosted once more than not.
+    /// </summary>
+    private static int Best(Dictionary<int, int> counts, int skillId, out int agree)
     {
-        int best = 0;
+        int best = 0, bestSeen = -1;
         agree = -1;
         foreach (int v in counts.Keys.OrderBy(v => v))
         {
-            int n = counts.Where(c => Fits(v, c.Key)).Sum(c => c.Value);
-            if (n > agree)
+            int seen = counts[v];
+            int n = counts.Where(c => Fits(v, c.Key, skillId)).Sum(c => c.Value);
+            if (seen > bestSeen || (seen == bestSeen && n > agree))
             {
                 best = v;
+                bestSeen = seen;
                 agree = n;
             }
         }
@@ -301,7 +358,7 @@ public static class StaggerCredit
     /// then the older ones (the latest first); one whose skill takes that amount off, else one whose skill staggers at all, else one of a skill not
     /// known yet.
     /// </summary>
-    private static List<Credit> Assign(IReadOnlyList<Group> groups, IReadOnlyList<DamageEvent> hits, IReadOnlyDictionary<int, int> table)
+    private static List<Credit> Assign(IReadOnlyList<Group> groups, IReadOnlyList<DamageEvent> hits, Table table)
     {
         var claimed = new bool[hits.Count];
         var credits = new List<Credit>();
@@ -328,10 +385,10 @@ public static class StaggerCredit
 
                 older.Reverse();
                 var order = since.Concat(older).ToList();
-                int? pick = order.Cast<int?>().FirstOrDefault(i => Fits(table.GetValueOrDefault(hits[i!.Value].SkillId), drop));
+                int? pick = order.Cast<int?>().FirstOrDefault(i => Fits(table.Of(hits[i!.Value].SkillId), drop, hits[i!.Value].SkillId));
                 bool exact = pick is not null;
-                pick ??= order.Cast<int?>().FirstOrDefault(i => table.GetValueOrDefault(hits[i!.Value].SkillId) > 0);
-                pick ??= order.Cast<int?>().FirstOrDefault(i => !table.ContainsKey(hits[i!.Value].SkillId));
+                pick ??= order.Cast<int?>().FirstOrDefault(i => table.Of(hits[i!.Value].SkillId) > 0);
+                pick ??= order.Cast<int?>().FirstOrDefault(i => !table.Knows(hits[i!.Value].SkillId));
                 if (pick is int k)
                 {
                     claimed[k] = true;

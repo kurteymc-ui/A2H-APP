@@ -8,8 +8,21 @@
     {
       "version": "1.20.57",
       "date": "2026-11-07",
-      "headline": "See what an update brings before you install it",
+      "headline": "A sharper stagger split, and update notes",
       "items": [
+        {
+          "kind": "improved",
+          "area": "Stagger",
+          "title": "Who took what off the bar, far more precisely",
+          "text": "A skill takes the same off the stagger bar at every level, but the game gives each level its own id, so the app used to miss many skills and had to guess. It now knows each skill's amount at any level, for all eight classes, checked on 25 real boss fights. On fights it had never seen, exact matches went from 70% of the stagger to 88%, and on Ultimate Berk from 31% to 69%.",
+          "example": "Judgment, Chain of Torment, the Spiritmaster's spirits: all counted by what they really take off, instead of the nearest hit."
+        },
+        {
+          "kind": "fixed",
+          "area": "Stagger",
+          "title": "No phantom 240 when Berk's bar changes size",
+          "text": "When a boss's stagger bar switches size (Berk goes from 720 to 480), the difference was counted as stagger nobody did. It isn't any more. Only the Gladiator's and Assassin's hits are marked as boosted now, as only they have the stagger buff."
+        },
         {
           "kind": "new",
           "area": "Updates",

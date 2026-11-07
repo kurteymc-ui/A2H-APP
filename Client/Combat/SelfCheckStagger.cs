@@ -30,14 +30,14 @@ public static class SelfCheckStagger
         for (int i = 0; i < 12; i++)
         {
             DateTime at = t0.AddSeconds(1 + i);
-            hits.Add(new DamageEvent(at, 1, boss, 1000, false, "Strike", SkillId: 501));     // takes 5 off
+            hits.Add(new DamageEvent(at, 1, boss, 1000, false, "Strike", SkillId: 11170350));     // takes 5 off
             hits.Add(new DamageEvent(at, 2, boss, 900, false, "Basic Attack", SkillId: 900)); // takes nothing off
-            hits.Add(new DamageEvent(at, 2, boss, 800, false, "Slam", SkillId: 602));         // takes 2 off
+            hits.Add(new DamageEvent(at, 2, boss, 800, false, "Slam", SkillId: 13010340));         // takes 2 off
             Reading(at, 5);
             Reading(at, 2);
-            hits.Add(new DamageEvent(at.AddSeconds(0.3), 1, boss, 1000, false, "Strike", SkillId: 501));
+            hits.Add(new DamageEvent(at.AddSeconds(0.3), 1, boss, 1000, false, "Strike", SkillId: 11170350));
             Reading(at.AddSeconds(0.3), 5);
-            hits.Add(new DamageEvent(at.AddSeconds(0.6), 2, boss, 800, false, "Slam", SkillId: 602));
+            hits.Add(new DamageEvent(at.AddSeconds(0.6), 2, boss, 800, false, "Slam", SkillId: 13010340));
             Reading(at.AddSeconds(0.6), 2);
             hits.Add(new DamageEvent(at.AddSeconds(0.9), 2, boss, 900, false, "Basic Attack", SkillId: 900));
         }
@@ -45,7 +45,7 @@ public static class SelfCheckStagger
         bar.Add(new StaggerEvent(t0.AddSeconds(13), boss, 0, 0, true));
         StaggerReport st = StaggerCredit.Build(bar, hits, t0);
         bool credited = st.Total == 168 && st.Of(1)?.Amount == 120 && st.Of(2)?.Amount == 48 && st.ExactPercent > 99.9
-            && st.Of(2)!.Skills.Count == 1 && st.Of(2)!.Skills[0].SkillId == 602 && st.Breaks.Count == 1 && st.Breaks[0].Player == 2;
+            && st.Of(2)!.Skills.Count == 1 && st.Of(2)!.Skills[0].SkillId == 13010340 && st.Breaks.Count == 1 && st.Breaks[0].Player == 2;
         Console.WriteLine($"  -> each drop of the bar goes to the hit that takes that amount off, in the hits' order (a basic attack between takes none): {credited} " +
             $"(total {st.Total}, player 1 {st.Of(1)?.Amount}, player 2 {st.Of(2)?.Amount}, exact {st.ExactPercent:0.#}%, breaks {st.Breaks.Count} by {st.Breaks.FirstOrDefault()?.Player})");
         ok &= credited;
@@ -111,6 +111,7 @@ public static class SelfCheckStagger
             && new ReportSkill("x", 1, 100, 0, 0, 10, 0, 0, null, null, null, null, null, null, null, 20, 10, 10, KnownHits: 10, ParriedHits: 2).Accuracy == 80;
         Console.WriteLine($"  -> accuracy: hits that landed in full, out of every attack: {accuracy} ({string.Join(", ", sel.Select(p => $"{p.Player.Name} {p.Accuracy:0.0}% ({p.Missed} dodged)"))})");
         ok &= accuracy;
+        ok &= Families();
         ok &= Checks();
         return ok;
     }
@@ -132,10 +133,10 @@ public static class SelfCheckStagger
         {
             if (i < 30)
             {
-                plan.Add((0.4 + i * 0.2, 1, 501, 10));
+                plan.Add((0.4 + i * 0.2, 1, 11190340, 10));
             }
 
-            plan.Add((0.5 + i * 0.2, 2, 602, i == 16 ? 7 : 5));
+            plan.Add((0.5 + i * 0.2, 2, 13350350, i == 16 ? 7 : 5));
         }
 
         int max = plan.Sum(x => x.Drop), current = max;
@@ -157,7 +158,7 @@ public static class SelfCheckStagger
         current = max;
         for (int i = 0; i < 20; i++)
         {
-            hits.Add(new DamageEvent(c0.AddSeconds(30.5 + i * 0.3), 1, boss, 1000, false, "Skill", SkillId: 501));
+            hits.Add(new DamageEvent(c0.AddSeconds(30.5 + i * 0.3), 1, boss, 1000, false, "Skill", SkillId: 11190340));
             current -= 10;
             bar.Add(new StaggerEvent(c0.AddSeconds(30.5 + i * 0.3), boss, current, max, false));
         }
@@ -172,7 +173,7 @@ public static class SelfCheckStagger
             && first.Credit.Hits.Single(h => h.Boosted) is { Player: 2, Amount: 7 } && first.Credit.Breaks.Count >= 1;
         bool failed = second is { Outcome: StaggerOutcome.Failed, Mechanic: mechanic } && second.Start == c0.AddSeconds(30) && second.Deadline == c0.AddSeconds(38)
             && second.Left == max - 200 && second.Taken == 200 && second.Credit.Of(1)?.Amount == 200 && second.Credit.Of(2) is null
-            && second.Used.Count == 1 && second.Used[0] is { Player: 1, SkillId: 501, Hits: 20 };
+            && second.Used.Count == 1 && second.Used[0] is { Player: 1, SkillId: 11190340, Hits: 20 };
         bool running = third is { Outcome: StaggerOutcome.Running, Taken: 0 } && third.Start == c0.AddSeconds(50) && third.TimeLeft(c0.AddSeconds(52)) is double left && Math.Abs(left - 6) < 0.01
             && StaggerChecks.Latest(at52) == third;
         List<StaggerCheck> later = StaggerChecks.Find(boss, bar, windups, hits, c0.AddSeconds(58.8));
@@ -185,7 +186,7 @@ public static class SelfCheckStagger
         var plainHits = new List<DamageEvent>();
         for (int i = 1; i <= 179; i++)
         {
-            plainHits.Add(new DamageEvent(c0.AddSeconds(i * 0.2), 3, boss, 1000, false, "Skill", SkillId: 501));
+            plainHits.Add(new DamageEvent(c0.AddSeconds(i * 0.2), 3, boss, 1000, false, "Skill", SkillId: 11190340));
             plain.Add(new StaggerEvent(c0.AddSeconds(i * 0.2), boss, 1790 - i * 10, 1800, false));
         }
 
@@ -196,7 +197,7 @@ public static class SelfCheckStagger
         // then a few hits on it and the boss dies: it ended (not a missed check)
         for (int i = 0; i < 3; i++)
         {
-            plainHits.Add(new DamageEvent(c0.AddSeconds(42 + i), 3, boss, 1000, false, "Skill", SkillId: 501));
+            plainHits.Add(new DamageEvent(c0.AddSeconds(42 + i), 3, boss, 1000, false, "Skill", SkillId: 11190340));
             plain.Add(new StaggerEvent(c0.AddSeconds(42 + i), boss, 1790 - i * 10, 1800, false));
         }
 
@@ -205,5 +206,36 @@ public static class SelfCheckStagger
         Console.WriteLine($"  -> a bar that is always up, broken without a cast: one check, the bar full again after it none: {up}; going down again when the boss died: ended={ended}");
         up &= ended;
         return broken && failed && running && ranOut && up;
+    }
+
+    /// <summary>
+    /// What the game's own fights showed (3 and 4 November 2026): a skill takes the same off the bar at every level and form, so an id the fight
+    /// doesn't know goes by its family (Judgment 12249999: 5, like 12243450); a bar that changes its size (Berk's 720, then 480) is no drop; only a
+    /// Gladiator's or Assassin's hit can be boosted (a Cleric's 10 stays a 10, not a boosted 7).
+    /// </summary>
+    private static bool Families()
+    {
+        DateTime t0 = new(2026, 11, 7, 22, 0, 0);
+        const int boss = 91;
+        var hits = new List<DamageEvent>();
+        var bar = new List<StaggerEvent> { new(t0, boss, 720, 720, false) };
+        int current = 720;
+        for (int i = 0; i < 10; i++)
+        {
+            DateTime at = t0.AddSeconds(1 + i);
+            hits.Add(new DamageEvent(at, 1, boss, 9000, false, "Judgment", SkillId: 12249999));          // a form the tables don't list: 5 by its family
+            hits.Add(new DamageEvent(at, 2, boss, 9000, false, "Debilitating Mark", SkillId: 17089999)); // a Cleric's 10
+            current -= 5;
+            bar.Add(new StaggerEvent(at, boss, current, 720, false));
+            current -= 10;
+            bar.Add(new StaggerEvent(at, boss, current, 720, false));
+        }
+
+        bar.Add(new StaggerEvent(t0.AddSeconds(12), boss, 480, 480, false)); // the bar's size changes: no drop of 240
+        StaggerReport st = StaggerCredit.Build(bar, hits, t0);
+        bool families = st.Of(1)?.Amount == 50 && st.Of(2)?.Amount == 100 && st.Total == 150 && st.ExactPercent > 99.9 && st.Hits.All(h => !h.Boosted);
+        Console.WriteLine($"  -> a skill's form goes by its family, a bar that changes size is no drop, a Cleric's hit is never boosted: {families} " +
+            $"(player 1 {st.Of(1)?.Amount}, player 2 {st.Of(2)?.Amount}, total {st.Total}, exact {st.ExactPercent:0.#}%, boosted {st.Hits.Count(h => h.Boosted)})");
+        return families;
     }
 }

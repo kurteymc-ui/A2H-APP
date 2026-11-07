@@ -131,7 +131,7 @@ internal static class FightReportSample
     /// <summary>What each skill of the sample takes off the boss's stagger bar (as in the game: the same amount each hit; none for basic attacks).</summary>
     public static readonly IReadOnlyDictionary<int, int> StaggerOf = new Dictionary<int, int>
     {
-        [11010000] = 10, [11780000] = 20, [11020000] = 5, [18250000] = 5, [12010000] = 7, [12020000] = 25, [13010000] = 2, [13020000] = 10, [13030000] = 5,
+        [11010000] = 2, [11780000] = 20, [11020000] = 5, [18250000] = 5, [12010000] = 7, [12020000] = 25, [13010000] = 2, [13020000] = 10, [13030000] = 5,
         [13040000] = 15, [15010000] = 2, [15020000] = 7, [15030000] = 5,
     };
 
