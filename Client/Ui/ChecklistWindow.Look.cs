@@ -156,16 +156,16 @@ public sealed partial class ChecklistWindow
     }
 
     /// <summary>The columns of the roster's table: the character (the rest of the width), the Odyle Energy, when it is full, then one per counter.</summary>
-    private static Grid RosterColumns(int counters)
+    private static Grid RosterColumns(IReadOnlyList<double> counters)
     {
         var grid = new Grid();
         // narrow enough for seven counters (the Abyss Corridor the seventh, 7 November 2026) in the window's first size of 1180 pixels
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 110 });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(78) });
-        for (int k = 0; k < counters; k++)
+        foreach (double width in counters)
         {
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(width) });
         }
 
         return grid;
@@ -222,7 +222,13 @@ public sealed partial class ChecklistWindow
         var table = new StackPanel();
         // the Abyss Corridors after the counters: open from the end of a siege to the start of the next (none without a siege in the timetable)
         Aion2Corridors.Window? corridors = Aion2Corridors.WindowAt(now);
-        int counters = 1 + defs.Count(d => d is not null) + (corridors is null ? 0 : 1);
+        // the daily tasks, each counter, the corridors; the Dimensional Invasion's long word gets a little more room
+        var counters = new List<double> { 52 };
+        counters.AddRange(defs.Where(d => d is not null).Select(d => d!.Id == 8 ? 64.0 : 58.0));
+        if (corridors is not null)
+        {
+            counters.Add(58);
+        }
 
         // the titles
         Grid head = RosterColumns(counters);
@@ -230,7 +236,7 @@ public sealed partial class ChecklistWindow
         void Title(string text, string? tip, int column, bool left = false)
         {
             // as the game writes them, broken between words only ("Dimensional / Invasion")
-            TextBlock t = Label(text, "Brush.TextMuted", 10, bold: true);
+            TextBlock t = Label(text, "Brush.TextMuted", 10.5, bold: true);
             t.TextWrapping = TextWrapping.Wrap;
             t.TextAlignment = left ? TextAlignment.Left : TextAlignment.Center;
             t.HorizontalAlignment = left ? HorizontalAlignment.Left : HorizontalAlignment.Center;
