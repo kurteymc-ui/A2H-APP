@@ -777,7 +777,7 @@ public sealed class AssistWindow : Window
 
         _classLine.Children.Clear();
         _classLine.Children.Add(Words(loc["Assist.PresetsOf"]));
-        var pick = new ComboBox { MinWidth = 150, VerticalAlignment = VerticalAlignment.Center, ToolTip = loc["Assist.PresetsOfTip"] };
+        var pick = new ComboBox { MinWidth = 170, VerticalAlignment = VerticalAlignment.Center, ToolTip = loc["Assist.PresetsOfTip"], Style = DarkCombo.Value, ItemContainerStyle = DarkComboItem.Value };
         if (cls == 0)
         {
             pick.Items.Add(new ComboBoxItem { Content = loc["Assist.ClassUnknown"], Tag = 0 });
@@ -808,7 +808,7 @@ public sealed class AssistWindow : Window
 
         _copyLine.Visibility = Visibility.Visible;
         _copyLine.Children.Add(Words(loc["Assist.CopyFrom"]));
-        var from = new ComboBox { MinWidth = 150, VerticalAlignment = VerticalAlignment.Center };
+        var from = new ComboBox { MinWidth = 170, VerticalAlignment = VerticalAlignment.Center, Style = DarkCombo.Value, ItemContainerStyle = DarkComboItem.Value };
         foreach (int other in others)
         {
             from.Items.Add(new ComboBoxItem { Content = ClassName(other), Tag = other });
