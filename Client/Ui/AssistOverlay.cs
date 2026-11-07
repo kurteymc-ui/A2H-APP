@@ -138,40 +138,22 @@ public sealed class AssistController : IDisposable
         PlacesVersion++;
     }
 
-    /// <summary>The cooldowns as they sit on the screen now, kept in a preset slot (1 to 3).</summary>
-    public static void SavePreset(int slot)
+    /// <summary>The look of the cooldowns now (no places): what a class keeps of its own.</summary>
+    private static CooldownPreset LookOf(MeterSettings s) => new()
     {
-        var s = MeterSettings.Load();
-        s.AssistPresets[slot] = new CooldownPreset
-        {
-            SavedAt = DateTime.Now,
-            Style = s.AssistCooldownStyle == CooldownArt.Tiles ? CooldownArt.Tiles : CooldownArt.Bars,
-            Scale = s.AssistCooldownScale,
-            BarWidth = s.AssistBarWidth,
-            Together = s.AssistCooldownsTogether,
-            ShowReady = s.AssistShowReady,
-            Opacity = s.AssistCooldownOpacity,
-            ReadyOpacity = s.AssistReadyOpacity,
-            BackOpacity = s.AssistBackOpacity,
-            Places = s.AssistCooldownPlaces.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
-            TilePlaces = s.AssistCooldownTilePlaces.ToDictionary(kv => kv.Key, kv => kv.Value.ToArray()),
-            Hidden = s.AssistOverlayHidden.ToList(),
-            Extra = s.AssistExtraSkills.ToList(),
-        };
-        s.AssistPresetActive = slot;
-        s.Save();
-    }
+        SavedAt = DateTime.Now,
+        Style = s.AssistCooldownStyle == CooldownArt.Tiles ? CooldownArt.Tiles : CooldownArt.Bars,
+        Scale = s.AssistCooldownScale,
+        BarWidth = s.AssistBarWidth,
+        Together = s.AssistCooldownsTogether,
+        ShowReady = s.AssistShowReady,
+        Opacity = s.AssistCooldownOpacity,
+        ReadyOpacity = s.AssistReadyOpacity,
+        BackOpacity = s.AssistBackOpacity,
+    };
 
-    /// <summary>A preset back on the screen: every cooldown goes to its place in it, with its look and size (the windows are made again there).
-    /// False when the slot is empty.</summary>
-    public static bool LoadPreset(int slot)
+    private static void PutLook(MeterSettings s, CooldownPreset p)
     {
-        var s = MeterSettings.Load();
-        if (!s.AssistPresets.TryGetValue(slot, out CooldownPreset? p) || p is null)
-        {
-            return false;
-        }
-
         s.AssistCooldownStyle = p.Style == CooldownArt.Tiles ? CooldownArt.Tiles : CooldownArt.Bars;
         s.AssistCooldownScale = Math.Clamp(p.Scale, 0.5, 3);
         s.AssistBarWidth = Math.Clamp(p.BarWidth, 90, 400);
@@ -180,10 +162,101 @@ public sealed class AssistController : IDisposable
         s.AssistCooldownOpacity = Math.Clamp(p.Opacity, 0.1, 1);
         s.AssistReadyOpacity = Math.Clamp(p.ReadyOpacity, 0.1, 1);
         s.AssistBackOpacity = Math.Clamp(p.BackOpacity, 0, 1);
-        s.AssistCooldownPlaces = p.Places.Where(kv => kv.Value is { Length: 2 }).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
-        s.AssistCooldownTilePlaces = p.TilePlaces.Where(kv => kv.Value is { Length: 2 }).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
-        s.AssistOverlayHidden = p.Hidden.ToList();
-        s.AssistExtraSkills = p.Extra.ToList();
+    }
+
+    /// <summary>
+    /// Another class is played (its record at the login, its first skill, or picked in the Skill Assist): the look of the class before is kept for it, and the
+    /// new class's own look is put on (a class seen for the first time keeps the look of the moment). The places are kept by skill, so each class's skills
+    /// stand where they were put for it. Called on the window's thread.
+    /// </summary>
+    public static void OnClassChanged(int before, int after)
+    {
+        var s = MeterSettings.Load();
+        if (before != 0)
+        {
+            s.AssistClassLooks[before] = LookOf(s);
+        }
+
+        if (s.AssistClassLooks.TryGetValue(after, out CooldownPreset? look) && look is not null)
+        {
+            PutLook(s, look);
+        }
+
+        s.AssistPresetActive = 0; // the presets are the class's own
+        s.Save();
+        PlacesVersion++;
+        AskReload();
+        EditBarChanged?.Invoke();
+    }
+
+    /// <summary>The preset slots of a class (its two digits; 0, no class known: the shared slots of before). The shared ones of before go to the class whose
+    /// skills they hold, once.</summary>
+    internal static Dictionary<int, CooldownPreset> PresetsOf(MeterSettings s, int cls)
+    {
+        foreach (var (slot, old) in s.AssistPresets.ToList())
+        {
+            int owner = old.Places.Keys.Concat(old.TilePlaces.Keys).Concat(old.Extra).Select(Aion2Cooldowns.ClassOf).Where(c => c != 0)
+                .GroupBy(c => c).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
+            if (owner == 0)
+            {
+                continue;
+            }
+
+            if (!s.AssistClassPresets.TryGetValue(owner, out var slots))
+            {
+                s.AssistClassPresets[owner] = slots = new();
+            }
+
+            slots.TryAdd(slot, old);
+            s.AssistPresets.Remove(slot);
+        }
+
+        if (cls == 0)
+        {
+            return s.AssistPresets;
+        }
+
+        if (!s.AssistClassPresets.TryGetValue(cls, out var mine))
+        {
+            s.AssistClassPresets[cls] = mine = new();
+        }
+
+        return mine;
+    }
+
+    /// <summary>The cooldowns as they sit on the screen now, kept in a preset slot (1 to 3) of the class played: its look and the places of its skills.</summary>
+    public static void SavePreset(int slot)
+    {
+        var s = MeterSettings.Load();
+        int cls = Aion2Cooldowns.CurrentClass();
+        bool Mine(int id) => cls == 0 || Aion2Cooldowns.ClassOf(id) == cls;
+        CooldownPreset preset = LookOf(s);
+        preset.Places = s.AssistCooldownPlaces.Where(kv => Mine(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
+        preset.TilePlaces = s.AssistCooldownTilePlaces.Where(kv => Mine(kv.Key)).ToDictionary(kv => kv.Key, kv => kv.Value.ToArray());
+        preset.Hidden = s.AssistOverlayHidden.Where(Mine).ToList();
+        preset.Extra = s.AssistExtraSkills.Where(Mine).ToList();
+        PresetsOf(s, cls)[slot] = preset;
+        s.AssistPresetActive = slot;
+        s.Save();
+    }
+
+    /// <summary>A preset of the class played back on the screen: every cooldown of the class goes to its place in it, with its look and size (the windows are
+    /// made again there); the other classes' places are left as they are. False when the slot is empty.</summary>
+    public static bool LoadPreset(int slot)
+    {
+        var s = MeterSettings.Load();
+        int cls = Aion2Cooldowns.CurrentClass();
+        if (!PresetsOf(s, cls).TryGetValue(slot, out CooldownPreset? p) || p is null)
+        {
+            return false;
+        }
+
+        bool Mine(int id) => cls == 0 || Aion2Cooldowns.ClassOf(id) == cls;
+        PutLook(s, p);
+        Replace(s.AssistCooldownPlaces, p.Places, Mine);
+        Replace(s.AssistCooldownTilePlaces, p.TilePlaces, Mine);
+        s.AssistOverlayHidden = s.AssistOverlayHidden.Where(id => !Mine(id)).Concat(p.Hidden).Distinct().ToList();
+        s.AssistExtraSkills = s.AssistExtraSkills.Where(id => !Mine(id)).Concat(p.Extra).Distinct().ToList();
         s.AssistPresetActive = slot;
         DropDocks(s);
         s.Save();
@@ -192,6 +265,83 @@ public sealed class AssistController : IDisposable
         EditBarChanged?.Invoke();
         return true;
     }
+
+    private static void Replace(Dictionary<int, double[]> places, Dictionary<int, double[]> from, Func<int, bool> mine)
+    {
+        foreach (int id in places.Keys.Where(mine).ToList())
+        {
+            places.Remove(id);
+        }
+
+        foreach (var (id, at) in from)
+        {
+            if (at is { Length: 2 })
+            {
+                places[id] = at.ToArray();
+            }
+        }
+    }
+
+    /// <summary>The classes that have a layout of their own to copy (places of their skills on the screen), by their two digits.</summary>
+    internal static IReadOnlyList<int> ClassesWithLayout(MeterSettings s) =>
+        s.AssistCooldownPlaces.Keys.Concat(s.AssistCooldownTilePlaces.Keys).Select(Aion2Cooldowns.ClassOf).Where(c => c != 0).Distinct().OrderBy(c => c).ToList();
+
+    /// <summary>
+    /// The layout of class <paramref name="from"/> put on the class played (7 November 2026, the owner: "implement a preset from another class to that class,
+    /// similar positions of squares and bars, if they're lazy"): its look, and its places one by one onto this class's skills - the first skill of its bar
+    /// takes the place of the first skill of the other class's bar, and so on (without a known bar, in the order the places stand on the screen, top to
+    /// bottom, then left to right). False when there is nothing to copy.
+    /// </summary>
+    public static bool CopyLayout(int from)
+    {
+        var s = MeterSettings.Load();
+        int to = Aion2Cooldowns.CurrentClass();
+        if (to == 0 || from == to)
+        {
+            return false;
+        }
+
+        List<int> source = BarOrder(s, from), target = BarOrder(s, to);
+        target.AddRange(s.AssistExtraSkills.Where(id => Aion2Cooldowns.ClassOf(id) == to && !target.Contains(id)));
+        target.AddRange(Aion2Cooldowns.ClassSkills(to).Where(id => !target.Contains(id)));
+        bool any = false;
+        foreach (Dictionary<int, double[]> places in new[] { s.AssistCooldownPlaces, s.AssistCooldownTilePlaces })
+        {
+            // the other class's placed skills: its bar's order first, then the rest as they stand on the screen
+            var placed = source.Where(places.ContainsKey).ToList();
+            placed.AddRange(places.Where(kv => Aion2Cooldowns.ClassOf(kv.Key) == from && !placed.Contains(kv.Key))
+                .OrderBy(kv => kv.Value[1]).ThenBy(kv => kv.Value[0]).Select(kv => kv.Key));
+            for (int i = 0; i < Math.Min(placed.Count, target.Count); i++)
+            {
+                places[target[i]] = places[placed[i]].ToArray();
+                any = true;
+            }
+        }
+
+        if (s.AssistClassLooks.TryGetValue(from, out CooldownPreset? look) && look is not null)
+        {
+            PutLook(s, look);
+            any = true;
+        }
+
+        if (!any)
+        {
+            return false;
+        }
+
+        s.AssistPresetActive = 0;
+        DropDocks(s);
+        s.Save();
+        PlacesVersion++;
+        AskReload();
+        EditBarChanged?.Invoke();
+        return true;
+    }
+
+    /// <summary>A remembered skill bar of a character of the class (base ids in slot order; empty when none is known).</summary>
+    private static List<int> BarOrder(MeterSettings s, int cls) =>
+        s.AssistBars.Values.Where(bar => bar.Count > 0 && bar.Any(id => Aion2Cooldowns.ClassOf(id) == cls))
+            .OrderByDescending(bar => bar.Count).Select(bar => bar.Where(id => Aion2Cooldowns.ClassOf(id) == cls).Distinct().ToList()).FirstOrDefault() ?? new List<int>();
 
     /// <summary>The cooldowns of 1.20.13 hung on each other through the overlays' docking; they are placed on their own now, so those ties go.</summary>
     private static bool DropDocks(MeterSettings s)

@@ -22731,5 +22731,53 @@
     "es": "Las letras de la brújula (N, NE, E ...) aparecen 3 segundos cuando el mapa aparece, hace zoom, cambia de mapa o el ratón se queda encima, y luego se desvanecen.",
     "pt": "As letras da bússola (N, NE, L ...) aparecem por 3 segundos quando o mapa surge, faz zoom, muda de mapa ou o mouse para sobre ele, e depois somem.",
     "ru": "Буквы компаса (С, СВ, В ...) видны 3 секунды, когда карта появляется, меняет масштаб, сменяется или мышь задерживается на ней, затем исчезают."
+  },
+  "Assist.PresetsOf": {
+    "en": "Presets and look of",
+    "de": "Presets und Aussehen für",
+    "fr": "Préréglages et apparence de",
+    "es": "Preajustes y aspecto de",
+    "pt": "Predefinições e visual de",
+    "ru": "Пресеты и вид для"
+  },
+  "Assist.PresetsOfTip": {
+    "en": "Each class keeps its own presets, look and places, and the app switches to the class you play by itself (at the login, or with your first skill). Pick a class here if it hasn't noticed yet.",
+    "de": "Jede Klasse hat eigene Presets, eigenes Aussehen und eigene Plätze, und die App wechselt von selbst zur gespielten Klasse (beim Login oder mit deiner ersten Fertigkeit). Wähle hier eine Klasse, falls sie es noch nicht bemerkt hat.",
+    "fr": "Chaque classe garde ses propres préréglages, apparence et emplacements, et l'application passe d'elle-même à la classe jouée (à la connexion ou à votre première compétence). Choisissez une classe ici si elle ne l'a pas encore remarqué.",
+    "es": "Cada clase guarda sus propios preajustes, aspecto y posiciones, y la app cambia sola a la clase que juegas (al iniciar sesión o con tu primera habilidad). Elige una clase aquí si aún no lo ha notado.",
+    "pt": "Cada classe guarda suas próprias predefinições, visual e posições, e o app muda sozinho para a classe que você joga (no login ou na sua primeira habilidade). Escolha uma classe aqui se ele ainda não percebeu.",
+    "ru": "У каждого класса свои пресеты, вид и места, и приложение само переключается на класс, которым вы играете (при входе или с первым умением). Выберите класс здесь, если оно ещё не заметило."
+  },
+  "Assist.ClassUnknown": {
+    "en": "Not known yet",
+    "de": "Noch unbekannt",
+    "fr": "Pas encore connue",
+    "es": "Aún desconocida",
+    "pt": "Ainda desconhecida",
+    "ru": "Пока неизвестен"
+  },
+  "Assist.CopyFrom": {
+    "en": "Copy the layout of",
+    "de": "Anordnung übernehmen von",
+    "fr": "Copier la disposition de",
+    "es": "Copiar la disposición de",
+    "pt": "Copiar o layout de",
+    "ru": "Скопировать расположение из"
+  },
+  "Assist.CopyLayout": {
+    "en": "Copy",
+    "de": "Übernehmen",
+    "fr": "Copier",
+    "es": "Copiar",
+    "pt": "Copiar",
+    "ru": "Скопировать"
+  },
+  "Assist.CopyLayoutTip": {
+    "en": "Puts that class's look on this one, and its bars or squares in the same spots: the first skill of its bar takes the place of the first skill of the other class's bar, and so on. Only this class changes.",
+    "de": "Übernimmt das Aussehen jener Klasse für diese und setzt die Balken oder Quadrate an dieselben Stellen: die erste Fertigkeit ihrer Leiste auf den Platz der ersten der anderen Klasse, und so weiter. Nur diese Klasse ändert sich.",
+    "fr": "Applique l'apparence de cette classe à celle-ci, et ses barres ou carrés aux mêmes endroits : la première compétence de sa barre prend la place de la première de l'autre classe, et ainsi de suite. Seule cette classe change.",
+    "es": "Pone el aspecto de esa clase en esta, y sus barras o cuadrados en los mismos sitios: la primera habilidad de su barra ocupa el lugar de la primera de la otra clase, y así sucesivamente. Solo cambia esta clase.",
+    "pt": "Aplica o visual daquela classe a esta, e as barras ou quadrados nos mesmos lugares: a primeira habilidade da barra fica no lugar da primeira da outra classe, e assim por diante. Só esta classe muda.",
+    "ru": "Переносит вид того класса на этот и ставит полосы или квадраты на те же места: первое умение панели занимает место первого умения другого класса, и так далее. Меняется только этот класс."
   }
 }

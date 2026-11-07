@@ -295,6 +295,15 @@ public sealed class MeterSettings
     /// <summary>The preset last saved or loaded (0: none), marked in the Skill Assist window.</summary>
     public int AssistPresetActive { get; set; }
 
+    /// <summary>Each class's look of the cooldowns (bars or squares, size, width, moving together, ready ones, see-through), by the class's two digits (11
+    /// Gladiator ... 18 Chanter): put on when that class is played (7 November 2026, the owner: "each class has different needs"). Where each skill sits is
+    /// kept by skill already, so every class has its own places anyway.</summary>
+    public Dictionary<int, CooldownPreset> AssistClassLooks { get; set; } = new();
+
+    /// <summary>Each class's three saved layouts, by its two digits, then slot 1 to 3 (the shared <see cref="AssistPresets"/> of before are given to the class
+    /// whose skills they hold the first time they are read).</summary>
+    public Dictionary<int, Dictionary<int, CooldownPreset>> AssistClassPresets { get; set; } = new();
+
     /// <summary>The effects on the player as an overlay of their own (the assist overlay shows the cooldowns). Null (never switched): as the assist overlay.
     /// It shares the assist overlay's lock and the list of what is hidden.</summary>
     public bool? ShowEffectsOverlay { get; set; }

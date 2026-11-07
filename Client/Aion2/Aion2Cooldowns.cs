@@ -59,6 +59,61 @@ public static class Aion2Cooldowns
     /// <summary>The class of the character the list belongs to: the first two digits of its skills (11 Gladiator, 12 Templar ...); 0 while unknown.</summary>
     private static int _class;
 
+    /// <summary>Raised when the class of the skills changes (the class before, the new one): another character logged in, its first skill, or the player's
+    /// own pick in the Skill Assist. Raised outside the lock, on the thread that noticed it.</summary>
+    public static event Action<int, int>? ClassChanged;
+
+    /// <summary>The two digits of a class's skills by its name (Gladiator 11, Templar 12, Assassin 13, Ranger 14, Sorcerer 15, Spiritmaster 16, Cleric 17,
+    /// Chanter 18; checked against the skill names: Throw Shadowblade 13, Rapid Fire 14, Bittercold Wind 15, Command: Proxy 16, Healing Light 17).</summary>
+    public static int DigitsOf(string? className) => className switch
+    {
+        "Gladiator" => 11, "Templar" => 12, "Assassin" => 13, "Ranger" => 14, "Sorcerer" => 15, "Spiritmaster" => 16, "Cleric" => 17, "Chanter" => 18, _ => 0,
+    };
+
+    /// <summary>The class's name by its two digits (null for none).</summary>
+    public static string? NameOfDigits(int cls) => cls switch
+    {
+        11 => "Gladiator", 12 => "Templar", 13 => "Assassin", 14 => "Ranger", 15 => "Sorcerer", 16 => "Spiritmaster", 17 => "Cleric", 18 => "Chanter", _ => null,
+    };
+
+    /// <summary>
+    /// The class of the character in the game (7 November 2026: the Skill Assist listed the Assassin skills of the character before on a Ranger until the game
+    /// sent a cooldown): from its record at the login, a skill it used, or the player's pick. The numbers of the class before are dropped.
+    /// </summary>
+    public static void SetClass(int cls)
+    {
+        int before;
+        lock (Gate)
+        {
+            before = _class;
+            if (cls == 0 || cls == before)
+            {
+                return;
+            }
+
+            SwitchClass(cls);
+        }
+
+        ClassChanged?.Invoke(before, cls);
+    }
+
+    // Under the lock: another character's skills - the numbers of the one before are gone.
+    private static void SwitchClass(int cls)
+    {
+        if (_class != 0)
+        {
+            State.Clear();
+            Runs.Clear();
+            LastUse.Clear();
+            LastCastFrame.Clear();
+            Framed.Clear();
+            Variants.Clear();
+            _barSeen = null;
+        }
+
+        _class = cls;
+    }
+
     /// <summary>A cooldown running: when it ends, how long it is in all (for the part still to go), and whether the game's number set it.</summary>
     private sealed class Run
     {
@@ -182,54 +237,57 @@ public static class Aion2Cooldowns
     /// not see (or the first number of one); its length is counted from the use when there was one.</summary>
     public static void Receive(List<CooldownEntry> entries, DateTime at)
     {
-        lock (Gate)
+        int switchedFrom = 0, switchedTo = 0;
+        try
         {
-            // another character's skills: the numbers of the one before are gone
-            int cls = entries.Select(e => ClassOf(e.Id)).FirstOrDefault(c => c != 0);
-            if (cls != 0 && cls != _class)
+            lock (Gate)
             {
-                if (_class != 0)
+                // another character's skills: the numbers of the one before are gone
+                int cls = entries.Select(e => ClassOf(e.Id)).FirstOrDefault(c => c != 0);
+                if (cls != 0 && cls != _class)
                 {
-                    State.Clear();
-                    Runs.Clear();
-                    LastUse.Clear();
-                    LastCastFrame.Clear();
-                    Framed.Clear();
-                    Variants.Clear();
+                    switchedFrom = _class;
+                    switchedTo = cls;
+                    SwitchClass(cls);
                 }
 
-                _class = cls;
-            }
-
-            // the whole list: what it does not name is gone from the game's numbers; a short frame changes only its skills
-            bool whole = entries.Count >= WholeList;
-            if (whole)
-            {
-                foreach (int gone in State.Keys.Where(id => entries.All(e => e.Id != id)).ToList())
-                {
-                    State.Remove(gone);
-                }
-            }
-
-            for (int i = 0; i < entries.Count; i++)
-            {
-                CooldownEntry e = entries[i];
-                if (!State.TryGetValue(e.Id, out Slot? slot))
-                {
-                    State[e.Id] = slot = new Slot { Order = _nextOrder++ };
-                }
-
+                // the whole list: what it does not name is gone from the game's numbers; a short frame changes only its skills
+                bool whole = entries.Count >= WholeList;
                 if (whole)
                 {
-                    slot.Order = i;
+                    foreach (int gone in State.Keys.Where(id => entries.All(e => e.Id != id)).ToList())
+                    {
+                        State.Remove(gone);
+                    }
                 }
 
-                slot.Remaining = e.Remaining;
-                slot.At = at;
-                Take(e, at);
-            }
+                for (int i = 0; i < entries.Count; i++)
+                {
+                    CooldownEntry e = entries[i];
+                    if (!State.TryGetValue(e.Id, out Slot? slot))
+                    {
+                        State[e.Id] = slot = new Slot { Order = _nextOrder++ };
+                    }
 
-            _at = at;
+                    if (whole)
+                    {
+                        slot.Order = i;
+                    }
+
+                    slot.Remaining = e.Remaining;
+                    slot.At = at;
+                    Take(e, at);
+                }
+
+                _at = at;
+            }
+        }
+        finally
+        {
+            if (switchedTo != 0)
+            {
+                ClassChanged?.Invoke(switchedFrom, switchedTo);
+            }
         }
 
         Changed?.Invoke();
@@ -310,37 +368,51 @@ public static class Aion2Cooldowns
 
         int id = BaseOf(skillId);
         int variant = id == skillId ? id : skillId / 10 * 10;
-        lock (Gate)
+        int switchedFrom = 0, switchedTo = 0;
+        try
         {
-            if (_class == 0 && ClassOf(id) != 0)
+            lock (Gate)
             {
-                _class = ClassOf(id);
-            }
+                if (ClassOf(id) is int own and not 0 && own != _class)
+                {
+                    // the own character used a skill of another class: that is its class (the one of the start, or picked, was another character's)
+                    switchedFrom = _class;
+                    switchedTo = own;
+                    SwitchClass(own);
+                }
 
-            if (LastCastFrame.TryGetValue(id, out DateTime frame) && at >= frame && at - frame <= SameUse)
-            {
+                if (LastCastFrame.TryGetValue(id, out DateTime frame) && at >= frame && at - frame <= SameUse)
+                {
+                    LastCastFrame[id] = at;
+                    return;
+                }
+
                 LastCastFrame[id] = at;
-                return;
-            }
+                bool sameVariant = !Variants.TryGetValue(id, out int before) || before == variant;
+                if (LastUse.TryGetValue(id, out DateTime last) && at > last && !Framed.Contains(id) && sameVariant)
+                {
+                    AddGap(variant, id, (at - last).TotalSeconds);
+                }
 
-            LastCastFrame[id] = at;
-            bool sameVariant = !Variants.TryGetValue(id, out int before) || before == variant;
-            if (LastUse.TryGetValue(id, out DateTime last) && at > last && !Framed.Contains(id) && sameVariant)
-            {
-                AddGap(variant, id, (at - last).TotalSeconds);
+                Variants[id] = variant;
+                LastUse[id] = at;
+                Framed.Remove(id);
+                if (LengthOf(id) is double length && length > NoCooldownSeconds && NotWorth(id) is null)
+                {
+                    Runs[id] = new Run { Ends = at.AddSeconds(length), Length = length, FromGame = false };
+                    HasCooldownKnown(id);
+                }
+                else
+                {
+                    Runs.Remove(id);
+                }
             }
-
-            Variants[id] = variant;
-            LastUse[id] = at;
-            Framed.Remove(id);
-            if (LengthOf(id) is double length && length > NoCooldownSeconds && NotWorth(id) is null)
+        }
+        finally
+        {
+            if (switchedTo != 0)
             {
-                Runs[id] = new Run { Ends = at.AddSeconds(length), Length = length, FromGame = false };
-                HasCooldownKnown(id);
-            }
-            else
-            {
-                Runs.Remove(id);
+                ClassChanged?.Invoke(switchedFrom, switchedTo);
             }
         }
     }

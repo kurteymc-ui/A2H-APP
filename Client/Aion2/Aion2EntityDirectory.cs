@@ -218,6 +218,8 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
     /// the "appeared" frame), so it also settles who the local player is.</summary>
     public void SetLocalCharacter(Aion2CharacterInfo info)
     {
+        // the Skill Assist follows the character's class at once, not only from its first skill (outside the directory's lock: the cooldowns have their own)
+        Aion2Cooldowns.SetClass(Aion2Cooldowns.DigitsOf(Aion2SkillNames.ClassFromCode(info.ClassCode)));
         int? renamedFrom = null;
         lock (_gate)
         {
@@ -341,11 +343,20 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
     /// record just fills the Character view and the profile upload until the game sends the real one.</summary>
     public void RestoreFrom(Aion2SavedCharacter saved)
     {
+        if (RestoreCharacter(saved) && Aion2Cooldowns.CurrentClass() == 0)
+        {
+            // the class of the character of the last session until the game says otherwise (a skill of another class switches it, Aion2Cooldowns.NoteOwnCast)
+            Aion2Cooldowns.SetClass(Aion2Cooldowns.DigitsOf(Aion2SkillNames.ClassFromCode(saved.ClassCode)));
+        }
+    }
+
+    private bool RestoreCharacter(Aion2SavedCharacter saved)
+    {
         lock (_gate)
         {
             if (_character is not null)
             {
-                return; // fresh data already arrived
+                return false; // fresh data already arrived
             }
 
             var equipment = saved.Equipment.Select(i => new Aion2EquippedItem(i.Slot, i.ItemId, i.Enchant, i.Stones, i.Stats, i.GodstoneId, i.SkillBonuses, i.Arcana)).ToList();
@@ -394,6 +405,8 @@ public sealed class Aion2EntityDirectory : IEntityDirectory
             _restoredOwner = saved.Name;
             _restoredLists = (_skills, _fullEquipment, _daevanion, _species, _titles, _petStates, _attributes, _wing, _activePet, _pantheon, _ownedTitles, _ownedWings);
         }
+
+        return true;
     }
 
     // The lists RestoreFrom took from the file belong to the character that was saved. A live list the game sends later is a new

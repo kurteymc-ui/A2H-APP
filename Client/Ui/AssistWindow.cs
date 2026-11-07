@@ -39,6 +39,9 @@ public sealed class AssistWindow : Window
     private CheckBox? _readyBox;
     private readonly UniformGrid _presets = new() { Columns = 3, Margin = new Thickness(0, 12, 0, 2) };
 
+    /// <summary>Above the presets: whose they are (the class played, or picked by hand); under them: copying another class's layout.</summary>
+    private readonly WrapPanel _classLine = new() { Margin = new Thickness(0, 10, 0, 0) }, _copyLine = new() { Margin = new Thickness(0, 10, 0, 0) };
+
     /// <summary>The tabs' names in the settings (<see cref="MeterSettings.AssistTab"/>) and for the tools window's size per tab.</summary>
     public const string CooldownsTab = "cooldowns", BuffsTab = "buffs";
 
@@ -363,7 +366,9 @@ public sealed class AssistWindow : Window
         // three saved layouts: how the cooldowns sit on the screen, to switch between
         var presets = new StackPanel();
         presets.Children.Add(CardHead(loc["Assist.Sec.Presets"], loc["Assist.Sec.PresetsSub"], null));
+        presets.Children.Add(_classLine);
         presets.Children.Add(_presets);
+        presets.Children.Add(_copyLine);
         DrawPresets(settings);
         page.Children.Add(Card(presets));
 
@@ -686,10 +691,13 @@ public sealed class AssistWindow : Window
     {
         LocalizationManager loc = LocalizationManager.Instance;
         _presets.Children.Clear();
+        int cls = Aion2Cooldowns.CurrentClass();
+        Dictionary<int, CooldownPreset> slots = AssistController.PresetsOf(settings, cls);
+        DrawClassLines(settings, cls);
         for (int slot = 1; slot <= 3; slot++)
         {
             int mine = slot;
-            CooldownPreset? preset = settings.AssistPresets.GetValueOrDefault(slot);
+            CooldownPreset? preset = slots.GetValueOrDefault(slot);
             bool active = preset is not null && settings.AssistPresetActive == slot;
             var body = new StackPanel();
             var name = new TextBlock { Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, loc["Assist.PresetN"], slot), FontWeight = FontWeights.SemiBold, FontSize = 13 };
@@ -752,6 +760,71 @@ public sealed class AssistWindow : Window
             tile.SetResourceReference(Border.BorderBrushProperty, active ? "Brush.Accent" : "Brush.Border");
             _presets.Children.Add(tile);
         }
+    }
+
+    /// <summary>The class line (7 November 2026: each class keeps its own presets and look, and the one played is followed by itself): the class the presets
+    /// are of, with a choice to pick another while the game has not said yet; and the copy of another class's layout onto this one.</summary>
+    private void DrawClassLines(MeterSettings settings, int cls)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        string ClassName(int digits) => Aion2Cooldowns.NameOfDigits(digits) is { } name ? AionDPS.Data.ClassCatalog.DisplayName(name, loc.Language) : "?";
+        TextBlock Words(string text)
+        {
+            var t = new TextBlock { Text = text, FontSize = 12.5, VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(0, 0, 8, 0) };
+            t.SetResourceReference(TextBlock.ForegroundProperty, "Brush.TextMuted");
+            return t;
+        }
+
+        _classLine.Children.Clear();
+        _classLine.Children.Add(Words(loc["Assist.PresetsOf"]));
+        var pick = new ComboBox { MinWidth = 150, VerticalAlignment = VerticalAlignment.Center, ToolTip = loc["Assist.PresetsOfTip"] };
+        if (cls == 0)
+        {
+            pick.Items.Add(new ComboBoxItem { Content = loc["Assist.ClassUnknown"], Tag = 0 });
+        }
+
+        for (int digits = 11; digits <= 18; digits++)
+        {
+            pick.Items.Add(new ComboBoxItem { Content = ClassName(digits), Tag = digits });
+        }
+
+        pick.SelectedItem = pick.Items.Cast<ComboBoxItem>().FirstOrDefault(i => (int)i.Tag == cls);
+        pick.SelectionChanged += (_, _) =>
+        {
+            if (pick.SelectedItem is ComboBoxItem { Tag: int chosen } && chosen != 0 && chosen != Aion2Cooldowns.CurrentClass())
+            {
+                Aion2Cooldowns.SetClass(chosen); // the presets, the look and the "other skills" of that class; the game's own class wins as soon as it says
+            }
+        };
+        _classLine.Children.Add(pick);
+
+        _copyLine.Children.Clear();
+        var others = AssistController.ClassesWithLayout(settings).Where(c => c != cls).ToList();
+        if (cls == 0 || others.Count == 0)
+        {
+            _copyLine.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        _copyLine.Visibility = Visibility.Visible;
+        _copyLine.Children.Add(Words(loc["Assist.CopyFrom"]));
+        var from = new ComboBox { MinWidth = 150, VerticalAlignment = VerticalAlignment.Center };
+        foreach (int other in others)
+        {
+            from.Items.Add(new ComboBoxItem { Content = ClassName(other), Tag = other });
+        }
+
+        from.SelectedIndex = 0;
+        _copyLine.Children.Add(from);
+        var copy = new Button { Content = loc["Assist.CopyLayout"], Padding = new Thickness(12, 3, 12, 3), Margin = new Thickness(8, 0, 0, 0), ToolTip = loc["Assist.CopyLayoutTip"] };
+        copy.Click += (_, _) =>
+        {
+            if (from.SelectedItem is ComboBoxItem { Tag: int source })
+            {
+                AssistController.CopyLayout(source); // the window follows through EditBarChanged
+            }
+        };
+        _copyLine.Children.Add(copy);
     }
 
     private static CheckBox Switch(string text, bool on, Action<bool> changed)

@@ -11,6 +11,20 @@
       "headline": "Just the frames on the Black Cloud shop, and updates straight to the newest",
       "items": [
         {
+          "kind": "fixed",
+          "area": "Skill Assist",
+          "title": "The right class's skills on every character",
+          "text": "After switching characters, the Skill Assist could still list the skills of the class you played before until the game sent a cooldown. It now follows your character's class from the login, and from the first skill you use if the app was started later.",
+          "example": "You log out of your Assassin and into your Ranger: the other skills listed are the Ranger's right away."
+        },
+        {
+          "kind": "new",
+          "area": "Skill Assist",
+          "title": "Each class keeps its own layout and presets",
+          "text": "Every class now has its own look (bars or squares, size, see-through), its own places and its own three presets, and the app switches to them by itself when you play that class. You can also pick the class by hand, and copy another class's layout onto this one: its bars or squares go to the same spots, first skill of the bar to first skill of the bar.",
+          "example": "Your Templar's cooldowns sit just how you like them: on your Cleric, pick Copy the layout of Templar and they line up the same way."
+        },
+        {
           "kind": "improved",
           "area": "Black Cloud",
           "title": "Only the frames on the shop, no pop-up",
