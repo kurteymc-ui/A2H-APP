@@ -60,7 +60,7 @@ public partial class MainWindow
             _overlayHadFight = true;
         }
 
-        bool open = !s.MeterFoldIdle || _dummyHeader || atDummy || _overlayHadFight || s.MeterGrind || _overlayBuffs || _historyMode || _pvpOnly
+        bool open = !s.MeterFoldIdle || _dummyHeader || atDummy || _overlayHadFight || s.MeterGrind || _overlayBuffs || _overlayStagger || _historyMode || _pvpOnly
             || _overlayBossShown || _overlayPinned;
         Show(OverlayBody, open);
         Show(OverlayDummyCard, dummy);

@@ -58,6 +58,11 @@ internal static class FightReportSample
                 long amount = (long)(rng.Next(6000, 14000) * power[p.Id] * phase * (t < 4 ? t / 4 : 1));
                 bool crit = rng.NextDouble() < 0.3;
                 var kinds = (rng.NextDouble() < 0.4 ? HitKinds.Back : HitKinds.Front) | (rng.NextDouble() < 0.12 ? HitKinds.Perfect : 0) | (rng.NextDouble() < 0.1 ? HitKinds.Double : 0);
+                if (((int)(t * 100) + p.Id * 7) % 43 == 0)
+                {
+                    kinds |= HitKinds.Parry; // a hit the boss parried or blocked (the accuracy column)
+                }
+
                 DateTime at = t0.AddSeconds(t + rng.NextDouble() * 0.2);
                 events.Add(new DamageEvent(at, p.Id, Boss, crit ? amount * 2 : amount, false, skill.Name, crit, SkillId: skill.Id, Kinds: kinds));
                 if (rng.NextDouble() < 0.35)
@@ -89,6 +94,7 @@ internal static class FightReportSample
         var avoids = new List<AvoidEvent>
         {
             new(t0.AddSeconds(3.0), Boss, 3, AvoidKind.Block, "Attack"), new(t0.AddSeconds(3.8), Boss, 3, AvoidKind.Parry, "Attack"), new(t0.AddSeconds(4.5), Boss, 3, AvoidKind.Dodge, "Attack"),
+            new(t0.AddSeconds(9.0), 1, Boss, AvoidKind.Dodge), new(t0.AddSeconds(27.5), 4, Boss, AvoidKind.Dodge), // attacks of the group the boss dodged
         };
 
         // party buffs (the Chanter's mantras, the Templar's Fury), debuffs on the boss and the boss's own effect
@@ -109,8 +115,9 @@ internal static class FightReportSample
         var windups = new List<WindupRecord>();
         foreach ((double at, double length) in new[] { (5.0, 1.0), (9.5, 1.0), (18.5, 1.3), (22.0, 19.0), (52.0, 1.3) })
         {
-            windups.Add(new WindupRecord(t0.AddSeconds(at), Boss, 90_000_100, 3, (int)(length * 1000), 0, 0, 0, false));
-            uses.Add(new SkillUse(t0.AddSeconds(at), Boss, 90_000_100));
+            int cast = length >= 10 ? 1800655 : 90_000_100; // the long one starts a stagger check (Transcendent Bakarma's "Wave of Death")
+            windups.Add(new WindupRecord(t0.AddSeconds(at), Boss, cast, 3, (int)(length * 1000), 0, 0, 0, false));
+            uses.Add(new SkillUse(t0.AddSeconds(at), Boss, cast));
         }
 
         var targets = new List<TargetChange> { new(t0, Boss, 3), new(t0.AddSeconds(24), Boss, 1), new(t0.AddSeconds(31), Boss, 3) };
@@ -129,7 +136,8 @@ internal static class FightReportSample
     };
 
     /// <summary>The boss's stagger bar as the game sends it: a reading right after each hit that lowers it, sized so it breaks at 14 s; back up full
-    /// at 20 s (the stagger over), down again after.</summary>
+    /// at 20 s (the stagger over), waiting for the boss's 19 s cast at 22 s (a stagger check); down from 23 s, but not below a third of it, so the cast
+    /// runs out at 41 s with the bar still up (the check failed) and it fills again.</summary>
     public static List<StaggerEvent> StaggerBar(IReadOnlyList<DamageEvent> events, DateTime t0)
     {
         var hits = events.Where(e => !e.IsHeal && e.TargetObjectId == Boss && StaggerOf.ContainsKey(e.SkillId)).OrderBy(e => e.Timestamp).ToList();
@@ -152,6 +160,11 @@ internal static class FightReportSample
                 continue;
             }
 
+            if (e.Timestamp >= t0.AddSeconds(20) && (e.Timestamp < t0.AddSeconds(23) || e.Timestamp >= t0.AddSeconds(41) || current - StaggerOf[e.SkillId] < max / 3))
+            {
+                continue; // waiting for the cast; past its end (filled again below); kept above a third: the check fails
+            }
+
             current = Math.Max(0, current - StaggerOf[e.SkillId]);
             bar.Add(new StaggerEvent(e.Timestamp, Boss, current, max, false));
             if (current == 0)
@@ -161,6 +174,7 @@ internal static class FightReportSample
             }
         }
 
+        bar.Add(new StaggerEvent(t0.AddSeconds(41.05), Boss, max, max, false)); // the cast ran out with the bar up: it fills again
         return bar;
     }
 }

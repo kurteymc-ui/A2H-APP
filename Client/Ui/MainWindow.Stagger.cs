@@ -5,27 +5,65 @@ using AionDPS.Combat;
 namespace AionDPS.Ui;
 
 /// <summary>
-/// The stagger check on the meter (7 November 2026, the owner: "if you keep wiping to the same boss I can't sit down after the fight and go look at logs ...
-/// see it at a glance"): over the lines, as soon as a boss's stagger check starts, the card of <see cref="StaggerCardView"/> - its mechanic, the time left,
-/// the bar over the cast's time, every player of the group with the exact amount they took off it (0 for one who took nothing off) and the skills that did
-/// it, each with its hits on hover. It stays after the check (broken, or not with what was left) until the next one starts or five minutes go by, so a
-/// wipe's check can be read before the next pull; its × hides it until the next check. Its own switch in Meter look (MeterStaggerCard), on to begin with.
+/// The meter's Stagger view (7 November 2026, the owner: "if you keep wiping to the same boss I can't sit down after the fight and go look at logs ... see
+/// it at a glance"; then: "instead of doing what you did, a button called stagger after group, this is too bulky"). The scope switch has "Stagger" after
+/// "Group": it shows, in place of the lines, the boss's latest stagger check in short (<see cref="StaggerCardView.MeterView"/>) - its mechanic and the
+/// time left or how it went, a thin bar of what is left, every player of the group with the exact amount they took off it (0 for one who took nothing
+/// off) and the skills that did it, each with its hits on hover - and the boss's earlier checks as chips to click. A check stays after it ends (broken,
+/// or not with what was left) until the next one starts or five minutes go by, so a wipe's check can be read before the next pull. Any other scope, or
+/// a measure picked in the menu, brings the lines back.
 /// </summary>
 public partial class MainWindow
 {
     /// <summary>How long an ended check stays on the meter.</summary>
     private static readonly TimeSpan StaggerKeep = TimeSpan.FromMinutes(5);
 
+    /// <summary>The Stagger view is on (its switch after Group).</summary>
+    private bool _overlayStagger;
+
     private long _staggerAt;
     private string _staggerShown = "";
-    private DateTime? _staggerHidden;
 
-    /// <summary>The checks that ended, kept as they were: the meter's events can be reset after a wipe, the card still shows who did what.</summary>
+    /// <summary>An earlier check clicked on the chips: shown until a new check starts.</summary>
+    private DateTime? _staggerPicked;
+
+    /// <summary>The checks that ended, kept as they were: the meter's events can be reset after a wipe, the view still shows who did what.</summary>
     private readonly Dictionary<(int Boss, DateTime Start), StaggerCheck> _staggerDone = new();
+
+    /// <summary>The Stagger switch: on, the view in place of the lines; on again (or another scope), the lines.</summary>
+    private void SetStaggerView(bool on)
+    {
+        _overlayStagger = on;
+        _staggerPicked = null;
+        _staggerShown = "";
+        _staggerAt = 0;
+        if (on)
+        {
+            _overlayBuffs = false;
+            _dummyCardHidden = _dummyHeader;
+        }
+
+        ApplyStaggerView();
+        RefreshRows();
+        UpdateOverlayStagger();
+        UpdateOverlayFold();
+    }
+
+    /// <summary>The lines or the Stagger view, and the switch marking it.</summary>
+    private void ApplyStaggerView()
+    {
+        CompactOverlayRowsArea.Visibility = _overlayStagger ? Visibility.Collapsed : Visibility.Visible;
+        if (!_overlayStagger)
+        {
+            OverlayStaggerCard.Visibility = Visibility.Collapsed;
+        }
+
+        UpdateScopeControls();
+    }
 
     private void UpdateOverlayStagger()
     {
-        if (Headless)
+        if (Headless || !_overlayStagger)
         {
             return; // the pictures fill it themselves
         }
@@ -38,51 +76,42 @@ public partial class MainWindow
 
         _staggerAt = tick;
         DateTime now = DateTime.Now;
-        StaggerCheck? check = _gateSettings.MeterStaggerCard && !_historyMode && !_pvpOnly && _source?.Entities is Aion2.Aion2EntityDirectory dir ? CurrentStaggerCheck(dir, now) : null;
-        if (check is null || (check.End is DateTime end && now - end > StaggerKeep) || (_staggerHidden is DateTime hidden && hidden == check.Start))
+        List<StaggerCheck> checks = !_historyMode && !_pvpOnly && _source?.Entities is Aion2.Aion2EntityDirectory dir ? CurrentStaggerChecks(dir, now) : new List<StaggerCheck>();
+        checks.RemoveAll(c => c.End is DateTime end && now - end > StaggerKeep && c.Outcome != StaggerOutcome.Running);
+        StaggerCheck? latest = StaggerChecks.Latest(checks);
+        if (latest?.Outcome == StaggerOutcome.Running)
         {
-            if (OverlayStaggerCard.Visibility != Visibility.Collapsed)
-            {
-                OverlayStaggerCard.Visibility = Visibility.Collapsed;
-                _staggerShown = "";
-            }
-
-            return;
+            _staggerPicked = null; // a new check: shown at once
         }
 
+        StaggerCheck? shown = _staggerPicked is DateTime picked ? checks.FirstOrDefault(c => c.Start == picked) ?? latest : latest;
         IReadOnlyList<StaggerPerson> people = StaggerPeople();
-        string? next = check.Outcome != StaggerOutcome.Running ? NextStaggerCheck() : null;
-        // rebuilt only when something on it changed (a tooltip being read stays open); a running check's time moves every time
-        string key = string.Join("|", check.Start.Ticks, check.Outcome, check.Left, check.Outcome == StaggerOutcome.Running ? Math.Round(check.Seconds(now), 1) : 0, next,
-            string.Join(",", check.Credit.Players.Select(p => p.Player + ":" + p.Amount + ":" + p.Skills.Count)), string.Join(",", people.Select(p => p.Id)));
-        if (key == _staggerShown && OverlayStaggerCard.Visibility == Visibility.Visible)
-        {
-            return;
-        }
+        string? next = shown is null || shown.Outcome != StaggerOutcome.Running ? NextStaggerCheck() : null;
 
-        _staggerShown = key;
-        DateTime start = check.Start;
-        OverlayStaggerCard.Child = StaggerCardView.Card(check, now, people, StaggerPersonOf, next, overlay: true, close: () =>
+        // rebuilt only when something on it changed (a tooltip being read stays open); a running check's time moves every time
+        string key = string.Join("|", shown?.Start.Ticks, shown?.Outcome, shown?.Left, shown?.Outcome == StaggerOutcome.Running ? Math.Round(shown.Seconds(now), 1) : 0, next,
+            string.Join(",", checks.Select(c => c.Start.Ticks + ":" + c.Outcome)),
+            shown is null ? "" : string.Join(",", shown.Credit.Players.Select(p => p.Player + ":" + p.Amount + ":" + p.Skills.Count)), string.Join(",", people.Select(p => p.Id)));
+        if (key != _staggerShown || OverlayStaggerCard.Visibility != Visibility.Visible)
         {
-            _staggerHidden = start;
-            OverlayStaggerCard.Visibility = Visibility.Collapsed;
-        });
-        OverlayStaggerCard.Visibility = Visibility.Visible;
+            _staggerShown = key;
+            ShowStaggerView(checks, shown, now, people, next);
+        }
     }
 
-    /// <summary>The check to show: of the boss whose stagger bar the game sent last (in the last ten minutes), the one running, else the last one.</summary>
-    private StaggerCheck? CurrentStaggerCheck(Aion2.Aion2EntityDirectory dir, DateTime now)
+    /// <summary>The checks of the boss whose stagger bar the game sent last (in the last ten minutes), oldest first; empty without one.</summary>
+    private List<StaggerCheck> CurrentStaggerChecks(Aion2.Aion2EntityDirectory dir, DateTime now)
     {
         if (dir.Combat.LastStagger() is not (int boss, DateTime at) || now - at > TimeSpan.FromMinutes(10) || dir.BossNpcIdOf(boss) is null)
         {
-            return null;
+            return new List<StaggerCheck>();
         }
 
         DateTime since = now.AddMinutes(-10);
         List<StaggerEvent> readings = dir.Combat.StaggersSince(boss, since);
         if (readings.Count == 0)
         {
-            return null;
+            return new List<StaggerCheck>();
         }
 
         var windups = dir.Combat.WindupsSince(boss, readings[0].At.AddSeconds(-5));
@@ -113,7 +142,7 @@ public partial class MainWindow
             _staggerDone.Remove(old);
         }
 
-        return StaggerChecks.Latest(checks);
+        return checks;
     }
 
     /// <summary>The hits on <paramref name="target"/> since <paramref name="since"/>, in the order they came (the meter's events, read from the newest back).</summary>
@@ -160,10 +189,25 @@ public partial class MainWindow
             ? c.Casting ? $"Next stagger check: {c.Name} now" : $"Next stagger check: {c.Name} in {Math.Ceiling(c.In).ToString(CultureInfo.CurrentCulture)} s"
             : null;
 
-    /// <summary>For the pictures: the card with a check as given.</summary>
-    internal void ShowStaggerCard(StaggerCheck check, DateTime now, IReadOnlyList<StaggerPerson> people, string? next)
+    /// <summary>The Stagger view with the checks as given (the pictures call it too): the view in place of the lines, the amount taken off in big.</summary>
+    internal void ShowStaggerView(IReadOnlyList<StaggerCheck> checks, StaggerCheck? shown, DateTime now, IReadOnlyList<StaggerPerson> people, string? next)
     {
-        OverlayStaggerCard.Child = StaggerCardView.Card(check, now, people, id => new StaggerPerson(id, "#" + id, ""), next, overlay: true, close: () => { });
+        if (!_overlayStagger)
+        {
+            _overlayStagger = true;
+            ApplyStaggerView();
+        }
+
+        Func<int, StaggerPerson> nameOf = Headless ? id => new StaggerPerson(id, "#" + id, "") : StaggerPersonOf;
+        OverlayStaggerCard.Child = StaggerCardView.MeterView(checks, shown, now, people, nameOf, next, Headless ? null : c =>
+        {
+            _staggerPicked = c.Start;
+            _staggerShown = "";
+            _staggerAt = 0;
+            UpdateOverlayStagger();
+        });
         OverlayStaggerCard.Visibility = Visibility.Visible;
+        OverlayTotalRateText.Text = shown is null ? "–" : shown.Taken.ToString("N0", CultureInfo.CurrentCulture);
+        OverlayTotalUnitText.Text = shown is null ? "Stagger" : "of " + shown.Max.ToString("N0", CultureInfo.CurrentCulture) + " off";
     }
 }

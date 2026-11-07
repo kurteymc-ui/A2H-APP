@@ -13,6 +13,9 @@ public enum StaggerOutcome
 /// <summary>A skill a player hit the boss with during a stagger check, and how many times.</summary>
 public sealed record StaggerUse(int Player, int SkillId, int Hits);
 
+/// <summary>A hit of a player on the boss (seconds from the fight's start): what they hit it with in a stretch of the fight, whether it took anything off the bar or not.</summary>
+public sealed record StaggerTouch(double At, int Player, int SkillId);
+
 /// <summary>
 /// One stagger check of a boss: from the moment its stagger bar was full until it broke or filled again. <see cref="Mechanic"/>: the boss's cast that started
 /// it (Ultimate Berk's 8 s "Extinction for Eternity", Transcendent Bakarma's 18 s "Wave of Death"; 0 for a bar that is always up), <see cref="Deadline"/>: when

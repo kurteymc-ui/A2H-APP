@@ -1446,6 +1446,11 @@
                                 <Border x:Name="OverlayScopeGroup" Tag="Group" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                     <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Group}"/>
                                 </Border>
+                                <!-- Not a scope: the Stagger view in place of the lines (MainWindow.Stagger.cs). -->
+                                <Border x:Name="OverlayScopeStagger" Tag="Stagger" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked"
+                                        ToolTip="The boss's stagger checks: who took how much off its stagger bar, with which skills (hover them)">
+                                    <TextBlock FontSize="11" FontWeight="SemiBold" Text="Stagger"/>
+                                </Border>
                                 <Border x:Name="OverlayScopeCorps" Tag="Corps" Padding="7,0" CornerRadius="4" Cursor="Hand" MouseLeftButtonDown="OnOverlayScopeClicked">
                                     <TextBlock FontSize="11" FontWeight="SemiBold" Text="{local:Loc Main.Scope.Corps}"/>
                                 </Border>
@@ -1510,8 +1515,8 @@
                     </Border>
                     <!-- The boss's health over the lines (MainWindow.BossBar.cs): its name, what is left, and when it dies at the group's pace against its enrage. -->
                     <Border x:Name="OverlayBossBar" Visibility="Collapsed" Margin="10,0,10,6"/>
-                    <!-- The boss's stagger check (MainWindow.Stagger.cs, StaggerCardView.cs): its mechanic and time left, the bar over the cast's time, who took
-                         how much off it and with which skills (hover them). Stays after the check until the next one. -->
+                    <!-- The Stagger view (the scope switch's "Stagger"; MainWindow.Stagger.cs, StaggerCardView.MeterView): in place of the lines, the boss's latest
+                         stagger check - its mechanic and how it went, who took how much off it and with which skills (hover them) - and its earlier checks. -->
                     <Border x:Name="OverlayStaggerCard" Visibility="Collapsed" Margin="10,0,10,6" Padding="9,6,9,7" CornerRadius="7"
                             Background="#0E6F9FD8" BorderBrush="#336F9FD8" BorderThickness="1"/>
                     <Grid Visibility="Collapsed">

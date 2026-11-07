@@ -17,7 +17,8 @@ public sealed record StaggerPerson(int Id, string Name, string ClassName);
 /// broken in so many seconds, or failed with so much still on the bar); the bar over the check's time - from the cast's start on the left to its end on the
 /// right, how full it was, the break; then every player of the group with the exact amount they took off and their share, a player who took nothing off
 /// with 0, and the skills that did it as icons: hovering one tells its hits, what each took off, the stagger buff's half as much again and when they came.
-/// The meter shows it live over its lines (MainWindow.Stagger.cs), the fight report for every check of the fight.
+/// The meter's Stagger view shows it live in short (MainWindow.Stagger.cs, <see cref="MeterView"/>), the fight report's Stagger tab for the check or the
+/// stretch picked on its chart (<see cref="StaggerChart"/>, <see cref="Rows"/>).
 /// </summary>
 internal static class StaggerCardView
 {
@@ -56,28 +57,12 @@ internal static class StaggerCardView
     /// <param name="next">A line under the card: the next check the boss timers expect (null: none).</param>
     /// <param name="overlay">On the meter: its scaled text sizes and colours; in the report: fixed sizes.</param>
     /// <param name="close">The card's ×: hides it until the next check (null: no ×).</param>
+    /// <param name="compact">The meter's Stagger view: no chart, a thin bar of what is left, tighter lines.</param>
     public static FrameworkElement Card(StaggerCheck check, DateTime now, IReadOnlyList<StaggerPerson> people, Func<int, StaggerPerson>? nameOf, string? next, bool overlay,
-        Action? close = null)
+        Action? close = null, bool compact = false)
     {
-        TextBlock Text(string text, double size, Brush? brush = null, bool bold = false)
-        {
-            var t = new TextBlock { Text = text, FontSize = size, FontWeight = bold ? FontWeights.SemiBold : FontWeights.Normal, VerticalAlignment = VerticalAlignment.Center };
-            if (overlay)
-            {
-                OverlayPictures.Scaled(t, size);
-            }
-
-            if (brush is not null)
-            {
-                t.Foreground = brush;
-            }
-            else
-            {
-                t.SetResourceReference(TextBlock.ForegroundProperty, overlay ? "Brush.OverlayText" : "Brush.Text");
-            }
-
-            return t;
-        }
+        Func<string, double, Brush?, bool, TextBlock> text = Texts(overlay);
+        TextBlock Text(string t, double size, Brush? brush = null, bool bold = false) => text(t, size, brush, bold);
 
         var root = new StackPanel();
 
@@ -121,38 +106,26 @@ internal static class StaggerCardView
         head.Children.Add(title);
         root.Children.Add(head);
 
-        // the bar over the check's time: the cast's start on the left, its end on the right
-        root.Children.Add(new StaggerGauge(check, now, overlay) { Height = overlay ? 38 : 44, Margin = new Thickness(0, 5, 0, 4) });
+        // the bar over the check's time: the cast's start on the left, its end on the right (the meter's Stagger view: a thin bar of what is left)
+        if (compact)
+        {
+            var slim = new Grid { Height = 4, Margin = new Thickness(0, 4, 0, 4) };
+            double fill = check.Max > 0 ? Math.Clamp((double)check.Left / check.Max, 0, 1) : 0;
+            slim.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(fill, 0.0001), GridUnitType.Star) });
+            slim.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(Math.Max(1 - fill, 0.0001), GridUnitType.Star) });
+            slim.Children.Add(new Border { Background = Brush(Blue, 0xD0), CornerRadius = new CornerRadius(2) });
+            var track = new Border { Background = Brush(Colors.White, 0x14), CornerRadius = new CornerRadius(2) };
+            Grid.SetColumn(track, 1);
+            slim.Children.Add(track);
+            root.Children.Add(slim);
+        }
+        else
+        {
+            root.Children.Add(new StaggerGauge(check, now, overlay) { Height = overlay ? 38 : 44, Margin = new Thickness(0, 5, 0, 4) });
+        }
 
         // the players: the most first, the group's others with 0
-        var lines = check.Credit.Players.ToDictionary(p => p.Player);
-        var shown = new List<StaggerPerson>();
-        foreach (StaggerLine line in check.Credit.Players)
-        {
-            shown.Add(people.FirstOrDefault(p => p.Id == line.Player) ?? nameOf?.Invoke(line.Player) ?? new StaggerPerson(line.Player, "#" + line.Player, ""));
-        }
-
-        foreach (StaggerPerson p in people.Where(p => !lines.ContainsKey(p.Id)).OrderBy(p => p.Name, StringComparer.CurrentCulture))
-        {
-            shown.Add(p);
-        }
-
-        int total = check.Credit.Total;
-        int best = check.Credit.Players.Select(p => p.Amount).DefaultIfEmpty(0).Max();
-        foreach (StaggerPerson p in shown)
-        {
-            StaggerLine? line = lines.GetValueOrDefault(p.Id);
-            root.Children.Add(PlayerLine(p, line, check, total, best, overlay, Text));
-        }
-
-        int unknown = check.Credit.Hits.Where(h => h.Player == 0).Sum(h => h.Amount);
-        if (unknown > 0)
-        {
-            TextBlock u = Text($"+{unknown:N0} with no hit of the group just before it (a hit the meter didn't see)", 10, OverlayPictures.Muted);
-            u.Margin = new Thickness(0, 2, 0, 0);
-            u.TextWrapping = TextWrapping.Wrap;
-            root.Children.Add(u);
-        }
+        root.Children.Add(Rows(check.Credit, check.Used, people, nameOf, overlay, compact, "seconds into the check", "in this check"));
 
         if (next is not null)
         {
@@ -164,12 +137,172 @@ internal static class StaggerCardView
         return root;
     }
 
-    private static FrameworkElement PlayerLine(StaggerPerson p, StaggerLine? line, StaggerCheck check, int total, int best, bool overlay,
-        Func<string, double, Brush?, bool, TextBlock> text)
+    /// <summary>
+    /// The meter's Stagger view (its "Stagger" switch, after Group; 7 November 2026, the owner: "instead of doing what you did, a button called stagger
+    /// after group, this is too bulky"): in place of the lines, the boss's latest check in short - its mechanic and how it went, a thin bar of what is
+    /// left, every player with the exact amount they took off and the skills that did it (hover them) - and, under it, the boss's earlier checks as chips:
+    /// a click shows that one. With no check yet a line says what will show.
+    /// </summary>
+    /// <param name="pick">A chip clicked: show that check (null: the chips can't be clicked).</param>
+    public static FrameworkElement MeterView(IReadOnlyList<StaggerCheck> checks, StaggerCheck? shown, DateTime now, IReadOnlyList<StaggerPerson> people,
+        Func<int, StaggerPerson>? nameOf, string? next, Action<StaggerCheck>? pick)
+    {
+        Func<string, double, Brush?, bool, TextBlock> text = Texts(true);
+        if (shown is null)
+        {
+            var empty = new StackPanel();
+            TextBlock line = text("No stagger check yet. When a boss's stagger bar comes up, this shows who takes how much off it and with which skills.", 11, OverlayPictures.Muted, false);
+            line.TextWrapping = TextWrapping.Wrap;
+            empty.Children.Add(line);
+            if (next is not null)
+            {
+                TextBlock n = text(next, 10.5, Brush(AmberColor), true);
+                n.Margin = new Thickness(0, 3, 0, 0);
+                empty.Children.Add(n);
+            }
+
+            return empty;
+        }
+
+        var root = new StackPanel();
+        root.Children.Add(Card(shown, now, people, nameOf, next, overlay: true, compact: true));
+        if (checks.Count > 1)
+        {
+            WrapPanel chips = Chips(checks, shown, now, overlay: true, pick, null, false, c => c.Start.ToString("HH:mm:ss", CultureInfo.CurrentCulture));
+            chips.Margin = new Thickness(0, 4, 0, 0);
+            root.Children.Add(chips);
+        }
+
+        return root;
+    }
+
+    /// <summary>
+    /// The boss's checks as chips, oldest first: ✓ broken (its time), ✗ not (what was left), the shown one marked; a click picks one. <paramref name="whole"/>:
+    /// a first chip for the whole fight (the report), marked when <paramref name="wholeOn"/>. <paramref name="when"/>: a check's time in its tooltip.
+    /// </summary>
+    public static WrapPanel Chips(IReadOnlyList<StaggerCheck> checks, StaggerCheck? shown, DateTime? now, bool overlay, Action<StaggerCheck>? pick, Action? whole, bool wholeOn,
+        Func<StaggerCheck, string> when)
+    {
+        Func<string, double, Brush?, bool, TextBlock> text = Texts(overlay);
+        double size = overlay ? 10 : 12;
+        var chips = new WrapPanel();
+        Border Chip(string label, Color color, bool on, string tip, Action? click)
+        {
+            var chip = new Border
+            {
+                Padding = overlay ? new Thickness(5, 0, 5, 1) : new Thickness(9, 3, 9, 4), Margin = new Thickness(0, 0, overlay ? 4 : 6, overlay ? 2 : 6),
+                CornerRadius = new CornerRadius(overlay ? 3 : 5), BorderThickness = new Thickness(1),
+                BorderBrush = Brush(color, (byte)(on ? 0xC0 : 0x50)), Background = Brush(color, (byte)(on ? 0x30 : 0x10)),
+                Child = text(label, size, Brush(color), on), ToolTip = tip, Cursor = click is not null ? System.Windows.Input.Cursors.Hand : null,
+            };
+            if (click is not null)
+            {
+                chip.MouseLeftButtonUp += (_, e) =>
+                {
+                    e.Handled = true;
+                    click();
+                };
+            }
+
+            return chip;
+        }
+
+        TextBlock title = text("Checks", size, OverlayPictures.Muted, true);
+        title.Margin = new Thickness(0, 0, 6, overlay ? 2 : 6);
+        chips.Children.Add(title);
+        if (whole is not null)
+        {
+            chips.Children.Add(Chip("Whole fight", Color.FromRgb(0xDC, 0xB8, 0x77), wholeOn, "Everything taken off the bar over the fight", whole));
+        }
+
+        int n = 0;
+        foreach (StaggerCheck c in checks)
+        {
+            n++;
+            (string status, Color color) = Status(c, now ?? c.End ?? c.Start);
+            string mark = c.Outcome switch
+            {
+                StaggerOutcome.Broken => "✓ " + c.Seconds(now ?? c.End ?? c.Start).ToString("0.0", CultureInfo.CurrentCulture) + " s",
+                StaggerOutcome.Failed => "✗ " + c.Left.ToString("N0", CultureInfo.CurrentCulture) + " left",
+                StaggerOutcome.Ended => "– " + c.Left.ToString("N0", CultureInfo.CurrentCulture) + " left",
+                _ => "● now",
+            };
+            StaggerCheck picked = c;
+            chips.Children.Add(Chip(n.ToString(CultureInfo.CurrentCulture) + "  " + mark, color, shown is not null && c.Start == shown.Start,
+                $"Check {n}: {Title(c)} at {when(c)} - {status}", pick is null ? null : () => pick(picked)));
+        }
+
+        return chips;
+    }
+
+    /// <summary>A text maker: the meter's scaled sizes and colours, or the report's.</summary>
+    private static Func<string, double, Brush?, bool, TextBlock> Texts(bool overlay) => (text, size, brush, bold) =>
+    {
+        var t = new TextBlock { Text = text, FontSize = size, FontWeight = bold ? FontWeights.SemiBold : FontWeights.Normal, VerticalAlignment = VerticalAlignment.Center };
+        if (overlay)
+        {
+            OverlayPictures.Scaled(t, size);
+        }
+
+        if (brush is not null)
+        {
+            t.Foreground = brush;
+        }
+        else
+        {
+            t.SetResourceReference(TextBlock.ForegroundProperty, overlay ? "Brush.OverlayText" : "Brush.Text");
+        }
+
+        return t;
+    };
+
+    /// <summary>
+    /// The players' lines of a stretch of the fight (a check, or a period picked in the report): the most first, every player of <paramref name="people"/> who
+    /// took nothing off with 0, each with the skills that did it (hover them) and, faded, those they hit with that took nothing off. <paramref name="when"/>:
+    /// what the hits' times count from ("seconds into the check"); <paramref name="where"/>: the stretch in a few words ("in this check").
+    /// </summary>
+    public static StackPanel Rows(StaggerReport credit, IReadOnlyList<StaggerUse> used, IReadOnlyList<StaggerPerson> people, Func<int, StaggerPerson>? nameOf, bool overlay, bool compact,
+        string when, string where)
+    {
+        Func<string, double, Brush?, bool, TextBlock> text = Texts(overlay);
+        var root = new StackPanel();
+        var lines = credit.Players.ToDictionary(p => p.Player);
+        var shown = new List<StaggerPerson>();
+        foreach (StaggerLine line in credit.Players)
+        {
+            shown.Add(people.FirstOrDefault(p => p.Id == line.Player) ?? nameOf?.Invoke(line.Player) ?? new StaggerPerson(line.Player, "#" + line.Player, ""));
+        }
+
+        foreach (StaggerPerson p in people.Where(p => !lines.ContainsKey(p.Id)).OrderBy(p => p.Name, StringComparer.CurrentCulture))
+        {
+            shown.Add(p);
+        }
+
+        int total = credit.Total;
+        int best = credit.Players.Select(p => p.Amount).DefaultIfEmpty(0).Max();
+        foreach (StaggerPerson p in shown)
+        {
+            root.Children.Add(PlayerLine(p, lines.GetValueOrDefault(p.Id), credit, used, total, best, overlay, compact, text, when, where));
+        }
+
+        int unknown = credit.Hits.Where(h => h.Player == 0).Sum(h => h.Amount);
+        if (unknown > 0)
+        {
+            TextBlock u = text($"+{unknown:N0} with no hit of the group just before it (a hit the meter didn't see)", 10, OverlayPictures.Muted, false);
+            u.Margin = new Thickness(0, 2, 0, 0);
+            u.TextWrapping = TextWrapping.Wrap;
+            root.Children.Add(u);
+        }
+
+        return root;
+    }
+
+    private static FrameworkElement PlayerLine(StaggerPerson p, StaggerLine? line, StaggerReport credit, IReadOnlyList<StaggerUse> used, int total, int best, bool overlay, bool compact,
+        Func<string, double, Brush?, bool, TextBlock> text, string when, string where)
     {
         int amount = line?.Amount ?? 0;
         Color cls = ClassBrushes.ClassColor(p.ClassName);
-        var grid = new Grid { Margin = new Thickness(0, 1, 0, 1), MinHeight = overlay ? 20 : 24, Background = Brushes.Transparent };
+        var grid = new Grid { Margin = new Thickness(0, compact ? 0 : 1, 0, compact ? 0 : 1), MinHeight = compact ? 18 : overlay ? 20 : 24, Background = Brushes.Transparent };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(overlay ? 46 : 60) });
@@ -187,22 +320,23 @@ internal static class StaggerCardView
         TextBlock name = text(p.Name, 11.5, Brush(amount > 0 ? cls : Color.FromRgb(0x9D, 0xB3, 0xC2)), true);
         name.Margin = new Thickness(5, 0, 6, 0);
         name.TextTrimming = TextTrimming.CharacterEllipsis;
-        name.ToolTip = PlayerTip(p, line, check, total);
+        name.ToolTip = PlayerTip(p, line, used, total, where);
         ToolTipService.SetInitialShowDelay(name, 150);
         grid.Children.Add(name);
 
         // the skills that took it off, as icons: hovering one tells what it did; then, faded, those they hit with that took nothing off
         var icons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
         var staggered = line?.Skills ?? Array.Empty<StaggerSkill>();
+        double size = compact ? 14 : overlay ? 16 : 20;
         foreach (StaggerSkill s in staggered.Take(overlay ? 5 : 8))
         {
-            icons.Children.Add(SkillIcon(s, p, check, overlay ? 16 : 20));
+            icons.Children.Add(SkillIcon(s, p, credit, size, when));
         }
 
         var did = staggered.Select(s => s.SkillId).ToHashSet();
-        foreach (StaggerUse u in check.Used.Where(u => u.Player == p.Id && !did.Contains(u.SkillId) && u.SkillId != 0).OrderByDescending(u => u.Hits).Take(amount > 0 ? (overlay ? 2 : 4) : (overlay ? 4 : 6)))
+        foreach (StaggerUse u in used.Where(u => u.Player == p.Id && !did.Contains(u.SkillId) && u.SkillId != 0).OrderByDescending(u => u.Hits).Take(amount > 0 ? (overlay ? 2 : 4) : (overlay ? 4 : 6)))
         {
-            icons.Children.Add(UsedIcon(u, p, overlay ? 16 : 20));
+            icons.Children.Add(UsedIcon(u, p, size, where));
         }
 
         Grid.SetColumn(icons, 1);
@@ -210,7 +344,7 @@ internal static class StaggerCardView
 
         TextBlock value = text(amount.ToString("N0", CultureInfo.CurrentCulture), 12, amount > 0 ? null : OverlayPictures.Red, true);
         value.HorizontalAlignment = HorizontalAlignment.Right;
-        value.ToolTip = amount > 0 ? $"{p.Name} took {amount:N0} off the bar in this check" : $"{p.Name} took nothing off the bar in this check";
+        value.ToolTip = amount > 0 ? $"{p.Name} took {amount:N0} off the bar {where}" : $"{p.Name} took nothing off the bar {where}";
         Grid.SetColumn(value, 2);
         grid.Children.Add(value);
 
@@ -222,7 +356,7 @@ internal static class StaggerCardView
         return grid;
     }
 
-    private static FrameworkElement SkillIcon(StaggerSkill s, StaggerPerson p, StaggerCheck check, double size)
+    private static FrameworkElement SkillIcon(StaggerSkill s, StaggerPerson p, StaggerReport credit, double size, string when)
     {
         ImageSource? picture = OverlayPictures.Load((s.SkillId != 0 ? Aion2SkillIcons.PathFor(s.SkillId) : null) ?? Aion2SkillIcons.PathForName(s.Name, p.ClassName));
         UIElement inner = picture is not null
@@ -232,7 +366,7 @@ internal static class StaggerCardView
         var icon = new Border
         {
             Width = size, Height = size, Margin = new Thickness(0, 0, 3, 0), CornerRadius = new CornerRadius(3), ClipToBounds = true, BorderThickness = new Thickness(1),
-            BorderBrush = Brush(Blue, 0xA0), Background = Brush(Blue, 0x22), Child = inner, ToolTip = SkillTip(s, p, check),
+            BorderBrush = Brush(Blue, 0xA0), Background = Brush(Blue, 0x22), Child = inner, ToolTip = SkillTip(s, p, credit, when),
         };
         ToolTipService.SetInitialShowDelay(icon, 100);
         ToolTipService.SetShowDuration(icon, 30_000);
@@ -240,7 +374,7 @@ internal static class StaggerCardView
     }
 
     /// <summary>A skill the player hit the boss with in the check that took nothing off the bar: faded, its hits on hover.</summary>
-    private static FrameworkElement UsedIcon(StaggerUse u, StaggerPerson p, double size)
+    private static FrameworkElement UsedIcon(StaggerUse u, StaggerPerson p, double size, string where)
     {
         string name = Aion2SkillNames.DisplayOf(u.SkillId);
         ImageSource? picture = OverlayPictures.Load(Aion2SkillIcons.PathFor(u.SkillId) ?? Aion2SkillIcons.PathForName(Aion2SkillNames.NameOf(u.SkillId), p.ClassName));
@@ -249,7 +383,7 @@ internal static class StaggerCardView
             : new TextBlock { Text = name.Length > 0 ? name[..1] : "?", FontSize = size * 0.55, Foreground = OverlayPictures.Muted, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
         var tip = new StackPanel { MaxWidth = 320 };
         tip.Children.Add(new TextBlock { Text = name, FontWeight = FontWeights.SemiBold, FontSize = 13 });
-        tip.Children.Add(new TextBlock { Text = $"{p.Name} hit the boss with it {u.Hits} time{(u.Hits == 1 ? "" : "s")} in this check: none of those hits took anything off the stagger bar.", FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+        tip.Children.Add(new TextBlock { Text = $"{p.Name} hit the boss with it {u.Hits} time{(u.Hits == 1 ? "" : "s")} {where}: none of those hits took anything off the stagger bar.", FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
         var icon = new Border
         {
             Width = size, Height = size, Margin = new Thickness(0, 0, 3, 0), CornerRadius = new CornerRadius(3), ClipToBounds = true, BorderThickness = new Thickness(1),
@@ -260,9 +394,9 @@ internal static class StaggerCardView
     }
 
     /// <summary>A skill's part: its name, its hits that took something off and what each did (half as much again with a stagger buff), and when they came.</summary>
-    public static FrameworkElement SkillTip(StaggerSkill s, StaggerPerson p, StaggerCheck check)
+    public static FrameworkElement SkillTip(StaggerSkill s, StaggerPerson p, StaggerReport credit, string when)
     {
-        var hits = check.Credit.Hits.Where(h => h.Player == p.Id && h.SkillId == s.SkillId).OrderBy(h => h.At).ToList();
+        var hits = credit.Hits.Where(h => h.Player == p.Id && h.SkillId == s.SkillId).OrderBy(h => h.At).ToList();
         var panel = new StackPanel { MaxWidth = 340 };
         panel.Children.Add(new TextBlock { Text = s.Name.Length > 0 ? Aion2SkillNames.DisplayOf(s.SkillId) is { Length: > 0 } shown && shown != s.SkillId.ToString(CultureInfo.InvariantCulture) ? shown : s.Name : "Attack", FontWeight = FontWeights.SemiBold, FontSize = 13 });
         panel.Children.Add(new TextBlock { Text = $"{p.Name}: {s.Amount:N0} off the bar in {s.Hits} hit{(s.Hits == 1 ? "" : "s")}", FontSize = 12, Margin = new Thickness(0, 2, 0, 4) });
@@ -276,7 +410,7 @@ internal static class StaggerCardView
         if (hits.Count > 0)
         {
             string times = string.Join(", ", hits.Take(16).Select(h => h.At.ToString("0.0", CultureInfo.CurrentCulture) + " s"));
-            panel.Children.Add(new TextBlock { Text = "When (seconds into the check): " + times + (hits.Count > 16 ? " …" : ""), FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+            panel.Children.Add(new TextBlock { Text = $"When ({when}): " + times + (hits.Count > 16 ? " …" : ""), FontSize = 11.5, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
         }
 
         if (hits.Any(h => !h.Exact))
@@ -288,17 +422,17 @@ internal static class StaggerCardView
     }
 
     /// <summary>A player's part: the amount, the share, the skills with what each took off.</summary>
-    public static FrameworkElement PlayerTip(StaggerPerson p, StaggerLine? line, StaggerCheck check, int total)
+    public static FrameworkElement PlayerTip(StaggerPerson p, StaggerLine? line, IReadOnlyList<StaggerUse> used, int total, string where)
     {
         var panel = new StackPanel { MaxWidth = 340 };
         panel.Children.Add(new TextBlock { Text = p.Name, FontWeight = FontWeights.SemiBold, FontSize = 13 });
-        var others = check.Used.Where(u => u.Player == p.Id && u.SkillId != 0 && line?.Skills.All(s => s.SkillId != u.SkillId) != false).OrderByDescending(u => u.Hits).ToList();
+        var others = used.Where(u => u.Player == p.Id && u.SkillId != 0 && line?.Skills.All(s => s.SkillId != u.SkillId) != false).OrderByDescending(u => u.Hits).ToList();
         string Others() => string.Join(", ", others.Take(8).Select(u => $"{Aion2SkillNames.DisplayOf(u.SkillId)} ×{u.Hits}"));
         if (line is null || line.Amount <= 0)
         {
             panel.Children.Add(new TextBlock { Text = others.Count > 0
-                ? "Took nothing off the boss's stagger bar in this check. Hit the boss with: " + Others() + " (none of it lowered the bar)."
-                : "Took nothing off the boss's stagger bar in this check, and the meter saw no hit of theirs on the boss in it.", FontSize = 12, TextWrapping = TextWrapping.Wrap });
+                ? $"Took nothing off the boss's stagger bar {where}. Hit the boss with: " + Others() + " (none of it lowered the bar)."
+                : $"Took nothing off the boss's stagger bar {where}, and the meter saw no hit of theirs on the boss.", FontSize = 12, TextWrapping = TextWrapping.Wrap });
             return panel;
         }
 

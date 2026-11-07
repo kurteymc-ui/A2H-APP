@@ -26,11 +26,20 @@ public sealed record ReportInput(
     Func<int, string?>? NameOf = null,
     IReadOnlySet<int>? Targets = null);
 
-/// <summary>One skill's line of a report table. The rates are percents (0 to 100); a hit-quality rate is null when the game said nothing of the hits.</summary>
+/// <summary>One skill's line of a report table. The rates are percents (0 to 100); a hit-quality rate is null when the game said nothing of the hits.
+/// <see cref="KnownHits"/>: the hits the game told how they landed; <see cref="ParriedHits"/>: of those, the ones the target parried or blocked.</summary>
 public sealed record ReportSkill(
     string Name, int SkillId, long Total, double Share, double Dps, int Hits, double PerMinute, int Uses, double? AvgInterval,
     double? Crit, double? Back, double? Front, double? Perfect, double? Double, double? Multi, double? Parry, double Average, long Highest, bool Absorb = false,
-    long Overheal = 0);
+    long Overheal = 0, int KnownHits = 0, int ParriedHits = 0)
+{
+    /// <summary>
+    /// The hits that landed in full (0 to 100): not parried or blocked by the target. Against a boss the game shows accuracy that way - a hit it parries or
+    /// blocks still lands, for about a third to half of the damage (the hit frame's parry bit, checked on recordings) - so this is the skill's accuracy;
+    /// null when the game said nothing of the hits.
+    /// </summary>
+    public double? Accuracy => KnownHits > 0 ? 100.0 * (KnownHits - ParriedHits) / KnownHits : null;
+}
 
 /// <summary>A line of a stacked chart: its name and the rate (per second) in each bin of the fight.</summary>
 public sealed record ReportSeries(string Name, double[] Values);
@@ -83,6 +92,23 @@ public sealed class ReportPlayerLine
     public int Parried { get; init; }
     public int Blocked { get; init; }
     public int Resisted { get; init; }
+
+    /// <summary>Their attacks the target avoided altogether (a dodge: no damage at all).</summary>
+    public int Missed { get; init; }
+
+    /// <summary>
+    /// Their accuracy (0 to 100): the hits that landed in full - not parried or blocked - out of all their attacks the game told how they landed, the
+    /// dodged ones too (see <see cref="ReportSkill.Accuracy"/>); null when the game said nothing of their hits.
+    /// </summary>
+    public double? Accuracy
+    {
+        get
+        {
+            int known = Skills.Sum(s => s.KnownHits), parried = Skills.Sum(s => s.ParriedHits);
+            return known > 0 ? 100.0 * (known - parried) / (known + Missed) : null;
+        }
+    }
+
     public IReadOnlyList<ReportDeath> Deaths { get; init; } = Array.Empty<ReportDeath>();
     public IReadOnlyList<ReportSkill> Skills { get; init; } = Array.Empty<ReportSkill>();
     public IReadOnlyList<ReportSkill> Heals { get; init; } = Array.Empty<ReportSkill>();
@@ -172,6 +198,9 @@ public sealed class FightReport
     /// <summary>The fight's start, the checks' times are of (local time).</summary>
     public DateTime StaggerCheckStart { get; init; }
 
+    /// <summary>Every hit of a player on the boss with a skill (seconds from the start): what each hit it with in a stretch picked on the stagger tab.</summary>
+    public IReadOnlyList<StaggerTouch> StaggerTouches { get; init; } = Array.Empty<StaggerTouch>();
+
     /// <summary>The party's hits that count, in time order: the timeline's details of any stretch of the fight (<see cref="FightMoments.Window"/>).</summary>
     public IReadOnlyList<ReportHit> PartyHits { get; init; } = Array.Empty<ReportHit>();
 
@@ -247,6 +276,9 @@ public sealed class FightReport
         }
 
         var avoidsOn = input.Avoids.Where(a => InWindow(a.Timestamp) && playerIds.Contains(a.TargetObjectId)).GroupBy(a => a.TargetObjectId).ToDictionary(g => g.Key, g => g.ToList());
+        // the players' own attacks a monster avoided altogether (their accuracy)
+        var missedBy = input.Avoids.Where(a => InWindow(a.Timestamp) && playerIds.Contains(a.SourceObjectId) && !playerIds.Contains(a.TargetObjectId))
+            .GroupBy(a => a.SourceObjectId).ToDictionary(g => g.Key, g => g.Count());
 
         long damage = damageBy.Values.Sum(l => l.Sum(e => e.Amount));
         long healing = healBy.Values.Sum(l => l.Sum(e => e.Amount));
@@ -306,6 +338,7 @@ public sealed class FightReport
                 Parried = avoided.Count(a => a.Kind == AvoidKind.Parry),
                 Blocked = avoided.Count(a => a.Kind == AvoidKind.Block),
                 Resisted = avoided.Count(a => a.Kind == AvoidKind.Resist),
+                Missed = missedBy.GetValueOrDefault(p.Id),
                 Deaths = playerDeaths,
                 Skills = Skills(mine, mineTotal, seconds, myUses),
                 Heals = Skills(heals, healTotal + shields.Where(s => s.SourceObjectId == p.Id).Sum(s => s.Amount), seconds, myUses, heals: true, overOf: overOf)
@@ -418,6 +451,7 @@ public sealed class FightReport
         IReadOnlyList<StaggerPhase> staggers = Array.Empty<StaggerPhase>();
         StaggerReport stagger = StaggerReport.Empty;
         IReadOnlyList<StaggerCheck> staggerChecks = Array.Empty<StaggerCheck>();
+        IReadOnlyList<StaggerTouch> staggerTouches = Array.Empty<StaggerTouch>();
         var bossCasts = new List<(double, string)>();
         var castBars = new List<(double, double, string)>();
         var castBarIds = new List<int>();
@@ -433,6 +467,11 @@ public sealed class FightReport
             var bossHits = input.Events.Where(e => InWindow(e.Timestamp) && e.TargetObjectId == bossId && Counts(e)).ToList();
             stagger = StaggerCredit.Build(bossBar, bossHits, start);
             staggerChecks = Combat.StaggerChecks.Find(bossId, bossBar, input.Extras.Windups ?? Array.Empty<WindupRecord>(), bossHits, end.AddSeconds(30));
+            if (stagger.HasData)
+            {
+                staggerTouches = bossHits.Where(h => h.SkillId != 0 && playerIds.Contains(h.SourceObjectId))
+                    .Select(h => new StaggerTouch((h.Timestamp - start).TotalSeconds, h.SourceObjectId, h.SkillId)).ToList();
+            }
             foreach (SkillUse u in uses.Where(u => u.Actor == bossId))
             {
                 bossCasts.Add(((u.At - start).TotalSeconds, Aion2SkillNames.NameOf(u.SkillId)));
@@ -501,6 +540,7 @@ public sealed class FightReport
             Stagger = stagger,
             StaggerChecks = staggerChecks,
             StaggerCheckStart = start,
+            StaggerTouches = staggerTouches,
             PartyHits = damageBy.Values.SelectMany(l => l)
                 .Select(e => new ReportHit((e.Timestamp - start).TotalSeconds, e.SourceObjectId, e.SkillId, e.SkillId != 0 ? Aion2SkillNames.NameOf(e.SkillId) : e.Skill ?? "Attack", e.Amount))
                 .OrderBy(h => h.At).ToList(),
@@ -557,7 +597,7 @@ public sealed class FightReport
             list.Add(new ReportSkill(s.Skill, s.SkillId, s.Total, total > 0 ? 100.0 * s.Total / total : 0, s.Total / seconds, s.Hits, s.Hits * 60 / seconds,
                 casts?.Count ?? 0, interval, s.Hits > 0 && !heals || s.CritHits > 0 ? 100.0 * s.CritHits / Math.Max(1, s.Hits) : null,
                 k?.Rate(k.Back), k?.Rate(k.Front), k?.Rate(k.Perfect), k?.Rate(k.Double), k?.Rate(k.Multi), k?.Rate(k.Parry),
-                s.Hits > 0 ? (double)s.Total / s.Hits : 0, s.Max, Overheal: over?.GetValueOrDefault(s.Skill) ?? 0));
+                s.Hits > 0 ? (double)s.Total / s.Hits : 0, s.Max, Overheal: over?.GetValueOrDefault(s.Skill) ?? 0, KnownHits: k?.Known ?? 0, ParriedHits: k?.Parry ?? 0));
         }
 
         return list;

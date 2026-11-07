@@ -9,6 +9,7 @@ public static class SelfCheckHistory
     {
         bool ok = true;
         ok &= RunSegmenterScenario();
+        ok &= SideFights();
         return ok;
     }
 
@@ -52,5 +53,29 @@ public static class SelfCheckHistory
         Console.WriteLine($"  -> second run picked up whole: {secondBounds}");
         Console.WriteLine($"  -> heals and the boss's own hits are not part of a run: {healsExcluded}");
         return twoRuns && firstBounds && secondBounds && healsExcluded;
+    }
+
+    /// <summary>The fights list leaves out a dungeon's side fights (Urugugu Canyon's Patrol and Shaman) once it knows the dungeon's bosses; the bosses, the run and the open world stay.</summary>
+    private static bool SideFights()
+    {
+        Console.WriteLine("[selftest] Fights list without a dungeon's side fights:");
+        DateTime t = new(2026, 11, 6, 23, 3, 0);
+        const int canyon = 600011;
+        FightLogEntry E(string title, int? npc, int zone, int minute) =>
+            new($"f{minute}", FightLogKind.Boss, title, null, t.AddMinutes(minute), 60, true, 1, 1000, 5000, npc, zone, "");
+        var all = new List<FightLogEntry>
+        {
+            new("run", FightLogKind.Run, "Urugugu Canyon", null, t, 600, true, 5, 1000, 5000, null, canyon, ""),
+            E("Urugugu Patrol", null, canyon, 0), E("Urugugu Shaman", null, canyon, 1), E("Guardian Captain Raur", 2300206, canyon, 2), E("Judge Urahum", 2300207, canyon, 4),
+            E("Divine Auldor", 2300218, canyon, 6), E("Field elite", null, 1110, 30), E("Unknown dungeon's boss", null, 699998, 40),
+        };
+        var shown = FightLog.WithoutSideFights(all).Select(e => e.Title).ToList();
+        bool sideGone = !shown.Contains("Urugugu Patrol") && !shown.Contains("Urugugu Shaman");
+        bool bossesStay = shown.Contains("Guardian Captain Raur") && shown.Contains("Judge Urahum") && shown.Contains("Divine Auldor") && shown.Contains("Urugugu Canyon");
+        bool restStays = shown.Contains("Field elite") && shown.Contains("Unknown dungeon's boss");
+        Console.WriteLine($"  -> Urugugu Patrol and Shaman left out: {sideGone}");
+        Console.WriteLine($"  -> the three bosses and the run stay: {bossesStay}");
+        Console.WriteLine($"  -> the open world and a dungeon whose bosses the table doesn't know keep every fight: {restStays}");
+        return sideGone && bossesStay && restStays;
     }
 }

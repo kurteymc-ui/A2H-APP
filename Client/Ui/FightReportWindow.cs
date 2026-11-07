@@ -432,6 +432,7 @@ public sealed class FightReportWindow : Window
         }
 
         cols.Add(new Col("Share", 80, p => Pct(p.Share)));
+        cols.Add(new Col("Accuracy", 90, p => Acc(p.Accuracy), Tip: p => AccuracyTip(p)));
         root.Children.Add(Section("Players", "Click a player to see their skills."));
         root.Children.Add(PlayersTable(players, p => p.Damage, cols.ToArray()));
         if (Selected(players) is not { } sel)
@@ -442,7 +443,7 @@ public sealed class FightReportWindow : Window
         root.Children.Add(PlayerHeading(sel.Player.Name + "'s skills", players));
         var card = new StackPanel();
         card.Children.Add(Summary(("Damage", N(sel.Damage)), ("DPS", N(sel.Dps)), ("rDPS", sel.Rdps is double r ? N(r) : null), ("Share", Pct(sel.Share)),
-            ("Deaths", sel.Deaths.Count > 0 ? sel.Deaths.Count.ToString(En) : null)));
+            ("Accuracy", sel.Accuracy is double a ? Acc(a) : null), ("Deaths", sel.Deaths.Count > 0 ? sel.Deaths.Count.ToString(En) : null)));
         card.Children.Add(SkillTable(sel.Skills, sel.Player.ClassName, BlueBrush, DamageColumns(full: true), sel.Damage, sel.Dps));
         root.Children.Add(Card(card));
         root.Children.Add(ChartCard(sel.DamageSeries));
@@ -1132,8 +1133,10 @@ public sealed class FightReportWindow : Window
     }
 
     /// <summary>
-    /// Who staggered the boss: the bar over the fight with its breaks, each player's part of it (and the breaks they finished), and the chosen player's
-    /// skills by the stagger they caused.
+    /// Who staggered the boss (7 November 2026, the owner: "for the stagger I meant for the tab in fights to be edited"): the bar over the fight with every
+    /// stagger check marked where its mechanic starts and ends (<see cref="StaggerChart"/>), the checks as chips; under it what was picked - a check (the last
+    /// one that failed to begin with) or a stretch dragged over the chart, or the whole fight - with every player's exact amount taken off and the skills
+    /// that did it (hover them); then each player's part over the fight and the chosen player's skills by the stagger they caused.
     /// </summary>
     private FrameworkElement StaggerTab()
     {
@@ -1147,68 +1150,49 @@ public sealed class FightReportWindow : Window
         var head = new StackPanel();
         head.Children.Add(Summary(("Stagger taken off", N(st.Total)), ("Breaks", st.Breaks.Count.ToString(En)),
             ("Matched to a skill exactly", Pct(st.ExactPercent))));
-        head.Children.Add(Muted("Each drop of the boss's stagger bar goes to the hit just before it whose skill takes that amount off (a skill always takes the same amount, " +
-            "or half as much again). The rest go to the nearest likely hit, so a player's share can be a little off.", 12, margin: new Thickness(18, 0, 18, 12)));
-        var chart = new FightTimelineChart(_r, id => _r.PlayerOf(id)?.Player.ClassName ?? "") { Margin = new Thickness(6, 0, 12, 10) };
+        head.Children.Add(Muted("The bar over the fight. Each stagger check is a band from the boss's cast that starts it (its name over the line) to the end of that cast " +
+            "(the red dashed line): green when the bar broke in time, red when it didn't. Hover for the bar to the point; click a check, or drag over a stretch, " +
+            "to see who took how much off it and with which skills.", 12, margin: new Thickness(18, 0, 18, 6)));
+        var chart = new StaggerChart(_r) { Margin = new Thickness(6, 0, 12, 6) };
         head.Children.Add(chart);
-        chart.Picked += (from, to) =>
-        {
-            _pick = (from, to);   // that stretch, on the timeline
-            ShowTab("Timeline");
-        };
-        if (st.Breaks.Count > 0)
-        {
-            var breaks = new WrapPanel { Margin = new Thickness(18, 0, 18, 14) };
-            int n = 0;
-            foreach (StaggerBreak b in st.Breaks)
-            {
-                n++;
-                ReportPlayer? by = _r.PlayerOf(b.Player)?.Player;
-                var item = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 22, 4) };
-                item.Children.Add(new TextBlock { Text = "◆ ", Foreground = ReportPalette.Brush(StaggerColor), VerticalAlignment = VerticalAlignment.Center });
-                item.Children.Add(Muted($"Break {n} at {ReportPalette.Clock(b.At)}: ", 12.5));
-                if (by is not null)
-                {
-                    item.Children.Add(NameCell(by, 12.5, small: true));
-                    if (b.SkillId != 0)
-                    {
-                        item.Children.Add(Muted("  " + Aion2SkillNames.DisplayOf(b.SkillId), 12.5));
-                    }
-                }
-                else
-                {
-                    item.Children.Add(Muted("last hit unknown", 12.5));
-                }
-
-                breaks.Children.Add(item);
-            }
-
-            head.Children.Add(breaks);
-        }
-
+        var chipsHost = new ContentControl { Margin = new Thickness(18, 2, 18, 8), Focusable = false };
+        head.Children.Add(chipsHost);
         root.Children.Add(Card(head));
 
-        // every stagger check: the mechanic that showed the bar, how it went, the exact amount each player took off it (0 for one who took nothing off) and
-        // the skills that did it (hover them)
-        if (_r.StaggerChecks.Count > 0)
+        // what was picked: a check (its card: the bar over the cast's time, every player with the exact amount and the skills, hover them) or a stretch
+        var people = _r.Players.Select(p => new StaggerPerson(p.Player.Id, p.Player.Name, p.Player.ClassName)).ToList();
+        StaggerPerson NameOf(int id) => new(id, _r.PlayerOf(id)?.Player.Name ?? "#" + id, _r.PlayerOf(id)?.Player.ClassName ?? "");
+        var pickedTitle = Section("", "");
+        var pickedHost = new ContentControl { Focusable = false };
+        root.Children.Add(pickedTitle);
+        root.Children.Add(pickedHost);
+        void Show(double from, double to, StaggerCheck? check)
         {
-            root.Children.Add(Section("Stagger checks", "each time the boss's bar had to be broken: how it went, and who took how much off it with which skills (hover them)"));
-            var people = _r.Players.Select(p => new StaggerPerson(p.Player.Id, p.Player.Name, p.Player.ClassName)).ToList();
-            var checks = new WrapPanel();
-            int n = 0;
-            foreach (StaggerCheck c in _r.StaggerChecks)
-            {
-                n++;
-                var stack = new StackPanel { Width = 470 };
-                stack.Children.Add(Muted($"Check {n} at {ReportPalette.Clock((c.Start - _r.StaggerCheckStart).TotalSeconds)}", 11.5, margin: new Thickness(0, 0, 0, 4)));
-                stack.Children.Add(StaggerCardView.Card(c, c.End ?? c.Start, people, id => new StaggerPerson(id, _r.PlayerOf(id)?.Player.Name ?? "#" + id, _r.PlayerOf(id)?.Player.ClassName ?? ""),
-                    null, overlay: false));
-                Border card = Card(stack);
-                card.Margin = new Thickness(0, 0, 12, 12);
-                checks.Children.Add(card);
-            }
+            chart.Select(from, to, check);
+            bool whole = check is null && from <= 0.01 && to >= _r.Seconds - 0.01;
+            int index = check is null ? -1 : _r.StaggerChecks.ToList().FindIndex(c => c.Start == check.Start);
+            chipsHost.Content = _r.StaggerChecks.Count == 0 ? null : StaggerCardView.Chips(_r.StaggerChecks, check, null, overlay: false,
+                c => Show(chart.Span(c).From, chart.Span(c).To, c), () => Show(0, _r.Seconds, null), whole,
+                c => ReportPalette.Clock((c.Start - _r.StaggerCheckStart).TotalSeconds));
+            int at = root.Children.IndexOf(pickedTitle);
+            root.Children.RemoveAt(at);
+            pickedTitle = check is not null
+                ? Section($"Check {index + 1} at {ReportPalette.Clock(from)}: {StaggerCardView.Title(check)}", "who took how much off it, with which skills (hover them)")
+                : whole ? Section("The whole fight", "who took how much off the bar, with which skills (hover them)")
+                : Section($"{Stamp(from)} to {Stamp(to)} ({to - from:0.0} s)", "who took how much off the bar in this stretch, with which skills (hover them)");
+            root.Children.Insert(at, pickedTitle);
+            pickedHost.Content = StaggerPicked(from, to, check, people, NameOf);
+        }
 
-            root.Children.Add(checks);
+        chart.Picked += Show;
+        StaggerCheck? first = _r.StaggerChecks.LastOrDefault(c => c.Outcome == StaggerOutcome.Failed) ?? _r.StaggerChecks.LastOrDefault();
+        if (first is not null)
+        {
+            Show(chart.Span(first).From, chart.Span(first).To, first);
+        }
+        else
+        {
+            Show(0, _r.Seconds, null);
         }
 
         var players = _r.Players.Where(p => st.Of(p.Player.Id) is not null).OrderByDescending(p => st.Of(p.Player.Id)!.Amount).ToList();
@@ -1239,12 +1223,74 @@ public sealed class FightReportWindow : Window
         return root;
     }
 
+    /// <summary>A moment of the fight to the tenth of a second: 1:23.4.</summary>
+    private static string Stamp(double seconds)
+    {
+        double t = Math.Max(0, seconds);
+        return ((int)t / 60).ToString(En) + ":" + (t % 60).ToString("00.0", En);
+    }
+
+    /// <summary>
+    /// What was picked on the stagger chart: a check - its card, the bar over the cast's time with where it started and ended, every player with the
+    /// exact amount they took off and the skills that did it (hover them), the skills that hit the boss and took nothing off faded - or a stretch of the
+    /// fight (the whole fight too) with each player's exact amount in it.
+    /// </summary>
+    private FrameworkElement StaggerPicked(double from, double to, StaggerCheck? check, IReadOnlyList<StaggerPerson> people, Func<int, StaggerPerson> nameOf)
+    {
+        var stack = new StackPanel { Margin = new Thickness(18, 14, 18, 14), MaxWidth = 780, HorizontalAlignment = HorizontalAlignment.Left };
+        if (check is not null)
+        {
+            stack.Children.Add(StaggerCardView.Card(check, check.End ?? check.Start.AddSeconds(check.Limit ?? 0), people, nameOf, null, overlay: false));
+            return Card(stack);
+        }
+
+        StaggerReport st = _r.Stagger;
+        bool whole = from <= 0.01 && to >= _r.Seconds - 0.01;
+        StaggerReport credit = st;
+        if (!whole)
+        {
+            var hits = st.Hits.Where(h => h.At >= from && h.At <= to).ToList();
+            int total = hits.Sum(h => h.Amount);
+            string NameOfSkill(int id) => st.Players.SelectMany(p => p.Skills).FirstOrDefault(k => k.SkillId == id)?.Name ?? (id != 0 ? Aion2SkillNames.DisplayOf(id) : "Attack");
+            var lines = hits.Where(h => h.Player != 0).GroupBy(h => h.Player)
+                .Select(g => new StaggerLine(g.Key, g.Sum(h => h.Amount), total > 0 ? 100.0 * g.Sum(h => h.Amount) / total : 0,
+                    st.Breaks.Count(b => b.Player == g.Key && b.At >= from && b.At <= to),
+                    g.GroupBy(h => h.SkillId).Select(k => new StaggerSkill(NameOfSkill(k.Key), k.Key, k.Sum(h => h.Amount), k.Count())).OrderByDescending(k => k.Amount).ToList()))
+                .OrderByDescending(l => l.Amount).ToList();
+            credit = new StaggerReport
+            {
+                Hits = hits, Players = lines, Total = total, Breaks = st.Breaks.Where(b => b.At >= from && b.At <= to).ToList(),
+                Bar = st.Bar.Where(b => b.At >= from && b.At <= to).ToList(),
+            };
+        }
+
+        var used = _r.StaggerTouches.Where(t => t.At >= from && t.At <= to).GroupBy(t => (t.Player, t.SkillId)).Select(g => new StaggerUse(g.Key.Player, g.Key.SkillId, g.Count())).ToList();
+        int breaks = credit.Breaks.Count;
+        stack.Children.Add(Muted($"{credit.Total:N0} taken off the boss's stagger bar" + (breaks > 0 ? $", {breaks} break{(breaks == 1 ? "" : "s")}" : "") +
+            (whole ? " over the fight" : " in this stretch"), 13, semibold: true, margin: new Thickness(0, 0, 0, 8)));
+        stack.Children.Add(StaggerCardView.Rows(credit, used, people, nameOf, overlay: false, compact: false, "seconds from the fight's start", whole ? "over the fight" : "in this stretch"));
+        return Card(stack);
+    }
+
     // ---------- the building blocks ----------
 
     private sealed record Col(string Header, double Width, Func<ReportPlayerLine, string> Text, bool Bold = false, Func<ReportPlayerLine, Brush?>? Color = null,
         Func<ReportPlayerLine, string?>? Tip = null);
 
-    private sealed record SCol(string Group, string Header, double Width, Func<ReportSkill, string> Text, bool Bold = false);
+    private sealed record SCol(string Group, string Header, double Width, Func<ReportSkill, string> Text, bool Bold = false, string? Tip = null);
+
+    /// <summary>An accuracy with one decimal ("99.4%"), "100%" when nothing was parried.</summary>
+    private static string Acc(double? v) => v is double d && double.IsFinite(d) ? (d >= 99.95 ? "100" : d.ToString("0.0", En)) + "%" : "–";
+
+    private const string AccuracyHelp = "Accuracy: the hits that landed in full, out of all the attacks. Against a boss a miss shows as a parry or a block: the hit still lands, " +
+        "for about a third to half of its damage. An attack the target dodged (no damage at all) counts as a miss too.";
+
+    private static string AccuracyTip(ReportPlayerLine p)
+    {
+        int known = p.Skills.Sum(s => s.KnownHits), parried = p.Skills.Sum(s => s.ParriedHits);
+        return known == 0 ? "The game said nothing of how their hits landed in this fight." :
+            $"{AccuracyHelp}\n\n{p.Player.Name}: {known - parried:N0} of {known + p.Missed:N0} attacks landed in full; {parried:N0} parried or blocked" + (p.Missed > 0 ? $", {p.Missed:N0} dodged." : ".");
+    }
 
     /// <summary>The overheal columns' tooltip.</summary>
     private static string? OverhealTip(ReportPlayerLine p) => p.HealChecked > 0
@@ -1270,10 +1316,7 @@ public sealed class FightReportWindow : Window
         cols.Add(new SCol("HIT QUALITY", "Perfect", 64, s => Pct0(s.Perfect)));
         cols.Add(new SCol("HIT QUALITY", "Double hit", 80, s => Pct0(s.Double)));
         cols.Add(new SCol("HIT QUALITY", "Multi-hit", 74, s => Pct0(s.Multi)));
-        if (full)
-        {
-            cols.Add(new SCol("HIT QUALITY", "Parried", 66, s => Pct0(s.Parry)));
-        }
+        cols.Add(new SCol("HIT QUALITY", "Accuracy", 82, s => Acc(s.Accuracy), Tip: AccuracyHelp));
 
         cols.Add(new SCol("PER HIT", "Average", 86, s => N(s.Average)));
         cols.Add(new SCol("PER HIT", "Highest", 86, s => N(s.Highest)));
@@ -1513,7 +1556,16 @@ public sealed class FightReportWindow : Window
         AddAt(header, Muted("Skill", 12.5), 0);
         for (int i = 0; i < cols.Length; i++)
         {
-            AddAt(header, Right(cols[i].Header, muted: true, size: 12.5), i + 1);
+            TextBlock head = Right(cols[i].Header, muted: true, size: 12.5);
+            if (cols[i].Tip is { } tip)
+            {
+                head.ToolTip = tip;
+                head.Cursor = Cursors.Help;
+                ToolTipService.SetInitialShowDelay(head, 150);
+                ToolTipService.SetShowDuration(head, 30_000);
+            }
+
+            AddAt(header, head, i + 1);
         }
 
         stack.Children.Add(header);
@@ -1578,6 +1630,7 @@ public sealed class FightReportWindow : Window
                     "Perfect" => Weighted(skills, s => s.Perfect),
                     "Double hit" => Weighted(skills, s => s.Double),
                     "Multi-hit" => Weighted(skills, s => s.Multi),
+                    "Accuracy" => skills.Sum(s => s.KnownHits) is int kh and > 0 ? Acc(100.0 * (kh - skills.Sum(s => s.ParriedHits)) / kh) : "",
                     _ => "",
                 };
                 AddAt(sums, Right(value, bold: cols[i].Bold, size: 14), i + 1);

@@ -2670,8 +2670,17 @@ public partial class MainWindow : Window
 
     private void OnOverlayScopeClicked(object sender, MouseButtonEventArgs e)
     {
-        if (sender is FrameworkElement { Tag: string tag } && Enum.TryParse(tag, out MeterScope scope))
+        if (sender is FrameworkElement { Tag: "Stagger" })
         {
+            SetStaggerView(!_overlayStagger); // not a scope: the Stagger view in place of the lines (MainWindow.Stagger.cs); clicked again, the lines
+        }
+        else if (sender is FrameworkElement { Tag: string tag } && Enum.TryParse(tag, out MeterScope scope))
+        {
+            if (_overlayStagger)
+            {
+                SetStaggerView(false);
+            }
+
             SetScope(scope);
         }
 
@@ -2684,7 +2693,7 @@ public partial class MainWindow : Window
         ClientScopeBox.Visibility = MeterOverlayActive ? Visibility.Visible : Visibility.Collapsed;
         foreach (Border segment in OverlayScopeSwitch.Children.OfType<Border>().Concat(ClientScopeSwitch.Children.OfType<Border>()))
         {
-            bool selected = segment.Tag as string == ShownScope.ToString();
+            bool selected = _overlayStagger && segment.Parent == OverlayScopeSwitch ? segment.Tag as string == "Stagger" : segment.Tag as string == ShownScope.ToString();
             // the chosen one: a gold-tinted pill with gold text; the others quiet words (the site's switches)
             segment.Background = selected ? ScopeOnBrush : Brushes.Transparent;
             if (segment.Child is TextBlock text)
@@ -8687,6 +8696,11 @@ public partial class MainWindow : Window
         void Pick(MeterMode mode)
         {
             _overlayBuffs = false;
+            if (_overlayStagger)
+            {
+                SetStaggerView(false);
+            }
+
             _dummyCardHidden = _dummyHeader;
             SetMode(mode);
             UpdateOverlayFold();
@@ -8698,18 +8712,23 @@ public partial class MainWindow : Window
         string length = seconds % 60 == 0 ? $"{seconds / 60} min" : $"{seconds} s";
         var items = new List<Control>
         {
-            OverlayItem("DPS", () => Pick(MeterMode.Damage), !card && !_overlayBuffs && _mode == MeterMode.Damage),
-            OverlayItem("rDPS (buffs credited)", () => Pick(MeterMode.Raid), !card && !_overlayBuffs && _mode == MeterMode.Raid, !restricted),
-            OverlayItem("Healing", () => Pick(MeterMode.Heal), !card && !_overlayBuffs && _mode == MeterMode.Heal, !restricted),
-            OverlayItem("Tanked (damage taken)", () => Pick(MeterMode.Taken), !card && !_overlayBuffs && _mode == MeterMode.Taken, !restricted),
+            OverlayItem("DPS", () => Pick(MeterMode.Damage), !card && !_overlayBuffs && !_overlayStagger && _mode == MeterMode.Damage),
+            OverlayItem("rDPS (buffs credited)", () => Pick(MeterMode.Raid), !card && !_overlayBuffs && !_overlayStagger && _mode == MeterMode.Raid, !restricted),
+            OverlayItem("Healing", () => Pick(MeterMode.Heal), !card && !_overlayBuffs && !_overlayStagger && _mode == MeterMode.Heal, !restricted),
+            OverlayItem("Tanked (damage taken)", () => Pick(MeterMode.Taken), !card && !_overlayBuffs && !_overlayStagger && _mode == MeterMode.Taken, !restricted),
             OverlayItem("Buffs on you", () =>
             {
+                if (_overlayStagger)
+                {
+                    SetStaggerView(false);
+                }
+
                 _overlayBuffs = true;
                 _overlayBuffsAt = DateTime.MinValue;
                 _dummyCardHidden = _dummyHeader;
                 RefreshRows();
             }, !card && _overlayBuffs, !restricted),
-            OverlayItem("All in one", () => Pick(MeterMode.All), !card && !_overlayBuffs && _mode == MeterMode.All, !restricted),
+            OverlayItem("All in one", () => Pick(MeterMode.All), !card && !_overlayBuffs && !_overlayStagger && _mode == MeterMode.All, !restricted),
             new Separator(),
         };
 
@@ -9017,9 +9036,9 @@ public partial class MainWindow : Window
 
         // the header's mode word and the group's total in big
         string unit = _healMode ? "HPS" : _takenMode ? "DTPS" : _mode == MeterMode.Raid && !_pvpOnly ? "rDPS" : "DPS";
-        string measured = _overlayBuffs ? "Buffs" : _allMode || _allCompactMode ? "All" : _takenMode ? "Tank" : _healMode ? "Heal" : _mode == MeterMode.Raid ? "rDPS" : "DPS";
+        string measured = _overlayStagger ? "Stagger" : _overlayBuffs ? "Buffs" : _allMode || _allCompactMode ? "All" : _takenMode ? "Tank" : _healMode ? "Heal" : _mode == MeterMode.Raid ? "rDPS" : "DPS";
         OverlayModeShort.Text = _dummyHeader && !_dummyCardHidden ? "Dummy" : _gateSettings.MeterGrind ? measured + " · Grind" : measured;
-        if (!_overlayBuffs)
+        if (!_overlayBuffs && !_overlayStagger)
         {
             double total = _rows.Where(r => !r.IsEnemy).Sum(r => (r.RdpsView ? r.Rdps ?? r.Dps : r.Dps) ?? 0);
             OverlayTotalRateText.Text = PlayerRow.Compact((long)Math.Round(total));

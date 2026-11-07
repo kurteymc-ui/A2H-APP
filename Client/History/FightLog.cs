@@ -67,6 +67,19 @@ public static class FightLog
     private static DamageEvent FromDto(EventDto d) => new(new DateTime(d.T, DateTimeKind.Local), d.S, d.G, d.A, d.H, d.Sk, d.C, IsTick: (d.X & 1) != 0, SkillId: d.I,
         Kinds: d.F is int f ? (HitKinds)f : null, HitCount: d.N > 1 ? d.N : 1, Estimated: (d.X & 4) != 0, ViaSummon: (d.X & 2) != 0, HpBefore: d.B ?? -1, HpMax: d.U ?? 0);
 
+    /// <summary>
+    /// The list without the side fights of a dungeon (7 November 2026, the owner: "remove the Urugugu Patrol, Urugugu Shaman, what not, those are not
+    /// needed; just keep the 3 main bosses"): in a dungeon where the meter knows the bosses (it fought one of the boss table there), a fight against a
+    /// monster that is no boss of the table is left out - of the list, the day's kills and wipes and the personal bests. The file stays (the whole run's
+    /// report has every pull). A dungeon none of whose bosses the table knows keeps all its fights, and the open world is left as it is.
+    /// </summary>
+    public static List<FightLogEntry> WithoutSideFights(IReadOnlyList<FightLogEntry> entries)
+    {
+        static bool Known(FightLogEntry e) => e.BossNpcId is int npc && AionDPS.Aion2.Protocol.Aion2BossCatalog.Find(npc) is not null;
+        var dungeons = entries.Where(e => e.Kind == FightLogKind.Boss && e.ZoneId != 0 && AionDPS.Aion2.Protocol.Aion2Zones.IsInstance(e.ZoneId) && Known(e)).Select(e => e.ZoneId).ToHashSet();
+        return entries.Where(e => !(e.Kind == FightLogKind.Boss && dungeons.Contains(e.ZoneId) && !Known(e))).ToList();
+    }
+
     /// <summary>The entries, newest first.</summary>
     public static IReadOnlyList<FightLogEntry> Entries()
     {

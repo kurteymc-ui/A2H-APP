@@ -85,6 +85,32 @@ public static class SelfCheckStagger
         bool meter = dead == "Tsubasa  ☠2 1:12" && back == "Tsubasa  ☠2" && row.NameDisplay == "Tsubasa";
         Console.WriteLine($"  -> the meter shows deaths after the name, and how long while dead: {meter} ({dead} / {back})");
         ok &= meter;
+
+        // the sample's checks (the report's stagger chart): the bar broken at 14 s (no cast), then the 19 s cast at 22 s whose bar is still up when it ends
+        var sc = report.StaggerChecks;
+        bool sampleChecks = sc.Count == 2 && sc[0].Outcome == StaggerOutcome.Broken && sc[0].Mechanic == 0
+            && sc[1].Mechanic == 1800655 && sc[1].Outcome == StaggerOutcome.Failed && sc[1].Left > 0 && Math.Abs((sc[1].Start - report.StaggerCheckStart).TotalSeconds - 22) < 0.1
+            && sc[1].Limit is double lim && Math.Abs(lim - 19) < 0.1 && report.StaggerTouches.Count > 0;
+        Console.WriteLine($"  -> the sample's checks: broken at 14 s, then the 19 s cast at 22 s not broken: {sampleChecks} " +
+            $"({string.Join("; ", sc.Select(c => $"{(c.Start - report.StaggerCheckStart).TotalSeconds:0.0} {c.Mechanic} {c.Outcome} {c.Left}"))})");
+        ok &= sampleChecks;
+
+        // the meter's Stagger view pictures: a failed check, a broken one, then the one now (running, or failed)
+        var (series, _) = Ui.StaggerSample.Series(false);
+        var (seriesFailed, _) = Ui.StaggerSample.Series(true);
+        bool pictures = series.Count == 3 && series[0].Outcome == StaggerOutcome.Failed && series[1].Outcome == StaggerOutcome.Broken && series[2].Outcome == StaggerOutcome.Running
+            && seriesFailed.Count == 3 && seriesFailed[2].Outcome == StaggerOutcome.Failed && series[1].Credit.Players.Any(p => p.Skills.Count > 0)
+            && series[2].Credit.Hits.Any(h => h.Boosted) && series[2].Used.Any(u => u.Player == 5);
+        Console.WriteLine($"  -> the pictures' checks: failed, broken, now: {pictures} ({string.Join(", ", series.Select(c => c.Outcome + " " + c.Left))} / {seriesFailed.LastOrDefault()?.Outcome})");
+        ok &= pictures;
+
+        // accuracy: hits not parried or blocked, out of every attack (the dodged ones too)
+        var sel = report.Players.Where(p => p.Damage > 0).ToList();
+        bool accuracy = sel.All(p => p.Accuracy is double a && a > 90 && a <= 100) && sel.Any(p => p.Accuracy < 100)
+            && sel.SelectMany(p => p.Skills).Any(k => k.Accuracy is double a && a < 100) && report.Players.Any(p => p.Missed > 0)
+            && new ReportSkill("x", 1, 100, 0, 0, 10, 0, 0, null, null, null, null, null, null, null, 20, 10, 10, KnownHits: 10, ParriedHits: 2).Accuracy == 80;
+        Console.WriteLine($"  -> accuracy: hits that landed in full, out of every attack: {accuracy} ({string.Join(", ", sel.Select(p => $"{p.Player.Name} {p.Accuracy:0.0}% ({p.Missed} dodged)"))})");
+        ok &= accuracy;
         ok &= Checks();
         return ok;
     }

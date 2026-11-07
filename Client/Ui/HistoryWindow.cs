@@ -128,7 +128,7 @@ public sealed class HistoryWindow : Window
 
     private void Draw()
     {
-        IReadOnlyList<FightLogEntry> everything = FightLog.Entries();
+        IReadOnlyList<FightLogEntry> everything = FightLog.WithoutSideFights(FightLog.Entries());
         DrawCharacters(everything);
         IReadOnlyList<FightLogEntry> all = _character == AllCharacters ? everything : everything.Where(e => e.You == _character).ToList();
         _bests = all.Where(e => e.Kind == FightLogKind.Boss && e.Killed == true && e.YourDps > 0).GroupBy(TitleOf).ToDictionary(g => g.Key, g => g.Max(e => e.YourDps));

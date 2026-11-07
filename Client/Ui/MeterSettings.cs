@@ -882,9 +882,6 @@ public sealed class MeterSettings
     /// since 5 November 2026: it went with the combat overlay's health bar switch (ShowBossHp), and a player who switched that big bar off lost the line too.</summary>
     public bool MeterBossLine { get; set; } = true;
 
-    /// <summary>The boss's stagger check over the meter's lines (MainWindow.Stagger.cs): who took how much off its stagger bar, live and after the check.</summary>
-    public bool MeterStaggerCard { get; set; } = true;
-
     /// <summary>The buttons in the meter's head: "always", or "hover" (only while the mouse is over the meter).</summary>
     public string MeterHeaderButtons { get; set; } = "always";
 
