@@ -414,6 +414,9 @@ public partial class MainWindow : Window
             _ = RefreshSchedule();
             // The meter talks to GitHub only while "check for updates" is on in the settings.
             var startupSettings = MeterSettings.Load();
+            // the version that ran before this start (kept since 1.19: the icon refresh below writes it once per version): the notes after an update
+            // list every version since that one, also for an update from before the notes remembered their own (MainWindow.UpdateNotes.cs)
+            _versionBefore = startupSettings.IconRefreshedFor;
             if (!Headless && startupSettings.IconRefreshedFor != AionDPS.Update.AppVersion.Text)
             {
                 // the first start of a version: Windows is told the program icons changed, so the Start menu, desktop and taskbar shortcuts show the
@@ -6561,8 +6564,9 @@ public partial class MainWindow : Window
     /// The update is already on disk by this point; all that is left is a restart, which is quick
     /// and needs no installer and no elevation. Still asked rather than done: the meter is being
     /// watched during a fight, and deciding on its own to disappear and come back mid-boss is not
-    /// its call to make. Declining costs nothing -- the staged version applies on the next normal
-    /// start anyway.
+    /// its call to make. Declining costs nothing -- the next start offers the newest version (a staged one
+    /// is not put in by itself any more: it may be old by then, see Program.Main), and "Restart now" asks
+    /// once more for a newer one first (<see cref="RestartIntoNewestAsync"/>).
     ///
     /// <para>
     /// Shown as an in-window, app-themed card (UpdateRestartOverlay) rather than MessageBox: this
@@ -6608,6 +6612,12 @@ public partial class MainWindow : Window
         while (_updateCheckRunning)
         {
             await Task.Delay(200);
+        }
+
+        // the question may have been open a while: the newest release goes in, not the one it named
+        if (await NewerThanAsync(update) is { } newer)
+        {
+            update = newer;
         }
 
         string version = update.TargetFullRelease.Version.ToString();
@@ -6662,6 +6672,20 @@ public partial class MainWindow : Window
         }
 
         _pendingRestartUpdate = null;
+        _ = RestartIntoNewestAsync(update);
+    }
+
+    /// <summary>
+    /// The update waiting on disk may not be the newest any more (downloaded an hour ago, a version came out since): asked once more, a newer one is fetched
+    /// and put in instead, so one restart brings the newest and the versions between are skipped. Without an answer in a few seconds the one on disk goes in.
+    /// </summary>
+    private async Task RestartIntoNewestAsync(VelopackUpdateInfo update)
+    {
+        if (await NewerThanAsync(update) is { } newer)
+        {
+            await InstallUpdateNowAsync(newer);
+            return;
+        }
 
         // Window geometry and settings are saved in OnClosing, which ApplyAndRestart never reaches
         // because it ends the process itself -- so save first, then hand over.
@@ -6670,6 +6694,25 @@ public partial class MainWindow : Window
         FlushStores(force: true);
 
         UpdateService.ApplyAndRestart(update);
+    }
+
+    /// <summary>A release newer than <paramref name="update"/>'s, asked of GitHub (at most a few seconds); null when there is none or no answer.</summary>
+    private static async Task<VelopackUpdateInfo?> NewerThanAsync(VelopackUpdateInfo update)
+    {
+        try
+        {
+            Task<VelopackUpdateInfo?> check = UpdateService.CheckAsync();
+            if (await Task.WhenAny(check, Task.Delay(TimeSpan.FromSeconds(6))) != check)
+            {
+                return null;
+            }
+
+            return await check is { } newest && newest.TargetFullRelease.Version.CompareTo(update.TargetFullRelease.Version) > 0 ? newest : null;
+        }
+        catch (Exception)
+        {
+            return null; // offline, GitHub busy: the one at hand
+        }
     }
 
     private void OnUpdateRestartLaterClicked(object sender, RoutedEventArgs e)

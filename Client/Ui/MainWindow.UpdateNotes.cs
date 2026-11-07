@@ -14,6 +14,9 @@ public partial class MainWindow
 {
     private int _notesRequest;
 
+    /// <summary>The version that ran before this start (<see cref="MeterSettings.IconRefreshedFor"/> as the start found it); null on a first install.</summary>
+    private static string? _versionBefore;
+
     /// <summary>The notes of the versions after this one up to <paramref name="update"/>'s, under the card's text (fetched, so the card shows first).</summary>
     private async void ShowUpdateNotes(VelopackUpdateInfo update)
     {
@@ -56,7 +59,8 @@ public partial class MainWindow
         }
 
         var settings = MeterSettings.Load();
-        string? seen = settings.NotesSeenVersion;
+        // the notes' own memory, else the version the start found had run before (an update from before the notes kept one): every version since is listed
+        string? seen = settings.NotesSeenVersion ?? (_versionBefore is { Length: > 0 } before && before != AppVersion.Text ? before : null);
         if (seen != AppVersion.Text)
         {
             settings.NotesSeenVersion = AppVersion.Text;

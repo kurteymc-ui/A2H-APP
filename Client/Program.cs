@@ -88,7 +88,10 @@ internal static class Program
         // this project packs with (see AionDpsMeter's release.yml). If it recurs, suspect Windows'
         // own shell icon cache (a stale bitmap cached against the unchanged .lnk file) or a
         // locally installed build old enough to predate that upstream fix, not a gap here.
-        VelopackApp.Build().Run();
+        // A downloaded update is not put in by itself at the next start (7 November 2026, the owner: an update goes to the newest version, the ones between
+        // are skipped): it may be one or two versions old by then, and the newest would come as a second update right after. The start-up check offers the
+        // newest instead, with the notes of every version missed (MainWindow.RunUpdateCheck, MainWindow.UpdateNotes.cs).
+        VelopackApp.Build().SetAutoApplyOnStartup(false).Run();
 
         if (RelaunchElevatedIfNeeded(args))
         {

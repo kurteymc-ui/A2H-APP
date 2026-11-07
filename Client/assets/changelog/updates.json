@@ -37,6 +37,13 @@
           "title": "The map comes up when a pet you need is near",
           "text": "Switch it on in Pet alerts and pick how near (100 m to 1 km). When your character comes that close to a monster of a pet you still need, of the genera you picked, the interactive map comes up over the game with a note of which pet and how far, like it does for a Hidden Cube. It goes again 10 seconds after none is that near, and works with the map switched off.",
           "example": "Within 300 m of a Vivel spawn you still need: the map pops up with \"Fera · Vivel nearby · 240 m\"."
+        },
+        {
+          "kind": "improved",
+          "area": "Updates",
+          "title": "Straight to the newest version",
+          "text": "An update now always goes to the newest version, in one restart, however many you skipped. One that was downloaded earlier isn't put in on its own any more when a newer one is out, and \"What's new\" lists every change from all the versions you missed.",
+          "example": "You were on 1.20.55: one update takes you to the newest, and What's new shows 1.20.56 to today in one list."
         }
       ]
     },

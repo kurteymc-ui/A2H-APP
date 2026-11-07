@@ -144,16 +144,16 @@
     "ko": "업데이트 준비 완료"
   },
   "Main.UpdateReady.Message": {
-    "en": "Version {0} has been downloaded (you have {1}).\n\nRestart the meter now to use it? If you'd rather not, it will be applied the next time you start the meter anyway.",
-    "de": "Version {0} wurde heruntergeladen (du hast {1}).\n\nJetzt neu starten, um sie zu verwenden? Falls nicht, wird sie beim nächsten Start ohnehin angewendet.",
-    "fr": "La version {0} a été téléchargée (vous avez {1}).\n\nRedémarrer le compteur maintenant pour l'utiliser ? Sinon, elle sera appliquée au prochain démarrage.",
-    "es": "Se ha descargado la versión {0} (tienes {1}).\n\n¿Reiniciar el medidor ahora para usarla? Si prefieres no hacerlo, se aplicará la próxima vez que inicies el medidor.",
-    "ru": "Версия {0} загружена (у вас {1}).\n\nПерезапустить счётчик сейчас, чтобы использовать её? Если нет, она будет применена при следующем запуске.",
-    "zh": "已下载版本 {0}(当前版本为 {1})。\n\n现在重启以使用新版本吗?如果不重启，下次启动时也会自动应用。",
-    "zh-TW": "已下載版本 {0}（您目前的版本為 {1}）。\n\n要現在重新啟動統計器以使用新版本嗎？若不重新啟動，下次啟動統計器時也會自動套用。",
-    "pt": "A versão {0} foi baixada (você está com a {1}).\n\nReiniciar o medidor agora para usá-la? Se preferir não reiniciar, ela será aplicada na próxima vez que você iniciar o medidor.",
-    "ja": "バージョン {0} をダウンロードしました（現在は {1}）。\n\nメーターを今すぐ再起動して使用しますか？再起動しない場合でも、次回メーターを起動したときに適用されます。",
-    "ko": "버전 {0}을(를) 다운로드했습니다 (현재 버전: {1}).\n\n지금 미터를 다시 시작하여 적용할까요? 원하지 않으면 다음에 미터를 시작할 때 자동으로 적용됩니다."
+    "en": "Version {0} has been downloaded (you have {1}).\n\nRestart the app now to use it? If you'd rather not, it offers you the newest version the next time it starts.",
+    "de": "Version {0} wurde heruntergeladen (du hast {1}).\n\nJetzt neu starten, um sie zu verwenden? Wenn nicht, bietet dir die App beim nächsten Start die neueste Version an.",
+    "fr": "La version {0} a été téléchargée (vous avez {1}).\n\nRedémarrer l'application maintenant pour l'utiliser ? Sinon, elle vous proposera la version la plus récente au prochain démarrage.",
+    "es": "Se ha descargado la versión {0} (tienes {1}).\n\n¿Reiniciar la app ahora para usarla? Si no, te ofrecerá la versión más reciente la próxima vez que se inicie.",
+    "ru": "Версия {0} загружена (у вас {1}).\n\nПерезапустить приложение сейчас, чтобы использовать её? Если нет, при следующем запуске оно предложит самую новую версию.",
+    "zh": "已下载版本 {0}(当前版本为 {1})。\n\n现在重启以使用新版本吗？如果不重启，下次启动时会为你提供最新版本。",
+    "zh-TW": "已下載版本 {0}（您目前的版本為 {1}）。\n\n要現在重新啟動以使用新版本嗎？若不重新啟動，下次啟動時會為您提供最新版本。",
+    "pt": "A versão {0} foi baixada (você está com a {1}).\n\nReiniciar o app agora para usá-la? Se preferir não, ele oferece a versão mais nova na próxima vez que iniciar.",
+    "ja": "バージョン {0} をダウンロードしました（現在は {1}）。\n\n今すぐ再起動して使用しますか？再起動しない場合は、次回の起動時に最新バージョンをご案内します。",
+    "ko": "버전 {0}을(를) 다운로드했습니다 (현재 버전: {1}).\n\n지금 다시 시작하여 적용할까요? 원하지 않으면 다음에 시작할 때 최신 버전을 안내합니다."
   },
   "Main.UpdateReady.Later": {
     "en": "Later",
