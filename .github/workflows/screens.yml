@@ -131,6 +131,23 @@ jobs:
             $p = Start-Process -FilePath $exe -ArgumentList (@($s[0], "`"$out`"") + $s[2..($s.Count - 1)]) -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru
             "$($s[0]) $($s[2]): exit $($p.ExitCode), $(if (Test-Path $out) { (Get-Item $out).Length } else { 'no picture' })"
           }
+          # The project page's pictures again at twice the pixels (sharp on high-density screens), in screens/hd.
+          New-Item -ItemType Directory screens/hd | Out-Null
+          $hd = @('window.png', 'compact.png', 'compact-rdps.png', 'compact-crowd.png', 'callout.png', 'bossbar.png', 'stagger.png', 'stagger-failed.png',
+            'stagger-tip.png', 'dummy.png', 'find.png', 'look-wide.png', 'look-thread.png', 'look-frame.png', 'look-raidlog.png', 'look-minimal.png',
+            'look-oldschool.png', 'chips.png', 'app-home.png', 'app-timers.png', 'app-bosses.png', 'app-legion.png', 'app-journey.png', 'app-characters.png',
+            'app-meterlook.png', 'app-petmap.png', 'app-gather.png', 'app-cubes.png', 'app-overlays.png', 'app-history.png', 'timers-overlay.png',
+            'blackcloud-toast.png', 'gather-overlay.png', 'season-overlay.png', 'assist-overlays.png', 'assist-buffs.png', 'petmap-route.png',
+            'petmap-route-whole-v.png', 'checklist-season.png', 'checklist-supply.png', 'details-skills.png', 'cpcalc.png', 'cpcalc-check.png',
+            'report-damage.png', 'report-stagger.png', 'report-timeline.png', 'report-rotation.png', 'report-support.png', 'report-buffs.png',
+            'report-healing.png', 'history-bosses.png', 'history-bests.png', 'setup-design.png', 'setup-overlays.png', 'loot.png', 'player.png')
+          $env:A2H_SHOT_SCALE = '2'
+          foreach ($s in ($shots | Where-Object { $hd -contains $_[1] })) {
+            $out = Join-Path (Resolve-Path screens/hd).Path $s[1]
+            $p = Start-Process -FilePath $exe -ArgumentList (@($s[0], "`"$out`"") + $s[2..($s.Count - 1)]) -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru
+            "hd $($s[0]) $($s[2]): exit $($p.ExitCode), $(if (Test-Path $out) { (Get-Item $out).Length } else { 'no picture' })"
+          }
+          Remove-Item Env:A2H_SHOT_SCALE
           # The app's own checks (recorded game frames, no game or Npcap needed): the result goes up with the pictures.
           $self = Start-Process -FilePath $exe -ArgumentList @('selftest') -WorkingDirectory (Resolve-Path out).Path -Wait -PassThru `
             -RedirectStandardOutput screens/selftest.txt -RedirectStandardError screens/selftest-errors.txt

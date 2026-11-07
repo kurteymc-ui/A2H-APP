@@ -837,7 +837,7 @@ internal static class Program
         content.Arrange(new System.Windows.Rect(0, 0, width, height));
         content.UpdateLayout();
         content.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         var backdrop = new System.Windows.Controls.Border { Width = width, Height = height, Background = (System.Windows.Media.Brush)app.FindResource("Brush.Window") };
         backdrop.Measure(new System.Windows.Size(width, height));
         backdrop.Arrange(new System.Windows.Rect(0, 0, width, height));
@@ -870,7 +870,7 @@ internal static class Program
             (System.Windows.ResourceDictionary)System.Windows.Application.LoadComponent(new Uri("/Ui/Styles/Shared.xaml", UriKind.Relative)));
 
         var recorder = new History.SessionRecorder(zone => Aion2.Protocol.Aion2Zones.IsInstance(zone) ? History.SessionKind.Instance : History.SessionKind.Map);
-        var names = new Dictionary<int, (string Name, string Class)> { [1] = ("Skeeve", "Sorcerer"), [2] = ("Aahz", "Gladiator"), [3] = ("Chumley", "Cleric"), [4] = ("Nunzio", "Assassin") };
+        var names = new Dictionary<int, (string Name, string Class)> { [1] = ("Corwyn", "Sorcerer"), [2] = ("Thorvald", "Gladiator"), [3] = ("Elyndra", "Cleric"), [4] = ("Nunzio", "Assassin") };
         recorder.Identify = id => names.TryGetValue(id, out var n) ? (n.Name, n.Class) : (id == 100 ? "Ruthilis of Pain" : null, null);
         var random = new Random(3);
         DateTime day = DateTime.Today.AddHours(7);
@@ -940,7 +940,7 @@ internal static class Program
 
         content.UpdateLayout();
         content.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         var back = new System.Windows.Shapes.Rectangle { Width = width, Height = height, Fill = (System.Windows.Media.Brush)app.Resources["Brush.Window"] };
         back.Measure(new System.Windows.Size(width, height));
         back.Arrange(new System.Windows.Rect(0, 0, width, height));
@@ -1098,7 +1098,7 @@ internal static class Program
             double height = Math.Min(2400, Math.Ceiling(content.DesiredSize.Height));
             content.Arrange(new System.Windows.Rect(0, 0, width, height));
             content.UpdateLayout();
-            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            var bitmap = Shot((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
             bitmap.Render(content);
             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
             encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -1259,7 +1259,7 @@ internal static class Program
                 System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
             }
 
-            var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+            var bitmap = Shot(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
             bitmap.Render(content);
             var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
             encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -1311,7 +1311,7 @@ internal static class Program
         content.UpdateLayout();
         System.Windows.Threading.Dispatcher.CurrentDispatcher.Invoke(() => { }, System.Windows.Threading.DispatcherPriority.ContextIdle);
         content.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(content);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -1348,7 +1348,7 @@ internal static class Program
         content.Arrange(new System.Windows.Rect(0, 0, width, height));
         content.UpdateLayout();
         content.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot((int)width, (int)height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(content);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -1363,6 +1363,14 @@ internal static class Program
 
     /// <summary>Renders the compact overlay panel with a few sample rows to a PNG, never showing a window.</summary>
     /// <summary>The open list of the target dropdown drawn under its closed box (a real popup would be a window of its own, and none is shown here).</summary>
+    /// <summary>The pictures' scale: A2H_SHOT_SCALE=2 draws every picture at twice the pixels (sharp on high-density screens, for the project page); 1 otherwise.</summary>
+    private static readonly double ShotScale = double.TryParse(Environment.GetEnvironmentVariable("A2H_SHOT_SCALE"), System.Globalization.NumberStyles.Float,
+        System.Globalization.CultureInfo.InvariantCulture, out double shotScale) && shotScale is >= 1 and <= 4 ? shotScale : 1;
+
+    /// <summary>A picture to draw into, at <see cref="ShotScale"/>: as many more pixels, at as many more dots per inch, so the layout stays the same.</summary>
+    private static System.Windows.Media.Imaging.RenderTargetBitmap Shot(int width, int height, double dpiX, double dpiY, System.Windows.Media.PixelFormat format) =>
+        new((int)Math.Ceiling(width * ShotScale), (int)Math.Ceiling(height * ShotScale), dpiX * ShotScale, dpiY * ShotScale, format);
+
     private static void DrawOpenTargetList(Ui.MainWindow window, System.Windows.FrameworkElement panel, System.Windows.Media.Imaging.RenderTargetBitmap bitmap)
     {
         var combo = window.MobBossFilter;
@@ -1722,7 +1730,7 @@ internal static class Program
         int w = kind is "window" or "window-open" ? 520 : (int)Math.Ceiling(panel.DesiredSize.Width), h = kind is "window" or "window-open" ? 420 : (int)Math.Ceiling(panel.DesiredSize.Height); // the window is drawn at the size it was arranged at
         var backdrop = new System.Windows.Controls.Border { Width = w, Height = h, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x30, 0x40, 0x30)) };
         int overlayScale = kind == "window-open" ? 1 : int.TryParse(Environment.GetEnvironmentVariable("AIONDPS_RENDER_SCALE"), out int osc) && osc is >= 1 and <= 4 ? osc : 1; // 2 = a sharp picture
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w * overlayScale, h * overlayScale, 96 * overlayScale, 96 * overlayScale, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w * overlayScale, h * overlayScale, 96 * overlayScale, 96 * overlayScale, System.Windows.Media.PixelFormats.Pbgra32);
         backdrop.Measure(new System.Windows.Size(w, h));
         backdrop.Arrange(new System.Windows.Rect(0, 0, w, h));
         bitmap.Render(backdrop);
@@ -1771,7 +1779,7 @@ internal static class Program
         }
 
         var backdrop = new System.Windows.Controls.Border { Width = w, Height = h, Background = (System.Windows.Media.Brush)app.Resources["Brush.Window"] ?? System.Windows.Media.Brushes.Black };
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         backdrop.Measure(new System.Windows.Size(w, h));
         backdrop.Arrange(new System.Windows.Rect(0, 0, w, h));
         bitmap.Render(backdrop);
@@ -1792,7 +1800,7 @@ internal static class Program
         pickerCard.Measure(new System.Windows.Size(400, 400));
         pickerCard.Arrange(new System.Windows.Rect(0, 0, pickerCard.DesiredSize.Width, pickerCard.DesiredSize.Height));
         pickerCard.UpdateLayout();
-        var pickerBitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)pickerCard.DesiredSize.Width, (int)pickerCard.DesiredSize.Height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var pickerBitmap = Shot((int)pickerCard.DesiredSize.Width, (int)pickerCard.DesiredSize.Height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         pickerBitmap.Render(pickerCard);
         var pickerEncoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         pickerEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(pickerBitmap));
@@ -1831,13 +1839,13 @@ internal static class Program
             Aion2.Aion2Tickets.TryParseList(Convert.FromHexString(Combat.SelfCheckTickets.SampleLogin), out var entries);
             var t0 = DateTime.Now;
             Aion2.Aion2Tickets.ReceiveList(entries, t0);
-            // Chumley's week in the dungeons: some Conquest rewards and bosses done, one Sanctuary attempt, a cube not yet taken
+            // Elyndra's week in the dungeons: some Conquest rewards and bosses done, one Sanctuary attempt, a cube not yet taken
             foreach ((int id, int left) in new[] { (60000006, 9), (60000007, 22), (60000008, 26), (60005301, 2), (90000001, 3), (90000002, 0), (60000010, 6), (80000001, 1), (4, 6) })
             {
                 Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(id, new Aion2.TicketValue(left, 0, 0)), t0.AddSeconds(2));
             }
 
-            Aion2.Aion2Tickets.NoteCharacter("Chumley", 1304, t0.AddSeconds(4));
+            Aion2.Aion2Tickets.NoteCharacter("Elyndra", 1304, t0.AddSeconds(4));
             // a second character that has used a lot: the Odyle energy is down and the bonus is in use, some counters are used up
             Aion2.Aion2Tickets.ReceiveList(entries, t0.AddSeconds(10));
             Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.OdyleId, new Aion2.TicketValue(75, 520, 0)), t0.AddSeconds(11));
@@ -1846,9 +1854,9 @@ internal static class Program
             Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(102, new Aion2.TicketValue(0, 0, 0)), t0.AddSeconds(11));
             Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.MissionsId, new Aion2.TicketValue(5, 5, 0)), t0.AddSeconds(11));
             Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.PremiumId, new Aion2.TicketValue(0, 0, DateTimeOffset.UtcNow.AddHours(16 * 24 + 20).ToUnixTimeMilliseconds())), t0.AddSeconds(11));
-            Aion2.Aion2Tickets.NoteCharacter("Aahz", 1304, t0.AddSeconds(14), level: 28); // a level 28 character: the daily dungeon (30) and the level 45 contents are still locked
+            Aion2.Aion2Tickets.NoteCharacter("Thorvald", 1304, t0.AddSeconds(14), level: 28); // a level 28 character: the daily dungeon (30) and the level 45 contents are still locked
 
-            // Chumley's season missions (Elyos ids): some under way, some finished, a condition step, one of last week
+            // Elyndra's season missions (Elyos ids): some under way, some finished, a condition step, one of last week
             long nowMs = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(), lastWeek = new DateTimeOffset(Aion2.ChecklistManual.LastWeeklyReset(DateTime.Now).AddHours(-2)).ToUnixTimeMilliseconds();
             var season = new List<(int Id, Aion2.AchievementValue Value)>
             {
@@ -1859,12 +1867,12 @@ internal static class Program
             };
             Func<string?> wasName = Aion2.Aion2Achievements.CurrentName;
             Aion2.Aion2Achievements.Reset();
-            Aion2.Aion2Achievements.CurrentName = () => "Chumley";
+            Aion2.Aion2Achievements.CurrentName = () => "Elyndra";
             Aion2.Aion2Achievements.Note(season, whole: false);
             Aion2.Aion2Achievements.CurrentName = wasName;
 
-            // Chumley's supply requests (Elyos ids) and both characters' inventories on one server: Silentium (bound) and Raw Leather Chumley can deliver now,
-            // Orichalcum Ore that Aahz's ore and the server storage complete, a few delivered; Craft and Boss as long as the game's (54 each)
+            // Elyndra's supply requests (Elyos ids) and both characters' inventories on one server: Silentium (bound) and Raw Leather Elyndra can deliver now,
+            // Orichalcum Ore that Thorvald's ore and the server storage complete, a few delivered; Craft and Boss as long as the game's (54 each)
             int First(int request) => Aion2.Aion2Supply.Find(request)?.Items[0] ?? 0;
             Aion2.SupplyGroup Tab(int group, int tab, long endMs, IEnumerable<(int Id, int Progress)> requests)
             {
@@ -1875,7 +1883,7 @@ internal static class Program
 
             const long regular = 4072575600999; // the Regular tabs end in 2099
             Aion2.Aion2Supply.Reset();
-            Aion2.Aion2Supply.Put("Chumley", new Aion2.SupplyCharacter
+            Aion2.Aion2Supply.Put("Elyndra", new Aion2.SupplyCharacter
             {
                 SavedAt = DateTime.UtcNow,
                 Groups = new()
@@ -1890,13 +1898,13 @@ internal static class Program
             Aion2.Aion2Inventories.Reset();
             Aion2.Aion2Inventories.Put(new Aion2.CharacterHoldings
             {
-                Name = "Chumley", ServerId = 1304, SavedAt = DateTime.UtcNow,
+                Name = "Elyndra", ServerId = 1304, SavedAt = DateTime.UtcNow,
                 Bag = new() { [silentium] = 3, [ore] = 4, [leather] = 6, [First(1011007)] = 1, [refining] = 14, [Aion2.SeasonMissions.OathCoin] = 40310, [503700031] = 6, [562000038] = 30 },
                 Storage = new() { [refiningBound] = 4, [503700031] = 2, [503700032] = 4 },
             }, new() { [ore] = 1, [refining] = 30, [aria] = 12 });
             Aion2.Aion2Inventories.Put(new Aion2.CharacterHoldings
             {
-                Name = "Aahz", ServerId = 1304, SavedAt = DateTime.UtcNow.AddHours(-3),
+                Name = "Thorvald", ServerId = 1304, SavedAt = DateTime.UtcNow.AddHours(-3),
                 Bag = new() { [silentium] = 6, [ore] = 5, [aria] = 8, [refiningBound] = 9, [Aion2.SeasonMissions.OathCoin] = 12650 }, Storage = new() { [refining] = 22 },
             });
         }
@@ -1909,7 +1917,7 @@ internal static class Program
         }
         else if (page.StartsWith("character", StringComparison.Ordinal))
         {
-            window.ShowCharacter("Chumley", page switch
+            window.ShowCharacter("Elyndra", page switch
             {
                 "character-season" => Ui.ChecklistWindow.Section.Season,
                 "character-supply" => Ui.ChecklistWindow.Section.Supply,
@@ -1930,7 +1938,7 @@ internal static class Program
         content.Arrange(new System.Windows.Rect(0, 0, w, h));
         content.UpdateLayout();
         var backdrop = new System.Windows.Controls.Border { Width = w, Height = h, Background = (System.Windows.Media.Brush)app.Resources["Brush.Window"] ?? System.Windows.Media.Brushes.Black };
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w * scale, h * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w * scale, h * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
         backdrop.Measure(new System.Windows.Size(w, h));
         backdrop.Arrange(new System.Windows.Rect(0, 0, w, h));
         bitmap.Render(backdrop);
@@ -2028,7 +2036,7 @@ internal static class Program
             page.Measure(new System.Windows.Size(double.PositiveInfinity, double.PositiveInfinity));
             page.Arrange(new System.Windows.Rect(page.DesiredSize));
             page.UpdateLayout();
-            var shot = new System.Windows.Media.Imaging.RenderTargetBitmap((int)Math.Ceiling(page.DesiredSize.Width) * scale, (int)Math.Ceiling(page.DesiredSize.Height) * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
+            var shot = Shot((int)Math.Ceiling(page.DesiredSize.Width) * scale, (int)Math.Ceiling(page.DesiredSize.Height) * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
             shot.Render(page);
             var png = new System.Windows.Media.Imaging.PngBitmapEncoder();
             png.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(shot));
@@ -2055,7 +2063,7 @@ internal static class Program
         content.Arrange(new System.Windows.Rect(0, 0, w, h));
         content.UpdateLayout();
         var backdrop = new System.Windows.Controls.Border { Width = w, Height = h, Background = (System.Windows.Media.Brush)app.Resources["Brush.Window"] ?? System.Windows.Media.Brushes.Black };
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w * scale, h * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w * scale, h * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
         backdrop.Measure(new System.Windows.Size(w, h));
         backdrop.Arrange(new System.Windows.Rect(0, 0, w, h));
         bitmap.Render(backdrop);
@@ -2109,7 +2117,7 @@ internal static class Program
         content.Arrange(new System.Windows.Rect(0, 0, w, h));
         content.UpdateLayout();
         var backdrop = new System.Windows.Controls.Border { Width = w, Height = h, Background = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(0x2a, 0x36, 0x2c)), Child = null };
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         backdrop.Measure(new System.Windows.Size(w, h));
         backdrop.Arrange(new System.Windows.Rect(0, 0, w, h));
         bitmap.Render(backdrop);
@@ -2166,7 +2174,7 @@ internal static class Program
         strip.Measure(new System.Windows.Size(360, 2000));
         strip.Arrange(new System.Windows.Rect(0, 0, 360, strip.DesiredSize.Height));
         strip.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(360, (int)Math.Ceiling(strip.DesiredSize.Height), 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(360, (int)Math.Ceiling(strip.DesiredSize.Height), 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(strip);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -2270,7 +2278,7 @@ internal static class Program
         strip.Arrange(new System.Windows.Rect(0, 0, strip.DesiredSize.Width, strip.DesiredSize.Height));
         strip.UpdateLayout();
         int width = (int)Math.Ceiling(strip.DesiredSize.Width), height = (int)Math.Ceiling(strip.DesiredSize.Height);
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(strip);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -2314,7 +2322,7 @@ internal static class Program
         strip.Measure(new System.Windows.Size(760, 2000));
         strip.Arrange(new System.Windows.Rect(0, 0, 760, strip.DesiredSize.Height));
         strip.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(760, (int)Math.Ceiling(strip.DesiredSize.Height), 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(760, (int)Math.Ceiling(strip.DesiredSize.Height), 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(strip);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -2443,7 +2451,7 @@ internal static class Program
         root.Arrange(new System.Windows.Rect(0, 0, 960, root.DesiredSize.Height));
         root.UpdateLayout();
         int w = 960, h = (int)Math.Ceiling(root.DesiredSize.Height);
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(root);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -2492,7 +2500,7 @@ internal static class Program
         host.Measure(new System.Windows.Size(1060, 760));
         host.Arrange(new System.Windows.Rect(0, 0, 1060, 760));
         host.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(1060, 760, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(1060, 760, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(host);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -2577,7 +2585,7 @@ internal static class Program
         int Pick(string category) => titles.Select(Aion2.Protocol.Aion2CpSources.Title).Where(t => t!.Category == category && t.Grade == "Unique").Select(t => t!.Id).FirstOrDefault();
         return new Aion2.Aion2SavedCharacter
         {
-            Name = "Falc0", ClassCode = 6, Level = 45, ServerId = 2001, SavedAt = DateTime.Now,
+            Name = "Ashveil", ClassCode = 6, Level = 45, ServerId = 2001, SavedAt = DateTime.Now,
             Equipment = gear.Select(i => new Aion2.Aion2SavedCharacter.SavedItem(i.SlotIndex, i.ItemId, i.Enchant, i.Stones, i.Stats, i.GodstoneId, i.SkillBonuses, i.Arcana)).ToList(),
             Skills = skills, Daevanion = boards,
             Species = species.Select(k => k).ToList(),
@@ -2646,9 +2654,9 @@ internal static class Program
             state.Measured.Add(measured);
         }
 
-        Combat.CpChecks.Put("Falc0", 2001, state, new Upload.CpOfficialRead(CpSampleOfficial(), p1.Cp + 120, 3010, utcNow.AddHours(-1)));
+        Combat.CpChecks.Put("Ashveil", 2001, state, new Upload.CpOfficialRead(CpSampleOfficial(), p1.Cp + 120, 3010, utcNow.AddHours(-1)));
         directory.RestoreFrom(CpSampleCharacter(CpSampleGear(17).Concat(CpSampleArcana()).ToList()));
-        directory.SetLocalCharacter(new Aion2.Aion2CharacterInfo(331, "Falc0", 6, 45, CpSampleGear(17), DateTime.Now, ServerId: 2001));
+        directory.SetLocalCharacter(new Aion2.Aion2CharacterInfo(331, "Ashveil", 6, 45, CpSampleGear(17), DateTime.Now, ServerId: 2001));
         directory.SetLocalStats(frame);
         directory.SetLocalEquipment(CpSampleGear(17).Concat(CpSampleArcana()).ToList());
 
@@ -2656,7 +2664,7 @@ internal static class Program
         Aion2.Aion2Inventories.Reset();
         Aion2.Aion2Inventories.Put(new Aion2.CharacterHoldings
         {
-            Name = "Falc0", ServerId = 2001, SavedAt = DateTime.UtcNow,
+            Name = "Ashveil", ServerId = 2001, SavedAt = DateTime.UtcNow,
             Bag = new() { [930100031] = 24_500_000, [930100023] = 61_200, [516530001] = 34 },
         });
         var page = new Ui.CpCalcPage(() => directory);
@@ -2677,7 +2685,7 @@ internal static class Program
         host.Measure(new System.Windows.Size(width, height));
         host.Arrange(new System.Windows.Rect(0, 0, width, height));
         host.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(width, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(host);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -2734,7 +2742,7 @@ internal static class Program
         host.Measure(new System.Windows.Size(1180, height));
         host.Arrange(new System.Windows.Rect(0, 0, 1180, height));
         host.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(1180, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(1180, height, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(host);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -2775,7 +2783,7 @@ internal static class Program
             Width = w, Height = h,
             Background = new System.Windows.Media.LinearGradientBrush(System.Windows.Media.Color.FromRgb(0x3a, 0x4a, 0x52), System.Windows.Media.Color.FromRgb(0x1c, 0x26, 0x2e), 60),
         };
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w * scale, h * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w * scale, h * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
         backdrop.Measure(new System.Windows.Size(w, h));
         backdrop.Arrange(new System.Windows.Rect(0, 0, w, h));
         bitmap.Render(backdrop);
@@ -2853,7 +2861,7 @@ internal static class Program
             Width = w, Height = h,
             Background = new System.Windows.Media.LinearGradientBrush(System.Windows.Media.Color.FromRgb(0x3a, 0x4a, 0x52), System.Windows.Media.Color.FromRgb(0x1c, 0x26, 0x2e), 60),
         };
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w * scale, h * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w * scale, h * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
         backdrop.Measure(new System.Windows.Size(w, h));
         backdrop.Arrange(new System.Windows.Rect(0, 0, w, h));
         if (Environment.GetEnvironmentVariable("AIONDPS_TRANSPARENT") != "1") // 1 = only the parts, on a see-through ground (for the website)
@@ -2949,7 +2957,7 @@ internal static class Program
         content.Arrange(new System.Windows.Rect(0, 0, width, height));
         content.UpdateLayout();
         content.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)width * scale, (int)height * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot((int)width * scale, (int)height * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
         var backdrop = new System.Windows.Controls.Border { Width = width, Height = height, Background = (System.Windows.Media.Brush)app.Resources["Brush.Window"] };
         backdrop.Measure(new System.Windows.Size(width, height));
         backdrop.Arrange(new System.Windows.Rect(0, 0, width, height));
@@ -2999,7 +3007,7 @@ internal static class Program
         content.Measure(new System.Windows.Size(w, h));
         content.Arrange(new System.Windows.Rect(0, 0, w, h));
         content.UpdateLayout();
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(content);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -3091,7 +3099,7 @@ internal static class Program
         content.Arrange(new System.Windows.Rect(0, 0, width, height));
         content.UpdateLayout();
         int scale = int.TryParse(Environment.GetEnvironmentVariable("AIONDPS_RENDER_SCALE"), out int sc) ? Math.Clamp(sc, 1, 4) : 1;
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap((int)width * scale, (int)height * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot((int)width * scale, (int)height * scale, 96 * scale, 96 * scale, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(content);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -3552,7 +3560,7 @@ internal static class Program
         visual.Arrange(new System.Windows.Rect(visual.DesiredSize));
         visual.UpdateLayout();
         int w = (int)Math.Ceiling(visual.DesiredSize.Width), h = (int)Math.Ceiling(visual.DesiredSize.Height);
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(visual);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -3601,7 +3609,7 @@ internal static class Program
         visual.Arrange(new System.Windows.Rect(visual.DesiredSize));
         visual.UpdateLayout();
         int w = (int)Math.Ceiling(visual.DesiredSize.Width), h = (int)Math.Ceiling(visual.DesiredSize.Height);
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(visual);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -3638,7 +3646,7 @@ internal static class Program
         visual.Arrange(new System.Windows.Rect(visual.DesiredSize));
         visual.UpdateLayout();
         int w = (int)Math.Ceiling(visual.DesiredSize.Width), h = (int)Math.Ceiling(visual.DesiredSize.Height);
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(visual);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -3840,7 +3848,7 @@ internal static class Program
             single.Measure(new System.Windows.Size(sw, sh));
             single.Arrange(new System.Windows.Rect(0, 0, sw, sh));
             single.UpdateLayout();
-            var shot = new System.Windows.Media.Imaging.RenderTargetBitmap(sw * pictureScale, sh * pictureScale, 96 * pictureScale, 96 * pictureScale, System.Windows.Media.PixelFormats.Pbgra32);
+            var shot = Shot(sw * pictureScale, sh * pictureScale, 96 * pictureScale, 96 * pictureScale, System.Windows.Media.PixelFormats.Pbgra32);
             shot.Render(single);
             var shotEncoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
             shotEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(shot));
@@ -3867,7 +3875,7 @@ internal static class Program
         root.Arrange(new System.Windows.Rect(0, 0, 1740, root.DesiredSize.Height));
         root.UpdateLayout();
         int w = 1740, h = (int)Math.Ceiling(root.DesiredSize.Height);
-        var bitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var bitmap = Shot(w, h, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         bitmap.Render(root);
         var encoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         encoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(bitmap));
@@ -3886,7 +3894,7 @@ internal static class Program
         dialog.Measure(new System.Windows.Size(dw, dh));
         dialog.Arrange(new System.Windows.Rect(0, 0, dw, dh));
         dialog.UpdateLayout();
-        var dialogBitmap = new System.Windows.Media.Imaging.RenderTargetBitmap(dw, dh, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
+        var dialogBitmap = Shot(dw, dh, 96, 96, System.Windows.Media.PixelFormats.Pbgra32);
         dialogBitmap.Render(dialog);
         var dialogEncoder = new System.Windows.Media.Imaging.PngBitmapEncoder();
         dialogEncoder.Frames.Add(System.Windows.Media.Imaging.BitmapFrame.Create(dialogBitmap));
