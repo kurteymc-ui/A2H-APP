@@ -236,7 +236,7 @@ internal static class ShopPetFinder
             }
         }
 
-        return result is { } best ? best with { Light = LightAt(fine, best) } : null;
+        return result is { } found ? found with { Light = LightAt(fine, found) } : null;
     }
 
     /// <summary>The mean brightness (0 to 255) of a found portrait's square.</summary>
