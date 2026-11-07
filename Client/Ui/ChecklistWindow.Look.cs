@@ -159,12 +159,13 @@ public sealed partial class ChecklistWindow
     private static Grid RosterColumns(int counters)
     {
         var grid = new Grid();
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 120 });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(84) });
+        // narrow enough for seven counters (the Abyss Corridor the seventh, 7 November 2026) in the window's first size of 1180 pixels
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star), MinWidth = 110 });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(110) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(78) });
         for (int k = 0; k < counters; k++)
         {
-            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(64) });
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(58) });
         }
 
         return grid;
@@ -229,12 +230,12 @@ public sealed partial class ChecklistWindow
         void Title(string text, string? tip, int column, bool left = false)
         {
             // as the game writes them, broken between words only ("Dimensional / Invasion")
-            TextBlock t = Label(text, "Brush.TextMuted", 10.5, bold: true);
+            TextBlock t = Label(text, "Brush.TextMuted", 10, bold: true);
             t.TextWrapping = TextWrapping.Wrap;
             t.TextAlignment = left ? TextAlignment.Left : TextAlignment.Center;
             t.HorizontalAlignment = left ? HorizontalAlignment.Left : HorizontalAlignment.Center;
             t.VerticalAlignment = VerticalAlignment.Bottom;
-            t.Margin = new Thickness(2, 0, 2, 0);
+            t.Margin = new Thickness(1, 0, 1, 0);
             t.ToolTip = tip;
             Cell(head, t, column);
         }
@@ -348,7 +349,7 @@ public sealed partial class ChecklistWindow
             long items = inItems.GetValueOrDefault(c.Name);
             if (o is not null)
             {
-                var energy = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(6, 0, 10, 0),
+                var energy = new StackPanel { VerticalAlignment = VerticalAlignment.Center, Margin = new Thickness(4, 0, 6, 0),
                     ToolTip = string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterOdyleLine"], o.Count, o.Cap, o.Bonus, o.PerTick)
                         + (items > 0 ? "\n" + string.Format(CultureInfo.CurrentCulture, loc["Checklist.RosterOdyleItems"], items.ToString("N0", CultureInfo.CurrentCulture)) : "") };
                 var figure = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
