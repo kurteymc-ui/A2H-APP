@@ -408,8 +408,11 @@ public sealed partial class CpCalcPage : Grid
             CpCalc.Pieces(gear, marginal, model, StonesOf).GroupBy(p => p.Slot).Select(g => g.First()).ToList(), marginal, gameCp, gameAt, fromPage, fit, unfitted);
 
         _body.Children.Add(Hero(view, model));
-        _body.Children.Add(GroupedStepsCard(view.Whole.Steps, Loc("CpCalc.Steps"), Loc("CpCalc.Steps.Note")));
-        if (ValueCard(view.Whole.Steps) is { } value)
+        // a Clash Rune's steps only when the player asks for them (CpWhole.RuneKey: last of all)
+        bool runes = MeterSettings.Load().CpShowRunes;
+        IReadOnlyList<CpStep> shown = runes ? view.Whole.Steps : view.Whole.Steps.Where(s => s.Key != CpWhole.RuneKey).ToList();
+        _body.Children.Add(GroupedStepsCard(shown, Loc("CpCalc.Steps"), Loc("CpCalc.Steps.Note"), view.Whole.Steps.Any(s => s.Key == CpWhole.RuneKey) ? RuneToggle(runes) : null));
+        if (ValueCard(shown) is { } value)
         {
             _body.Children.Add(value);
         }
@@ -593,7 +596,22 @@ public sealed partial class CpCalcPage : Grid
     /// The best next steps by group: what costs nothing first (titles, wings, gear the character already has), then the other groups by their best step;
     /// each group's best few and the rest behind a "more" link.
     /// </summary>
-    private UIElement GroupedStepsCard(IReadOnlyList<CpStep> steps, string title, string? note)
+    /// <summary>The switch that shows a Clash Rune's steps (off: players don't raise them for Combat Power).</summary>
+    private UIElement RuneToggle(bool on)
+    {
+        var box = new CheckBox { IsChecked = on, Margin = new Thickness(0, 10, 0, 0) };
+        box.Content = new TextBlock { Text = Loc("CpCalc.Steps.Runes"), TextWrapping = TextWrapping.Wrap, FontSize = 12, Foreground = Res("Brush.Text") };
+        box.Click += (_, _) =>
+        {
+            MeterSettings settings = MeterSettings.Load();
+            settings.CpShowRunes = box.IsChecked == true;
+            settings.Save();
+            Poll(force: true);
+        };
+        return box;
+    }
+
+    private UIElement GroupedStepsCard(IReadOnlyList<CpStep> steps, string title, string? note, UIElement? footer = null)
     {
         var stack = new StackPanel();
         stack.Children.Add(Heading(title));
@@ -652,6 +670,11 @@ public sealed partial class CpCalcPage : Grid
         if (note is not null)
         {
             stack.Children.Add(Label(note, 11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 10, 0, 0)));
+        }
+
+        if (footer is not null)
+        {
+            stack.Children.Add(footer);
         }
 
         var card = Card(stack);
@@ -869,9 +892,13 @@ public sealed partial class CpCalcPage : Grid
         CpStepKind.PetNew => F("CpCalc.S.PetNew", GenusName(s.Key), s.Count),
         CpStepKind.Title => F("CpCalc.S.Title", Aion2Titles.Find(s.OtherId, Lang)?.Name ?? "#" + s.OtherId, Loc("CpCalc.TitleSlot." + s.Slot)),
         CpStepKind.Wing => F("CpCalc.S.Wing", Aion2Wings.Find(s.OtherId, Lang)?.Name ?? "#" + s.OtherId),
-        CpStepKind.Daevanion => F("CpCalc.S.Daevanion", Aion2DaevanionCatalog.BoardName(s.OtherId), s.Count),
+        CpStepKind.Daevanion => F("CpCalc.S.DaevanionNodes", Aion2DaevanionCatalog.BoardName(s.OtherId), s.Count, s.ToLevel, NodeGains(s.ToStat)),
         _ => "",
     };
+
+    /// <summary>What a Daevanion step's nodes give most, as names ("Damage Boost, +Rending Blow"): stat tokens, and "Skill:id" for a skill's levels.</summary>
+    private static string NodeGains(string? what) => string.Join(", ", (what ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries)
+        .Select(k => k.StartsWith("Skill:", StringComparison.Ordinal) && int.TryParse(k.AsSpan(6), out int id) ? "+" + Aion2SkillNames.DisplayOf(id) : Aion2CpData.Name(k, Lang)));
 
     /// <summary>The name of a genus by the tables' key (Intellect ...) as the game writes it.</summary>
     private static string GenusName(string? key) =>
@@ -1090,8 +1117,7 @@ public sealed partial class CpCalcPage : Grid
     private UIElement SkillsTab(View v)
     {
         var page = new StackPanel();
-        double per = v.Whole.Skills.FirstOrDefault()?.PerLevel ?? 0;
-        page.Children.Add(Summary(v, v.Whole.Parts[CpSource.Skills], F("CpCalc.Skills.Head", Number(per))));
+        page.Children.Add(Summary(v, v.Whole.Parts[CpSource.Skills], Loc("CpCalc.Skills.Head")));
         if (v.Whole.Skills.Count == 0)
         {
             page.Children.Add(Card(Label(Loc("CpCalc.Skills.None"), 12.5, brush: Res("Brush.TextMuted"))));
@@ -1133,11 +1159,16 @@ public sealed partial class CpCalcPage : Grid
         var text = new StackPanel { Margin = new Thickness(10, 0, 8, 0), VerticalAlignment = VerticalAlignment.Center };
         var line = new StackPanel { Orientation = Orientation.Horizontal };
         line.Children.Add(new TextBlock { Text = Aion2SkillNames.DisplayOf(s.SkillId), FontSize = 12.5, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Text"), TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 230 });
-        line.Children.Add(new TextBlock { Text = "  " + F("CpCalc.LevelOf", s.Level, CpWhole.SkillTop), FontSize = 12, Foreground = Res("Brush.TextMuted"), VerticalAlignment = VerticalAlignment.Bottom });
+        // a passive can go past 20 (gear, Arcana): its level alone
+        line.Children.Add(new TextBlock { Text = "  " + (s.Passive ? F("CpCalc.Lv", s.Level) : F("CpCalc.LevelOf", s.Level, CpWhole.SkillTop)), FontSize = 12, Foreground = Res("Brush.TextMuted"), VerticalAlignment = VerticalAlignment.Bottom });
         text.Children.Add(line);
         var sub = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 0) };
         string bonus = s.Level > s.BaseLevel ? F("CpCalc.Skills.Bonus", s.BaseLevel, s.Level - s.BaseLevel) : F("CpCalc.Skills.Trained", s.BaseLevel);
         sub.Children.Add(new TextBlock { Text = s.Counted ? bonus : Loc("CpCalc.Skills.NotCounted"), FontSize = 11, Foreground = Res("Brush.TextMuted") });
+        if (s.Counted && s.PerLevel >= 1)
+        {
+            sub.Children.Add(new TextBlock { Text = "  ·  " + F("CpCalc.Skills.NextLevel", Number(s.PerLevel)), FontSize = 11, Foreground = Res("Brush.Heal") });
+        }
         if (!s.Passive)
         {
             sub.Children.Add(new TextBlock { Text = "   ", FontSize = 11 });
@@ -1365,9 +1396,16 @@ public sealed partial class CpCalcPage : Grid
                 stack.Children.Add(Label(F("CpCalc.Daevanion.Skills", b.SkillLevels), 11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 4, 0, 0)));
             }
 
-            if (b.CpLeft >= 1)
+            // the points of the board's pool (the first four boards share theirs) and what the points left can still open here
+            if (CpWhole.PoolPoints(b.BoardId) is int cap and > 0)
             {
-                stack.Children.Add(Label(F("CpCalc.Daevanion.Left", Number(b.CpLeft), b.ClosedStatNodes), 11.5, brush: Res("Brush.Heal"), margin: new Thickness(0, 4, 0, 0)));
+                int used = v.Whole.Boards.Where(x => CpWhole.PoolOf(x.BoardId) == CpWhole.PoolOf(b.BoardId)).Sum(x => x.Points);
+                stack.Children.Add(Label(F("CpCalc.Daevanion.Points", used, cap), 11.5, brush: Res("Brush.TextMuted"), margin: new Thickness(0, 4, 0, 0)));
+            }
+
+            if (v.Whole.Steps.FirstOrDefault(s => s.Kind == CpStepKind.Daevanion && s.OtherId == b.BoardId) is { } open)
+            {
+                stack.Children.Add(Label(F("CpCalc.Daevanion.Left", Number(open.Gain), open.Count), 11.5, brush: Res("Brush.Heal"), margin: new Thickness(0, 4, 0, 0)));
             }
 
             var card = Card(stack);
@@ -1506,7 +1544,9 @@ public sealed partial class CpCalcPage : Grid
                 stack.Children.Add(new TextBlock { Text = Number(a.Cp) + " CP", FontSize = 13, FontWeight = FontWeights.SemiBold, Foreground = Res("Brush.Accent"), TextAlignment = TextAlignment.Center, Margin = new Thickness(0, 4, 0, 0) });
                 if (a.SkillLevels > 0)
                 {
-                    stack.Children.Add(new TextBlock { Text = F("CpCalc.Arcana.Skills", a.SkillLevels), FontSize = 11, Foreground = Res("Brush.TextMuted"), TextAlignment = TextAlignment.Center });
+                    // the card's skill levels by what they are worth on those skills now (+4 that takes a skill from 16 to 20 is about +1,300)
+                    string skillText = a.SkillCp >= 1 ? F("CpCalc.Arcana.SkillsCp", a.SkillLevels, Number(a.SkillCp)) : F("CpCalc.Arcana.Skills", a.SkillLevels);
+                    stack.Children.Add(new TextBlock { Text = skillText, FontSize = 11, Foreground = Res("Brush.TextMuted"), TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap });
                 }
 
                 var card = Card(stack);

@@ -128,6 +128,9 @@ public sealed class MeterSettings
     /// refit of the Combat Power model. Switched on when the privacy terms are accepted (they name it), off in Settings, Upload, or the CP calculator.</summary>
     public bool ShareCpMeasurements { get; set; }
 
+    /// <summary>Whether the CP calculator lists a Clash Rune's upgrades (off: players don't raise them for Combat Power; shown last of all when on).</summary>
+    public bool CpShowRunes { get; set; }
+
     /// <summary>Whether the minimap reader's checks against the game's own reports go to the website without a name (Upload/MapShare.cs), to refit where
     /// each world map's picture lies: on by default while the app is in beta (the owner, 5 November 2026; the privacy terms name it and nothing goes before
     /// they are accepted), switched off in Settings, Upload.</summary>

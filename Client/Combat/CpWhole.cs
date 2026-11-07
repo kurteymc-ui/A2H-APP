@@ -48,15 +48,17 @@ public sealed record CpWholeInput(
 public sealed record CpSourceLine(string Stat, double Value, double? Cp);
 
 /// <summary>A skill as the calculator counts it: its level, the trained level, active or passive, whether its levels count (an active skill only on the bar),
-/// their CP, what one more level gives, its specialisation slots (open, filled) and the level that opens the next one.</summary>
+/// their CP (by the model's level tables: most of it at 12, 16 and 20), what one more level gives (<see cref="PerLevel"/>), its specialisation slots (open,
+/// filled) and the level that opens the next one.</summary>
 public sealed record CpSkillRow(int SkillId, int Level, int BaseLevel, bool Passive, bool Counted, double Cp, double PerLevel, int SpecOpen, int SpecFilled, int? NextSpecAt);
 
-/// <summary>A Stigma: its level, whether it is equipped (only those count), its CP and what its next level gives (0 at the top).</summary>
+/// <summary>A Stigma: its level, whether it counts (<see cref="Equipped"/>: one of the highest Stigmas slotted in the preset, the skill bar aside), its CP and
+/// what its next level gives (0 at the top).</summary>
 public sealed record CpStigmaRow(int SkillId, int Level, bool Equipped, double Cp, double NextLevel, int SpecFilled);
 
 /// <summary>A Daevanion board: the nodes opened and all its nodes (the start aside), what the open stat nodes give, their CP, the CP of the stat nodes still
-/// closed, and the skill levels its nodes add (they count with the skills).</summary>
-public sealed record CpBoardRow(int BoardId, int Open, int Total, IReadOnlyList<CpSourceLine> Lines, double Cp, double CpLeft, int ClosedStatNodes, int SkillLevels);
+/// closed, the skill levels its nodes add (they count with the skills) and the points its open nodes took (<see cref="CpWhole.DaevanionMainPoints"/>).</summary>
+public sealed record CpBoardRow(int BoardId, int Open, int Total, IReadOnlyList<CpSourceLine> Lines, double Cp, double CpLeft, int ClosedStatNodes, int SkillLevels, int Points = 0);
 
 /// <summary>
 /// A line of a Genus Insight board: its slot (1..9), grade (1 Common .. 5 Heroic), stat, value and CP; what a new Analysis of the slot gives on average at the
@@ -78,7 +80,9 @@ public sealed record CpTitleRow(int TitleId, int Slot, IReadOnlyList<CpSourceLin
 public sealed record CpWingRow(int WingId, IReadOnlyList<CpSourceLine> Lines, double Cp);
 
 /// <summary>An Arcana card: its slot and item, its level, the deity value it carries and that value's CP, and the skill levels it adds (they count with the skills).</summary>
-public sealed record CpArcanaRow(int Slot, int ItemId, int Level, string? GodStat, int GodValue, double Cp, int SkillLevels);
+/// <param name="SkillCp">What the card's skill levels are worth with those skills: each skill's Combat Power with them against without them (by the level
+/// tables, so +4 to a skill at 16 is worth more than +4 to one at 15).</param>
+public sealed record CpArcanaRow(int Slot, int ItemId, int Level, string? GodStat, int GodValue, double Cp, int SkillLevels, double SkillCp = 0);
 
 /// <summary>An attribute or deity value: its total and where its points come from (gear, pets, Arcana, the rest), and its CP.</summary>
 public sealed record CpAttributeRow(int Id, string Stat, double Total, double FromGear, double FromPets, double FromArcana, double Other, double Cp);
@@ -229,8 +233,31 @@ public static class CpWhole
     /// <summary>The level a skill's specialisation slots open at (mastery skills: 8, 12, 20).</summary>
     public static readonly int[] SpecLevels = { 8, 12, 20 };
 
-    /// <summary>The highest skill level the calculator offers a step to (the game shows skills up to 20).</summary>
+    /// <summary>The highest skill level the calculator offers a step to: 20 (the levels past it come from gear, Arcana and Daevanion; a passive can go past 20).</summary>
     public const int SkillTop = 20;
+
+    /// <summary>The levels an active skill's steps go by: the first specialisation at 8, then 12, 16 and 20 (+500, +900 and +1,000 Combat Power on reaching
+    /// them, in-game figures; 20 opens the third specialisation).</summary>
+    public static readonly int[] SkillRanks = { 8, 12, 16, 20 };
+
+    /// <summary>The class's weapon passive ("Equip Gladiator Weapon", the class's skill id xx000000): it has no levels to raise, so it is not listed.</summary>
+    public static bool IsWeaponPassive(int skillId) => skillId >= 1_000_000 && skillId % 1_000_000 == 0;
+
+    /// <summary>
+    /// The Daevanion points the game allows in Global Season 1 (7 November 2026, players' in-game checks): 416 across a class's first four boards (Nezekan, Zikel,
+    /// Vaizel, Triniel) together, 120 on Ariel's; the later boards aren't open yet.
+    /// </summary>
+    public const int DaevanionMainPoints = 416, DaevanionArielPoints = 120;
+
+    /// <summary>A board's place among its class's boards (1 Nezekan ... 4 Triniel, 5 Ariel, 6 on the later ones): board ids are the class's number and that place.</summary>
+    public static int BoardPlace(int boardId) => boardId % 10;
+
+    /// <summary>The points a board's pool allows: <see cref="DaevanionMainPoints"/> for the first four boards together, <see cref="DaevanionArielPoints"/> for
+    /// Ariel's, 0 for a later board.</summary>
+    public static int PoolPoints(int boardId) => BoardPlace(boardId) switch { >= 1 and <= 4 => DaevanionMainPoints, 5 => DaevanionArielPoints, _ => 0 };
+
+    /// <summary>A board's pool: 1 the first four boards (their points shared), 2 Ariel's, 0 a later board.</summary>
+    public static int PoolOf(int boardId) => BoardPlace(boardId) switch { >= 1 and <= 4 => 1, 5 => 2, _ => 0 };
 
     /// <summary>The highest Stigma level the calculator offers a step to: 20, the top any character the website read has reached (the model's bands go on to 25).</summary>
     public const int StigmaTop = 20;
@@ -375,43 +402,57 @@ public static class CpWhole
         parts[CpSource.Gear] = pieces.Sum(p => p.Mid);
         parts[CpSource.Base] = model.BaseOf(input.ClassName);
 
-        // skills and Stigmas: the levels of the equipped active skills and of all passives, each equipped Stigma by its level bands
-        double perLevel = model.Weight("skill") * scale * totals.Factor("skill");
-        double stigmaWeight = model.Weight("stigma") * scale * totals.Factor("stigma");
+        // skills and Stigmas by the model's level tables (most of a skill's Combat Power comes at a few levels): the active skills on the bar and every passive;
+        // the highest Stigmas slotted in the preset (the game lists them at login; for a Stigma the skill bar doesn't matter - a Stigma like Focused Block counts
+        // off the bar too)
+        double skillScale = scale * totals.Factor("skill"), stigmaScale = scale * totals.Factor("stigma");
+        double SkillAt(bool passive, int level) => model.SkillCp(passive, level) * skillScale;
+        double StigmaAt(int level) => model.StigmaCp(level) * stigmaScale;
         var skills = new List<CpSkillRow>();
         var stigmas = new List<CpStigmaRow>();
-        foreach (Aion2SkillEntry s in (input.Skills ?? Array.Empty<Aion2SkillEntry>()).GroupBy(s => s.SkillId).Select(g => g.First()))
+        var entries = (input.Skills ?? Array.Empty<Aion2SkillEntry>()).GroupBy(s => s.SkillId).Select(g => g.First())
+            .Where(s => s.Level > 0 && Aion2Artwork.SkillKind(s.SkillId) is not null && !IsWeaponPassive(s.SkillId)).ToList();
+        var slotted = entries.Where(s => s.Stigma).OrderByDescending(s => s.Level).ThenByDescending(s => s.Equipped).ThenBy(s => s.SkillId)
+            .Take(model.StigmaSlots).Select(s => s.SkillId).ToHashSet();
+        foreach (Aion2SkillEntry s in entries)
         {
-            string? kind = Aion2Artwork.SkillKind(s.SkillId);
-            if (kind is null || s.Level <= 0)
-            {
-                continue;
-            }
-
             int filled = s.Stones?.Count(x => x > 0) ?? 0;
             if (s.Stigma)
             {
-                double now = s.Equipped ? Aion2CpSources.StigmaPoints(s.Level) * stigmaWeight : 0;
-                double next = s.Level < StigmaTop ? (Aion2CpSources.StigmaPoints(s.Level + 1) - Aion2CpSources.StigmaPoints(s.Level)) * stigmaWeight : 0;
-                stigmas.Add(new CpStigmaRow(s.SkillId, s.Level, s.Equipped, now, next, filled));
+                bool counts = slotted.Contains(s.SkillId);
+                double now = counts ? StigmaAt(s.Level) : 0;
+                double next = s.Level < StigmaTop ? StigmaAt(s.Level + 1) - StigmaAt(s.Level) : 0;
+                stigmas.Add(new CpStigmaRow(s.SkillId, s.Level, counts, now, next, filled));
                 continue;
             }
 
-            bool passive = kind == "p";
+            bool passive = Aion2Artwork.SkillKind(s.SkillId) == "p";
             bool counted = passive || s.Equipped;
             int open = passive ? 0 : SpecLevels.Count(l => s.Level >= l);
             int? nextAt = passive ? null : SpecLevels.Where(l => s.Level < l).Select(l => (int?)l).FirstOrDefault();
-            skills.Add(new CpSkillRow(s.SkillId, s.Level, s.BaseLevel, passive, counted, counted ? s.Level * perLevel : 0, perLevel, open, filled, nextAt));
+            skills.Add(new CpSkillRow(s.SkillId, s.Level, s.BaseLevel, passive, counted, counted ? SkillAt(passive, s.Level) : 0,
+                SkillAt(passive, s.Level + 1) - SkillAt(passive, s.Level), open, filled, nextAt));
         }
 
         parts[CpSource.Skills] = skills.Sum(s => s.Cp);
         parts[CpSource.Stigmas] = stigmas.Sum(s => s.Cp);
 
+        // a skill level from gear or an Arcana card: what the skill's Combat Power would lose without it (by the tables: +1 that takes a skill to 20 is +1,000)
+        var levelOf = skills.Where(s => s.Counted).ToDictionary(s => s.SkillId, s => (s.Level, s.Passive));
+        double LevelsCp(int skillId, int levels)
+        {
+            if (levels <= 0 || (!levelOf.TryGetValue(skillId, out var k) && !levelOf.TryGetValue(Aion2Cooldowns.BaseOf(skillId), out k)))
+            {
+                return 0;
+            }
+
+            return SkillAt(k.Passive, k.Level) - SkillAt(k.Passive, Math.Max(1, k.Level - levels));
+        }
+
         // a piece's skill lines: what their levels are worth with the skill (counted there, so not in the piece's own sum)
-        var countedSkills = skills.Where(s => s.Counted).Select(s => s.SkillId).ToHashSet();
         pieces = pieces.Select(p => !p.Lines.Any(l => l.IsSkill) ? p : p with
         {
-            Lines = p.Lines.Select(l => l.IsSkill ? l with { SkillCp = countedSkills.Contains(l.SkillId) || countedSkills.Contains(Aion2Cooldowns.BaseOf(l.SkillId)) ? l.Value * perLevel : 0 } : l).ToList(),
+            Lines = p.Lines.Select(l => l.IsSkill ? l with { SkillCp = LevelsCp(l.SkillId, (int)Math.Round(l.Value)) } : l).ToList(),
         }).ToList();
 
         // Daevanion boards
@@ -424,7 +465,7 @@ public static class CpWhole
             int skillLevels = all.Where(n => open.Contains(n.Id) && n.Type == "SkillLevel").Sum(n => n.Value);
             var of = lines.Where(l => l.Source == CpSource.Daevanion && l.Key == "board:" + board.BoardId).ToList();
             boards.Add(new CpBoardRow(board.BoardId, all.Count(n => open.Contains(n.Id)), all.Count, Summed(of), of.Sum(l => Cp(l.Stat, l.Value)),
-                closed.Sum(n => Adds(n.Key, n.Value)), closed.Count, skillLevels));
+                closed.Sum(n => Adds(n.Key, n.Value)), closed.Count, skillLevels, all.Where(n => open.Contains(n.Id)).Sum(Aion2DaevanionCatalog.PointsOf)));
         }
 
         // Genus Insight
@@ -475,7 +516,8 @@ public static class CpWhole
         {
             Aion2ArcanaDetails a = g.Arcana!;
             string? god = Aion2CpData.Token(a.GodStatId);
-            return new CpArcanaRow(g.SlotIndex, g.ItemId, g.Enchant, god, a.GodValue, god is null ? 0 : Cp(god, a.GodValue), a.SkillBonuses.Sum(b => b.Level));
+            return new CpArcanaRow(g.SlotIndex, g.ItemId, g.Enchant, god, a.GodValue, god is null ? 0 : Cp(god, a.GodValue), a.SkillBonuses.Sum(b => b.Level),
+                a.SkillBonuses.Sum(b => LevelsCp(b.SkillId, b.Level)));
         }).ToList();
         var attributeRows = new List<CpAttributeRow>();
         for (int id = Aion2Attributes.FirstId; id <= Aion2Attributes.LastId; id++)
@@ -707,9 +749,13 @@ public static class CpWhole
             }
         }
 
+        // a Clash Rune's steps: last of all, and shown on the page only when asked for (players don't raise them for Combat Power)
+        var runeSlots = r.Pieces.Where(p => p.Data?.Category == "Rune").Select(p => p.Slot).ToHashSet();
+        steps = steps.Select(s => runeSlots.Contains(s.Slot) ? s with { Key = RuneKey } : s).ToList();
+
         // Stigmas and skills: each one's next step along the class build's path (CpPlan: the build's order, the lower ranks first), in that order
         CpClassPlan? plan = CpPlan.For(input.ClassName);
-        double stigmaWeight = model.Weight("stigma") * r.Scale * r.Totals.Factor("stigma");
+        double stigmaScale = r.Scale * r.Totals.Factor("stigma"), skillScale = r.Scale * r.Totals.Factor("skill");
         var worn = r.Stigmas.Where(s => s.Equipped && s.Level >= 1).ToList();
         int order = 0;
         var stigmaSeen = new HashSet<int>();
@@ -721,17 +767,18 @@ public static class CpWhole
             }
 
             CpStigmaRow s = worn[p.Index];
-            double gain = (Aion2CpSources.StigmaPoints(p.To) - Aion2CpSources.StigmaPoints(p.From)) * stigmaWeight;
+            double gain = (model.StigmaCp(p.To) - model.StigmaCp(p.From)) * stigmaScale;
             // "build": a Stigma of the class build, not past the level the build takes it to
             bool inBuild = plan is not null && plan.StigmaGoals.TryGetValue(CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId)), out int goal) && p.To <= goal;
             steps.Add(new CpStep(CpStepKind.Stigma, gain, gain, CpCertainty.Exact, OtherId: s.SkillId, ToLevel: p.To, FromLevel: p.From, Shards: CpPlan.ShardsTo(p.From, p.To),
                 Order: ++order, Key: inBuild ? "build" : null));
         }
 
-        // skill levels: every counted skill gives the same per level; the build says which first
+        // skill levels: by the level tables (12, 16 and 20 give most), a skill to 8, 12, 16 and 20 at a time in the build's order
         var counted = r.Skills.Where(s => s.Counted && s.PerLevel > 0).ToList();
         var skillSeen = new HashSet<int>();
-        foreach (CpLevelStep p in CpPlan.SkillPath(counted.Select(s => CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId))).ToList(), counted.Select(s => s.Level).ToList(), plan, SkillTop))
+        foreach (CpLevelStep p in CpPlan.SkillPath(counted.Select(s => CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId))).ToList(), counted.Select(s => s.Level).ToList(), plan, SkillTop,
+            SkillRanks))
         {
             if (!skillSeen.Add(p.Index))
             {
@@ -739,7 +786,7 @@ public static class CpWhole
             }
 
             CpSkillRow s = counted[p.Index];
-            double gain = (p.To - p.From) * s.PerLevel;
+            double gain = (model.SkillCp(s.Passive, p.To) - model.SkillCp(s.Passive, p.From)) * skillScale;
             bool inBuild = plan is not null && plan.SkillTargets.TryGetValue(CpPlan.Key(Aion2SkillNames.NameOf(s.SkillId)), out int target) && p.To <= target;
             steps.Add(new CpStep(CpStepKind.Skill, gain, gain, CpCertainty.Exact, OtherId: s.SkillId, ToLevel: p.To, FromLevel: p.From, Order: ++order, Key: inBuild ? "build" : null));
         }
@@ -804,23 +851,132 @@ public static class CpWhole
             }
         }
 
-        // Daevanion: the stat nodes still closed, per node on average (opening one takes the points and the path to it)
-        foreach (CpBoardRow b in r.Boards.Where(b => b.ClosedStatNodes > 0 && b.CpLeft >= 1))
-        {
-            double each = b.CpLeft / b.ClosedStatNodes;
-            if (each >= 1)
-            {
-                steps.Add(new CpStep(CpStepKind.Daevanion, each, b.CpLeft, CpCertainty.Average, OtherId: b.BoardId, Count: b.ClosedStatNodes));
-            }
-        }
+        // Daevanion: the points the game still allows (DaevanionMainPoints across the first four boards, DaevanionArielPoints on Ariel's), spent on the closed
+        // nodes in the order players go by for PvE (DaevanionOrder), one step per board
+        steps.AddRange(DaevanionSteps(r, input, model, adds));
 
         return new CpWholeResult
         {
             Totals = r.Totals, Scale = r.Scale, Parts = r.Parts, Pieces = r.Pieces, Skills = r.Skills, Stigmas = r.Stigmas, Boards = r.Boards, Genus = r.Genus,
             Pets = r.Pets, PetsNearLevel = r.PetsNearLevel, Titles = r.Titles, OwnedTitles = r.OwnedTitles, OwnedTitlesCp = r.OwnedTitlesCp,
             OwnedTitleCount = r.OwnedTitleCount, Wing = r.Wing, Arcana = r.Arcana, Attributes = r.Attributes,
-            Steps = steps.Where(s => Math.Max(s.Gain, s.GainMax) >= 1).OrderByDescending(s => s.Rank).ThenBy(s => s.Kind).ThenBy(s => s.Slot).ToList(),
+            // a Clash Rune's steps last of all (Key "rune": the page hides them unless asked)
+            Steps = steps.Where(s => Math.Max(s.Gain, s.GainMax) >= 1).OrderBy(s => s.Key == RuneKey).ThenByDescending(s => s.Rank).ThenBy(s => s.Kind).ThenBy(s => s.Slot).ToList(),
         };
+    }
+
+    /// <summary>The key of the steps of a Clash Rune (the piece of kind "Rune"): the last of all, and hidden on the page unless the player shows them.</summary>
+    public const string RuneKey = "rune";
+
+    /// <summary>
+    /// The order players open Daevanion nodes in for PvE (7 November 2026): 1 the gold nodes (Damage Boost, Combat Speed ...), 2 active skills (the +12 and
+    /// +16 thresholds), 3 passives that raise damage, 4 Attack, 5 Critical Hit (and the other flat offence), 6 passives for defence, 7 Defense, 8 HP, 9 MP.
+    /// </summary>
+    public static int DaevanionOrder(Aion2DaevanionNode node, Func<int, bool?> isPassive)
+    {
+        if (node.Type == "SkillLevel")
+        {
+            int.TryParse(node.Key, out int skillId);
+            return isPassive(skillId) switch { false => 2, true => DefensivePassive(skillId) ? 6 : 3, null => 9 };
+        }
+
+        if (node.Grade == "Unique")
+        {
+            return 1;
+        }
+
+        string? key = Aion2CpData.MapOf(node.Key)?.Key ?? Aion2CpData.ShareOf(node.Key)?.Total;
+        return key switch
+        {
+            _ when key is not null && Aion2CpData.PercentKeys.Contains(key) => 1,
+            "atk" => 4,
+            "crit" or "acc" or "critacc" or "critAtk" or "pveAtk" or "pen" => 5,
+            "def" or "dmgRed" or "frontDef" or "critDef" or "backCritRes" => 7,
+            "hp" or "regen" => 8,
+            _ => 9,
+        };
+    }
+
+    /// <summary>A passive for defence, by its name (the game's data doesn't say): its levels go after the passives that raise damage.</summary>
+    private static bool DefensivePassive(int skillId) =>
+        System.Text.RegularExpressions.Regex.IsMatch(Aion2SkillNames.NameOf(skillId) ?? "", @"defen|guard|health|life|protect|armou?r|ironclad|resist|endur|toleran|recover|regenerat|block|shield|surviv",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// The Daevanion nodes still worth opening within the points the game allows: for the first four boards together and for Ariel's, the points left
+    /// (the cap less the open nodes' points), spent on the closed nodes in <see cref="DaevanionOrder"/> (within a place, the most CP a point first), a skill
+    /// node by what its level is worth on the skill at its level then; one step per board (the nodes, their points and CP). Nothing for a later board.
+    /// </summary>
+    private static IEnumerable<CpStep> DaevanionSteps(CpWholeResult r, CpWholeInput input, CpModel model, Func<string, double, double> adds)
+    {
+        var boards = (input.Daevanion ?? Array.Empty<Aion2DaevanionBoard>()).GroupBy(b => b.BoardId).Select(g => g.First()).ToList();
+        var skillRows = r.Skills.GroupBy(s => s.SkillId).ToDictionary(g => g.Key, g => g.First());
+        CpSkillRow? RowOf(int skillId) => skillRows.TryGetValue(skillId, out CpSkillRow? row) || skillRows.TryGetValue(Aion2Cooldowns.BaseOf(skillId), out row) ? row : null;
+        bool? IsPassive(int skillId) => RowOf(skillId) is { Counted: true } row ? row.Passive : null;
+        var level = new Dictionary<int, int>();
+        double skillScale = r.Scale * r.Totals.Factor("skill");
+        double SkillGain(int skillId, int levels)
+        {
+            if (RowOf(skillId) is not { Counted: true } row)
+            {
+                return 0;
+            }
+
+            int now = level.GetValueOrDefault(row.SkillId, row.Level);
+            return (model.SkillCp(row.Passive, now + levels) - model.SkillCp(row.Passive, now)) * skillScale;
+        }
+
+        foreach (var (places, cap) in new[] { (new[] { 1, 2, 3, 4 }, DaevanionMainPoints), (new[] { 5 }, DaevanionArielPoints) })
+        {
+            var pool = boards.Where(b => places.Contains(BoardPlace(b.BoardId))).ToList();
+            if (pool.Count == 0)
+            {
+                continue;
+            }
+
+            var open = pool.SelectMany(b => b.NodeIds).ToHashSet();
+            int spent = open.Select(Aion2DaevanionCatalog.Find).Where(n => n is not null && n.Type != "Start").Sum(n => Aion2DaevanionCatalog.PointsOf(n!));
+            int left = cap - spent;
+            if (left <= 0)
+            {
+                continue;
+            }
+
+            var closed = pool.SelectMany(b => Aion2DaevanionCatalog.NodesOfBoard(b.BoardId)).Where(n => !open.Contains(n.Id) && n.Type is "Stat" or "SkillLevel")
+                .Select(n => (Node: n, Order: DaevanionOrder(n, IsPassive), Points: Aion2DaevanionCatalog.PointsOf(n),
+                    Gain: n.Type == "Stat" ? adds(n.Key, n.Value) : int.TryParse(n.Key, out int id) ? SkillGain(id, n.Value) : 0))
+                .Where(x => x.Gain >= 1)
+                .OrderBy(x => x.Order).ThenByDescending(x => x.Gain / x.Points).ThenBy(x => x.Node.Id).ToList();
+            var taken = new Dictionary<int, (int Nodes, int Points, double Gain, Dictionary<string, double> What)>();
+            foreach (var x in closed)
+            {
+                if (x.Points > left)
+                {
+                    continue;
+                }
+
+                double gain = x.Gain;
+                string what = x.Node.Key;
+                if (x.Node.Type == "SkillLevel" && int.TryParse(x.Node.Key, out int skillId) && RowOf(skillId) is { } row)
+                {
+                    gain = SkillGain(skillId, x.Node.Value); // with the levels of the nodes taken before
+                    level[row.SkillId] = level.GetValueOrDefault(row.SkillId, row.Level) + x.Node.Value;
+                    what = "Skill:" + row.SkillId;
+                }
+
+                left -= x.Points;
+                var t = taken.GetValueOrDefault(x.Node.Board, (0, 0, 0.0, new Dictionary<string, double>(StringComparer.Ordinal)));
+                t.What[what] = t.What.GetValueOrDefault(what) + gain;
+                taken[x.Node.Board] = (t.Nodes + 1, t.Points + x.Points, t.Gain + gain, t.What);
+            }
+
+            foreach (var (boardId, t) in taken.Where(kv => kv.Value.Gain >= 1))
+            {
+                // what the nodes give most, for the step's text: stat tokens, "Skill:<id>" for a skill's levels
+                string most = string.Join(",", t.What.OrderByDescending(kv => kv.Value).Take(3).Select(kv => kv.Key));
+                yield return new CpStep(CpStepKind.Daevanion, t.Gain, t.Gain, CpCertainty.Exact, OtherId: boardId, Count: t.Nodes, ToLevel: t.Points, ToStat: most);
+            }
+        }
     }
 
     /// <summary>A piece's base stats, enhancement and breakthrough at the given levels, added up per stat.</summary>

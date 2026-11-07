@@ -13,15 +13,15 @@ public readonly record struct CpLevelStep(int Index, int From, int To);
 
 /// <summary>
 /// The order the CP calculator puts Stigma and skill levels in: the website's class build (assets/aion2/builds/class_plans.json, made from the Class Builds
-/// page). Levels go by ranks - 5, 10, 15, 20 - the lower ranks first: a Stigma to 10 before another from 10 to 13, a skill to 15 before another to 16
-/// (6 November 2026, the owner: "Stigma and skills, priority should be based on the class website. Getting a skill to 15 better than going for 16 on
-/// another, or 5 to 10 over 10 to 13"). Stigmas follow the build's own plan first (the order the Class Builds page and the Character Lookup's
-/// suggestions level them in), then every Stigma by ranks; skills go by ranks in the build's priority order, each up to the level the build takes it to,
-/// then the rest. Pure, apart from reading the file once.
+/// page; 6 November 2026, the owner: "Stigma and skills, priority should be based on the class website"). Levels go by ranks, the lower ranks first:
+/// Stigmas by 5, 10, 15, 20 (a Stigma to 10 before another from 10 to 13); active skills by the levels that count, 8, 12, 16, 20 (7 November 2026: the
+/// first specialisation at 8, +500 / +900 / +1,000 Combat Power on reaching 12 / 16 / 20, in-game figures). Stigmas follow the build's own plan first
+/// (the order the Class Builds page and the Character Lookup's suggestions level them in), then every Stigma by ranks; skills go by ranks in the build's
+/// priority order, each up to the level the build takes it to, then the rest. Pure, apart from reading the file once.
 /// </summary>
 public static class CpPlan
 {
-    /// <summary>The ranks levels go by.</summary>
+    /// <summary>The ranks Stigma levels go by (and skills', unless others are given).</summary>
     public static readonly int[] Ranks = { 5, 10, 15, 20 };
 
     private static Dictionary<string, CpClassPlan>? _plans;
@@ -53,9 +53,9 @@ public static class CpPlan
     }
 
     /// <summary>The next rank above <paramref name="level"/> up to <paramref name="cap"/>, else the cap itself when it is above the level.</summary>
-    private static int? NextRank(int level, int cap)
+    private static int? NextRank(int level, int cap, IReadOnlyList<int> ranks)
     {
-        foreach (int rank in Ranks)
+        foreach (int rank in ranks)
         {
             if (rank > level && rank <= cap)
             {
@@ -141,17 +141,18 @@ public static class CpPlan
     }
 
     /// <summary>
-    /// The skills' path, the first step first: by ranks (all to 5, then to 10, 15 and 20), in the build's priority order, each up to the level the build takes
+    /// The skills' path, the first step first: by ranks (<paramref name="ranks"/>, else <see cref="Ranks"/>: all to the first, then the next ...), in the build's priority order, each up to the level the build takes
     /// it to; then the skills the build leaves lower or doesn't name, by ranks, to <paramref name="top"/>. <paramref name="names"/>: the skills to level (the
     /// ones that count).
     /// </summary>
-    public static List<CpLevelStep> SkillPath(IReadOnlyList<string> names, IReadOnlyList<int> levels, CpClassPlan? plan, int top)
+    public static List<CpLevelStep> SkillPath(IReadOnlyList<string> names, IReadOnlyList<int> levels, CpClassPlan? plan, int top, IReadOnlyList<int>? ranks = null)
     {
+        ranks ??= Ranks;
         var path = new List<(int I, int To, bool Whole)>();
         var index = names.Select((k, i) => (k, i)).GroupBy(x => x.k).ToDictionary(g => g.Key, g => g.First().i);
         if (plan is not null)
         {
-            foreach (int bp in Ranks)
+            foreach (int bp in ranks)
             {
                 foreach (string k in plan.SkillOrder)
                 {
@@ -165,7 +166,7 @@ public static class CpPlan
 
         // the rest: the build's order first, then the others as they come
         var order = (plan?.SkillOrder.Where(index.ContainsKey).Select(k => index[k]) ?? Enumerable.Empty<int>()).Concat(Enumerable.Range(0, names.Count)).Distinct().ToList();
-        foreach (int bp in Ranks)
+        foreach (int bp in ranks)
         {
             foreach (int i in order)
             {
@@ -173,19 +174,20 @@ public static class CpPlan
             }
         }
 
-        return Walk(path, levels);
+        return Walk(path, levels, ranks);
     }
 
     /// <summary>Follows a path from the levels now: each entry raises its skill to the next rank on the way to its level (all at once for a "whole" entry).</summary>
-    private static List<CpLevelStep> Walk(List<(int I, int To, bool Whole)> path, IReadOnlyList<int> levels)
+    private static List<CpLevelStep> Walk(List<(int I, int To, bool Whole)> path, IReadOnlyList<int> levels, IReadOnlyList<int>? ranks = null)
     {
+        ranks ??= Ranks;
         int[] level = levels.ToArray();
         var steps = new List<CpLevelStep>();
         foreach ((int i, int to, bool whole) in path)
         {
             while (level[i] < to)
             {
-                int next = whole ? to : NextRank(level[i], to) ?? to;
+                int next = whole ? to : NextRank(level[i], to, ranks) ?? to;
                 steps.Add(new CpLevelStep(i, level[i], next));
                 level[i] = next;
             }

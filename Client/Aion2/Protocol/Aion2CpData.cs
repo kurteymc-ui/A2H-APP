@@ -24,8 +24,21 @@ public sealed record CpItemData(int Id, string Group, string Category, int Level
 /// stats the website's model has none for (<see cref="Aion2CpData.OwnWeights"/>). The CP measurements' upload counts plain amounts: no reference, no own weights.
 /// </summary>
 public sealed record CpModel(IReadOnlyDictionary<string, double> Weights, IReadOnlyDictionary<string, string> Confidence, bool FromWebsite, double IlMult = 0, double IlRef = 2500,
-    IReadOnlyDictionary<string, double>? Base = null, double PercentRef = Aion2CpData.OffenseReference, double GuardRef = Aion2CpData.GuardReference, bool Own = true)
+    IReadOnlyDictionary<string, double>? Base = null, double PercentRef = Aion2CpData.OffenseReference, double GuardRef = Aion2CpData.GuardReference, bool Own = true,
+    CpLevels? Levels = null)
 {
+    /// <summary>
+    /// The Combat Power of a skill at a level: by the model's tables (<see cref="Levels"/>, the weight of "skill" on top: 1 for the in-game figures); a model
+    /// without tables (one from before 7 November 2026) counts every level the same, at its weight.
+    /// </summary>
+    public double SkillCp(bool passive, int level) => Levels is { } l ? (passive ? l.Passive : l.Active).CpAt(level) * Weight("skill") : Math.Max(0, level) * Weight("skill");
+
+    /// <summary>The Combat Power of a Stigma at a level: by the model's table, or by the older bands (<see cref="Aion2CpSources.StigmaPoints"/>) without one.</summary>
+    public double StigmaCp(int level) => (Levels is { } l ? l.Stigma.CpAt(level) : Aion2CpSources.StigmaPoints(level)) * Weight("stigma");
+
+    /// <summary>How many Stigmas count: the highest ones of those slotted (4 in Global Season 1).</summary>
+    public int StigmaSlots => Levels?.StigmaSlots ?? 4;
+
     /// <summary>The weight of a model stat: the website's, else the meter's own for the few the website's model has none for.</summary>
     public double Weight(string key) => Weights.TryGetValue(key, out double w) ? w : Own ? Aion2CpData.OwnWeights.GetValueOrDefault(key) : 0;
 
@@ -46,6 +59,42 @@ public sealed record CpModel(IReadOnlyDictionary<string, double> Weights, IReadO
 
     /// <summary>The progression factor at an Item Level (1 without one or without the factor).</summary>
     public double Progression(int? itemLevel) => IlMult > 0 && itemLevel is > 0 ? Math.Max(0.5, 1 + IlMult * (itemLevel.Value - IlRef) / 1000) : 1;
+}
+
+/// <summary>
+/// One kind's levels -> Combat Power (the website's model "levels", src/features.js LEVELS): <see cref="Per"/> a level up to <see cref="To"/>, the amount of
+/// <see cref="At"/> on reaching one of its levels, <see cref="Above"/> a level past <see cref="To"/>, and <see cref="Beyond"/> a level past <see cref="Cap"/>.
+/// Level 1 counts nothing.
+/// </summary>
+public sealed record CpLevelTable(double Per, int To, IReadOnlyDictionary<int, double> At, double Above, int? Cap = null, double? Beyond = null)
+{
+    /// <summary>What a level adds on reaching it.</summary>
+    public double Level(int level) => level < 2 ? 0 : At.TryGetValue(level, out double a) ? a : level <= To ? Per : Cap is int cap && level > cap ? Beyond ?? Above : Above;
+
+    /// <summary>The Combat Power of the levels up to <paramref name="level"/>.</summary>
+    public double CpAt(int level)
+    {
+        double cp = 0;
+        for (int l = 2; l <= level; l++)
+        {
+            cp += Level(l);
+        }
+
+        return cp;
+    }
+}
+
+/// <summary>
+/// Skill and Stigma levels -> Combat Power, measured in game (7 November 2026; the website's 8,700 level 45 characters agree, a fitted weight of 1.0 to 1.1).
+/// An equipped active skill: 100 a level, and 500 / 900 / 1,000 on reaching 12 / 16 / 20 (19 to 20 is +1,000), 400 a level past 20. A passive: 100 a level to
+/// 16, 200 from 17 to 20, 400 past 20. A Stigma: 100 a level and 491 / 1,200 / 1,900 / 2,800 on reaching 5 / 10 / 15 / 20; the four highest slotted count.
+/// </summary>
+public sealed record CpLevels(CpLevelTable Active, CpLevelTable Passive, CpLevelTable Stigma, int StigmaSlots = 4)
+{
+    public static readonly CpLevels InGame = new(
+        new CpLevelTable(100, 20, new Dictionary<int, double> { [12] = 500, [16] = 900, [20] = 1000 }, 400),
+        new CpLevelTable(100, 16, new Dictionary<int, double>(), 200, 20, 400),
+        new CpLevelTable(100, 25, new Dictionary<int, double> { [5] = 491, [10] = 1200, [15] = 1900, [20] = 2800 }, 100));
 }
 
 /// <summary>
@@ -111,6 +160,8 @@ public static class Aion2CpData
     public static readonly IReadOnlyDictionary<string, double> OwnWeights = new Dictionary<string, double>(StringComparer.Ordinal)
     {
         ["dmgRed"] = 151, ["regen"] = 19, ["mp"] = 0.27, ["frontDef"] = 0.09, ["critDef"] = 0.09, ["backCritRes"] = 0.48,
+        // Move Speed (a wing's line): about 100 CP a percent, measured in game by players (7 November 2026)
+        ["move"] = 100,
     };
 
     /// <summary>How much of its weight a percentage of the attack is worth on this character: its offence against the model's reference (5 % at the least,
@@ -310,7 +361,8 @@ public static class Aion2CpData
 
         try
         {
-            string js = await http.GetStringAsync(Brand.Site + "/armory/assets/cp-model-data.js").ConfigureAwait(false);
+            // "levels": the model with its skill and Stigma tables (the site gives the app from before them the model it was made for)
+            string js = await http.GetStringAsync(Brand.Site + "/armory/assets/cp-model-data.js?levels=1").ConfigureAwait(false);
             if (ModelJson(js) is not { } json)
             {
                 return;
@@ -409,7 +461,46 @@ public static class Aion2CpData
         }
 
         // the website may set the references one day
-        return new CpModel(weights, confidence, fromWebsite, Number("ilMult", 0), Number("ilRef", 2500), bases, Number("percentRef", OffenseReference), Number("guardRef", GuardReference));
+        return new CpModel(weights, confidence, fromWebsite, Number("ilMult", 0), Number("ilRef", 2500), bases, Number("percentRef", OffenseReference), Number("guardRef", GuardReference),
+            Levels: root.TryGetProperty("levels", out JsonElement lv) && lv.ValueKind == JsonValueKind.Object ? ReadLevels(lv) : null);
+    }
+
+    /// <summary>The model's skill and Stigma tables ({active, passive, stigma: {per, to, at: {level: amount}, above, cap?, beyond?}, slots}); null when one is missing or broken.</summary>
+    internal static CpLevels? ReadLevels(JsonElement e)
+    {
+        static CpLevelTable? Table(JsonElement t)
+        {
+            if (t.ValueKind != JsonValueKind.Object || !t.TryGetProperty("per", out JsonElement per) || per.ValueKind != JsonValueKind.Number
+                || !t.TryGetProperty("to", out JsonElement to) || to.ValueKind != JsonValueKind.Number || !t.TryGetProperty("above", out JsonElement above) || above.ValueKind != JsonValueKind.Number)
+            {
+                return null;
+            }
+
+            var at = new Dictionary<int, double>();
+            if (t.TryGetProperty("at", out JsonElement a) && a.ValueKind == JsonValueKind.Object)
+            {
+                foreach (JsonProperty p in a.EnumerateObject())
+                {
+                    if (int.TryParse(p.Name, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out int level) && p.Value.ValueKind == JsonValueKind.Number)
+                    {
+                        at[level] = p.Value.GetDouble();
+                    }
+                }
+            }
+
+            int? cap = t.TryGetProperty("cap", out JsonElement c) && c.ValueKind == JsonValueKind.Number ? c.GetInt32() : null;
+            double? beyond = t.TryGetProperty("beyond", out JsonElement b) && b.ValueKind == JsonValueKind.Number ? b.GetDouble() : null;
+            return new CpLevelTable(per.GetDouble(), to.GetInt32(), at, above.GetDouble(), cap, beyond);
+        }
+
+        if (!e.TryGetProperty("active", out JsonElement act) || !e.TryGetProperty("passive", out JsonElement pas) || !e.TryGetProperty("stigma", out JsonElement stg)
+            || Table(act) is not { } active || Table(pas) is not { } passive || Table(stg) is not { } stigma)
+        {
+            return null;
+        }
+
+        int slots = stg.TryGetProperty("slots", out JsonElement sl) && sl.ValueKind == JsonValueKind.Number ? Math.Clamp(sl.GetInt32(), 1, 12) : 4;
+        return new CpLevels(active, passive, stigma, slots);
     }
 
     private static Data Load(string path)

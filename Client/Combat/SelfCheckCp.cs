@@ -257,27 +257,75 @@ public static class SelfCheckCp
         CpWholeResult s = CpWhole.Evaluate(simple, model);
         double atk = model.Weight("atk");
         bool split = Near(s.Parts[CpSource.Genus], atk * 100 * 1.05) && Near(s.Parts[CpSource.Attributes], atk * 100 * 0.1 / 2) && Near(s.Parts[CpSource.Base], model.BaseOf("Templar"))
-            && Near(s.Total, model.BaseOf("Templar") + atk * 100 * 1.1) && model.BaseOf("Templar") > 4000 && model.BaseOf("Elementalist") == model.BaseOf("Spiritmaster")
+            && Near(s.Total, model.BaseOf("Templar") + atk * 100 * 1.1) && model.BaseOf("Templar") != 0 && Math.Abs(model.BaseOf("Templar")) < 10_000
+            && model.BaseOf("Elementalist") == model.BaseOf("Spiritmaster")
             && Near(Aion2CpData.Cp("WeaponDamage", 1, s.Totals.Marginal, model), atk * 1.1);
         Console.WriteLine($"  -> the whole character adds up: Attack +100 (Genus Insight, the first preset) with Might 100 = {s.Total - s.Parts[CpSource.Base]:0} CP, line {s.Parts[CpSource.Genus]:0} + Might {s.Parts[CpSource.Attributes]:0}: {split}");
 
-        // skills: 16 + 10 on the bar, a passive 12, an active 20 not on the bar, a variant id that is no skill of the table; Stigmas: 15 equipped (6,400 x the
-        // weight; level 16 +1,200), 20 equipped (12,400, at the top), 9 not equipped
+        // skills by the level tables (in-game figures, 7 November 2026): an active 16 and 10 on the bar (2,700 and 900), a passive 12 (1,100), an active 20 not on
+        // the bar (nothing), a variant id that is no skill of the table, the class's weapon passive (not listed); Stigmas: 20 and 15 on the bar and 9 slotted off
+        // it - all three count, the highest four do (7,891 + 4,691 + 1,191)
         var skills = new[]
         {
             new Aion2SkillEntry(11010000, 16, 10, Equipped: true), new Aion2SkillEntry(11020000, 10, 10, Equipped: true), new Aion2SkillEntry(11710000, 12, 10),
             new Aion2SkillEntry(11030000, 20, 10), new Aion2SkillEntry(11250000, 15, 15, Stigma: true, Equipped: true), new Aion2SkillEntry(11270000, 9, 9, Stigma: true),
             new Aion2SkillEntry(11310000, 20, 20, Stigma: true, Equipped: true),
-            new Aion2SkillEntry(11010340, 16, 10),
+            new Aion2SkillEntry(11010340, 16, 10), new Aion2SkillEntry(11000000, 1, 1),
         };
         CpWholeResult k = CpWhole.Evaluate(new CpWholeInput("Templar", Array.Empty<Aion2EquippedItem>(), Skills: skills), model);
-        bool levels = Near(k.Parts[CpSource.Skills], 38 * model.Weight("skill")) && Near(Aion2CpSources.StigmaPoints(20), 12_400) && Near(Aion2CpSources.StigmaPoints(5), 900)
-            && Near(k.Parts[CpSource.Stigmas], (6_400 + 12_400) * model.Weight("stigma")) && k.Stigmas is [{ Equipped: true, Level: 20, NextLevel: 0 }, { Equipped: true, Level: 15 } st, { Equipped: false }]
-            && Near(st.NextLevel, 1_200 * model.Weight("stigma")) && k.Skills.Count == 4 && k.Skills.Single(x => x.SkillId == 11010000) is { SpecOpen: 2, NextSpecAt: 20, Counted: true }
-            && k.Steps.Count(x => x.Kind == CpStepKind.Stigma) == 1 && k.Steps.Any(x => x is { Kind: CpStepKind.Stigma, FromLevel: 15, ToLevel: 20, Shards: 40 })
-            && k.Steps.Count(x => x.Kind == CpStepKind.Skill) == 3 && k.Steps.Any(x => x is { Kind: CpStepKind.Skill, FromLevel: 10, ToLevel: 15 })
-            && Near(k.Steps.Single(x => x.Kind == CpStepKind.Stigma).Gain, 6_000 * model.Weight("stigma"));
-        Console.WriteLine($"  -> skill levels {k.Parts[CpSource.Skills]:0} CP (38 levels: on the bar and passive), Stigmas 15 and 20 {k.Parts[CpSource.Stigmas]:0} CP, each to its next rank: {levels}");
+        double sw = model.Weight("skill"), tw = model.Weight("stigma");
+        bool tables = model.Levels is not null && Near(model.SkillCp(false, 20) - model.SkillCp(false, 19), 1_000 * sw) && Near(model.SkillCp(false, 16) - model.SkillCp(false, 15), 900 * sw)
+            && Near(model.SkillCp(false, 14) - model.SkillCp(false, 13), 100 * sw) && Near(model.SkillCp(true, 20), 2_300 * sw) && Near(model.SkillCp(true, 22), 3_100 * sw)
+            && Near(model.StigmaCp(20), 7_891 * tw) && Near(model.StigmaCp(5), 791 * tw) && model.StigmaSlots == 4;
+        bool levels = Near(k.Parts[CpSource.Skills], (2_700 + 900 + 1_100) * sw) && Near(k.Parts[CpSource.Stigmas], (7_891 + 4_691 + 1_191) * tw)
+            && k.Stigmas is [{ Equipped: true, Level: 20, NextLevel: 0 }, { Equipped: true, Level: 15 } st, { Equipped: true, Level: 9 }]
+            && Near(st.NextLevel, 100 * tw) && k.Skills.Count == 4 && k.Skills.All(x => x.SkillId != 11000000)
+            && k.Skills.Single(x => x.SkillId == 11010000) is { SpecOpen: 2, NextSpecAt: 20, Counted: true, PerLevel: var next16 } && Near(next16, 100 * sw)
+            && k.Steps.Count(x => x.Kind == CpStepKind.Stigma) == 2 && k.Steps.Any(x => x is { Kind: CpStepKind.Stigma, FromLevel: 15, ToLevel: 20, Shards: 40 } && Near(x.Gain, 3_200 * tw))
+            && k.Steps.Any(x => x is { Kind: CpStepKind.Stigma, FromLevel: 9, ToLevel: 10 } && Near(x.Gain, 1_200 * tw))
+            && k.Steps.Count(x => x.Kind == CpStepKind.Skill) == 3 && k.Steps.Any(x => x is { Kind: CpStepKind.Skill, FromLevel: 10, ToLevel: 12 } && Near(x.Gain, 600 * sw))
+            && k.Steps.Any(x => x is { Kind: CpStepKind.Skill, FromLevel: 16, ToLevel: 20 } && Near(x.Gain, 1_300 * sw))
+            && k.Steps.Any(x => x is { Kind: CpStepKind.Skill, OtherId: 11710000, FromLevel: 12, ToLevel: 16 } && Near(x.Gain, 400 * sw));
+        Console.WriteLine($"  -> the level tables (20: +1,000, a passive past 20 400 a level, Stigma 20 7,891)={tables}; skills {k.Parts[CpSource.Skills]:0} CP, Stigmas {k.Parts[CpSource.Stigmas]:0} CP " +
+            $"(one slotted off the bar counts), each to its next level that counts: {levels}");
+
+        // an Arcana card's skill levels by what they are worth on the skill: +4 that took it from 16 to 20 is 1,300, from 15 to 19 1,200
+        var arcana = new List<Aion2EquippedItem> { new(41, 810130001, 5, Arcana: new Aion2ArcanaDetails(0, 11, 25, new[] { new Aion2SkillBonus(11010000, 4) })) };
+        double ArcanaSkills(int level) => CpWhole.Evaluate(new CpWholeInput("Templar", arcana, Skills: new[] { new Aion2SkillEntry(11010000, level, 10, Equipped: true) }), model).Arcana.Single().SkillCp;
+        bool card = Near(ArcanaSkills(20), 1_300 * sw) && Near(ArcanaSkills(19), 1_200 * sw);
+
+        // Daevanion within the points the game allows: the first three boards and part of the fourth full (416 points or more), nothing to open there; Ariel's
+        // empty, its steps within 120 points; a later board, nothing
+        var main = new[] { 11, 12, 13 }.Select(b => new Aion2DaevanionBoard(b, Aion2DaevanionCatalog.NodesOfBoard(b).Select(n => n.Id).ToList())).ToList();
+        var fourth = Aion2DaevanionCatalog.NodesOfBoard(14).OrderBy(n => n.Id).ToList();
+        int need = CpWhole.DaevanionMainPoints - main.Sum(b => b.NodeIds.Select(Aion2DaevanionCatalog.Find).Where(n => n is not null && n.Type != "Start").Sum(n => Aion2DaevanionCatalog.PointsOf(n!)));
+        var take = new List<int>();
+        foreach (var n in fourth)
+        {
+            if (need <= 0)
+            {
+                break;
+            }
+
+            take.Add(n.Id);
+            need -= n.Type == "Start" ? 0 : Aion2DaevanionCatalog.PointsOf(n);
+        }
+
+        var dv = main.Append(new Aion2DaevanionBoard(14, take)).Append(new Aion2DaevanionBoard(15, Array.Empty<int>())).Append(new Aion2DaevanionBoard(16, Array.Empty<int>())).ToList();
+        var dvSkills = new[] { new Aion2SkillEntry(11010000, 10, 10, Equipped: true), new Aion2SkillEntry(11020000, 10, 10, Equipped: true) };
+        CpWholeResult d = CpWhole.Evaluate(new CpWholeInput("Gladiator", Program.CpSampleGear(15), Skills: dvSkills, Daevanion: dv), model);
+        var dvSteps = d.Steps.Where(x => x.Kind == CpStepKind.Daevanion).ToList();
+        bool caps = fourth.Count > 0 && dvSteps.All(x => CpWhole.BoardPlace(x.OtherId) == 5) && dvSteps.Count == 1 && dvSteps[0].ToLevel is > 0 and <= CpWhole.DaevanionArielPoints
+            && dvSteps[0].Count > 0 && CpWhole.PoolOf(14) == 1 && CpWhole.PoolOf(15) == 2 && CpWhole.PoolOf(16) == 0
+            && d.Boards.Where(b => CpWhole.PoolOf(b.BoardId) == 1).Sum(b => b.Points) >= CpWhole.DaevanionMainPoints;
+        Console.WriteLine($"  -> an Arcana card's +4 on a skill at 20 / 19: {ArcanaSkills(20):0} / {ArcanaSkills(19):0} CP={card}; Daevanion within 416 + 120 points: " +
+            $"{string.Join(", ", dvSteps.Select(x => $"{Aion2DaevanionCatalog.BoardName(x.OtherId)} {x.Count} nodes {x.ToLevel} points +{x.Gain:0}"))}={caps}");
+
+        // a wing's Move Speed (about 100 CP a percent) and Boss Damage Tolerance (a share of Defense, as Defense %) count
+        bool wing = Near(Aion2CpData.Cp("MoveSpeed", 100, new CpTotals(0, 0, 0, 0, 0), model) ?? 0, 100)
+            && Near(Aion2CpData.Cp("BossNpcDecreaseDamage", 350, new CpTotals(0, 0, 0, 0, 10_000), model) ?? 0, 350 * model.Weight("def"));
+        Console.WriteLine($"  -> a wing's Move Speed 1 % and Boss Damage Tolerance 3.5 % at 10,000 Defense count: {wing}");
+        levels &= tables && card && caps && wing;
 
         // the sample character: pets by genus and level (a Cogni pet at 3 = 30 HP, 2 Critical Hit, 1 Might), owned titles, the wing, a board's lines with a new
         // Analysis on average, the parts all there, every step at least 1 CP and the biggest first, the fit to a game number 5 % under the calculator
@@ -300,9 +348,11 @@ public static class SelfCheckCp
             && cogniRow is { Cp: > 0 } && cogniRow.ByLevel.Sum() > 10 && cogniRow.StepGain[2] > 0 && cogniRow.StepGain[0] > 0
             && Aion2CpSources.Genus("Special")?.OddsAt(10) is { Length: 5 } odds && Near(odds.Sum(), 1) && Near(odds[4], 0.05)
             && dbl is { Slot: 4, Grade: 5, Cp: > 0 } && dbl.Average > 0 && dbl.Better is > 0 and < 1 && dbl.Best >= dbl.Now
-            && r.Parts.Where(p => p.Key != CpSource.Attributes).All(p => p.Value > 0) && r.Titles.Count == 2 && r.OwnedTitleCount > 100 && r.Wing is { Cp: > 0 }
+            && r.Parts.Where(p => p.Key is not CpSource.Attributes and not CpSource.Base).All(p => p.Value > 0) && r.Titles.Count == 2 && r.OwnedTitleCount > 100 && r.Wing is { Cp: > 0 }
             && r.Boards.Count == 6 && r.Boards.All(b => b.Open > 0) && r.Boards.Count(b => b.Cp > 0) >= 5 && r.Arcana.Count == 5 && r.Arcana.All(a => a.GodStat is not null && a.Cp > 0)
-            && r.Steps.Count > 5 && r.Steps.All(x => Math.Max(x.Gain, x.GainMax) >= 1) && r.Steps.Zip(r.Steps.Skip(1)).All(x => x.First.Rank >= x.Second.Rank - 0.001)
+            && r.Steps.Count > 5 && r.Steps.All(x => Math.Max(x.Gain, x.GainMax) >= 1)
+            && r.Steps.Where(x => x.Key != CpWhole.RuneKey).Zip(r.Steps.Where(x => x.Key != CpWhole.RuneKey).Skip(1)).All(x => x.First.Rank >= x.Second.Rank - 0.001)
+            && r.Steps.SkipWhile(x => x.Key != CpWhole.RuneKey).All(x => x.Key == CpWhole.RuneKey)
             && fit is double f && Math.Abs(f - 0.95) < 0.001 && CpWhole.Fit(10, input, model) is null && CpWhole.Fit(null, input, model) is null
             && Math.Abs(CpWhole.Evaluate(input, model, 0.95).Total - baseCp - (r.Total - baseCp) * 0.95) < 0.5;
         Console.WriteLine($"  -> the sample character: {r.Total:N0} CP in {r.Parts.Count(p => p.Value > 0.5)} parts, pets {r.Parts[CpSource.Pets]:0}, Genus Insight {r.Parts[CpSource.Genus]:0}"

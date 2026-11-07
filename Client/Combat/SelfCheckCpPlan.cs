@@ -43,6 +43,15 @@ public static class SelfCheckCpPlan
             $"({string.Join(", ", skillFirsts.Select(s => $"{skillNames[s.Index]} {s.From}->{s.To}"))})");
         ok &= skillOrder;
 
+        // the calculator's skill steps go by the levels that count (CpWhole.SkillRanks: 8, 12, 16, 20; +500 / +900 / +1,000 on reaching 12 / 16 / 20):
+        // Rending Blow to 8, Keen Strike to the build's 12, Overhead Slam 12 to 16, the other skill to 8
+        List<CpLevelStep> counted = CpPlan.SkillPath(skillNames, new[] { 12, 4, 9, 3 }, gladiator, 20, CpWhole.SkillRanks);
+        var countedFirsts = counted.GroupBy(s => s.Index).Select(g => g.First()).ToList();
+        bool byTables = countedFirsts.Count == 4 && countedFirsts[0] == new CpLevelStep(1, 4, 8) && countedFirsts[1] == new CpLevelStep(2, 9, 12)
+            && countedFirsts[2] == new CpLevelStep(0, 12, 16) && countedFirsts[3] == new CpLevelStep(3, 3, 8) && counted.All(s => s.To is 8 or 12 or 16 or 20 || s.Index == 2);
+        Console.WriteLine($"  -> by the levels that count (8, 12, 16, 20): {byTables} ({string.Join(", ", countedFirsts.Select(s => $"{skillNames[s.Index]} {s.From}->{s.To}"))})");
+        ok &= byTables;
+
         // a class without a build: by ranks only
         List<CpLevelStep> plain = CpPlan.StigmaPath(new[] { "a", "b" }, new[] { 12, 6 }, null, 20);
         bool none = plain.Count > 0 && plain[0] == new CpLevelStep(1, 6, 10);

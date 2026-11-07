@@ -20032,8 +20032,8 @@
     "zh-TW": "Lv {0}"
   },
   "CpCalc.Stigmas.Head": {
-    "en": "Every equipped Stigma counts by its level, and a level counts more the higher it is: 225 CP a level up to 5, 400 to 10, 700 to 15, 1,200 to 20 and 1,600 to 25 (the website's measurement, fitted to your character).",
-    "de": "Jedes ausgerüstete Stigma zählt nach seiner Stufe, und eine Stufe zählt mehr, je höher sie ist: 225 KP pro Stufe bis 5, 400 bis 10, 700 bis 15, 1.200 bis 20 und 1.600 bis 25 (die Messung der Website, an deinen Charakter angepasst)."
+    "en": "The four highest Stigmas slotted in your preset count (on the skill bar or not): 100 CP a level, and +491, +1,200, +1,900 and +2,800 on reaching 5, 10, 15 and 20 (in-game figures, fitted to your character).",
+    "de": "Die vier höchsten Stigmen in deinem Preset zählen (auf der Skillleiste oder nicht): 100 KP pro Stufe und +491, +1.200, +1.900 und +2.800 beim Erreichen von 5, 10, 15 und 20 (Werte aus dem Spiel, an deinen Charakter angepasst)."
   },
   "CpCalc.Stigmas.Next": {
     "en": "level {0}: +{1} CP",
@@ -20044,16 +20044,16 @@
     "de": "höchste Stufe"
   },
   "CpCalc.Stigmas.Unequipped": {
-    "en": "Not equipped: they don't count",
-    "de": "Nicht ausgerüstet: zählen nicht"
+    "en": "Not counted: not slotted, or past the four highest",
+    "de": "Zählen nicht: nicht eingesetzt oder nach den vier höchsten"
   },
   "CpCalc.Stigmas.None": {
     "en": "No Stigmas yet: the skill list comes at login.",
     "de": "Noch keine Stigmen: die Skillliste kommt beim Einloggen."
   },
   "CpCalc.Skills.Head": {
-    "en": "Every level of an active skill on your bar and of every passive skill counts the same: {0} CP. The levels include what gear, Arcana and Daevanion add.",
-    "de": "Jede Stufe eines aktiven Skills auf deiner Leiste und jedes passiven Skills zählt gleich: {0} KP. Die Stufen enthalten, was Ausrüstung, Arkana und Daevanion hinzufügen."
+    "en": "Most of a skill's Combat Power comes at a few levels (in-game figures): an active skill on your bar gives 100 CP a level and +500, +900 and +1,000 on reaching 12, 16 and 20; a passive 100 a level to 16, 200 from 17 to 20 and 400 past 20. The levels include what gear, Arcana and Daevanion add.",
+    "de": "Die meiste Kampfkraft eines Skills kommt bei wenigen Stufen (Werte aus dem Spiel): ein aktiver Skill auf deiner Leiste gibt 100 KP pro Stufe und +500, +900 und +1.000 beim Erreichen von 12, 16 und 20; ein passiver 100 pro Stufe bis 16, 200 von 17 bis 20 und 400 über 20. Die Stufen enthalten, was Ausrüstung, Arkana und Daevanion hinzufügen."
   },
   "CpCalc.Skills.Active": {
     "en": "Active skills",
@@ -20276,8 +20276,8 @@
     "de": "Die Pet-Liste kommt beim Einloggen."
   },
   "CpCalc.Daevanion.Head": {
-    "en": "What the stat nodes you opened give, and what the ones still closed would. Skill nodes raise skill levels, which count with the skills.",
-    "de": "Was die geöffneten Werteknoten bringen und was die noch geschlossenen bringen würden. Skillknoten heben Skillstufen, die bei den Skills zählen."
+    "en": "What the stat nodes you opened give. The game allows 416 points across the first four boards together and 120 on Ariel's; the steps spend what is left in the order players go by for PvE (gold nodes, active skills, damage passives, Attack, Critical Hit, defence passives, Defense, HP, MP). Skill nodes raise skill levels, which count with the skills.",
+    "de": "Was die geöffneten Werteknoten bringen. Das Spiel erlaubt 416 Punkte auf den ersten vier Tafeln zusammen und 120 auf Ariels; die Schritte geben den Rest in der Reihenfolge aus, die Spieler für PvE nehmen (goldene Knoten, aktive Skills, Schadens-Passive, Angriff, Kritischer Treffer, Verteidigungs-Passive, Verteidigung, LP, MP). Skillknoten heben Skillstufen, die bei den Skills zählen."
   },
   "CpCalc.Daevanion.Nodes": {
     "en": "{0} / {1} nodes",
@@ -20292,8 +20292,8 @@
     "zh-TW": "{0} / {1} 節點"
   },
   "CpCalc.Daevanion.Left": {
-    "en": "+{0} CP in {1} closed stat nodes",
-    "de": "+{0} KP in {1} geschlossenen Werteknoten"
+    "en": "+{0} CP in the {1} nodes the points left can open",
+    "de": "+{0} KP in den {1} Knoten, die die übrigen Punkte öffnen können"
   },
   "CpCalc.Daevanion.Skills": {
     "en": "+{0} skill levels (counted with the skills)",
@@ -22354,5 +22354,25 @@
   },
   "Status.Running": {
     "en": "Running since {0}"
+  },
+  "CpCalc.Skills.NextLevel": {
+    "en": "next level +{0} CP",
+    "de": "nächste Stufe +{0} KP"
+  },
+  "CpCalc.S.DaevanionNodes": {
+    "en": "Daevanion {0}: open {1} nodes ({2} points): {3}",
+    "de": "Daevanion {0}: {1} Knoten öffnen ({2} Punkte): {3}"
+  },
+  "CpCalc.Daevanion.Points": {
+    "en": "{0} of {1} points used (with the other boards of the pool)",
+    "de": "{0} von {1} Punkten benutzt (mit den anderen Tafeln des Pools)"
+  },
+  "CpCalc.Arcana.SkillsCp": {
+    "en": "+{0} skill levels: {1} CP with those skills",
+    "de": "+{0} Skillstufen: {1} KP bei diesen Skills"
+  },
+  "CpCalc.Steps.Runes": {
+    "en": "Show Clash Rune upgrades (last of all: they are rarely worth it for Combat Power)",
+    "de": "Kampfrunen-Verbesserungen zeigen (ganz zuletzt: sie lohnen sich für die Kampfkraft selten)"
   }
 }
