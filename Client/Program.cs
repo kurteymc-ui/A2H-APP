@@ -1214,6 +1214,19 @@ internal static class Program
                 Aion2.Aion2Tickets.NoteCharacter(name, 2302, t0.AddSeconds(at + 4), level: 45);
                 Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.OdyleId, new Aion2.TicketValue(odyle, charged, 0)), t0.AddSeconds(at + 6));
                 Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Tickets.PremiumId, new Aion2.TicketValue(0, 0, DateTimeOffset.UtcNow.AddDays(20).ToUnixTimeMilliseconds())), t0.AddSeconds(at + 6));
+                if (name != "Nyxelle")
+                {
+                    // the Abyss Corridors given out on entering the Abyss after the last siege (two open to the side); Draegor went through one, Nyxelle was not in the Abyss since
+                    foreach (var (corridor, ms) in new[] { (Aion2.Aion2Corridors.FirstId, 0L), (Aion2.Aion2Corridors.FirstId + 1, 130_000L), (Aion2.Aion2Corridors.FirstId + 2, 130_000L) })
+                    {
+                        Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(corridor, new Aion2.TicketValue(0, 0, ms)), t0.AddSeconds(at + 7), reason: 2);
+                    }
+
+                    if (name == "Draegor")
+                    {
+                        Aion2.Aion2Tickets.ReceiveUpdate(new Aion2.TicketReading(Aion2.Aion2Corridors.FirstId + 1, default), t0.AddSeconds(at + 8), reason: 3);
+                    }
+                }
             }
 
             // their classes, as the login's character list gives them (made up: a Gladiator, a Cleric, an Assassin)

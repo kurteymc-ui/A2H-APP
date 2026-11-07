@@ -257,6 +257,34 @@ public static class Aion2Tickets
         }
     }
 
+    /// <summary>The server the player is on: the one of the character logged in now, else the one of the character played last (0 = not known).</summary>
+    public static int HomeServerId
+    {
+        get
+        {
+            lock (Gate)
+            {
+                if ((_current ?? _likely) is { } name && Characters.TryGetValue(name, out TicketCharacter? on) && on.ServerId > 0)
+                {
+                    return on.ServerId;
+                }
+
+                return Characters.Values.Where(c => c.ServerId > 0 && c.Tickets.Count > 0).OrderByDescending(c => c.SavedAt).FirstOrDefault()?.ServerId ?? 0;
+            }
+        }
+    }
+
+    /// <summary>
+    /// The characters of the server the player is on (<see cref="HomeServerId"/>), as <see cref="Snapshot"/> orders them; all of them while no server is known.
+    /// The Characters page shows only these (7 November 2026, the owner: characters of a server a player had left showed up with the others).
+    /// </summary>
+    public static IReadOnlyList<TicketCharacter> OnHomeServer()
+    {
+        int home = HomeServerId;
+        IReadOnlyList<TicketCharacter> all = Snapshot();
+        return home <= 0 ? all : all.Where(c => c.ServerId == home).ToList();
+    }
+
     /// <summary>The name of the character logged in now (null until the game named one).</summary>
     public static string? CurrentName
     {
@@ -737,6 +765,10 @@ public static class Aion2Tickets
             if (_awaitingName && _pending is not null)
             {
                 _pending[reading.Id] = reading.Value;
+                if (reason == 2 && Aion2Corridors.IsCorridor(reading.Id))
+                {
+                    Aion2Corridors.NoteRefill(_pending, reading.Id, at);
+                }
             }
             else if ((_current ?? _likely) is { } name)
             {
@@ -753,6 +785,12 @@ public static class Aion2Tickets
                         && reading.Value.Count - before.Count is > 0 and <= 100 and int rise && reading.Value.Bonus == before.Bonus)
                     {
                         tickets[OdyleTickId] = new TicketValue(rise, 0, new DateTimeOffset(at.ToUniversalTime()).ToUnixTimeMilliseconds());
+                    }
+
+                    // the Abyss Corridors given out after a siege (on the first entry into the Abyss): when, and how many
+                    if (reason == 2 && Aion2Corridors.IsCorridor(reading.Id))
+                    {
+                        Aion2Corridors.NoteRefill(tickets, reading.Id, at);
                     }
 
                     Characters[name] = known with { SavedAt = DateTime.UtcNow, Tickets = tickets };
@@ -829,6 +867,12 @@ public static class Aion2Tickets
                 if (Characters.TryGetValue(name, out TicketCharacter? ticked) && !_pending.ContainsKey(OdyleTickId) && ticked.Tickets.TryGetValue(OdyleTickId, out TicketValue clock))
                 {
                     _pending[OdyleTickId] = clock;
+                }
+
+                // and when the Abyss Corridors were given out last (the list holds only the time left of each)
+                if (Characters.TryGetValue(name, out TicketCharacter? walked) && !_pending.ContainsKey(Aion2Corridors.RefillId) && walked.Tickets.TryGetValue(Aion2Corridors.RefillId, out TicketValue refill))
+                {
+                    _pending[Aion2Corridors.RefillId] = refill;
                 }
 
                 // the first login of a day sends yesterday's missions count: the old reading stays (stale, so the checklist shows it as an estimate)

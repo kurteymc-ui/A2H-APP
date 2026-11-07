@@ -175,7 +175,7 @@ public sealed partial class ChecklistWindow : Window
     /// <summary>Rebuilds the character list (the one logged in now is chosen first) and the page.</summary>
     private void Refresh()
     {
-        IReadOnlyList<TicketCharacter> all = Aion2Tickets.Snapshot();
+        IReadOnlyList<TicketCharacter> all = Aion2Tickets.OnHomeServer(); // the server played on now only
         string? current = Aion2Tickets.CurrentName;
         // the roster of all characters first when there are two or more; a character the user picked stays picked
         bool roster = all.Count(c => c.Tickets.Count > 0) >= 2;
@@ -713,7 +713,7 @@ public sealed partial class ChecklistWindow : Window
         LocalizationManager loc = LocalizationManager.Instance;
         DateTime now = DateTime.Now, utcNow = DateTime.UtcNow;
         string? online = Aion2Tickets.CurrentName;
-        List<TicketCharacter> all = Aion2Tickets.Snapshot().Where(c => c.Tickets.Count > 0).ToList();
+        List<TicketCharacter> all = Aion2Tickets.OnHomeServer().Where(c => c.Tickets.Count > 0).ToList();
         var odyle = all.ToDictionary(c => c.Name, c => Aion2Tickets.OdyleNow(c, utcNow, c.Name == online));
 
         // the board: the resets, the energy of every character together, the claims it makes, whom to play next, the daily tasks done

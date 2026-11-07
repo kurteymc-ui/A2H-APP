@@ -25,6 +25,19 @@
           "example": "Your Templar's cooldowns sit just how you like them: on your Cleric, pick Copy the layout of Templar and they line up the same way."
         },
         {
+          "kind": "new",
+          "area": "Characters",
+          "title": "Abyss Corridors on the Characters page",
+          "text": "A new column shows how many Abyss Corridors each character still has to enter since the last Artifact Siege. The game hands them out when a character first enters the Abyss after the siege; a character that has not been there yet shows the number your other character got, marked with ~.",
+          "example": "Your side holds two artifacts: Draegor shows 1 after one corridor, Nyxelle shows ~2 until she enters the Abyss."
+        },
+        {
+          "kind": "fixed",
+          "area": "Characters",
+          "title": "Only the server you play on",
+          "text": "Characters from a server you no longer play on no longer show on the Characters page and the home page. It follows the server of the character you are logged in with, or the one you played last."
+        },
+        {
           "kind": "improved",
           "area": "Black Cloud",
           "title": "Only the frames on the shop, no pop-up",

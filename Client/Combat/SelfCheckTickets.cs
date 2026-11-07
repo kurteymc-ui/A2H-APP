@@ -401,11 +401,59 @@ public static class SelfCheckTickets
             && built[1] is { Name: "Plain", Online: false, Premium: false, Odyle: { N: 550, Cap: 560 } } && built.All(b => b.Tickets.Count == 0);
         Console.WriteLine($"  -> the roster for the site: readings as seen, clock and caps={rosterBuilt}");
         bool odyleOk = tickLearnt && projected && liveExact && withoutClock && capped && lockedOdyle && rosterBuilt;
+        bool corridorsOk = Corridors(entries);
 
         Aion2Tickets.Reset();
-        bool ok = odyleOk && missionsReset && missionsStale && stamped && firstLogin && sameDay && newcomer && maskBit2 && startedInGame && relogKeeps && remoteRead && listRead && listedEntries && deletedGone && listKept && membership && premiumKnown && plainCaps && ticketFrame && noTicket && ticketAlone && passFrame && passLevels && lostTomorrow && rules && dungeonRefill && korean && locks && missionsRead && ticks && keptUntilReset && dailyCleared && weeklyCleared && resetTimes && cooldownOk && shortKeeps && everyFrame && clockOk && jumpOk && restartOk && listOk && truncated && gain && used && refill && notYet && bound && changed && refills && Aion2Tickets.Catalog.Count == 70;
+        bool ok = corridorsOk && odyleOk && missionsReset && missionsStale && stamped && firstLogin && sameDay && newcomer && maskBit2 && startedInGame && relogKeeps && remoteRead && listRead && listedEntries && deletedGone && listKept && membership && premiumKnown && plainCaps && ticketFrame && noTicket && ticketAlone && passFrame && passLevels && lostTomorrow && rules && dungeonRefill && korean && locks && missionsRead && ticks && keptUntilReset && dailyCleared && weeklyCleared && resetTimes && cooldownOk && shortKeeps && everyFrame && clockOk && jumpOk && restartOk && listOk && truncated && gain && used && refill && notYet && bound && changed && refills && Aion2Tickets.Catalog.Count == 70;
         Console.WriteLine(ok ? "  -> OK" : "  -> FAILED");
         ServerTime.Reset();
         return ok;
+    }
+
+    /// <summary>
+    /// The Abyss Corridors, from the frames of the owner's recording of 2 November 2026: given out on the first entry into the Abyss after the siege (1 none,
+    /// 2 and 3 with 2 min 10 s each), corridor 2 then entered and run down to 0; an alt of the server not in the Abyss since gets the same number marked as worked
+    /// out; nothing before the siege's end or during the next siege; a relog keeps when they were given out. And the Characters page shows only the server played on.
+    /// </summary>
+    private static bool Corridors(List<TicketReading> entries)
+    {
+        Aion2Tickets.Reset();
+        var at = new DateTime(2026, 11, 2, 22, 39, 17);
+        void Login(string name, int server, DateTime when)
+        {
+            Aion2Tickets.ReceiveList(entries, when);
+            Aion2Tickets.NoteCharacter(name, server, when.AddSeconds(1));
+        }
+
+        void Change(string hex, DateTime when)
+        {
+            if (Aion2Tickets.TryParseUpdate(Convert.FromHexString(hex), out TicketReading reading, out int reason, out _))
+            {
+                Aion2Tickets.ReceiveUpdate(reading, when, reason);
+            }
+        }
+
+        Login("Oldie", 1305, at.AddDays(-30)); // a character of a server left long ago
+        Login("Nyxelle", 1304, at.AddHours(-3));
+        Login("Draegor", 1304, at.AddMinutes(-12));
+        Change("0c6100008196980002", at);
+        Change("0c61000182969800d0fb01000000000002", at);
+        Change("0c61000183969800d0fb01000000000002", at);
+        var window = new Aion2Corridors.Window(at.AddMinutes(-9), at.AddDays(3), false);
+        TicketCharacter Of(string name) => Aion2Tickets.Snapshot().First(c => c.Name == name);
+        bool given = Aion2Corridors.Of(Of("Draegor"), Aion2Tickets.Snapshot(), window) is { Left: 2, Open: 2, From: null };
+        Change("0c61000182969800d0fb01000000000003", at.AddMinutes(3)); // corridor 504001 entered: its time starts
+        Change("0c6100008296980003", at.AddMinutes(5));                 // and runs out
+        bool entered = Aion2Corridors.Of(Of("Draegor"), Aion2Tickets.Snapshot(), window) is { Left: 1, Open: 2, From: null };
+        bool alt = Aion2Corridors.Of(Of("Nyxelle"), Aion2Tickets.Snapshot(), window) is { Left: 2, Open: 2, From: "Draegor" }
+            && Aion2Corridors.Of(Of("Oldie"), Aion2Tickets.Snapshot(), window) is null;
+        bool outside = Aion2Corridors.Of(Of("Draegor"), Aion2Tickets.Snapshot(), window with { Since = at.AddDays(3).AddMinutes(30) }) is null
+            && Aion2Corridors.Of(Of("Draegor"), Aion2Tickets.Snapshot(), window with { SiegeOn = true }) is null;
+        Login("Draegor", 1304, at.AddMinutes(20)); // a relog: the list holds only the time left of each
+        bool relog = Aion2Tickets.Snapshot().First(c => c.Name == "Draegor").Tickets.TryGetValue(Aion2Corridors.RefillId, out TicketValue stamp) && stamp.Count == 2
+            && Aion2Corridors.Of(Of("Draegor"), Aion2Tickets.Snapshot(), window) is { Open: 2, From: null };
+        bool home = Aion2Tickets.HomeServerId == 1304 && Aion2Tickets.OnHomeServer().Select(c => c.Name).OrderBy(n => n).SequenceEqual(new[] { "Draegor", "Nyxelle" });
+        Console.WriteLine($"  -> Abyss Corridors given out={given}, one entered={entered}, an alt of the server worked out and none for another server={alt}, none outside the window={outside}, a relog keeps them={relog}; only the server played on={home}");
+        return given && entered && alt && outside && relog && home;
     }
 }

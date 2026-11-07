@@ -34,7 +34,7 @@ public partial class MainWindow
 
         // the characters' Odyle Energy: who is full, who is next
         string? online = Aion2Tickets.CurrentName;
-        var odyle = Aion2Tickets.Snapshot().Where(c => c.Tickets.Count > 0)
+        var odyle = Aion2Tickets.OnHomeServer().Where(c => c.Tickets.Count > 0)
             .Select(c => (Character: c, State: Aion2Tickets.OdyleNow(c, utcNow, c.Name == online))).Where(x => x.State is not null)
             .OrderBy(x => x.State!.Full ? DateTime.MinValue : x.State.FullAt ?? DateTime.MaxValue).Take(8).ToList();
         var energy = new StackPanel();

@@ -170,6 +170,38 @@ public sealed partial class ChecklistWindow
         return grid;
     }
 
+    /// <summary>
+    /// The Abyss Corridors of one character in the roster: how many are left of those open to its side since the last siege (its own numbers once it was in the
+    /// Abyss since; "~" with the number another character of the server was given before that; "–" during a siege or when no one was in the Abyss since).
+    /// </summary>
+    private static UIElement CorridorBox(TicketCharacter c, IReadOnlyList<TicketCharacter> all, Aion2Corridors.Window window)
+    {
+        LocalizationManager loc = LocalizationManager.Instance;
+        CultureInfo culture = CultureInfo.CurrentCulture;
+        string until = window.Until is { } next ? string.Format(culture, loc["Checklist.CorridorUntil"], next.ToString("ddd", culture) + " " + next.ToString("t", culture)) : "";
+        Aion2Corridors.State? state = Aion2Corridors.Of(c, all, window);
+        if (state is null)
+        {
+            TextBlock dash = Label("–", "Brush.TextSubtle", 13);
+            dash.HorizontalAlignment = HorizontalAlignment.Center;
+            dash.ToolTip = window.SiegeOn ? loc["Checklist.CorridorSiege"] : loc["Checklist.CorridorNotSeen"];
+            return dash;
+        }
+
+        string text = (state.From is null ? "" : "~") + state.Left.ToString(culture);
+        string tip = state.Open == 0 ? loc["Checklist.CorridorNone"]
+            : state.From is null ? string.Format(culture, loc["Checklist.CorridorLeft"], state.Left, state.Open)
+            : string.Format(culture, loc["Checklist.CorridorFrom"], state.Open, state.From);
+        tip += until.Length > 0 && state.Open > 0 ? "\n" + until : "";
+        var line = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center };
+        line.Children.Add(Label(text, state.Left > 0 ? "Brush.Accent" : "Brush.TextMuted", 12.5, bold: true));
+        var box = new Border { Child = line, MinWidth = 44, Height = 26, Padding = new Thickness(6, 0, 6, 0), CornerRadius = new CornerRadius(7), BorderThickness = new Thickness(1),
+            HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, ToolTip = tip };
+        box.SetResourceReference(Border.BackgroundProperty, "Brush.Control");
+        box.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
+        return box;
+    }
+
     private static void Cell(Grid grid, UIElement element, int column)
     {
         Grid.SetColumn(element, column);
@@ -187,7 +219,9 @@ public sealed partial class ChecklistWindow
     {
         LocalizationManager loc = LocalizationManager.Instance;
         var table = new StackPanel();
-        int counters = 1 + defs.Count(d => d is not null);
+        // the Abyss Corridors after the counters: open from the end of a siege to the start of the next (none without a siege in the timetable)
+        Aion2Corridors.Window? corridors = Aion2Corridors.WindowAt(now);
+        int counters = 1 + defs.Count(d => d is not null) + (corridors is null ? 0 : 1);
 
         // the titles
         Grid head = RosterColumns(counters);
@@ -216,6 +250,11 @@ public sealed partial class ChecklistWindow
             {
                 Title(def.ShortIn(language).Replace("\n", " ", StringComparison.Ordinal), def.NameIn(language), column++);
             }
+        }
+
+        if (corridors is not null)
+        {
+            Title(Aion2.Protocol.Aion2Zones.NameOf(Aion2Corridors.ZoneId, language) ?? loc["Checklist.Corridor"], loc["Checklist.CorridorTip"], column++);
         }
 
         table.Children.Add(head);
@@ -385,6 +424,11 @@ public sealed partial class ChecklistWindow
                 string text = (count != value.Count ? "~" : "") + count.ToString(CultureInfo.CurrentCulture) + (value.Bonus > 0 ? $"+{value.Bonus}" : "");
                 string tip = $"{def.NameIn(language)}: {count} / {Math.Max(cap, count)}" + (lost > 0 ? "  ·  " + string.Format(CultureInfo.CurrentCulture, loc[lost == 1 ? "Checklist.WarnLostOne" : "Checklist.WarnLostMany"], lost) : "");
                 Cell(row, Box(text, lost > 0 ? "Brush.Warning" : count > 0 ? "Brush.Accent" : "Brush.TextMuted", tip, lost > 0), column++);
+            }
+
+            if (corridors is not null)
+            {
+                Cell(row, CorridorBox(c, all, corridors), column++);
             }
 
             // the line: a stripe of the class colour at the left, lit under the mouse; a click opens the character

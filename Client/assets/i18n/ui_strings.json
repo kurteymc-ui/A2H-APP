@@ -22779,5 +22779,37 @@
     "es": "Pone el aspecto de esa clase en esta, y sus barras o cuadrados en los mismos sitios: la primera habilidad de su barra ocupa el lugar de la primera de la otra clase, y así sucesivamente. Solo cambia esta clase.",
     "pt": "Aplica o visual daquela classe a esta, e as barras ou quadrados nos mesmos lugares: a primeira habilidade da barra fica no lugar da primeira da outra classe, e assim por diante. Só esta classe muda.",
     "ru": "Переносит вид того класса на этот и ставит полосы или квадраты на те же места: первое умение панели занимает место первого умения другого класса, и так далее. Меняется только этот класс."
+  },
+  "Checklist.Corridor": {
+    "en": "Abyss Corridor",
+    "de": "Abysskorridor"
+  },
+  "Checklist.CorridorTip": {
+    "en": "The Abyss Corridors your side opened at the last Artifact Siege that this character has not entered yet (2 minutes each). They stay open until the next siege. The game gives them out when the character first enters the Abyss after the siege.",
+    "de": "Die Abysskorridore, die deine Seite bei der letzten Artefakt-Eroberung geöffnet hat und die dieser Charakter noch nicht betreten hat (je 2 Minuten). Sie bleiben bis zur nächsten Eroberung offen. Das Spiel vergibt sie, wenn der Charakter nach der Eroberung zum ersten Mal den Abyss betritt."
+  },
+  "Checklist.CorridorUntil": {
+    "en": "Open until the next siege, {0}",
+    "de": "Offen bis zur nächsten Eroberung, {0}"
+  },
+  "Checklist.CorridorSiege": {
+    "en": "The siege is on: the corridors open when it ends",
+    "de": "Die Eroberung läuft: die Korridore öffnen, wenn sie endet"
+  },
+  "Checklist.CorridorNotSeen": {
+    "en": "Not known yet: enter the Abyss once after the siege with a character of this server while the app runs",
+    "de": "Noch nicht bekannt: nach der Eroberung einmal mit einem Charakter dieses Servers den Abyss betreten, während die App läuft"
+  },
+  "Checklist.CorridorNone": {
+    "en": "No corridor open to your side since the last siege",
+    "de": "Seit der letzten Eroberung ist kein Korridor für deine Seite offen"
+  },
+  "Checklist.CorridorLeft": {
+    "en": "Abyss Corridor: {0} of {1} left",
+    "de": "Abysskorridor: {0} von {1} übrig"
+  },
+  "Checklist.CorridorFrom": {
+    "en": "{0} open to your side (seen on {1}); this character has not been in the Abyss since the siege",
+    "de": "{0} für deine Seite offen (gesehen bei {1}); dieser Charakter war seit der Eroberung nicht im Abyss"
   }
 }

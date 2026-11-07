@@ -30,7 +30,7 @@ public sealed partial class ChecklistWindow
     /// </summary>
     private UIElement? SeasonCharacters(string shown, IReadOnlyList<SeasonMission> missions, DateTime now)
     {
-        List<TicketCharacter> characters = Aion2Tickets.Snapshot().Where(c => c.Tickets.Count > 0).ToList();
+        List<TicketCharacter> characters = Aion2Tickets.OnHomeServer().Where(c => c.Tickets.Count > 0).ToList();
         if (characters.Count < 2)
         {
             return null;
