@@ -158,9 +158,11 @@ public static class StaggerChecks
 
             DateTime start = cast is { } c && c.At > x.Start ? c.At : x.Start;
             DateTime? deadline = cast is { } cc ? cc.At.AddMilliseconds(cc.DurationMs) : null;
-            if (firstDrop is null && cast is null && x.Outcome != StaggerOutcome.Broken)
+            // the bar sat full: no check - with a cast too, unless it is one known to start a check (Isolation Specialist Rahu's 15 s cast in Ludra comes
+            // after its bar filled again, and hundreds of hits during it take nothing off: the boss can't be staggered then, there is nothing to break)
+            if (firstDrop is null && x.Outcome != StaggerOutcome.Broken && (cast is not { } shown || !IsMechanic(shown.SkillId)))
             {
-                continue; // the bar sat full: no check
+                continue;
             }
 
             if (x.Outcome == StaggerOutcome.Running)

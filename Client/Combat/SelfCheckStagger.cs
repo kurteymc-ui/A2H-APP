@@ -233,9 +233,17 @@ public static class SelfCheckStagger
 
         bar.Add(new StaggerEvent(t0.AddSeconds(12), boss, 480, 480, false)); // the bar's size changes: no drop of 240
         StaggerReport st = StaggerCredit.Build(bar, hits, t0);
+
+        // Ludra's Isolation Specialist Rahu: its 4,500 bar broken, full again, then a 15 s cast during which nothing comes off it - no check of its own
+        var rahuBar = new List<StaggerEvent> { new(t0, boss, 4500, 4500, false), new(t0.AddSeconds(5), boss, 4495, 4500, false), new(t0.AddSeconds(100), boss, 0, 0, true),
+            new(t0.AddSeconds(108), boss, 4500, 4500, false), new(t0.AddSeconds(126), boss, 4500, 4500, false) };
+        var rahuCast = new List<WindupRecord> { new(t0.AddSeconds(108.4), boss, 1802900, 1, 15000, 0, 0, 0, false) };
+        var rahu = StaggerChecks.Find(boss, rahuBar, rahuCast, Array.Empty<DamageEvent>(), t0.AddSeconds(160));
+        bool rahuOne = rahu.Count == 1 && rahu[0].Outcome == StaggerOutcome.Broken;
+        Console.WriteLine($"  -> a cast while the bar can't be staggered is no check (Rahu): {rahuOne} ({string.Join(", ", rahu.Select(c => c.Outcome + " " + c.Mechanic))})");
         bool families = st.Of(1)?.Amount == 50 && st.Of(2)?.Amount == 100 && st.Total == 150 && st.ExactPercent > 99.9 && st.Hits.All(h => !h.Boosted);
         Console.WriteLine($"  -> a skill's form goes by its family, a bar that changes size is no drop, a Cleric's hit is never boosted: {families} " +
             $"(player 1 {st.Of(1)?.Amount}, player 2 {st.Of(2)?.Amount}, total {st.Total}, exact {st.ExactPercent:0.#}%, boosted {st.Hits.Count(h => h.Boosted)})");
-        return families;
+        return families && rahuOne;
     }
 }
