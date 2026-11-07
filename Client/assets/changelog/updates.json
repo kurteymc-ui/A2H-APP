@@ -36,6 +36,13 @@
           "title": "Straight to the newest version",
           "text": "An update now always goes to the newest version, in one restart, however many you skipped. One that was downloaded earlier isn't put in on its own any more when a newer one is out, and \"What's new\" lists every change from all the versions you missed.",
           "example": "You were on 1.20.55: one update takes you to the newest, and What's new shows 1.20.56 to today in one list."
+        },
+        {
+          "kind": "new",
+          "area": "Map",
+          "title": "The compass only for a moment",
+          "text": "A new switch next to Compass on the Interactive map page: the N, NE, E ... letters around the map show for 3 seconds when it comes up, zooms, changes map or your mouse rests on it, then fade, so they don't sit over the map the whole time. The Compass switch still turns them off completely.",
+          "example": "The map pops up for a Hidden Cube: the letters show you which way is north, then get out of the way."
         }
       ]
     },

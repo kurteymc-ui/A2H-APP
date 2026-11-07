@@ -951,6 +951,9 @@ public sealed class MeterSettings
     /// <summary>The points of the compass around the edge of the interactive map (N, NE, E ... north is up).</summary>
     public bool PetMapCompass { get; set; } = true;
 
+    /// <summary>The compass shows only for 3 seconds when the map comes up, zooms, changes map or the mouse rests on it, then fades (with <see cref="PetMapCompass"/> on). Off by default.</summary>
+    public bool PetMapCompassFade { get; set; }
+
     /// <summary>The interactive map shows only its marks and the route, no map picture (to lay over the game's minimap).</summary>
     public bool PetMapMarkersOnly { get; set; }
 

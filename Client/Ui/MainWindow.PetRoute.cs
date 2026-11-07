@@ -116,6 +116,7 @@ public partial class MainWindow
         shape.Children.Add(Check(loc["PetRoute.Round"], now.PetMapRound, (s, v) => s.PetMapRound = v));
         shape.Children.Add(Check(loc["PetRoute.MarksOnly"], now.PetMapMarkersOnly, (s, v) => s.PetMapMarkersOnly = v, loc["PetRoute.MarksOnlyTip"]));
         shape.Children.Add(Check(loc["PetMap.Compass"], now.PetMapCompass, (s, v) => s.PetMapCompass = v, loc["PetMap.CompassTip"]));
+        shape.Children.Add(Check(loc["PetMap.CompassFade"], now.PetMapCompassFade, (s, v) => s.PetMapCompassFade = v, loc["PetMap.CompassFadeTip"]));
         display.Children.Add(shape);
 
         // no full map any more: the map itself zooms out to the whole map (mouse wheel or its +/- buttons; PetMapZoom)

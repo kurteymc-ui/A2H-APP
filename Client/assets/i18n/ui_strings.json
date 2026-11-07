@@ -22715,5 +22715,21 @@
     "es": "Buscada",
     "pt": "Procurado",
     "ru": "Нужен"
+  },
+  "PetMap.CompassFade": {
+    "en": "Compass only for 3 s",
+    "de": "Kompass nur 3 s",
+    "fr": "Boussole 3 s seulement",
+    "es": "Brújula solo 3 s",
+    "pt": "Bússola só por 3 s",
+    "ru": "Компас только на 3 с"
+  },
+  "PetMap.CompassFadeTip": {
+    "en": "The compass letters (N, NE, E ...) show for 3 seconds when the map comes up, zooms, changes map or the mouse rests on it, then fade away.",
+    "de": "Die Kompassbuchstaben (N, NO, O ...) erscheinen 3 Sekunden, wenn die Karte auftaucht, zoomt, die Karte wechselt oder die Maus auf ihr ruht, und verblassen dann.",
+    "fr": "Les lettres de la boussole (N, NE, E ...) s'affichent 3 secondes quand la carte apparaît, zoome, change de carte ou que la souris reste dessus, puis s'effacent.",
+    "es": "Las letras de la brújula (N, NE, E ...) aparecen 3 segundos cuando el mapa aparece, hace zoom, cambia de mapa o el ratón se queda encima, y luego se desvanecen.",
+    "pt": "As letras da bússola (N, NE, L ...) aparecem por 3 segundos quando o mapa surge, faz zoom, muda de mapa ou o mouse para sobre ele, e depois somem.",
+    "ru": "Буквы компаса (С, СВ, В ...) видны 3 секунды, когда карта появляется, меняет масштаб, сменяется или мышь задерживается на ней, затем исчезают."
   }
 }

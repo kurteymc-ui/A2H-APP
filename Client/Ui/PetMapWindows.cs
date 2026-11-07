@@ -995,13 +995,32 @@ public sealed class PetMapWindow : MovableOverlay
     private readonly List<Border> _compass = new();
     private string _compassLanguage = "";
 
+    /// <summary>The compass shows only for a moment (<see cref="MeterSettings.PetMapCompassFade"/>, 7 November 2026: "hide the cardinals after 3 s"): for 3
+    /// seconds after the map comes up, is zoomed, changes to another map or the mouse rests on it, then it fades. Always there while the map is being placed.</summary>
+    public bool CompassFades { get; set; }
+
+    private DateTime _compassWake = DateTime.UtcNow;
+    private double _compassZoom = -1;
+    private string _compassMap = "";
+
+    /// <summary>Shows the compass again for its moment (the map came up, was zoomed or moved, or the mouse rests on it).</summary>
+    public void WakeCompass() => _compassWake = DateTime.UtcNow;
+
     /// <summary>
     /// The eight points of the compass just inside the edge: the four main ones in the middle of the sides, the others in the corners (round: on the circle).
     /// North in gold. They stay where they are when the view moves or zooms (the map never turns).
     /// </summary>
     private void DrawCompass(double cx, double cy, double vw, double vh)
     {
-        if (!ShowCompass)
+        // fading: full for 3 s after it was woken, gone 0.6 s later (always on the app's page and while the map is placed)
+        double alpha = 1;
+        if (CompassFades && !PlaceIsView && IsLocked)
+        {
+            double since = (DateTime.UtcNow - _compassWake).TotalSeconds;
+            alpha = since <= 3 ? 1 : since >= 3.6 ? 0 : 1 - (since - 3) / 0.6;
+        }
+
+        if (!ShowCompass || alpha <= 0)
         {
             foreach (Border label in _compass)
             {
@@ -1064,6 +1083,7 @@ public sealed class PetMapWindow : MovableOverlay
 
             Canvas.SetLeft(label, x - w / 2);
             Canvas.SetTop(label, y - h / 2);
+            label.Opacity = alpha;
             label.Visibility = Visibility.Visible;
         }
     }
@@ -1431,6 +1451,14 @@ public sealed class PetMapWindow : MovableOverlay
 
     public PetMapWindow() : base("Aion DPS Pet Map", new Border { Child = null }, Load, Save, SystemParameters.WorkArea.Right - ViewSize - 40, 120, LoadSize, SaveSize, OverlayEdgeMode.CropAnchored)
     {
+        IsVisibleChanged += (_, _) =>
+        {
+            if (IsVisible)
+            {
+                WakeCompass(); // the map came up: the compass for a moment
+            }
+        };
+
         // the wheel over the map zooms it (on the overlay while the cursor rests on it, see TakeMouseWhileOver; on the app's page always)
         _canvas.MouseWheel += (_, e) =>
         {
@@ -1596,6 +1624,13 @@ public sealed class PetMapWindow : MovableOverlay
         }
 
         zoom = double.IsFinite(zoom) ? Math.Clamp(zoom, 0, 1) : 0;
+        if (Math.Abs(zoom - _compassZoom) > 0.001 || map.Key != _compassMap)
+        {
+            _compassZoom = zoom;
+            _compassMap = map.Key;
+            WakeCompass(); // zoomed, or another map: the compass for a moment
+        }
+
         double close = Math.Max(radiusMetres, 10) * 100.0; // the close-up's radius in world units
 
         // zoomed out: the radius grows from the close-up's to what shows the whole land (its picture's extent; without tiles that of the spawn points);
@@ -1983,6 +2018,10 @@ public sealed class PetMapWindow : MovableOverlay
         // a drag of the free map keeps the mouse until the button is let go, also beyond the map's edge
         Point? cursor = CursorOnCanvas();
         bool over = (ZoomRequested is not null || LockRequested is not null) && (_grab is not null || (cursor is not null && (PlaceIsView || NativeCursor.Showing())));
+        if (cursor is not null && NativeCursor.Showing())
+        {
+            WakeCompass(); // the mouse rests on the map: the compass stays while it does
+        }
         TakeMouseWhileOver(over);
         // (the pictures of the tests show them, so that they can be checked); the padlock also stays while the view is free, so that is never forgotten
         PlaceZoomButtons(cx, cy, vw, vh, HoverForPicture is not null || (ZoomRequested is not null && (over || !IsLocked)), zoom);

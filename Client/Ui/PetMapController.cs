@@ -979,6 +979,7 @@ public sealed class PetMapController : IDisposable
 
         _map.Round = settings.PetMapRound;
         _map.ShowCompass = settings.PetMapCompass;
+        _map.CompassFades = settings.PetMapCompassFade;
         _map.ArrowPets = arrowPets;
         _map.SetRoute(routeStops, nextPet, firstName, stopTexts, firstKibelisk);
         foreach (var view in _mapViews)
