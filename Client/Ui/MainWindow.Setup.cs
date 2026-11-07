@@ -129,7 +129,7 @@ public partial class MainWindow
             head.Children.Add(_stepText);
             _title = ShellText("", "Brush.Text", 22, bold: true);
             _title.Margin = new Thickness(0, 4, 0, 4);
-            _title.FontFamily = ThemeManager.TitleFont;
+            ThemeManager.UseTitleFont(_title);
             head.Children.Add(_title);
             _lede = Wrapped("", "Brush.TextMuted", 13);
             _lede.MaxWidth = 900;
@@ -1350,7 +1350,7 @@ public partial class MainWindow
             var title = new Border { CornerRadius = new CornerRadius(8, 8, 0, 0), Padding = new Thickness(12, 0, 12, 0) };
             title.SetResourceReference(Border.BackgroundProperty, "Brush.TitleBar");
             TextBlock brand = ShellText("ATREIA  APP", "Brush.Accent", 12, bold: true);
-            brand.FontFamily = ThemeManager.TitleFont;
+            ThemeManager.UseTitleFont(brand);
             brand.VerticalAlignment = VerticalAlignment.Center;
             title.Child = brand;
             window.Children.Add(title);
@@ -1376,7 +1376,7 @@ public partial class MainWindow
             body.Children.Add(sideBack);
             var page = new StackPanel { Margin = new Thickness(16, 12, 16, 12) };
             TextBlock heading = ShellText(Loc["Shell.OvMeter"].ToUpper(CultureInfo.CurrentCulture), "Brush.Text", 15, bold: true);
-            heading.FontFamily = ThemeManager.TitleFont;
+            ThemeManager.UseTitleFont(heading);
             page.Children.Add(heading);
             var card = new Border { CornerRadius = new CornerRadius(7), BorderThickness = new Thickness(1), Padding = new Thickness(12, 10, 12, 10), Margin = new Thickness(0, 10, 0, 0) };
             card.SetResourceReference(Border.BackgroundProperty, "Brush.Panel");

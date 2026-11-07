@@ -251,7 +251,7 @@ public sealed class FightReportWindow : Window
 
         var titles = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var title = new TextBlock { Text = _r.Title, FontSize = 26, FontWeight = FontWeights.SemiBold };
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         titles.Children.Add(title);
         titles.Children.Add(Muted(_r.Start.ToString("MMM d, yyyy, h:mm tt", CultureInfo.GetCultureInfo("en-US")), 13));
         row.Children.Add(titles);

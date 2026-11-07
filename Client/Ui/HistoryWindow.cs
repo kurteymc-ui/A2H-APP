@@ -58,7 +58,7 @@ public sealed class HistoryWindow : Window
 
         StackPanel page = _page;
         var title = new TextBlock { Text = "History", FontSize = 26, FontWeight = FontWeights.SemiBold };
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         page.Children.Add(title);
         page.Children.Add(Muted("Boss fights, Nightmare, training dummy parses and PvP are saved on this PC as they end, each on its own, with every number the meter showed. Click one for its report.", 13.5, new Thickness(0, 4, 0, 0)));
         page.Children.Add(_characters);

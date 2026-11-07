@@ -230,7 +230,7 @@ internal sealed class WorldBossPage : Grid
         DockPanel.SetDock(when, Dock.Right);
         head.Children.Add(when);
         TextBlock title = Text(map.NameIn(Language), "Brush.Text", 17, bold: true);
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         head.Children.Add(title);
         stack.Children.Add(head);
         if (at is null)

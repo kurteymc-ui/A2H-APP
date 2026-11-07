@@ -190,7 +190,7 @@ internal sealed class LegionPage : Grid
 
         var words = new StackPanel();
         TextBlock title = Text(Loc["Legion.Title"], "Brush.Text", 26);
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         words.Children.Add(title);
         TextBlock lede = Text(Loc["Legion.Lede"], "Brush.TextMuted", 13);
         lede.Margin = new Thickness(0, 4, 0, 0);
@@ -247,7 +247,7 @@ internal sealed class LegionPage : Grid
         var stack = new StackPanel { Margin = new Thickness(20, 20, 20, 18) };
         stack.Children.Add(new TextBlock { Text = Loc["Legion.Kicker"].ToUpper(CultureInfo.CurrentCulture), FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Gold) });
         TextBlock name = Text(legion.Legion, "Brush.Text", 28);
-        name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(name);
         name.TextTrimming = TextTrimming.CharacterEllipsis;
         name.Margin = new Thickness(0, 4, 0, 0);
         stack.Children.Add(name);

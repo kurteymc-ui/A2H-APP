@@ -539,7 +539,7 @@ internal sealed class StaggerGauge : FrameworkElement
             dc.DrawGeometry(null, new Pen(B(Color.FromRgb(0xA8, 0xC8, 0xF0), 0xF0), 1.4), edge);
         }
 
-        var typeface = new Typeface("Segoe UI");
+        var typeface = ThemeManager.UiTypeface();
         double dpi = VisualTreeHelper.GetDpi(this).PixelsPerDip;
         void Label(string text, double x, Brush brush, bool right = false)
         {

@@ -1185,7 +1185,7 @@ public sealed class DummyTimelineView : FrameworkElement
     private FormattedText Text(string text, double size, Brush brush, double maxWidth = 0, bool bold = false)
     {
         var formatted = new FormattedText(text, CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-            new Typeface(new FontFamily("Segoe UI"), FontStyles.Normal, bold ? FontWeights.SemiBold : FontWeights.Normal, FontStretches.Normal), size, brush,
+            ThemeManager.UiTypeface(bold), size, brush,
             VisualTreeHelper.GetDpi(this).PixelsPerDip);
         if (maxWidth > 0)
         {

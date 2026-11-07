@@ -22,7 +22,7 @@ public sealed partial class ChecklistWindow
         LocalizationManager loc = LocalizationManager.Instance;
         var head = new StackPanel { Margin = new Thickness(4, 2, 4, 14) };
         TextBlock title = Label(loc["Checklist.PageTitle"], "Brush.Text", 26);
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         head.Children.Add(title);
         TextBlock lede = Label(loc["Checklist.PageLede"], "Brush.TextMuted", 13);
         lede.TextWrapping = TextWrapping.Wrap;
@@ -452,7 +452,7 @@ public sealed partial class ChecklistWindow
         var who = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var nameLine = new StackPanel { Orientation = Orientation.Horizontal };
         TextBlock name = Label(c.Name, "Brush.Text", 28);
-        name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(name);
         if (className is not null)
         {
             name.Foreground = ClassBrushes.Text(className);

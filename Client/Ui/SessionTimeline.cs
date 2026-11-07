@@ -184,7 +184,7 @@ public sealed class SessionTimeline : FrameworkElement
             if (rect.Width > 56)
             {
                 string label = SessionLabels.NameOf(session);
-                var formatted = new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI Semibold"), 12,
+                var formatted = new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, ThemeManager.UiTypeface(semiBold: true), 12,
                     new SolidColorBrush(Color.FromRgb(0x0C, 0x14, 0x1A)), dip) { MaxTextWidth = Math.Max(1, rect.Width - 12), MaxLineCount = 1, Trimming = TextTrimming.CharacterEllipsis };
                 dc.DrawText(formatted, new Point(rect.X + 6, rect.Y + (rect.Height - formatted.Height) / 2));
             }
@@ -239,7 +239,7 @@ public sealed class SessionTimeline : FrameworkElement
             string label = tick.TimeOfDay == TimeSpan.Zero
                 ? tick.ToString("ddd d.M.", CultureInfo.CurrentCulture)
                 : tick.ToString("HH:mm", CultureInfo.InvariantCulture);
-            var formatted = new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 11, muted, dip);
+            var formatted = new FormattedText(label, CultureInfo.CurrentCulture, FlowDirection.LeftToRight, ThemeManager.UiTypeface(), 11, muted, dip);
             dc.DrawText(formatted, new Point(Math.Min(Math.Max(0, x - formatted.Width / 2), width - formatted.Width), AxisTop));
         }
     }

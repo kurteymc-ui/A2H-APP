@@ -179,7 +179,7 @@ public sealed class ReplayView : FrameworkElement
                     dc.DrawEllipse(new SolidColorBrush(Color.FromRgb(0x8C, 0x5A, 0x4A)), new Pen(new SolidColorBrush(Color.FromArgb(0xB0, 0xFF, 0xFF, 0xFF)), 1), a, 4, 4);
                     if (_showNames)
                     {
-                        var addLabel = new FormattedText(e.Name, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 9, muted, dpi);
+                        var addLabel = new FormattedText(e.Name, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, ThemeManager.UiTypeface(), 9, muted, dpi);
                         dc.DrawText(addLabel, new Point(a.X - addLabel.Width / 2, a.Y + 6));
                     }
                 }
@@ -222,7 +222,7 @@ public sealed class ReplayView : FrameworkElement
                     dc.DrawLine(new Pen(Brushes.White, 2), at, new Point(at.X + Math.Cos(ang) * rb * 1.8, at.Y - Math.Sin(ang) * rb * 1.8));
                 }
 
-                var label = new FormattedText(e.Name, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 11, text, dpi);
+                var label = new FormattedText(e.Name, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, ThemeManager.UiTypeface(), 11, text, dpi);
                 dc.DrawText(label, new Point(at.X - label.Width / 2, at.Y + rb + 2));
             }
             else
@@ -242,7 +242,7 @@ public sealed class ReplayView : FrameworkElement
                     dc.DrawLine(cross, new Point(at.X - 6, at.Y + 6), new Point(at.X + 6, at.Y - 6));
                     // how long they have been dead
                     var span = new FormattedText("☠ " + TimeSpan.FromSeconds(Math.Max(0, _time - death!.At)).ToString(@"m\:ss"), System.Globalization.CultureInfo.CurrentCulture,
-                        FlowDirection.LeftToRight, new Typeface("Segoe UI"), 10, Brushes.OrangeRed, dpi);
+                        FlowDirection.LeftToRight, ThemeManager.UiTypeface(), 10, Brushes.OrangeRed, dpi);
                     dc.DrawText(span, new Point(at.X - span.Width / 2, at.Y - 22));
                 }
 
@@ -255,7 +255,7 @@ public sealed class ReplayView : FrameworkElement
 
                 if (_showNames)
                 {
-                    var label = new FormattedText(e.Name, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 10, dead ? muted : text, dpi);
+                    var label = new FormattedText(e.Name, System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, ThemeManager.UiTypeface(), 10, dead ? muted : text, dpi);
                     dc.DrawText(label, new Point(at.X - label.Width / 2, at.Y + 8));
                 }
             }
@@ -289,14 +289,14 @@ public sealed class ReplayView : FrameworkElement
             status.Add(LocalizationManager.Instance["Replay.OwnEstimated"]);
         }
 
-        var header = new FormattedText(string.Join("  ·  ", status), System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 13, text, dpi);
+        var header = new FormattedText(string.Join("  ·  ", status), System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, ThemeManager.UiTypeface(), 13, text, dpi);
         dc.DrawText(header, new Point(10, 8));
         double bar = 10 * _scale * 100; // ten metres
         if (bar >= 20)
         {
             var scalePen = new Pen(muted, 2);
             dc.DrawLine(scalePen, new Point(10, height - 14), new Point(10 + bar, height - 14));
-            var meters = new FormattedText("10 m", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 10, muted, dpi);
+            var meters = new FormattedText("10 m", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, ThemeManager.UiTypeface(), 10, muted, dpi);
             dc.DrawText(meters, new Point(14 + bar, height - 22));
         }
     }

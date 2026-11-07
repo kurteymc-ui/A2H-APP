@@ -238,7 +238,7 @@ internal sealed class JourneyPage : Grid
 
         var words = new StackPanel();
         TextBlock title = Text(Loc["Journey.Title"], "Brush.Text", 26);
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         words.Children.Add(title);
         TextBlock lede = Text(Loc["Journey.Lede"], "Brush.TextMuted", 13);
         lede.Margin = new Thickness(0, 4, 0, 0);
@@ -355,7 +355,7 @@ internal sealed class JourneyPage : Grid
 
         stack.Children.Add(face);
         TextBlock name = Text(who.Name, "Brush.Text", 24);
-        name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(name);
         name.Margin = new Thickness(0, 12, 0, 0);
         name.TextTrimming = TextTrimming.CharacterEllipsis;
         stack.Children.Add(name);
@@ -480,7 +480,7 @@ internal sealed class JourneyPage : Grid
             Text = Dates(r.From, r.To).ToUpper(CultureInfo.CurrentCulture), FontSize = 11.5, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(accent),
         });
         var headline = new TextBlock { Text = Headline(r), FontSize = 30, Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 6, 0, 10) };
-        headline.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(headline);
         words.Children.Add(headline);
         var facts = new List<string>();
         if (n.MinutesPlayed > 0)
@@ -970,7 +970,7 @@ internal sealed class JourneyPage : Grid
         grid.Children.Add(face);
         var words = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
         var name = new TextBlock { Text = r.Who.Name, FontSize = 36, Foreground = Brushes.White };
-        name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(name);
         words.Children.Add(name);
         words.Children.Add(new TextBlock
         {

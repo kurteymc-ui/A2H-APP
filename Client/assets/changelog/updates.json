@@ -43,6 +43,12 @@
           "title": "The compass only for a moment",
           "text": "A new switch next to Compass on the Interactive map page: the N, NE, E ... letters around the map show for 3 seconds when it comes up, zooms, changes map or your mouse rests on it, then fade, so they don't sit over the map the whole time. The Compass switch still turns them off completely.",
           "example": "The map pops up for a Hidden Cube: the letters show you which way is north, then get out of the way."
+        },
+        {
+          "kind": "improved",
+          "area": "Look",
+          "title": "One clean font everywhere",
+          "text": "Titles, character names and the charts now use the same font as the buttons and the rest of the app, instead of the old decorative capitals and a second font in the charts."
         }
       ]
     },

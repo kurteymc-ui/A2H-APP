@@ -95,7 +95,7 @@ public sealed class ModulePage : DockPanel
         bar.SetResourceReference(Border.BorderBrushProperty, "Brush.Border");
         DockPanel.SetDock(bar, Dock.Right);
         var name = new TextBlock { Text = title, FontSize = 26, VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis };
-        name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(name);
         name.SetResourceReference(TextBlock.ForegroundProperty, "Brush.Text");
         header.Children.Add(bar);
         header.Children.Add(left ?? name);

@@ -43,7 +43,7 @@ internal sealed class StatusPage : Grid
         _openNetwork = openNetwork;
         var root = new StackPanel { Margin = new Thickness(24, 18, 24, 24), MaxWidth = 980, HorizontalAlignment = HorizontalAlignment.Left };
         TextBlock title = Text(Loc["Status.Title"], "Brush.Text", 26);
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         root.Children.Add(title);
         TextBlock lede = Wrapped(Loc["Status.Lede"], "Brush.TextMuted", 13);
         lede.Margin = new Thickness(0, 4, 0, 16);

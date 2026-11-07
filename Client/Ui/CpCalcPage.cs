@@ -114,7 +114,7 @@ public sealed partial class CpCalcPage : Grid
         var head = new StackPanel { Margin = new Thickness(0, 0, 0, 10) };
         // the page's title as the other character pages have it (6 November 2026, the owner: "fix the CP to be a nicer style")
         var title = new TextBlock { Text = Loc("Main.MenuTools.CpCalc"), FontSize = 26, Foreground = Res("Brush.Text") };
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         head.Children.Add(title);
         _note.Foreground = Res("Brush.TextMuted");
         head.Children.Add(_note);
@@ -467,7 +467,7 @@ public sealed partial class CpCalcPage : Grid
         if (_character is not null)
         {
             var name = new TextBlock { Text = _character, FontSize = 22, Foreground = Res("Brush.Text"), Margin = new Thickness(0, 4, 0, 0), TextTrimming = TextTrimming.CharacterEllipsis };
-            name.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+            ThemeManager.UseTitleFont(name);
             left.Children.Add(name);
             int? il = CharacterOf(_directory()).ItemLevel;
             string who = string.Join("  ·  ", new[] { cls, il is int level ? F("CpCalc.Hero.ItemLevel", level.ToString("N0", CultureInfo.CurrentCulture)) : "" }.Where(x => x.Length > 0));

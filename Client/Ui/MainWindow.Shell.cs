@@ -948,7 +948,7 @@ public partial class MainWindow
     {
         var stack = new StackPanel { Margin = new Thickness(0, 0, 0, 14) };
         TextBlock head = ShellText(title, "Brush.Text", 24);
-        head.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(head);
         stack.Children.Add(head);
         TextBlock sub = Wrapped(lede, "Brush.TextMuted", 13);
         sub.Margin = new Thickness(0, 4, 0, 0);

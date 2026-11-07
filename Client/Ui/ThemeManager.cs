@@ -50,7 +50,22 @@ public static class ThemeManager
     /// <summary>The site's text face (Source Sans 3, bundled as "A2H Sans") and its title face (Cinzel), compiled into the app (Fonts/).</summary>
     public static FontFamily UiFont => _uiFont ??= Bundled("./Fonts/#A2H Sans, Segoe UI");
 
-    public static FontFamily TitleFont => _titleFont ??= Bundled("./Fonts/#Cinzel, Georgia");
+    /// <remarks>Titles take the buttons' face too since 7 November 2026 (the owner: "a nice font, the same as the buttons"; Cinzel's capitals read oddly in
+    /// names and headings), semi-bold where a title asks for no weight of its own (<see cref="UseTitleFont"/>).</remarks>
+    public static FontFamily TitleFont => _titleFont ??= Bundled("./Fonts/#A2H Sans, Segoe UI");
+
+    /// <summary>A title in the titles' face: semi-bold unless it was given a weight of its own.</summary>
+    public static void UseTitleFont(System.Windows.Controls.TextBlock title)
+    {
+        title.SetResourceReference(System.Windows.Controls.TextBlock.FontFamilyProperty, "Font.Title");
+        if (title.FontWeight == FontWeights.Normal)
+        {
+            title.FontWeight = FontWeights.SemiBold;
+        }
+    }
+
+    /// <summary>The buttons' face for text drawn by hand (charts, the replay, the timelines).</summary>
+    public static Typeface UiTypeface(bool semiBold = false) => new(UiFont, FontStyles.Normal, semiBold ? FontWeights.SemiBold : FontWeights.Normal, FontStretches.Normal);
 
     private static FontFamily? _uiFont;
     private static FontFamily? _titleFont;

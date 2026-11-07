@@ -186,7 +186,7 @@ public partial class MainWindow
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         var who = new StackPanel();
         TextBlock head = ShellText(name is null ? hello : string.Format(CultureInfo.CurrentCulture, loc["Home.Hello"], hello, name), "Brush.Text", 24);
-        head.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(head);
         who.Children.Add(head);
 
         // the character line and whether the game is being read

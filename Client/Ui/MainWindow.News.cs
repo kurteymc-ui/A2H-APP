@@ -181,7 +181,7 @@ public partial class MainWindow
             FontSize = 28, Foreground = Brushes.White, TextWrapping = TextWrapping.Wrap, TextTrimming = TextTrimming.CharacterEllipsis, MaxHeight = 76, LineHeight = 36,
             Effect = new System.Windows.Media.Effects.DropShadowEffect { Color = Colors.Black, BlurRadius = 8, ShadowDepth = 0, Opacity = 0.7 },
         };
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         words.Children.Add(title);
         var summary = new TextBlock
         {
@@ -414,7 +414,7 @@ public partial class MainWindow
         meta.Children.Add(when);
         page.Children.Add(meta);
         TextBlock title = Wrapped(item.Title, "Brush.Text", 26);
-        title.SetResourceReference(TextBlock.FontFamilyProperty, "Font.Title");
+        ThemeManager.UseTitleFont(title);
         page.Children.Add(title);
         if (item.WrittenUp && item.OfficialTitle is { Length: > 0 } official && official != item.Title)
         {

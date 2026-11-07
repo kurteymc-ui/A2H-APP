@@ -92,7 +92,7 @@ public sealed class RotationTimelineView : FrameworkElement
             double x = X(t);
             dc.DrawLine(line, new Point(x, AxisHeight), new Point(x, height));
             var label = new FormattedText(TimeSpan.FromSeconds(t).ToString(t >= 3600 ? @"h\:mm\:ss" : @"m\:ss"), System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight,
-                new Typeface("Segoe UI"), 10, text, dpi);
+                ThemeManager.UiTypeface(), 10, text, dpi);
             dc.DrawText(label, new Point(x + 2, 1));
         }
 
@@ -151,7 +151,7 @@ public sealed class RotationTimelineView : FrameworkElement
             {
                 var fillBrush = new SolidColorBrush(Color.FromRgb((byte)(60 + use.SkillId * 7 % 120), (byte)(60 + use.SkillId * 13 % 120), (byte)(70 + use.SkillId * 29 % 120)));
                 dc.DrawRoundedRectangle(fillBrush, null, box, 3, 3);
-                var letter = new FormattedText(use.Name.Length > 0 ? use.Name[..1] : "?", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, new Typeface("Segoe UI"), 11, Brushes.White, dpi);
+                var letter = new FormattedText(use.Name.Length > 0 ? use.Name[..1] : "?", System.Globalization.CultureInfo.CurrentCulture, FlowDirection.LeftToRight, ThemeManager.UiTypeface(), 11, Brushes.White, dpi);
                 dc.DrawText(letter, new Point(box.X + (IconSize - letter.Width) / 2, box.Y + (IconSize - letter.Height) / 2));
             }
 

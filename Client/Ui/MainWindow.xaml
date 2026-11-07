@@ -767,8 +767,8 @@
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="16,0,0,0">
                         <!-- the Atreia emblem (the site's and the Discord bot's icon, see-through) -->
                         <Image Source="pack://siteoforigin:,,,/assets/app/a2h-emblem.png" Width="22" Height="22" RenderOptions.BitmapScalingMode="HighQuality"/>
-                        <TextBlock Text="Atreia" FontFamily="{DynamicResource Font.Title}" FontSize="16" Foreground="{DynamicResource Brush.Text}" Margin="10,0,0,0" VerticalAlignment="Center"/>
-                        <TextBlock Text="App" FontFamily="{DynamicResource Font.Title}" FontSize="16" Foreground="{DynamicResource Brush.Accent}" Margin="7,0,0,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="Atreia" FontFamily="{DynamicResource Font.Title}" FontWeight="SemiBold" FontSize="16" Foreground="{DynamicResource Brush.Text}" Margin="10,0,0,0" VerticalAlignment="Center"/>
+                        <TextBlock Text="App" FontFamily="{DynamicResource Font.Title}" FontWeight="SemiBold" FontSize="16" Foreground="{DynamicResource Brush.Accent}" Margin="7,0,0,0" VerticalAlignment="Center"/>
                     </StackPanel>
                 </DockPanel>
                 </Border>
