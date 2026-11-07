@@ -10,14 +10,21 @@ public enum StaggerOutcome
     Ended,
 }
 
+/// <summary>A skill a player hit the boss with during a stagger check, and how many times.</summary>
+public sealed record StaggerUse(int Player, int SkillId, int Hits);
+
 /// <summary>
 /// One stagger check of a boss: from the moment its stagger bar was full until it broke or filled again. <see cref="Mechanic"/>: the boss's cast that started
 /// it (Ultimate Berk's 8 s "Extinction for Eternity", Transcendent Bakarma's 18 s "Wave of Death"; 0 for a bar that is always up), <see cref="Deadline"/>: when
 /// that cast ends - the bar has to break before. <see cref="Left"/>: what was still on the bar at the end (0 when it broke). <see cref="Credit"/>: who took
 /// what off it (times in seconds from <see cref="Start"/>).
 /// </summary>
-public sealed record StaggerCheck(int Boss, DateTime Start, DateTime? Deadline, int Mechanic, int Max, DateTime? End, StaggerOutcome Outcome, int Left, StaggerReport Credit)
+public sealed record StaggerCheck(int Boss, DateTime Start, DateTime? Deadline, int Mechanic, int Max, DateTime? End, StaggerOutcome Outcome, int Left, StaggerReport Credit,
+    IReadOnlyList<StaggerUse>? Uses = null)
 {
+    /// <summary>The skills each player hit the boss with in the check, those that took nothing off the bar too ("I used mine").</summary>
+    public IReadOnlyList<StaggerUse> Used => Uses ?? Array.Empty<StaggerUse>();
+
     /// <summary>The time the cast gives to break the bar (seconds), null without a cast.</summary>
     public double? Limit => Deadline is DateTime d ? (d - Start).TotalSeconds : null;
 
@@ -172,7 +179,9 @@ public static class StaggerChecks
             var mine = hits.Where(h => h.TargetObjectId == boss && !h.IsHeal && h.Timestamp >= start - StaggerCredit.Window && h.Timestamp <= to.AddSeconds(0.2)).ToList();
             var ofCheck = x.Readings.Where(r => r.At >= start || r.At == x.Start).ToList();
             StaggerReport credit = StaggerCredit.Build(ofCheck, mine, start);
-            checks.Add(new StaggerCheck(boss, start, deadline, cast?.SkillId ?? 0, x.Max, x.End, x.Outcome, x.Outcome == StaggerOutcome.Broken ? 0 : x.Left, credit));
+            var used = mine.Where(h => h.Timestamp >= start && h.SourceObjectId != 0).GroupBy(h => (h.SourceObjectId, h.SkillId))
+                .Select(g => new StaggerUse(g.Key.SourceObjectId, g.Key.SkillId, g.Count())).ToList();
+            checks.Add(new StaggerCheck(boss, start, deadline, cast?.SkillId ?? 0, x.Max, x.End, x.Outcome, x.Outcome == StaggerOutcome.Broken ? 0 : x.Left, credit, used));
         }
 
         return checks;

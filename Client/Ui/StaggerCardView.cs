@@ -191,11 +191,18 @@ internal static class StaggerCardView
         ToolTipService.SetInitialShowDelay(name, 150);
         grid.Children.Add(name);
 
-        // the skills that took it off, as icons: hovering one tells what it did
+        // the skills that took it off, as icons: hovering one tells what it did; then, faded, those they hit with that took nothing off
         var icons = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        foreach (StaggerSkill s in (line?.Skills ?? Array.Empty<StaggerSkill>()).Take(overlay ? 5 : 8))
+        var staggered = line?.Skills ?? Array.Empty<StaggerSkill>();
+        foreach (StaggerSkill s in staggered.Take(overlay ? 5 : 8))
         {
             icons.Children.Add(SkillIcon(s, p, check, overlay ? 16 : 20));
+        }
+
+        var did = staggered.Select(s => s.SkillId).ToHashSet();
+        foreach (StaggerUse u in check.Used.Where(u => u.Player == p.Id && !did.Contains(u.SkillId) && u.SkillId != 0).OrderByDescending(u => u.Hits).Take(amount > 0 ? (overlay ? 2 : 4) : (overlay ? 4 : 6)))
+        {
+            icons.Children.Add(UsedIcon(u, p, overlay ? 16 : 20));
         }
 
         Grid.SetColumn(icons, 1);
@@ -232,6 +239,26 @@ internal static class StaggerCardView
         return icon;
     }
 
+    /// <summary>A skill the player hit the boss with in the check that took nothing off the bar: faded, its hits on hover.</summary>
+    private static FrameworkElement UsedIcon(StaggerUse u, StaggerPerson p, double size)
+    {
+        string name = Aion2SkillNames.DisplayOf(u.SkillId);
+        ImageSource? picture = OverlayPictures.Load(Aion2SkillIcons.PathFor(u.SkillId) ?? Aion2SkillIcons.PathForName(Aion2SkillNames.NameOf(u.SkillId), p.ClassName));
+        UIElement inner = picture is not null
+            ? new Image { Source = picture, Stretch = Stretch.UniformToFill }
+            : new TextBlock { Text = name.Length > 0 ? name[..1] : "?", FontSize = size * 0.55, Foreground = OverlayPictures.Muted, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center };
+        var tip = new StackPanel { MaxWidth = 320 };
+        tip.Children.Add(new TextBlock { Text = name, FontWeight = FontWeights.SemiBold, FontSize = 13 });
+        tip.Children.Add(new TextBlock { Text = $"{p.Name} hit the boss with it {u.Hits} time{(u.Hits == 1 ? "" : "s")} in this check: none of those hits took anything off the stagger bar.", FontSize = 12, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0) });
+        var icon = new Border
+        {
+            Width = size, Height = size, Margin = new Thickness(0, 0, 3, 0), CornerRadius = new CornerRadius(3), ClipToBounds = true, BorderThickness = new Thickness(1),
+            BorderBrush = Brush(Color.FromRgb(0x9D, 0xB3, 0xC2), 0x50), Child = inner, Opacity = 0.45, ToolTip = tip,
+        };
+        ToolTipService.SetInitialShowDelay(icon, 100);
+        return icon;
+    }
+
     /// <summary>A skill's part: its name, its hits that took something off and what each did (half as much again with a stagger buff), and when they came.</summary>
     public static FrameworkElement SkillTip(StaggerSkill s, StaggerPerson p, StaggerCheck check)
     {
@@ -265,9 +292,13 @@ internal static class StaggerCardView
     {
         var panel = new StackPanel { MaxWidth = 340 };
         panel.Children.Add(new TextBlock { Text = p.Name, FontWeight = FontWeights.SemiBold, FontSize = 13 });
+        var others = check.Used.Where(u => u.Player == p.Id && u.SkillId != 0 && line?.Skills.All(s => s.SkillId != u.SkillId) != false).OrderByDescending(u => u.Hits).ToList();
+        string Others() => string.Join(", ", others.Take(8).Select(u => $"{Aion2SkillNames.DisplayOf(u.SkillId)} ×{u.Hits}"));
         if (line is null || line.Amount <= 0)
         {
-            panel.Children.Add(new TextBlock { Text = "Took nothing off the boss's stagger bar in this check: none of their hits on the boss in it lowered the bar.", FontSize = 12, TextWrapping = TextWrapping.Wrap });
+            panel.Children.Add(new TextBlock { Text = others.Count > 0
+                ? "Took nothing off the boss's stagger bar in this check. Hit the boss with: " + Others() + " (none of it lowered the bar)."
+                : "Took nothing off the boss's stagger bar in this check, and the meter saw no hit of theirs on the boss in it.", FontSize = 12, TextWrapping = TextWrapping.Wrap });
             return panel;
         }
 
@@ -275,6 +306,11 @@ internal static class StaggerCardView
         foreach (StaggerSkill s in line.Skills)
         {
             panel.Children.Add(new TextBlock { Text = $"{s.Amount,6:N0}   {s.Name} ({s.Hits} hit{(s.Hits == 1 ? "" : "s")})", FontSize = 11.5, FontFamily = new FontFamily("Consolas, Segoe UI") });
+        }
+
+        if (others.Count > 0)
+        {
+            panel.Children.Add(new TextBlock { Text = "Also hit with, taking nothing off: " + Others(), FontSize = 11.5, Opacity = 0.8, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 4, 0, 0) });
         }
 
         return panel;

@@ -4,7 +4,7 @@ namespace AionDPS.Ui;
 
 /// <summary>
 /// A made-up stagger check for the pictures (render-overlay stagger, stagger-failed, stagger-tip): a boss's 8 s cast like Ultimate Berk's "Extinction for
-/// Eternity" with a bar of 480; a Gladiator, an Assassin (one hit with its stagger buff), a Ranger and a Sorcerer take it down, a Chanter takes nothing off.
+/// Eternity" with a bar of 480; a Gladiator, an Assassin (one hit with its stagger buff), a Ranger and a Sorcerer take it down, a Chanter hits it with skills that take nothing off.
 /// Running 5.2 s in, or failed when the cast ran out with part of the bar still up.
 /// </summary>
 internal static class StaggerSample
@@ -42,6 +42,12 @@ internal static class StaggerSample
             }
 
             hits.Add(new DamageEvent(t0.AddSeconds(at), who, Boss, 9_000, false, "Skill", SkillId: skill));
+            if (k % 3 == 0)
+            {
+                // the Chanter hits too, with skills that take nothing off the bar: shown faded on their line
+                hits.Add(new DamageEvent(t0.AddSeconds(at + 0.17), 5, Boss, 6_000, false, "Skill", SkillId: k % 6 == 0 ? 18010000 : 18030000));
+            }
+
             current -= drop;
             bar.Add(new StaggerEvent(t0.AddSeconds(at), Boss, current, max, false));
             at += 0.35;

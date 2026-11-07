@@ -145,7 +145,8 @@ public static class SelfCheckStagger
             && first.Limit == 8 && first.Credit.Of(1)?.Amount == 300 && first.Credit.Of(2)?.Amount == 167 && first.Credit.Hits.Count(h => h.Boosted) == 1
             && first.Credit.Hits.Single(h => h.Boosted) is { Player: 2, Amount: 7 } && first.Credit.Breaks.Count >= 1;
         bool failed = second is { Outcome: StaggerOutcome.Failed, Mechanic: mechanic } && second.Start == c0.AddSeconds(30) && second.Deadline == c0.AddSeconds(38)
-            && second.Left == max - 200 && second.Taken == 200 && second.Credit.Of(1)?.Amount == 200 && second.Credit.Of(2) is null;
+            && second.Left == max - 200 && second.Taken == 200 && second.Credit.Of(1)?.Amount == 200 && second.Credit.Of(2) is null
+            && second.Used.Count == 1 && second.Used[0] is { Player: 1, SkillId: 501, Hits: 20 };
         bool running = third is { Outcome: StaggerOutcome.Running, Taken: 0 } && third.Start == c0.AddSeconds(50) && third.TimeLeft(c0.AddSeconds(52)) is double left && Math.Abs(left - 6) < 0.01
             && StaggerChecks.Latest(at52) == third;
         List<StaggerCheck> later = StaggerChecks.Find(boss, bar, windups, hits, c0.AddSeconds(58.8));
