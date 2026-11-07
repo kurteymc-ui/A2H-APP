@@ -6,6 +6,20 @@
   ],
   "versions": [
     {
+      "version": "1.20.64",
+      "date": "2026-11-07",
+      "headline": "Skill cooldowns that keep running while your buffs tick",
+      "items": [
+        {
+          "kind": "fixed",
+          "area": "Skill Assist",
+          "title": "Buffs and channels no longer restart their cooldown",
+          "text": "Some skills keep sending hits after you use them: Flame Blessing's flames while the blessing is on, a channel's hits, an aura's or a mantra's pulses. The Skill Assist took each one for a new use, so Flame Blessing showed about 1 second the whole time and other buffs showed a few seconds more than the game. Now only the use starts the cooldown, and short lengths learnt from those hits are thrown away.",
+          "example": "Flame Blessing used: 60 s counts down from the cast, whatever its flames do meanwhile."
+        }
+      ]
+    },
+    {
       "version": "1.20.63",
       "date": "2026-11-07",
       "headline": "Cooldowns no longer reset when a party member buffs you, and cube alerts only with a key",

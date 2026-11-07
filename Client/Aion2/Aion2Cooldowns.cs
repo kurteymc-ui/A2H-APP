@@ -106,6 +106,7 @@ public static class Aion2Cooldowns
             Runs.Clear();
             LastUse.Clear();
             LastCastFrame.Clear();
+            LastTick.Clear();
             Framed.Clear();
             Variants.Clear();
             _barSeen = null;
@@ -125,7 +126,7 @@ public static class Aion2Cooldowns
     private static readonly Dictionary<int, Run> Runs = new();
 
     /// <summary>Per skill its last use (the first cast frame of it) and the last cast frame of it at all.</summary>
-    private static readonly Dictionary<int, DateTime> LastUse = new(), LastCastFrame = new();
+    private static readonly Dictionary<int, DateTime> LastUse = new(), LastCastFrame = new(), LastTick = new();
 
     // The bar as the list last saw it, and when a skill left it (the latest use known then): a skill swapped off the bar is not listed again for a use
     // from before (5 November 2026, the owner: "when I swap a skill, it changes but then won't swap back to my skill").
@@ -393,6 +394,17 @@ public static class Aion2Cooldowns
                     _otherUses.Clear();
                 }
 
+                // A hit or tick of a use, not a use (7 November 2026, a tester's Spiritmaster: Flame Blessing showed 1.1 s the whole time the blessing was
+                // on, another buff 3 s more than the game): the blessing's flame about every second (16370001 after the use 16370030), a channel's hit every
+                // 0.1 s (Bittercold Wind 15280142), an aura's or a mantra's pulse - ids not ending in 0 - while the skill's cooldown runs or right after
+                // another frame of it. Each restarted the cooldown and was learnt as a gap between uses.
+                if (skillId % 10 != 0 && IsTick(id, at))
+                {
+                    LastTick[id] = at;
+                    return;
+                }
+
+                LastTick[id] = at;
                 if (LastCastFrame.TryGetValue(id, out DateTime frame) && at >= frame && at - frame <= SameUse)
                 {
                     LastCastFrame[id] = at;
@@ -427,6 +439,19 @@ public static class Aion2Cooldowns
                 ClassChanged?.Invoke(switchedFrom, switchedTo);
             }
         }
+    }
+
+    // Under the lock: whether a frame of skill id (its last digit not 0) is a hit or tick of a use: the cooldown has more than a little left (a quarter of
+    // it, at most 3 s: a cooldown shortened by gear lets the next use come a bit early), or a frame of the skill came just before (a stream of ticks).
+    private static bool IsTick(int id, DateTime at)
+    {
+        if (Runs.TryGetValue(id, out Run? run) && (run.Ends - at).TotalSeconds > Math.Min(3, 0.25 * run.Length))
+        {
+            return true;
+        }
+
+        double quiet = Math.Min(3, 0.5 * (LengthOf(id) ?? 6));
+        return LastTick.TryGetValue(id, out DateTime tick) && at >= tick && (at - tick).TotalSeconds < quiet;
     }
 
     /// <summary>The uses of another class's skills since the last of the class in use (class, base ids, the first's time).</summary>
@@ -519,7 +544,9 @@ public static class Aion2Cooldowns
         if (gaps.Count >= GapsForLength && table is not (<= NoCooldownSeconds))
         {
             double learned = gaps[(int)(0.1 * gaps.Count)];
-            return table is double most ? Math.Min(learned, most) : learned;
+
+            // under half the table's is no shorter cooldown but the gaps between a use's ticks, learnt before they were told apart (7 November 2026)
+            return table is double most ? learned < 0.5 * most ? most : Math.Min(learned, most) : learned;
         }
 
         if (table is double length)
@@ -705,6 +732,7 @@ public static class Aion2Cooldowns
             Runs.Clear();
             LastUse.Clear();
             LastCastFrame.Clear();
+            LastTick.Clear();
             _barSeen = null;
             LeftBar.Clear();
             _otherUses.Clear();

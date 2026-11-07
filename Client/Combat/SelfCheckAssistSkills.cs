@@ -130,6 +130,41 @@ public static class SelfCheckAssistSkills
             && changes.SequenceEqual(new[] { (0, 13), (13, 14), (14, 18) })
             && Aion2Cooldowns.DigitsOf("Spiritmaster") == 16 && Aion2Cooldowns.NameOfDigits(15) == "Sorcerer",
             $"{string.Join(" ", changes.Select(c => $"{c.Item1}>{c.Item2}"))}, running {running}, kept {buffKeeps}");
+
+        // a use's ticks are no uses (7 November 2026, a tester's Spiritmaster: Flame Blessing showed 1.1 s while the blessing was on): the use 16370030, then
+        // its flame 16370001 every 1.1 s for 20 s, as on the owner's recordings - the 60 s cooldown runs from the use; a channel's hits 0.1 s apart (Bittercold
+        // Wind 15280142, no frame ending in 0) start its 15 s once and the next use after it starts it again; gaps learnt from ticks before are not a cooldown
+        Aion2Cooldowns.Reset();
+        Aion2Cooldowns.SetClass(16);
+        DateTime blessed = DateTime.Now;
+        Aion2Cooldowns.NoteOwnCast(16370030, blessed);
+        for (int k = 1; k <= 18; k++)
+        {
+            Aion2Cooldowns.NoteOwnCast(16370001, blessed.AddSeconds(1.1 * k));
+        }
+
+        CooldownView flame = Aion2Cooldowns.View(16370000, blessed.AddSeconds(21));
+        bool blessing = flame.Running && Math.Abs(flame.Seconds - 39) < 0.01 && Aion2Cooldowns.Length(16370000) == 60;
+        Aion2Cooldowns.Reset();
+        Aion2Cooldowns.SetClass(15);
+        for (int k = 0; k < 20; k++)
+        {
+            Aion2Cooldowns.NoteOwnCast(15280142, blessed.AddSeconds(0.1 * k));
+        }
+
+        CooldownView wind = Aion2Cooldowns.View(15280000, blessed.AddSeconds(5));
+        for (int k = 0; k < 20; k++)
+        {
+            Aion2Cooldowns.NoteOwnCast(15280142, blessed.AddSeconds(16 + 0.1 * k));
+        }
+
+        CooldownView again = Aion2Cooldowns.View(15280000, blessed.AddSeconds(20));
+        bool channel = wind.Running && Math.Abs(wind.Seconds - 10) < 0.01 && again.Running && Math.Abs(again.Seconds - 11) < 0.01;
+        Aion2Cooldowns.Reset();
+        Aion2Cooldowns.SeedGaps(new Dictionary<int, List<double>> { [16370000] = new() { 2.1, 2.2, 2.3, 2.4, 2.6, 2.8 } });
+        bool seeded = Aion2Cooldowns.Length(16370000) == 60;
+        Check("a use's ticks are no uses: Flame Blessing's flame every 1.1 s, a channel's hits every 0.1 s; gaps of ticks learnt before are no cooldown",
+            blessing && channel && seeded, $"blessing {flame.Seconds:0.0} s left ({blessing}), wind {wind.Seconds:0.0} then {again.Seconds:0.0} ({channel}), seeded {Aion2Cooldowns.Length(16370000)}");
         Aion2Cooldowns.Reset();
         return ok;
     }
